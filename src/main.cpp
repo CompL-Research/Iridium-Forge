@@ -274,9 +274,11 @@ int main(int argc, char **argv)
     // Iridium SEXP
     auto sexp = parseSEXP(iridiumObj);
 
-    msgpack::object buildContexts = obj.via.map.ptr[4].val; // find "iridium" properly by key
+    sexp->dump();
 
-    parseBuildContexts(buildContexts);
+    // msgpack::object buildContexts = obj.via.map.ptr[4].val; // find "iridium" properly by key
+
+    // parseBuildContexts(buildContexts);
 
     
 

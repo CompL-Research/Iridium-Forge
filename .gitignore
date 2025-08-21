@@ -1,6 +1,7 @@
 build
 out
 test.sh
+gen.sh
 
 # Prerequisites
 *.d

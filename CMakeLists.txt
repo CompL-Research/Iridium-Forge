@@ -21,7 +21,11 @@ else()
   message(FATAL_ERROR "msgpack-c++ not found. Install msgpack-cxx (e.g., via vcpkg or your package manager).")
 endif()
 
-add_executable(iridium_forge src/main.cpp src/Globals.cpp src/IridiumBuildContext.cpp src/IridiumSEXP.cpp)
+# add_executable(iridium_forge src/main.cpp src/Globals.cpp src/IridiumBuildContext.cpp src/IridiumSEXP.cpp)
+
+file(GLOB_RECURSE IRIDIUM_SRC CONFIGURE_DEPENDS src/*.cpp)
+add_executable(iridium_forge ${IRIDIUM_SRC})
+
 target_link_libraries(iridium_forge PRIVATE ZLIB::ZLIB ${MSGPACK_TARGET})
 
 # Add include folder

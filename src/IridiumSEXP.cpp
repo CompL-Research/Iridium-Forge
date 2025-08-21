@@ -1,6 +1,7 @@
 #include "Iridium/IridiumSEXP.h"
+#include "Iridium/IridiumTypes.h"
 
-std::shared_ptr<IridiumSEXP> parseSEXP(const msgpack::object &obj)
+IRISEXP parseSEXP(const msgpack::object &obj)
 {
   if (obj.type != msgpack::type::ARRAY || obj.via.array.size != 3)
     throw std::runtime_error("Invalid SEXP object");
@@ -56,12 +57,12 @@ std::shared_ptr<IridiumSEXP> parseSEXP(const msgpack::object &obj)
     }
   }
 
+  IRISEXP res = specializeSEXP(sexp);
+
   // Populate bbIdxToSEXPMap
-  if (sexp->tag == "BB") {
-    assert(sexp->hasFlag("IDX"));
-    auto idxFlag = sexp->getFlag("IDX");
-    bbIdxToSEXPMap[idxFlag->getNumber()] = sexp;
+  if (auto bb = std::dynamic_pointer_cast<BBSEXP>(res)) {
+    bbIdxToSEXPMap[bb->getIDX()] = bb;  // bb is now a shared_ptr<BBSEXP>
   }
 
-  return sexp;
+  return res;
 }

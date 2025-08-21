@@ -39,7 +39,7 @@ public:
   bool getBoolean() const { return std::get<bool>(value); }
   const std::string &getString() const { return std::get<std::string>(value); }
 
-  void dump(int indent = 0, std::ostream & oss = std::cout) const
+  void dump(int indent = 0, std::ostream &oss = std::cout) const
   {
     std::string pad(indent, ' ');
     oss << pad << "Flag(" << key << ": ";
@@ -70,11 +70,12 @@ private:
 class IridiumSEXP
 {
 public:
+  virtual ~IridiumSEXP() = default;  // makes it polymorphic? IDK how Cpp works!!
   std::string tag;
-  std::vector<std::shared_ptr<IridiumSEXP>> args;
+  std::vector<IRISEXP> args;
   std::vector<std::shared_ptr<IridiumFlag>> flags;
 
-  void dump(int indent = 0, std::ostream & oss = std::cout) const
+  void dump(int indent = 0, std::ostream &oss = std::cout) const
   {
     std::string pad(indent, ' ');
     oss << pad << "SEXP(" << tag;
@@ -85,20 +86,20 @@ public:
       for (size_t i = 0; i < flags.size(); ++i)
       {
         auto &f = flags[i];
-        oss << f->getKey() << "=";
+        // oss << f->getKey() << "=";
         switch (f->getKind())
         {
         case IridiumFlag::IridiumPrimitives::number:
-          oss << f->getNumber();
+          oss << f->getKey() << "=" << f->getNumber();
           break;
         case IridiumFlag::IridiumPrimitives::boolean:
-          oss << (f->getBoolean() ? "true" : "false");
+          oss << f->getKey() << "=" << (f->getBoolean() ? "true" : "false");
           break;
         case IridiumFlag::IridiumPrimitives::string:
-          oss << "\"" << f->getString() << "\"";
+          oss << f->getKey() << "=" << "\"" << f->getString() << "\"";
           break;
         case IridiumFlag::IridiumPrimitives::null:
-          oss << "null";
+          oss << f->getKey();
           break;
         }
         if (i + 1 < flags.size())
@@ -113,26 +114,91 @@ public:
       s->dump(indent + 2, oss);
   }
 
-  bool hasFlag(const std::string & flagToCheck) {
-    for (auto & flag : flags) {
+  void setFlag(const std::string &flagToSet)
+  {
+    removeFlag(flagToSet);
+    flags.push_back(std::make_shared<IridiumFlag>(flagToSet));
+  }
+
+  void setFlag(const std::string &flagToSet, double number)
+  {
+    removeFlag(flagToSet);
+    flags.push_back(std::make_shared<IridiumFlag>(flagToSet, number));
+  }
+
+  void setFlag(const std::string &flagToSet, bool boolean)
+  {
+    removeFlag(flagToSet);
+    flags.push_back(std::make_shared<IridiumFlag>(flagToSet, boolean));
+  }
+
+  void setFlag(const std::string &flagToSet, std::string str)
+  {
+    removeFlag(flagToSet);
+    flags.push_back(std::make_shared<IridiumFlag>(flagToSet, str));
+  }
+
+  bool hasFlag(const std::string &flagToCheck)
+  {
+    for (auto &flag : flags)
+    {
       auto flagName = flag->getKey();
-      if (flagName == flagToCheck) {
+      if (flagName == flagToCheck)
+      {
         return true;
       }
     }
     return false;
   }
 
-  std::shared_ptr<IridiumFlag> getFlag(const std::string & flagToGet) {
-    for (auto & flag : flags) {
+  void removeFlag(const std::string &flagToRemove)
+  {
+    // Remove all elements where value is even
+    flags.erase(
+        std::remove_if(flags.begin(), flags.end(),
+                       [&](const auto &f)
+                       { return f->getKey() == flagToRemove; }),
+        flags.end());
+  }
+
+  double getFlagDouble(const std::string &flagToGet)
+  {
+    for (auto &flag : flags)
+    {
       auto flagName = flag->getKey();
-      if (flagName == flagToGet) {
-        return flag;
+      if (flagName == flagToGet)
+      {
+        return flag->getNumber();
       }
     }
-    throw std::runtime_error("Tried to get flag " + flagToGet + " which does not exist!");
-    exit(1);
+    throw std::runtime_error("getFlagDouble failed");
+  }
+
+  std::string getFlagString(const std::string &flagToGet)
+  {
+    for (auto &flag : flags)
+    {
+      auto flagName = flag->getKey();
+      if (flagName == flagToGet)
+      {
+        return flag->getString();
+      }
+    }
+    throw std::runtime_error("getFlagString failed");
+  }
+
+  bool getFlagBoolean(const std::string &flagToGet)
+  {
+    for (auto &flag : flags)
+    {
+      auto flagName = flag->getKey();
+      if (flagName == flagToGet)
+      {
+        return flag->getBoolean();
+      }
+    }
+    throw std::runtime_error("getFlagBoolean failed");
   }
 };
 
-std::shared_ptr<IridiumSEXP> parseSEXP(const msgpack::object &obj);
+IRISEXP parseSEXP(const msgpack::object &obj);
