@@ -1,7 +1,7 @@
 #include "Iridium/IridiumSEXP.h"
 #include "Iridium/IridiumTypes.h"
 
-IRISEXP parseSEXP(const msgpack::object &obj)
+IRISEXP parseSEXP(const msgpack::object &obj, std::optional<std::unordered_map<int, IRISEXP>*> bbIdxToSEXPMap)
 {
   if (obj.type != msgpack::type::ARRAY || obj.via.array.size != 3)
     throw std::runtime_error("Invalid SEXP object");
@@ -19,7 +19,7 @@ IRISEXP parseSEXP(const msgpack::object &obj)
   for (uint32_t i = 0; i < argsHolder.via.array.size; i++)
   {
     const msgpack::object &arg = argsHolder.via.array.ptr[i];
-    sexp->args.push_back(parseSEXP(arg));
+    sexp->args.push_back(parseSEXP(arg, bbIdxToSEXPMap));
   }
 
   // Add Flags
@@ -61,7 +61,8 @@ IRISEXP parseSEXP(const msgpack::object &obj)
 
   // Populate bbIdxToSEXPMap
   if (auto bb = std::dynamic_pointer_cast<BBSEXP>(res)) {
-    bbIdxToSEXPMap[bb->getIDX()] = bb;  // bb is now a shared_ptr<BBSEXP>
+    if (!bbIdxToSEXPMap.has_value()) throw std::runtime_error("bbIdxToSEXPMap not passed to parseSEXP when parsing a BBSEXP");
+    (*bbIdxToSEXPMap.value())[bb->getIDX()] = bb;
   }
 
   return res;

@@ -1,7 +1,7 @@
 #include "Iridium/IridiumBuildContext.h"
 #include "Iridium/IridiumSEXP.h"
 
-void parseBuildContexts(const msgpack::object &obj)
+void parseBuildContexts(const msgpack::object &obj, std::unordered_map<int, IRISEXP> & bbIdxToSEXPMap, std::unordered_map<int, IRIBUILDCONTEXT> & iridiumBuildContext)
 {
   if (obj.type != msgpack::type::ARRAY)
     throw std::runtime_error("Expected ARRAY for build contexts");

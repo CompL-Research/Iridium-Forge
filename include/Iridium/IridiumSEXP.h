@@ -201,4 +201,4 @@ public:
   }
 };
 
-IRISEXP parseSEXP(const msgpack::object &obj);
+IRISEXP parseSEXP(const msgpack::object &obj, std::optional<std::unordered_map<int, IRISEXP>*> bbIdxToSEXPMap = std::nullopt);

@@ -111,4 +111,4 @@ public:
   void dump(std::ostream & oss) const;
 };
 
-void parseBuildContexts(const msgpack::object &obj);
+void parseBuildContexts(const msgpack::object &obj, std::unordered_map<int, IRISEXP> & bbIdxToSEXPMap, std::unordered_map<int, IRIBUILDCONTEXT> & iridiumBuildContext);
