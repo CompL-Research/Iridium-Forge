@@ -80,6 +80,21 @@ IRISEXP specializeSEXP(IRISEXP obj)
   {
     return make_iriexp<GotoSEXP>(obj);
   }
+
+  if (tag == "JSFuncDecl")
+  {
+    return make_iriexp<JSFuncDeclSEXP>(obj);
+  }
+
+  if (tag == "Lambda")
+  {
+    return make_iriexp<LambdaSEXP>(obj);
+  }
+
+  if (tag == "NOP")
+  {
+    return make_iriexp<NOPSEXP>(obj);
+  }
   throw std::runtime_error("Unhandled Iridium Tag: " + tag);
 }
 
@@ -100,4 +115,11 @@ void setBBFlag(std::shared_ptr<BBSEXP> b, BBSEXPFLAGS flagToSet)
   if (flagToSet == BBSEXPFLAGS::ClosureBoundary) return b->setClosureBoundary();
   if (flagToSet == BBSEXPFLAGS::Lexical) return b->setLexical();
   throw std::runtime_error("Impossible case reached setBBFlag");
+}
+
+std::shared_ptr<NOPSEXP> makeNOPSEXP()
+{
+  auto sexp = std::make_shared<IridiumSEXP>();
+  sexp->tag = "NOP";
+  return std::make_shared<NOPSEXP>(sexp);
 }

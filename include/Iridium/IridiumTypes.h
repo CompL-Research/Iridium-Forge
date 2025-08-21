@@ -312,8 +312,63 @@ public:
   DEFINE_DOUBLE_FLAG_FUNCS(IDX)
 };
 
+class JSFuncDeclSEXP : public IridiumSEXP
+{
+public:
+  JSFuncDeclSEXP(IRISEXP obj)
+  {
+    assert(obj->tag == "JSFuncDecl");
+
+    this->tag = obj->tag;
+    this->args = std::move(obj->args);
+    this->flags = std::move(obj->flags);
+  }
+
+  DEFINE_ARG_FUNCS(LValTarget, 0)
+  DEFINE_ARG_FUNCS(RVal, 1)
+
+  DEFINE_VOID_FLAG_FUNCS(JSLET)
+  DEFINE_VOID_FLAG_FUNCS(JSCONST)
+  DEFINE_VOID_FLAG_FUNCS(JSVAR)
+
+  DEFINE_VOID_FLAG_FUNCS(SAFE)
+  DEFINE_VOID_FLAG_FUNCS(THISINIT)
+  DEFINE_VOID_FLAG_FUNCS(SLOPPY)
+};
+
+class LambdaSEXP : public IridiumSEXP
+{
+public:
+  LambdaSEXP(IRISEXP obj)
+  {
+    assert(obj->tag == "Lambda");
+
+    this->tag = obj->tag;
+    this->args = std::move(obj->args);
+    this->flags = std::move(obj->flags);
+  }
+
+  DEFINE_DOUBLE_FLAG_FUNCS(StartBBIDX)
+};
+
+class NOPSEXP : public IridiumSEXP
+{
+public:
+  NOPSEXP(IRISEXP obj)
+  {
+    assert(obj->tag == "NOP");
+
+    this->tag = obj->tag;
+    this->args = std::move(obj->args);
+    this->flags = std::move(obj->flags);
+  }
+};
+
+
 IRISEXP specializeSEXP(IRISEXP val);
 
 BBSEXPFLAGS getBBFlag(std::shared_ptr<BBSEXP> b);
 
 void setBBFlag(std::shared_ptr<BBSEXP> b, BBSEXPFLAGS flagToSet);
+
+std::shared_ptr<NOPSEXP> makeNOPSEXP();

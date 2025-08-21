@@ -17,7 +17,7 @@
 #include "Iridium/IridiumTypes.h"
 #include "Iridium/IridiumBuildContext.h"
 
-void normalizeBBFlags(std::unordered_map<int, IRIBUILDCONTEXT> buildContext) {
+void normalizeBBFlags(std::unordered_map<int, IRIBUILDCONTEXT> & buildContext) {
   for (auto & e : buildContext) {
     int scopeIdx = e.first;
     IRIBUILDCONTEXT buildContext = e.second;
