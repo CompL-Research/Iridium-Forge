@@ -70,5 +70,34 @@ IRISEXP specializeSEXP(IRISEXP obj)
   {
     return make_iriexp<ReturnSEXP>(obj);
   }
+
+  if (tag == "IfElseJump")
+  {
+    return make_iriexp<IfElseJumpSEXP>(obj);
+  }
+
+  if (tag == "Goto")
+  {
+    return make_iriexp<GotoSEXP>(obj);
+  }
   throw std::runtime_error("Unhandled Iridium Tag: " + tag);
+}
+
+BBSEXPFLAGS getBBFlag(std::shared_ptr<BBSEXP> b) 
+{
+  if (b->hasTopLevel()) return BBSEXPFLAGS::TopLevel;
+  if (b->hasClosureBoundary()) return BBSEXPFLAGS::ClosureBoundary;
+  if (b->hasLexical()) return BBSEXPFLAGS::Lexical;
+  throw std::runtime_error("Failed to get a valid flag from a BBSEXP");
+}
+
+void setBBFlag(std::shared_ptr<BBSEXP> b, BBSEXPFLAGS flagToSet) 
+{
+  b->unsetTopLevel();
+  b->unsetClosureBoundary();
+  b->unsetLexical();
+  if (flagToSet == BBSEXPFLAGS::TopLevel) return b->setTopLevel();
+  if (flagToSet == BBSEXPFLAGS::ClosureBoundary) return b->setClosureBoundary();
+  if (flagToSet == BBSEXPFLAGS::Lexical) return b->setLexical();
+  throw std::runtime_error("Impossible case reached setBBFlag");
 }

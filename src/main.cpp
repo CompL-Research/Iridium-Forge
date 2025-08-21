@@ -8,6 +8,7 @@
 #include <optional>
 #include "Iridium/IridiumBuildContext.h"
 #include "Iridium/IridiumSEXP.h"
+#include "Iridium/Passes/1_normalize_bb_flags.h"
 
 // --------- Read all bytes from file or stdin ----------
 static std::vector<uint8_t> read_all(const std::optional<std::string> &path)
@@ -274,11 +275,20 @@ int main(int argc, char **argv)
     // Iridium SEXP
     auto sexp = parseSEXP(iridiumObj);
 
+    msgpack::object buildContexts = obj.via.map.ptr[4].val; // find "iridium" properly by key
+    parseBuildContexts(buildContexts);
+
+    std::cout << "After Initial Parsing" << std::endl;
     sexp->dump();
 
-    // msgpack::object buildContexts = obj.via.map.ptr[4].val; // find "iridium" properly by key
+    normalizeBBFlags();
 
-    // parseBuildContexts(buildContexts);
+    std::cout << "After [1_normalize_bb_flags]" << std::endl;
+    sexp->dump();
+
+
+
+    
 
     
 

@@ -236,6 +236,12 @@ public:
 
 };
 
+enum BBSEXPFLAGS {
+  TopLevel,
+  ClosureBoundary,
+  Lexical
+};
+
 class BBSEXP : public IridiumSEXP
 {
 public:
@@ -273,5 +279,41 @@ public:
   DEFINE_VOID_FLAG_FUNCS(ModuleEarlyReturn)
 };
 
+class IfElseJumpSEXP : public IridiumSEXP
+{
+public:
+  IfElseJumpSEXP(IRISEXP obj)
+  {
+    assert(obj->tag == "IfElseJump");
+
+    this->tag = obj->tag;
+    this->args = std::move(obj->args);
+    this->flags = std::move(obj->flags);
+  }
+
+  DEFINE_ARG_FUNCS(Test, 0)
+
+  DEFINE_DOUBLE_FLAG_FUNCS(TRUE)
+
+  DEFINE_DOUBLE_FLAG_FUNCS(FALSE)
+};
+
+class GotoSEXP : public IridiumSEXP
+{
+public:
+  GotoSEXP(IRISEXP obj)
+  {
+    assert(obj->tag == "Goto");
+
+    this->tag = obj->tag;
+    this->args = std::move(obj->args);
+    this->flags = std::move(obj->flags);
+  }
+  DEFINE_DOUBLE_FLAG_FUNCS(IDX)
+};
 
 IRISEXP specializeSEXP(IRISEXP val);
+
+BBSEXPFLAGS getBBFlag(std::shared_ptr<BBSEXP> b);
+
+void setBBFlag(std::shared_ptr<BBSEXP> b, BBSEXPFLAGS flagToSet);
