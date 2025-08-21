@@ -10,6 +10,7 @@
 #include "Iridium/IridiumSEXP.h"
 #include "Iridium/Passes/1_normailzeBBFlags.h"
 #include "Iridium/Passes/2_hoistFunctionDeclarations.h"
+#include "Iridium/Passes/3_filterNops.h"
 
 // --------- Read all bytes from file or stdin ----------
 static std::vector<uint8_t> read_all(const std::optional<std::string> &path)
@@ -290,6 +291,10 @@ int main(int argc, char **argv)
 
     std::cout << "After [2_hoistFunctionDeclarations]" << std::endl;
     hoistFunctionDeclarations(sexp, iridiumBuildContext);
+    sexp->dump();
+
+    std::cout << "After [3_filterNops]" << std::endl;
+    filterNOPs(sexp);
     sexp->dump();
 
 
