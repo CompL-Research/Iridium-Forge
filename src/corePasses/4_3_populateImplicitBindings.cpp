@@ -21,7 +21,6 @@ void populateImplicitBindings(IRISEXP fileSexp, std::unordered_map<int, IRIBUILD
       assert(bb && "Expected bb to be a BBSEXP");
 
       auto localScope = bb->getScopeIDX();
-      auto parentClosureScope = findParentClosureScope(localScope, iridiumBuildContext);
 
       // Iterate over STMT
       for (int i = 0; i < bb->args.size(); i++)
@@ -45,8 +44,8 @@ void populateImplicitBindings(IRISEXP fileSexp, std::unordered_map<int, IRIBUILD
           else
             throw std::runtime_error("Invalid kind for an implicit binding");
 
-          assert(localScope == parentClosureScope);
-          auto bindingSEXP = makeEnvBindingSEXP(-1, containerBC->scopeIdx, bindingName, kind, localScope, parentClosureScope);
+          assert(localScope == containerBC->scopeIdx);
+          auto bindingSEXP = makeEnvBindingSEXP(-1, containerBC->scopeIdx, bindingName, kind, containerBC->scopeIdx, containerBC->parent);
 
           auto bindingsSEXP = std::dynamic_pointer_cast<BindingsSEXP>(container->getBindings());
           assert(bindingsSEXP && "Expected bindingsSEXP");
