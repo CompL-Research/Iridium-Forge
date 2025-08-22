@@ -17,6 +17,7 @@
 #include "Iridium/Passes/4_4_reduceFunctionDeclarations.h"
 #include "Iridium/Passes/4_5_populateExplicitBindings.h"
 #include "Iridium/Passes/4_6_addClosureArgsBindings.h"
+#include "Iridium/Passes/5_initializeStackFrame.h"
 // #include "Iridium/Passes/4_createStructure.h"
 
 // --------- Read all bytes from file or stdin ----------
@@ -326,6 +327,10 @@ int main(int argc, char **argv)
 
     std::cout << "Starting [4_6_addClosureArgsBindings]" << std::endl;
     addClosureArgsBindings(sexp, iridiumBuildContext);
+    sexp->dump();
+
+    std::cout << "Starting [5_initializeStackFrame]" << std::endl;
+    initializeStackFrame(sexp, iridiumBuildContext);
     sexp->dump();
 
     return 0;
