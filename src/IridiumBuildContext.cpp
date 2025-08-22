@@ -1,7 +1,8 @@
 #include "Iridium/IridiumBuildContext.h"
 #include "Iridium/IridiumSEXP.h"
+#include "Iridium/IridiumTypes.h"
 
-void parseBuildContexts(const msgpack::object &obj, std::unordered_map<int, IRISEXP> & bbIdxToSEXPMap, std::unordered_map<int, IRIBUILDCONTEXT> & iridiumBuildContext)
+void parseBuildContexts(const msgpack::object &obj, std::unordered_map<int, std::shared_ptr<BBSEXP>> & bbIdxToSEXPMap, std::unordered_map<int, IRIBUILDCONTEXT> & iridiumBuildContext)
 {
   if (obj.type != msgpack::type::ARRAY)
     throw std::runtime_error("Expected ARRAY for build contexts");
@@ -31,7 +32,7 @@ void parseBuildContexts(const msgpack::object &obj, std::unordered_map<int, IRIS
     int ecmaArgs = 0;
     std::optional<std::unordered_map<std::string, std::pair<std::string, std::string>>> privateMapping = std::nullopt;
     std::optional<std::unordered_map<std::string, IRISEXP>> moduleRequestMap = std::nullopt;
-    std::vector<IRISEXP> bbs;
+    std::vector<std::shared_ptr<BBSEXP>> bbs;
 
     // Parse each key/value
     for (uint32_t j = 0; j < ctxObj.via.map.size; j++)

@@ -364,6 +364,57 @@ public:
   }
 };
 
+class BBContainerSEXP : public IridiumSEXP
+{
+public:
+  BBContainerSEXP(IRISEXP obj)
+  {
+    assert(obj->tag == "BBContainer");
+
+    this->tag = obj->tag;
+    this->args = std::move(obj->args);
+    this->flags = std::move(obj->flags);
+  }
+
+  DEFINE_ARG_FUNCS(Bindings, 0)
+  DEFINE_ARG_FUNCS(BB, 1)
+
+  DEFINE_DOUBLE_FLAG_FUNCS(ECMAArgs)
+  DEFINE_DOUBLE_FLAG_FUNCS(StartBBIDX)
+  DEFINE_DOUBLE_FLAG_FUNCS(ScopeIDX)
+
+  DEFINE_VOID_FLAG_FUNCS(ARGUMENTS)
+  DEFINE_VOID_FLAG_FUNCS(ASYNC)
+  DEFINE_VOID_FLAG_FUNCS(STRICT)
+  DEFINE_VOID_FLAG_FUNCS(GENERATOR)
+  DEFINE_VOID_FLAG_FUNCS(PROTO)
+  DEFINE_VOID_FLAG_FUNCS(NEW)
+  DEFINE_VOID_FLAG_FUNCS(SCALL)
+  DEFINE_VOID_FLAG_FUNCS(SOBJ)
+  DEFINE_VOID_FLAG_FUNCS(HOME)
+  DEFINE_VOID_FLAG_FUNCS(DERIVED)
+
+  DEFINE_DOUBLE_FLAG_FUNCS(ContainerFlagID)
+};
+
+class BindingsSEXP : public IridiumSEXP
+{
+public:
+  BindingsSEXP(IRISEXP obj)
+  {
+    assert(obj->tag == "Bindings");
+
+    this->tag = obj->tag;
+    this->args = std::move(obj->args);
+    this->flags = std::move(obj->flags);
+  }
+
+  DEFINE_ARG_FUNCS(LocalBindings, 0)
+  DEFINE_ARG_FUNCS(RemoteBindings, 1)
+  DEFINE_ARG_FUNCS(Lambdas, 1)
+
+  DEFINE_DOUBLE_FLAG_FUNCS(ParentScope)
+};
 
 IRISEXP specializeSEXP(IRISEXP val);
 
@@ -372,3 +423,6 @@ BBSEXPFLAGS getBBFlag(std::shared_ptr<BBSEXP> b);
 void setBBFlag(std::shared_ptr<BBSEXP> b, BBSEXPFLAGS flagToSet);
 
 std::shared_ptr<NOPSEXP> makeNOPSEXP();
+std::shared_ptr<ListSEXP> makeListSEXP();
+std::shared_ptr<BindingsSEXP> makeBindingsSEXP(double parentScope);
+std::shared_ptr<BBContainerSEXP> makeBBContainerSEXP(double parentScope);

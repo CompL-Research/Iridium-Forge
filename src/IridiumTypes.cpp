@@ -95,6 +95,17 @@ IRISEXP specializeSEXP(IRISEXP obj)
   {
     return make_iriexp<NOPSEXP>(obj);
   }
+
+  if (tag == "BBContainer")
+  {
+    return make_iriexp<BBContainerSEXP>(obj);
+  }
+
+  if (tag == "Bindings")
+  {
+    return make_iriexp<BindingsSEXP>(obj);
+  }
+
   throw std::runtime_error("Unhandled Iridium Tag: " + tag);
 }
 
@@ -122,4 +133,33 @@ std::shared_ptr<NOPSEXP> makeNOPSEXP()
   auto sexp = std::make_shared<IridiumSEXP>();
   sexp->tag = "NOP";
   return std::make_shared<NOPSEXP>(sexp);
+}
+
+std::shared_ptr<ListSEXP> makeListSEXP()
+{
+  auto sexp = std::make_shared<IridiumSEXP>();
+  sexp->tag = "List";
+  return std::make_shared<ListSEXP>(sexp);
+}
+
+std::shared_ptr<BindingsSEXP> makeBindingsSEXP(double parentScope)
+{
+  auto sexp = std::make_shared<IridiumSEXP>();
+  sexp->tag = "Bindings";
+  sexp->args.push_back(makeListSEXP());
+  sexp->args.push_back(makeListSEXP());
+  sexp->args.push_back(makeListSEXP());
+  sexp->setFlag("ParentScope", parentScope);
+  return std::make_shared<BindingsSEXP>(sexp);
+}
+
+
+std::shared_ptr<BBContainerSEXP> makeBBContainerSEXP(double parentScope)
+{
+  auto sexp = std::make_shared<IridiumSEXP>();
+  sexp->tag = "BBContainer";
+  sexp->args.push_back(makeBindingsSEXP(parentScope));
+  sexp->args.push_back(makeListSEXP());
+
+  return std::make_shared<BBContainerSEXP>(sexp);
 }

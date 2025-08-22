@@ -9,7 +9,7 @@
 //   }
 // }
 
-#include "Iridium/Passes/2_hoistFunctionDeclarations.h"
+#include "Iridium/Passes/3_filterNops.h"
 #include "Iridium/Globals.h"
 #include "Iridium/IridiumTypes.h"
 

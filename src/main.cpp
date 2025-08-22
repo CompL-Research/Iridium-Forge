@@ -11,6 +11,7 @@
 #include "Iridium/Passes/1_normailzeBBFlags.h"
 #include "Iridium/Passes/2_hoistFunctionDeclarations.h"
 #include "Iridium/Passes/3_filterNops.h"
+#include "Iridium/Passes/4_createStructure.h"
 
 // --------- Read all bytes from file or stdin ----------
 static std::vector<uint8_t> read_all(const std::optional<std::string> &path)
@@ -275,7 +276,7 @@ int main(int argc, char **argv)
     msgpack::object iridiumObj = obj.via.map.ptr[5].val; // find "iridium" properly by key
 
     // Iridium SEXP
-    std::unordered_map<int, IRISEXP> bbIdxToSEXPMap;
+    std::unordered_map<int, std::shared_ptr<BBSEXP>> bbIdxToSEXPMap;
     std::unordered_map<int, IRIBUILDCONTEXT> iridiumBuildContext;
     auto sexp = parseSEXP(iridiumObj, &bbIdxToSEXPMap);
 
@@ -295,6 +296,10 @@ int main(int argc, char **argv)
 
     std::cout << "After [3_filterNops]" << std::endl;
     filterNOPs(sexp);
+    sexp->dump();
+
+    std::cout << "After [4_createStructure]" << std::endl;
+    createStructure(sexp, iridiumBuildContext);
     sexp->dump();
 
 

@@ -12,6 +12,7 @@
 
 // Forward-declare your IridiumSEXP type
 class IridiumSEXP;
+class BBSEXP;
 
 class IridiumBuildContext
 {
@@ -62,7 +63,7 @@ public:
 
   std::optional<std::unordered_map<std::string, std::pair<std::string, std::string>>> privateMapping;
   std::optional<std::unordered_map<std::string, IRISEXP>> moduleRequestMap;
-  std::vector<IRISEXP> BB;
+  std::vector<std::shared_ptr<BBSEXP>> BB;
 
   // Constructor
   IridiumBuildContext(
@@ -85,7 +86,7 @@ public:
       int ecmaArgs,
       std::optional<std::unordered_map<std::string, std::pair<std::string, std::string>>> privateMapping,
       std::optional<std::unordered_map<std::string, IRISEXP>> moduleRequestMap,
-      std::vector<IRISEXP> BB)
+      std::vector<std::shared_ptr<BBSEXP>> BB)
       : parent(parent),
         scopeIdx(scopeIdx),
         args(std::move(args)),
@@ -111,4 +112,4 @@ public:
   void dump(std::ostream & oss) const;
 };
 
-void parseBuildContexts(const msgpack::object &obj, std::unordered_map<int, IRISEXP> & bbIdxToSEXPMap, std::unordered_map<int, IRIBUILDCONTEXT> & iridiumBuildContext);
+void parseBuildContexts(const msgpack::object &obj, std::unordered_map<int, std::shared_ptr<BBSEXP>> & bbIdxToSEXPMap, std::unordered_map<int, IRIBUILDCONTEXT> & iridiumBuildContext);
