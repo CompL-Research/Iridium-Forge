@@ -298,9 +298,8 @@ int main(int argc, char **argv)
     filterNOPs(sexp);
     sexp->dump();
 
-    std::cout << "After [4_createStructure]" << std::endl;
+    std::cout << "Starting [4_createStructure]" << std::endl;
     createStructure(sexp, iridiumBuildContext);
-    sexp->dump();
 
 
 

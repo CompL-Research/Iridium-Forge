@@ -384,6 +384,28 @@
 #include "Iridium/Globals.h"
 #include "Iridium/IridiumTypes.h"
 
+template <typename T>
+void prependArgs(std::vector<T> &target, const std::vector<T> &toPrepend)
+{
+  std::vector<T> newArgs;
+  newArgs.reserve(toPrepend.size() + target.size());
+
+  // first insert the new items
+  newArgs.insert(newArgs.end(), toPrepend.begin(), toPrepend.end());
+
+  // then append the old ones
+  newArgs.insert(newArgs.end(),
+                 std::make_move_iterator(target.begin()),
+                 std::make_move_iterator(target.end()));
+
+  target = std::move(newArgs);
+}
+
+template <typename T, typename U>
+inline void prepend(std::vector<T>& vec, U&& value) {
+    vec.insert(vec.begin(), std::forward<U>(value));
+}
+
 static void groupIntoClosureGroups(IRISEXP fileSexp, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext)
 {
   std::unordered_map<double, std::shared_ptr<BBContainerSEXP>> bbGroups;
@@ -428,9 +450,8 @@ static void groupIntoClosureGroups(IRISEXP fileSexp, std::unordered_map<int, IRI
   }
 }
 
-void initializeBindingsFrame(IRISEXP fileSexp, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext)
+void populateModuleBindings(IRISEXP fileSexp, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext)
 {
-
   auto moduleRequests = makeListSEXP();
   moduleRequests->setTYPE("ModuleRequest");
 
@@ -442,6 +463,9 @@ void initializeBindingsFrame(IRISEXP fileSexp, std::unordered_map<int, IRIBUILDC
   auto staticStarExports = makeListSEXP();
   staticStarExports->setTYPE("StarExport");
 
+  bool isModule = false;
+  double topLevelScopeIdx = 0;
+
   // Iterate over BBContainerSEXP
   for (auto &bbc : fileSexp->args)
   {
@@ -450,13 +474,17 @@ void initializeBindingsFrame(IRISEXP fileSexp, std::unordered_map<int, IRIBUILDC
     auto containerBC = iridiumBuildContext[container->getScopeIDX()];
     bool isTopLevel = container->hasTopLevel();
 
-    // Bindings created due to imports
-    std::vector<std::shared_ptr<StaticImportSEXP>> staticModuleImports;
+    if (isTopLevel)
+    {
+      isModule = containerBC->isModule;
+      topLevelScopeIdx = containerBC->scopeIdx;
+    }
+    else
+      continue;
 
     // If this is a top level module, the populate module requests
     if (containerBC->moduleRequestMap)
     {
-      assert(isTopLevel);
       auto &moduleRequestMap = containerBC->moduleRequestMap.value();
       for (auto &e : moduleRequestMap)
       {
@@ -465,9 +493,6 @@ void initializeBindingsFrame(IRISEXP fileSexp, std::unordered_map<int, IRIBUILDC
       }
     }
 
-    // 
-    // Collecte Declarations from Instructions
-    // 
     auto bbs = std::dynamic_pointer_cast<ListSEXP>(container->getBB());
     assert(bbs && "Expected ListSEXP");
     for (auto &_bb : bbs->args)
@@ -482,18 +507,22 @@ void initializeBindingsFrame(IRISEXP fileSexp, std::unordered_map<int, IRIBUILDC
       for (int i = 0; i < bb->args.size(); i++)
       {
         auto stmt = bb->args.at(i);
-
         // import a from "SOURCE";
         if (auto staticImportStmt = std::dynamic_pointer_cast<StaticImportSEXP>(stmt))
         {
           assert(isTopLevel);
-          auto localBinding = staticImportStmt->getStorageLocation();
-          assert(std::dynamic_pointer_cast<ResolveEnvBindingSEXP>(localBinding) && "Expected localBinding to be ResolveEnvBindingSEXP");
-          
+          auto storageTarget = std::dynamic_pointer_cast<ResolveEnvBindingSEXP>(staticImportStmt->getStorageLocation());
+          assert(storageTarget && "Expected storageTarget to be ResolveEnvBindingSEXP");
+
+          std::string bindingName = storageTarget->getNAME();
+          auto binding = makeEnvBindingSEXP(-1, containerBC->scopeIdx, bindingName, EnvBindingSEXPKindFlag::JSLET, localScope, parentClosureScope);
+          auto remoteBinding = makeRemoteEnvBindingSEXP(binding, -1);
+
+          auto bindingsSEXP = std::dynamic_pointer_cast<BindingsSEXP>(container->getBindings());
+          assert(bindingsSEXP && "Expected bindingsSEXP");
+          addToListSEXP(bindingsSEXP->getRemoteBindings(), remoteBinding);
+
           addToListSEXP(staticImports, staticImportStmt);
-          
-          staticModuleImports.push_back(staticImportStmt);
-          
           bb->args.at(i) = makeNOPSEXP();
         }
 
@@ -524,33 +553,7 @@ void initializeBindingsFrame(IRISEXP fileSexp, std::unordered_map<int, IRIBUILDC
         }
       }
     }
-
-    // 
-    // Start populating the bindings frame
-    // 
-    auto bindingsSEXP = std::dynamic_pointer_cast<BindingsSEXP>(container->getBindings());
-    assert(bbs && "Expected bindingsSEXP");
-
-    // If this is a top level module, the populate module requests
-    if (staticModuleImports.size() > 0)
-    {
-      assert(isTopLevel);
-      assert(containerBC->moduleRequestMap);
-
-      for (auto & staticImportSEXP : staticModuleImports)
-      {
-        auto storageTarget = std::dynamic_pointer_cast<ResolveEnvBindingSEXP>(staticImportSEXP->getStorageLocation());
-        assert(storageTarget && "Expected ResolveEnvBindingSEXP");
-        std::string bindingName = storageTarget->getNAME();
-        auto binding = makeEnvBindingSEXP(-1, containerBC->scopeIdx, bindingName, EnvBindingSEXPKindFlag::JSLET, containerBC->scopeIdx, containerBC->parent);
-        auto remoteBinding = makeRemoteEnvBindingSEXP(binding, -1);
-
-        addToListSEXP(bindingsSEXP->getRemoteBindings(), remoteBinding);
-        // toSkipInit.add(remoteBinding);
-      }
-    }
   }
-
   std::vector<IRISEXP> newArgs;
   newArgs.push_back(moduleRequests);
   newArgs.push_back(staticImports);
@@ -562,8 +565,364 @@ void initializeBindingsFrame(IRISEXP fileSexp, std::unordered_map<int, IRIBUILDC
   fileSexp->args = std::move(newArgs);
 }
 
+void populateImplicitBindings(IRISEXP fileSexp, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext)
+{
+  // Iterate over BBContainerSEXP
+  for (auto &bbc : fileSexp->args)
+  {
+    auto container = std::dynamic_pointer_cast<BBContainerSEXP>(bbc);
+    if (!container)
+      continue;
+    assert(iridiumBuildContext.find(container->getScopeIDX()) != iridiumBuildContext.end());
+    auto containerBC = iridiumBuildContext[container->getScopeIDX()];
+
+    auto bbs = std::dynamic_pointer_cast<ListSEXP>(container->getBB());
+    assert(bbs && "Expected ListSEXP");
+    for (auto &_bb : bbs->args)
+    {
+      auto bb = std::dynamic_pointer_cast<BBSEXP>(_bb);
+      assert(bb && "Expected bb to be a BBSEXP");
+
+      auto localScope = bb->getScopeIDX();
+      auto parentClosureScope = findParentClosureScope(localScope, iridiumBuildContext);
+
+      // Iterate over STMT
+      for (int i = 0; i < bb->args.size(); i++)
+      {
+        auto stmt = bb->args.at(i);
+
+        //
+        // Implicit Binding Declaration
+        //
+        if (auto jsImplicitBindingDeclarationStmt = std::dynamic_pointer_cast<JSImplicitBindingDeclarationSEXP>(stmt))
+        {
+          std::string bindingName = jsImplicitBindingDeclarationStmt->getNAME();
+          EnvBindingSEXPKindFlag kind;
+
+          if (jsImplicitBindingDeclarationStmt->hasJSLET())
+            kind = EnvBindingSEXPKindFlag::JSLET;
+          else if (jsImplicitBindingDeclarationStmt->hasJSCONST())
+            kind = EnvBindingSEXPKindFlag::JSCONST;
+          else if (jsImplicitBindingDeclarationStmt->hasJSVAR())
+            kind = EnvBindingSEXPKindFlag::JSVAR;
+          else
+            throw std::runtime_error("Invalid kind for an implicit binding");
+
+          assert(localScope == parentClosureScope);
+          auto bindingSEXP = makeEnvBindingSEXP(-1, containerBC->scopeIdx, bindingName, kind, localScope, parentClosureScope);
+
+          auto bindingsSEXP = std::dynamic_pointer_cast<BindingsSEXP>(container->getBindings());
+          assert(bindingsSEXP && "Expected bindingsSEXP");
+          addToListSEXP(bindingsSEXP->getLocalBindings(), bindingSEXP);
+        }
+      }
+    }
+  }
+}
+
+void reduceFunctionDeclarations(IRISEXP fileSexp, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext)
+{
+  bool isModule = false;
+  double topLevelScopeIdx = 0;
+
+  // Iterate over BBContainerSEXP
+  for (auto &bbc : fileSexp->args)
+  {
+    auto container = std::dynamic_pointer_cast<BBContainerSEXP>(bbc);
+    if (!container)
+      continue;
+    assert(iridiumBuildContext.find(container->getScopeIDX()) != iridiumBuildContext.end());
+    auto containerBC = iridiumBuildContext[container->getScopeIDX()];
+    bool isTopLevel = container->hasTopLevel();
+
+    if (isTopLevel)
+    {
+      isModule = containerBC->isModule;
+      topLevelScopeIdx = containerBC->scopeIdx;
+    }
+    auto bbs = std::dynamic_pointer_cast<ListSEXP>(container->getBB());
+    assert(bbs && "Expected ListSEXP");
+    for (auto &_bb : bbs->args)
+    {
+      auto bb = std::dynamic_pointer_cast<BBSEXP>(_bb);
+      assert(bb && "Expected bb to be a BBSEXP");
+
+      auto localScope = bb->getScopeIDX();
+      auto parentClosureScope = findParentClosureScope(localScope, iridiumBuildContext);
+
+      // Iterate over STMT
+      for (int i = 0; i < bb->args.size(); i++)
+      {
+        auto stmt = bb->args.at(i);
+        //
+        // Function Declaration, reduce it to an Explicit Binding Declaration if possible.
+        //
+        if (auto funcDeclStmt = std::dynamic_pointer_cast<JSFuncDeclSEXP>(bb->args.at(i)))
+        {
+          if (!isModule && localScope == topLevelScopeIdx)
+          {
+            // NADA
+          }
+          else
+          {
+            bb->args.at(i) = reduceJSFunDecl(funcDeclStmt);
+          }
+        }
+      }
+    }
+  }
+}
+
+void populateExplicitBindings(IRISEXP fileSexp, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext)
+{
+  bool isModule = false;
+  double topLevelScopeIdx = 0;
+
+  // Iterate over BBContainerSEXP
+  for (auto &bbc : fileSexp->args)
+  {
+    auto container = std::dynamic_pointer_cast<BBContainerSEXP>(bbc);
+    if (!container)
+      continue;
+    assert(iridiumBuildContext.find(container->getScopeIDX()) != iridiumBuildContext.end());
+    auto containerBC = iridiumBuildContext[container->getScopeIDX()];
+
+    bool isTopLevel = container->hasTopLevel();
+
+    if (isTopLevel)
+    {
+      isModule = containerBC->isModule;
+      topLevelScopeIdx = containerBC->scopeIdx;
+    }
+
+    std::vector<std::pair<std::string, EnvBindingSEXPKindFlag>> sloppyDeclarations;
+    std::unordered_map<double, std::vector<std::pair<std::string, EnvBindingSEXPKindFlag>>> explicitBindings;
+
+    auto bbs = std::dynamic_pointer_cast<ListSEXP>(container->getBB());
+    assert(bbs && "Expected ListSEXP");
+    for (auto &_bb : bbs->args)
+    {
+      auto bb = std::dynamic_pointer_cast<BBSEXP>(_bb);
+      assert(bb && "Expected bb to be a BBSEXP");
+
+      auto localScope = bb->getScopeIDX();
+      auto parentClosureScope = findParentClosureScope(localScope, iridiumBuildContext);
+
+      // Iterate over STMT
+      for (int i = 0; i < bb->args.size(); i++)
+      {
+        auto stmt = bb->args.at(i);
+
+        //
+        // Explicit Binding Declaration
+        //
+        if (auto jsExplicitBindingDeclarationStmt = std::dynamic_pointer_cast<JSExplicitBindingDeclarationSEXP>(stmt))
+        {
+          double scopeToHoistTo;
+          EnvBindingSEXPKindFlag flag = EnvBindingSEXPKindFlag::JSVAR;
+          if (jsExplicitBindingDeclarationStmt->hasJSLET())
+          {
+            scopeToHoistTo = localScope;
+            flag = EnvBindingSEXPKindFlag::JSLET;
+          }
+          else if (jsExplicitBindingDeclarationStmt->hasJSCONST())
+          {
+            scopeToHoistTo = localScope;
+            flag = EnvBindingSEXPKindFlag::JSCONST;
+          }
+          else if (jsExplicitBindingDeclarationStmt->hasJSVAR())
+          {
+            scopeToHoistTo = parentClosureScope;
+            flag = EnvBindingSEXPKindFlag::JSVAR;
+          }
+          else
+            throw std::runtime_error("Explicit binding kind failed");
+
+          auto binding = std::dynamic_pointer_cast<ResolveEnvBindingSEXP>(jsExplicitBindingDeclarationStmt->getLValTarget());
+          assert(binding && "Expected binding to be ResolveEnvBindingSEXP");
+
+          if (scopeToHoistTo == topLevelScopeIdx && !isModule)
+          {
+            // Top Level Global Declaration for script mode
+            sloppyDeclarations.push_back(std::make_pair(binding->getNAME(), flag));
+          }
+          else
+          {
+            // Create a binding in the current bindings frame at the relevant scope
+            explicitBindings[scopeToHoistTo].push_back(std::make_pair(binding->getNAME(), flag));
+          }
+
+          if (!jsExplicitBindingDeclarationStmt->hasRVal())
+          {
+            if (jsExplicitBindingDeclarationStmt->hasJSVAR())
+            {
+              // This statement is no longer needed
+              bb->args.at(i) = makeNOPSEXP();
+            }
+            else
+            {
+              // This statement has been reduced to a simple EnvWriteSEXP
+              jsExplicitBindingDeclarationStmt->setRVal(makeGlobalBindingSEXP("undefined"));
+              bb->args.at(i) = reduceJSDecl(jsExplicitBindingDeclarationStmt);
+              
+            }
+          }
+          else
+          {
+            bb->args.at(i) = reduceJSDecl(jsExplicitBindingDeclarationStmt);
+          }
+        }
+      }
+    }
+    {
+      // Handle Sloppy Declarations
+      std::shared_ptr<BBSEXP> &startBB = containerBC->BB[0];
+      std::vector<IRISEXP> envWrites;
+      envWrites.reserve(sloppyDeclarations.size() * 2);
+      for (auto &e : sloppyDeclarations)
+      {
+
+        envWrites.push_back(makeJSSloppyDeclSEXP(e.first, e.second));
+        // TODO: Is this needed???
+
+        // IRISEXP lval = makeResolveEnvBindingSEXP(e.first);
+        // IRISEXP rval;
+        // if (e.second == EnvBindingSEXPKindFlag::JSVAR)
+        // {
+        //   rval = makeEnvReadSEXP("undefined");
+        // }
+        // else
+        // {
+        //   rval = makeJSNUBDSEXP();
+        // }
+        // envWrites.push_back(makeEnvWrite(lval, rval, true, false)); 
+      }
+      // prepend envWrites to startBB->args
+      prependArgs(startBB->args, envWrites);
+    }
+
+    {
+      // Handle Explicit Declarations
+      for (auto & e : explicitBindings) {
+        auto & bindingContext = iridiumBuildContext[e.first];
+        double localScope = bindingContext->scopeIdx;
+        double parentScope = bindingContext->parent;
+
+        std::shared_ptr<BBSEXP> &startBB = bindingContext->BB[0];
+        std::vector<IRISEXP> envWrites;
+
+        envWrites.reserve(e.second.size());
+        
+        for (auto & b : e.second) {
+          auto bindingsSEXP = std::dynamic_pointer_cast<BindingsSEXP>(container->getBindings());
+          assert(bindingsSEXP && "Expected bindingsSEXP");
+          std::string bindingName = b.first;
+
+          IRISEXP lval = makeResolveEnvBindingSEXP(bindingName);
+
+          IRISEXP rval;
+          if (b.second == EnvBindingSEXPKindFlag::JSVAR)
+          {
+            rval = makeEnvReadSEXP("undefined");
+          }
+          else
+          {
+            rval = makeJSNUBDSEXP();
+          }
+
+          if(!hasBindingReference(bindingsSEXP, containerBC->scopeIdx, bindingName, b.second, localScope, parentScope))
+          {
+            if (startBB->hasTopLevel()) { // the place where it will be hoisted to, is it the top level container?
+              auto localBinding = makeEnvBindingSEXP(-1, containerBC->scopeIdx, bindingName, b.second, localScope, parentScope);
+              auto res = makeRemoteEnvBindingSEXP(localBinding, -1);
+              addToListSEXP(bindingsSEXP->getRemoteBindings(), res);
+
+              envWrites.push_back(makeEnvWrite(lval, rval, true, false));
+            } else {
+              auto res = makeEnvBindingSEXP(-1, containerBC->scopeIdx, bindingName, b.second, localScope, parentScope);
+              addToListSEXP(bindingsSEXP->getLocalBindings(), res);
+
+              envWrites.push_back(makeEnvWrite(lval, rval, true, false));
+            }
+          }
+        }
+
+        prependArgs(startBB->args, envWrites);
+      }
+    }
+  }
+}
+
+
+void addClosureArgsBindings(IRISEXP fileSexp, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext)
+{
+  // Iterate over BBContainerSEXP
+  for (auto &bbc : fileSexp->args)
+  {
+    auto container = std::dynamic_pointer_cast<BBContainerSEXP>(bbc);
+    if (!container)
+      continue;
+    assert(iridiumBuildContext.find(container->getScopeIDX()) != iridiumBuildContext.end());
+    auto containerBC = iridiumBuildContext[container->getScopeIDX()];
+
+    auto bindingsSEXP = std::dynamic_pointer_cast<BindingsSEXP>(container->getBindings());
+    assert(bindingsSEXP && "Expected bindingsSEXP");
+    
+
+    // 0 -> No Arguments Object
+    // 1 -> Mapped Arguments
+    // 2 -> Unmapped Arguments
+    if (containerBC->argumentsKind > 0) {
+      container->setARGUMENTS();
+      std::string bindingName = "arguments";
+      EnvBindingSEXPKindFlag flag = EnvBindingSEXPKindFlag::JSVAR;
+      auto argumentsSpecialObjectBinding = makeEnvBindingSEXP(-1, containerBC->scopeIdx, bindingName, flag, containerBC->scopeIdx, containerBC->parent);
+
+      addToListSEXP(bindingsSEXP->getLocalBindings(), argumentsSpecialObjectBinding);
+
+      auto stmt = makeJSImplicitBindingDeclarationSEXP(makeResolveEnvBindingSEXP(bindingName), makeListSEXP(), bindingName, flag, containerBC->argumentsKind == 1 ? 1 : 0);
+
+      auto & startBB = containerBC->BB[0];
+      prepend(startBB->args, stmt);
+    }
+
+    // Adding function arguments, if required
+    for (int k = 0; k < containerBC->args.size(); k++) {
+      EnvBindingSEXPKindFlag flag = EnvBindingSEXPKindFlag::JSARG;
+      if (k + 1 == containerBC->args.size() && containerBC->hasRestArgs) {
+        flag = EnvBindingSEXPKindFlag::JSRESTARG;
+      }
+      auto res = makeEnvBindingSEXP(-1, containerBC->scopeIdx, containerBC->args[k], flag, containerBC->scopeIdx, containerBC->parent);
+
+      addToListSEXP(bindingsSEXP->getLocalBindings(), res);
+    }
+  }
+}
+
 void createStructure(IRISEXP fileSexp, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext)
 {
+  
   groupIntoClosureGroups(fileSexp, iridiumBuildContext);
-  initializeBindingsFrame(fileSexp, iridiumBuildContext);
+  std::cout << "  [groupIntoClosureGroups]" << std::endl;
+  fileSexp->dump(4);
+
+  populateModuleBindings(fileSexp, iridiumBuildContext);
+  std::cout << "  [populateModuleBindings]" << std::endl;
+  fileSexp->dump(4);
+
+  populateImplicitBindings(fileSexp, iridiumBuildContext);
+  std::cout << "  [populateImplicitBindings]" << std::endl;
+  fileSexp->dump(4);
+
+  reduceFunctionDeclarations(fileSexp, iridiumBuildContext);
+  std::cout << "  [reduceFunctionDeclarations]" << std::endl;
+  fileSexp->dump(4);
+
+  populateExplicitBindings(fileSexp, iridiumBuildContext);
+  std::cout << "  [populateExplicitBindings]" << std::endl;
+  fileSexp->dump(4);
+
+  addClosureArgsBindings(fileSexp, iridiumBuildContext);
+  std::cout << "  [addClosureArgsBindings]" << std::endl;
+  fileSexp->dump(4);
 }
