@@ -7,6 +7,10 @@
   {                                       \
     this->args.at(Index) = obj;           \
   }                                       \
+  bool has##FuncName()                    \
+  {                                       \
+    return Index < this->args.size();     \
+  }                                       \
   IRISEXP get##FuncName() const           \
   {                                       \
     return this->args.at(Index);          \
@@ -33,7 +37,7 @@
   void set##FlagName(bool value) { setFlag(#FlagName, value); } \
   void unset##FlagName() { removeFlag(#FlagName); }             \
   bool has##FlagName() { return hasFlag(#FlagName); }           \
-  bool get##FlagName() { return getFlagBool(#FlagName); }
+  bool get##FlagName() { return getFlagBoolean(#FlagName); }
 
 class FileSEXP : public IridiumSEXP
 {
@@ -104,8 +108,8 @@ public:
   DEFINE_VOID_FLAG_FUNCS(JSVAR)
 
   DEFINE_DOUBLE_FLAG_FUNCS(OPID)
-  DEFINE_VOID_FLAG_FUNCS(SAFE)
-  DEFINE_VOID_FLAG_FUNCS(THISINIT)
+  DEFINE_BOOL_FLAG_FUNCS(SAFE)
+  DEFINE_BOOL_FLAG_FUNCS(THISINIT)
   DEFINE_VOID_FLAG_FUNCS(SLOPPY)
   DEFINE_VOID_FLAG_FUNCS(SKIPINIT)
 };
@@ -140,7 +144,6 @@ public:
   DEFINE_ARG_FUNCS(Test, 0)
   DEFINE_DOUBLE_FLAG_FUNCS(IDX)
   DEFINE_VOID_FLAG_FUNCS(NOT)
-
 };
 
 class StringSEXP : public IridiumSEXP
@@ -193,10 +196,9 @@ public:
   DEFINE_VOID_FLAG_FUNCS(JSCONST)
   DEFINE_VOID_FLAG_FUNCS(JSVAR)
 
-  DEFINE_VOID_FLAG_FUNCS(SAFE)
-  DEFINE_VOID_FLAG_FUNCS(THISINIT)
+  DEFINE_BOOL_FLAG_FUNCS(SAFE)
+  DEFINE_BOOL_FLAG_FUNCS(THISINIT)
   DEFINE_VOID_FLAG_FUNCS(SLOPPY)
-
 };
 
 class CallSiteSEXP : public IridiumSEXP
@@ -217,7 +219,6 @@ public:
   DEFINE_VOID_FLAG_FUNCS(Import)
   DEFINE_VOID_FLAG_FUNCS(Super)
   DEFINE_VOID_FLAG_FUNCS(JSDirectEval)
-
 };
 
 class ReturnAsyncSEXP : public IridiumSEXP
@@ -233,10 +234,10 @@ public:
   }
 
   DEFINE_ARG_FUNCS(RetVal, 0)
-
 };
 
-enum BBSEXPFLAGS {
+enum BBSEXPFLAGS
+{
   TopLevel,
   ClosureBoundary,
   Lexical
@@ -261,7 +262,6 @@ public:
   DEFINE_DOUBLE_FLAG_FUNCS(IDX)
 
   DEFINE_DOUBLE_FLAG_FUNCS(ScopeIDX)
-
 };
 
 class ReturnSEXP : public IridiumSEXP
@@ -331,8 +331,8 @@ public:
   DEFINE_VOID_FLAG_FUNCS(JSCONST)
   DEFINE_VOID_FLAG_FUNCS(JSVAR)
 
-  DEFINE_VOID_FLAG_FUNCS(SAFE)
-  DEFINE_VOID_FLAG_FUNCS(THISINIT)
+  DEFINE_BOOL_FLAG_FUNCS(SAFE)
+  DEFINE_BOOL_FLAG_FUNCS(THISINIT)
   DEFINE_VOID_FLAG_FUNCS(SLOPPY)
 };
 
@@ -500,7 +500,7 @@ public:
   DEFINE_DOUBLE_FLAG_FUNCS(REQIDX)
 };
 
-class EnvBindingSEXP  : public IridiumSEXP
+class EnvBindingSEXP : public IridiumSEXP
 {
 public:
   EnvBindingSEXP(IRISEXP obj)
@@ -520,7 +520,7 @@ public:
   DEFINE_VOID_FLAG_FUNCS(JSLET)
   DEFINE_VOID_FLAG_FUNCS(JSCONST)
   DEFINE_VOID_FLAG_FUNCS(JSVAR)
-  
+
   DEFINE_DOUBLE_FLAG_FUNCS(IDX)
   DEFINE_DOUBLE_FLAG_FUNCS(REFIDX)
   DEFINE_DOUBLE_FLAG_FUNCS(Scope)
@@ -528,7 +528,7 @@ public:
   DEFINE_DOUBLE_FLAG_FUNCS(NEXT)
 };
 
-class RemoteEnvBindingSEXP  : public IridiumSEXP
+class RemoteEnvBindingSEXP : public IridiumSEXP
 {
 public:
   RemoteEnvBindingSEXP(IRISEXP obj)
@@ -546,6 +546,91 @@ public:
   DEFINE_VOID_FLAG_FUNCS(NSIMPORT)
 };
 
+class GlobalBindingSEXP : public IridiumSEXP
+{
+public:
+  GlobalBindingSEXP(IRISEXP obj)
+  {
+    assert(obj->tag == "GlobalBinding");
+
+    this->tag = obj->tag;
+    this->args = std::move(obj->args);
+    this->flags = std::move(obj->flags);
+  }
+
+  DEFINE_STRING_FLAG_FUNCS(NAME)
+};
+
+class EnvWriteSEXP : public IridiumSEXP
+{
+public:
+  EnvWriteSEXP(IRISEXP obj)
+  {
+    assert(obj->tag == "EnvWrite");
+
+    this->tag = obj->tag;
+    this->args = std::move(obj->args);
+    this->flags = std::move(obj->flags);
+  }
+
+  DEFINE_ARG_FUNCS(LValTarget, 0)
+  DEFINE_ARG_FUNCS(RVal, 1)
+
+  DEFINE_BOOL_FLAG_FUNCS(SAFE)
+  DEFINE_BOOL_FLAG_FUNCS(THISINIT)
+  DEFINE_VOID_FLAG_FUNCS(SLOPPY)
+
+};
+
+class JSNUBDSEXP : public IridiumSEXP
+{
+public:
+  JSNUBDSEXP(IRISEXP obj)
+  {
+    assert(obj->tag == "JSNUBD");
+
+    this->tag = obj->tag;
+    this->args = std::move(obj->args);
+    this->flags = std::move(obj->flags);
+  }
+
+};
+
+class JSSloppyDeclSEXP : public IridiumSEXP
+{
+public:
+  JSSloppyDeclSEXP(IRISEXP obj)
+  {
+    assert(obj->tag == "JSSloppyDecl");
+
+    this->tag = obj->tag;
+    this->args = std::move(obj->args);
+    this->flags = std::move(obj->flags);
+  }
+
+  DEFINE_STRING_FLAG_FUNCS(NAME)
+
+  DEFINE_VOID_FLAG_FUNCS(JSLET)
+  DEFINE_VOID_FLAG_FUNCS(JSCONST)
+  DEFINE_VOID_FLAG_FUNCS(JSVAR)
+
+};
+
+class NumberSEXP : public IridiumSEXP
+{
+public:
+  NumberSEXP(IRISEXP obj)
+  {
+    assert(obj->tag == "Number");
+
+    this->tag = obj->tag;
+    this->args = std::move(obj->args);
+    this->flags = std::move(obj->flags);
+  }
+
+  DEFINE_DOUBLE_FLAG_FUNCS(IridiumPrimitive)
+};
+
 IRISEXP specializeSEXP(IRISEXP val);
 
 BBSEXPFLAGS getBBFlag(std::shared_ptr<BBSEXP> b);
@@ -557,8 +642,16 @@ std::shared_ptr<ListSEXP> makeListSEXP();
 std::shared_ptr<BindingsSEXP> makeBindingsSEXP(double parentScope);
 std::shared_ptr<BBContainerSEXP> makeBBContainerSEXP(double scopeIdx, double parentScope);
 
-enum EnvBindingSEXPKindFlag {
-  JSARG, JSRESTARG, JSLET, JSCONST, JSVAR
-};
+
+
 std::shared_ptr<EnvBindingSEXP> makeEnvBindingSEXP(double refIdx, double idx, std::string b, EnvBindingSEXPKindFlag kindFlag, double scope, double parentScope);
 std::shared_ptr<RemoteEnvBindingSEXP> makeRemoteEnvBindingSEXP(std::shared_ptr<EnvBindingSEXP>, double refIdx);
+std::shared_ptr<GlobalBindingSEXP> makeGlobalBindingSEXP(const std::string & name);
+std::shared_ptr<EnvWriteSEXP> reduceJSDecl(std::shared_ptr<JSExplicitBindingDeclarationSEXP> explicitBinding);
+std::shared_ptr<JSExplicitBindingDeclarationSEXP> reduceJSFunDecl(std::shared_ptr<JSFuncDeclSEXP> funcDecl);
+std::shared_ptr<EnvWriteSEXP> makeEnvWrite(IRISEXP lval, IRISEXP rval, bool safe, bool thisInit);
+std::shared_ptr<ResolveEnvBindingSEXP> makeResolveEnvBindingSEXP(std::string name);
+std::shared_ptr<EnvReadSEXP> makeEnvReadSEXP(std::string name);
+std::shared_ptr<JSNUBDSEXP> makeJSNUBDSEXP();
+std::shared_ptr<JSSloppyDeclSEXP> makeJSSloppyDeclSEXP(std::string name, EnvBindingSEXPKindFlag kindFlag);
+std::shared_ptr<JSImplicitBindingDeclarationSEXP> makeJSImplicitBindingDeclarationSEXP(IRISEXP store, IRISEXP args, std::string bindingName, EnvBindingSEXPKindFlag kindFlag, double opid);

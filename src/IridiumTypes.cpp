@@ -141,6 +141,31 @@ IRISEXP specializeSEXP(IRISEXP obj)
     return make_iriexp<RemoteEnvBindingSEXP>(obj);
   }
 
+  if (tag == "GlobalBinding")
+  {
+    return make_iriexp<GlobalBindingSEXP>(obj);
+  }
+
+  if (tag == "EnvWrite")
+  {
+    return make_iriexp<EnvWriteSEXP>(obj);
+  }
+
+  if (tag == "JSNUBD")
+  {
+    return make_iriexp<JSNUBDSEXP>(obj);
+  }
+
+  if (tag == "JSSloppyDecl")
+  {
+    return make_iriexp<JSSloppyDeclSEXP>(obj);
+  }
+
+  if (tag == "Number")
+  {
+    return make_iriexp<NumberSEXP>(obj);
+  }
+
   throw std::runtime_error("Unhandled Iridium Tag: " + tag);
 }
 
@@ -249,5 +274,125 @@ std::shared_ptr<RemoteEnvBindingSEXP> makeRemoteEnvBindingSEXP(std::shared_ptr<E
   res->args.resize(1);
   res->setParentReference(obj);
   res->setREFIDX(refIdx);
+  return res;
+}
+
+std::shared_ptr<GlobalBindingSEXP> makeGlobalBindingSEXP(const std::string & name)
+{
+  auto sexp = std::make_shared<IridiumSEXP>();
+  sexp->tag = "GlobalBinding";
+  auto res = std::make_shared<GlobalBindingSEXP>(sexp);
+  res->setNAME(name);
+  return res;
+}
+
+std::shared_ptr<EnvWriteSEXP> reduceJSDecl(std::shared_ptr<JSExplicitBindingDeclarationSEXP> explicitBinding)
+{
+  explicitBinding->unsetJSLET();
+  explicitBinding->unsetJSCONST();
+  explicitBinding->unsetJSVAR();
+  auto sexp = std::make_shared<IridiumSEXP>();
+  sexp->tag = "EnvWrite";
+  sexp->args = std::move(explicitBinding->args);
+  sexp->flags = std::move(explicitBinding->flags);
+
+  return std::make_shared<EnvWriteSEXP>(sexp);
+}
+
+std::shared_ptr<JSExplicitBindingDeclarationSEXP> reduceJSFunDecl(std::shared_ptr<JSFuncDeclSEXP> funcDecl)
+{
+  auto sexp = std::make_shared<IridiumSEXP>();
+  sexp->tag = "JSExplicitBindingDeclaration";
+  sexp->args = std::move(funcDecl->args);
+  sexp->flags = std::move(funcDecl->flags);
+
+  return std::make_shared<JSExplicitBindingDeclarationSEXP>(sexp);
+}
+
+std::shared_ptr<EnvWriteSEXP> makeEnvWrite(IRISEXP lval, IRISEXP rval, bool safe, bool thisInit)
+{
+  auto sexp = std::make_shared<IridiumSEXP>();
+  sexp->tag = "EnvWrite";
+  auto res = std::make_shared<EnvWriteSEXP>(sexp);
+
+  res->args.resize(2);
+
+  res->setLValTarget(lval);
+  res->setRVal(rval);
+  res->setSAFE(safe);
+  res->setTHISINIT(thisInit);
+
+  return res;
+}
+
+std::shared_ptr<ResolveEnvBindingSEXP> makeResolveEnvBindingSEXP(std::string name)
+{
+  auto sexp = std::make_shared<IridiumSEXP>();
+  sexp->tag = "ResolveEnvBinding";
+  auto res = std::make_shared<ResolveEnvBindingSEXP>(sexp);
+  res->setNAME(name);
+  return res;
+}
+
+std::shared_ptr<EnvReadSEXP> makeEnvReadSEXP(std::string name)
+{
+  auto sexp = std::make_shared<IridiumSEXP>();
+  sexp->tag = "EnvRead";
+  auto res = std::make_shared<EnvReadSEXP>(sexp);
+
+  res->args.resize(1);
+
+  res->setObj(makeResolveEnvBindingSEXP(name));
+  return res;
+}
+
+std::shared_ptr<JSNUBDSEXP> makeJSNUBDSEXP()
+{
+  auto sexp = std::make_shared<IridiumSEXP>();
+  sexp->tag = "JSNUBD";
+  auto res = std::make_shared<JSNUBDSEXP>(sexp);
+
+  return res;
+}
+
+std::shared_ptr<JSSloppyDeclSEXP> makeJSSloppyDeclSEXP(std::string name, EnvBindingSEXPKindFlag kindFlag)
+{
+  auto sexp = std::make_shared<IridiumSEXP>();
+  sexp->tag = "JSSloppyDecl";
+  auto res = std::make_shared<JSSloppyDeclSEXP>(sexp);
+
+  res->setNAME(name);
+  if (kindFlag == EnvBindingSEXPKindFlag::JSLET) res->setJSLET();
+  else if (kindFlag == EnvBindingSEXPKindFlag::JSCONST) res->setJSCONST();
+  else if (kindFlag == EnvBindingSEXPKindFlag::JSVAR) res->setJSVAR();
+  else throw std::runtime_error("Invalid JSSloppyDeclSEXP kind flag");
+
+  return res;
+}
+
+std::shared_ptr<JSImplicitBindingDeclarationSEXP> makeJSImplicitBindingDeclarationSEXP(IRISEXP store, IRISEXP args, std::string bindingName, EnvBindingSEXPKindFlag kindFlag, double opid)
+{
+  auto sexp = std::make_shared<IridiumSEXP>();
+  sexp->tag = "JSImplicitBindingDeclaration";
+  auto res = std::make_shared<JSImplicitBindingDeclarationSEXP>(sexp);
+
+  res->args.resize(2);
+
+  res->setStore(store);
+  res->setArgs(args);
+
+  res->setNAME(bindingName);
+
+  if (kindFlag == EnvBindingSEXPKindFlag::JSLET) res->setJSLET();
+  else if (kindFlag == EnvBindingSEXPKindFlag::JSCONST) res->setJSCONST();
+  else if (kindFlag == EnvBindingSEXPKindFlag::JSVAR) res->setJSVAR();
+  else throw std::runtime_error("Invalid kindFlag passed while creating JSImplicitBindingDeclarationSEXP");
+
+  res->setOPID(opid);
+
+  res->setSAFE(true);
+  res->setTHISINIT(false);
+  res->setSKIPINIT();
+
   return res;
 }
