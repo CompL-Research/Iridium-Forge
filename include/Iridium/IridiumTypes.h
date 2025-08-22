@@ -393,6 +393,7 @@ public:
   DEFINE_VOID_FLAG_FUNCS(SOBJ)
   DEFINE_VOID_FLAG_FUNCS(HOME)
   DEFINE_VOID_FLAG_FUNCS(DERIVED)
+  DEFINE_VOID_FLAG_FUNCS(TopLevel)
 
   DEFINE_DOUBLE_FLAG_FUNCS(ContainerFlagID)
 };
@@ -411,9 +412,138 @@ public:
 
   DEFINE_ARG_FUNCS(LocalBindings, 0)
   DEFINE_ARG_FUNCS(RemoteBindings, 1)
-  DEFINE_ARG_FUNCS(Lambdas, 1)
+  DEFINE_ARG_FUNCS(Lambdas, 2)
 
   DEFINE_DOUBLE_FLAG_FUNCS(ParentScope)
+};
+
+class StarExportSEXP : public IridiumSEXP
+{
+public:
+  StarExportSEXP(IRISEXP obj)
+  {
+    assert(obj->tag == "StarExport");
+
+    this->tag = obj->tag;
+    this->args = std::move(obj->args);
+    this->flags = std::move(obj->flags);
+  }
+
+  DEFINE_DOUBLE_FLAG_FUNCS(MODULEREQIDX)
+};
+
+class StaticImportSEXP : public IridiumSEXP
+{
+public:
+  StaticImportSEXP(IRISEXP obj)
+  {
+    assert(obj->tag == "StaticImport");
+
+    this->tag = obj->tag;
+    this->args = std::move(obj->args);
+    this->flags = std::move(obj->flags);
+  }
+
+  DEFINE_ARG_FUNCS(StorageLocation, 0)
+
+  DEFINE_STRING_FLAG_FUNCS(FIELD)
+  DEFINE_DOUBLE_FLAG_FUNCS(MODULEREQIDX)
+};
+
+class LocalStaticExportSEXP : public IridiumSEXP
+{
+public:
+  LocalStaticExportSEXP(IRISEXP obj)
+  {
+    assert(obj->tag == "LocalStaticExport");
+
+    this->tag = obj->tag;
+    this->args = std::move(obj->args);
+    this->flags = std::move(obj->flags);
+  }
+
+  DEFINE_ARG_FUNCS(StorageLocation, 0)
+
+  DEFINE_STRING_FLAG_FUNCS(LOCALNAME)
+  DEFINE_STRING_FLAG_FUNCS(EXPORTNAME)
+};
+
+class NamedReexportSEXP : public IridiumSEXP
+{
+public:
+  NamedReexportSEXP(IRISEXP obj)
+  {
+    assert(obj->tag == "NamedReexport");
+
+    this->tag = obj->tag;
+    this->args = std::move(obj->args);
+    this->flags = std::move(obj->flags);
+  }
+
+  DEFINE_DOUBLE_FLAG_FUNCS(MODULEREQIDX)
+  DEFINE_STRING_FLAG_FUNCS(EXPORTNAME)
+};
+
+class ModuleRequestSEXP : public IridiumSEXP
+{
+public:
+  ModuleRequestSEXP(IRISEXP obj)
+  {
+    assert(obj->tag == "ModuleRequest");
+
+    this->tag = obj->tag;
+    this->args = std::move(obj->args);
+    this->flags = std::move(obj->flags);
+  }
+
+  DEFINE_STRING_FLAG_FUNCS(SOURCE)
+  DEFINE_DOUBLE_FLAG_FUNCS(REQIDX)
+};
+
+class EnvBindingSEXP  : public IridiumSEXP
+{
+public:
+  EnvBindingSEXP(IRISEXP obj)
+  {
+    assert(obj->tag == "EnvBinding");
+
+    this->tag = obj->tag;
+    this->args = std::move(obj->args);
+    this->flags = std::move(obj->flags);
+  }
+
+  DEFINE_STRING_FLAG_FUNCS(NAME)
+  DEFINE_VOID_FLAG_FUNCS(ASW)
+
+  DEFINE_VOID_FLAG_FUNCS(JSARG)
+  DEFINE_VOID_FLAG_FUNCS(JSRESTARG)
+  DEFINE_VOID_FLAG_FUNCS(JSLET)
+  DEFINE_VOID_FLAG_FUNCS(JSCONST)
+  DEFINE_VOID_FLAG_FUNCS(JSVAR)
+  
+  DEFINE_DOUBLE_FLAG_FUNCS(IDX)
+  DEFINE_DOUBLE_FLAG_FUNCS(REFIDX)
+  DEFINE_DOUBLE_FLAG_FUNCS(Scope)
+  DEFINE_DOUBLE_FLAG_FUNCS(ParentScope)
+  DEFINE_DOUBLE_FLAG_FUNCS(NEXT)
+};
+
+class RemoteEnvBindingSEXP  : public IridiumSEXP
+{
+public:
+  RemoteEnvBindingSEXP(IRISEXP obj)
+  {
+    assert(obj->tag == "RemoteEnvBinding");
+
+    this->tag = obj->tag;
+    this->args = std::move(obj->args);
+    this->flags = std::move(obj->flags);
+  }
+
+  DEFINE_ARG_FUNCS(ParentReference, 0)
+
+  DEFINE_DOUBLE_FLAG_FUNCS(REFIDX)
+  DEFINE_VOID_FLAG_FUNCS(NSIMPORT)
 };
 
 IRISEXP specializeSEXP(IRISEXP val);
@@ -425,4 +555,10 @@ void setBBFlag(std::shared_ptr<BBSEXP> b, BBSEXPFLAGS flagToSet);
 std::shared_ptr<NOPSEXP> makeNOPSEXP();
 std::shared_ptr<ListSEXP> makeListSEXP();
 std::shared_ptr<BindingsSEXP> makeBindingsSEXP(double parentScope);
-std::shared_ptr<BBContainerSEXP> makeBBContainerSEXP(double parentScope);
+std::shared_ptr<BBContainerSEXP> makeBBContainerSEXP(double scopeIdx, double parentScope);
+
+enum EnvBindingSEXPKindFlag {
+  JSARG, JSRESTARG, JSLET, JSCONST, JSVAR
+};
+std::shared_ptr<EnvBindingSEXP> makeEnvBindingSEXP(double refIdx, double idx, std::string b, EnvBindingSEXPKindFlag kindFlag, double scope, double parentScope);
+std::shared_ptr<RemoteEnvBindingSEXP> makeRemoteEnvBindingSEXP(std::shared_ptr<EnvBindingSEXP>, double refIdx);

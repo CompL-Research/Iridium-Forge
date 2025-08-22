@@ -106,6 +106,41 @@ IRISEXP specializeSEXP(IRISEXP obj)
     return make_iriexp<BindingsSEXP>(obj);
   }
 
+  if (tag == "StarExport")
+  {
+    return make_iriexp<StarExportSEXP>(obj);
+  }
+
+  if (tag == "StaticImport")
+  {
+    return make_iriexp<StaticImportSEXP>(obj);
+  }
+
+  if (tag == "LocalStaticExport")
+  {
+    return make_iriexp<LocalStaticExportSEXP>(obj);
+  }
+
+  if (tag == "NamedReexport")
+  {
+    return make_iriexp<NamedReexportSEXP>(obj);
+  }
+
+  if (tag == "ModuleRequest")
+  {
+    return make_iriexp<ModuleRequestSEXP>(obj);
+  }
+
+  if (tag == "EnvBinding")
+  {
+    return make_iriexp<EnvBindingSEXP>(obj);
+  }
+
+  if (tag == "RemoteEnvBinding")
+  {
+    return make_iriexp<RemoteEnvBindingSEXP>(obj);
+  }
+
   throw std::runtime_error("Unhandled Iridium Tag: " + tag);
 }
 
@@ -146,20 +181,73 @@ std::shared_ptr<BindingsSEXP> makeBindingsSEXP(double parentScope)
 {
   auto sexp = std::make_shared<IridiumSEXP>();
   sexp->tag = "Bindings";
-  sexp->args.push_back(makeListSEXP());
-  sexp->args.push_back(makeListSEXP());
-  sexp->args.push_back(makeListSEXP());
-  sexp->setFlag("ParentScope", parentScope);
-  return std::make_shared<BindingsSEXP>(sexp);
+  auto res = std::make_shared<BindingsSEXP>(sexp);
+
+  res->args.resize(3);
+  
+  auto localBindings = makeListSEXP();
+  localBindings->setTYPE("EnvBinding");
+  res->setLocalBindings(localBindings);
+
+  auto remoteBindings = makeListSEXP();
+  remoteBindings->setTYPE("RemoteEnvBinding");
+  res->setRemoteBindings(remoteBindings);
+
+  auto lambdas = makeListSEXP();
+  lambdas->setTYPE("PoolBinding");
+  res->setLambdas(lambdas);
+
+  res->setParentScope(parentScope);
+  return res;
 }
 
 
-std::shared_ptr<BBContainerSEXP> makeBBContainerSEXP(double parentScope)
+std::shared_ptr<BBContainerSEXP> makeBBContainerSEXP(double scopeIdx, double parentScope)
 {
   auto sexp = std::make_shared<IridiumSEXP>();
   sexp->tag = "BBContainer";
-  sexp->args.push_back(makeBindingsSEXP(parentScope));
-  sexp->args.push_back(makeListSEXP());
+  auto res = std::make_shared<BBContainerSEXP>(sexp);
 
-  return std::make_shared<BBContainerSEXP>(sexp);
+  res->args.resize(2);
+
+  res->setBindings(makeBindingsSEXP(parentScope));
+  auto bbContainer = makeListSEXP();
+  bbContainer->setTYPE("BB");
+  res->setBB(bbContainer);
+
+  res->setScopeIDX(scopeIdx);
+
+  return res;
+}
+
+std::shared_ptr<EnvBindingSEXP> makeEnvBindingSEXP(double refIdx, double scopeIdx, std::string name, EnvBindingSEXPKindFlag kindFlag, double scope, double parentScope)
+{
+  auto sexp = std::make_shared<IridiumSEXP>();
+  sexp->tag = "EnvBinding";
+  auto res = std::make_shared<EnvBindingSEXP>(sexp);
+
+  res->setREFIDX(refIdx);
+  res->setIDX(scopeIdx);
+  res->setNAME(name);
+  if (kindFlag == EnvBindingSEXPKindFlag::JSARG) res->setJSARG();
+  else if (kindFlag == EnvBindingSEXPKindFlag::JSRESTARG) res->setJSRESTARG();
+  else if (kindFlag == EnvBindingSEXPKindFlag::JSLET) res->setJSLET();
+  else if (kindFlag == EnvBindingSEXPKindFlag::JSCONST) res->setJSCONST();
+  else if (kindFlag == EnvBindingSEXPKindFlag::JSVAR) res->setJSVAR();
+
+  res->setScope(scope);
+  res->setParentScope(parentScope);
+  res->setNEXT(-1);
+  return res;
+}
+
+std::shared_ptr<RemoteEnvBindingSEXP> makeRemoteEnvBindingSEXP(std::shared_ptr<EnvBindingSEXP> obj, double refIdx)
+{
+  auto sexp = std::make_shared<IridiumSEXP>();
+  sexp->tag = "RemoteEnvBinding";
+  auto res = std::make_shared<RemoteEnvBindingSEXP>(sexp);
+  res->args.resize(1);
+  res->setParentReference(obj);
+  res->setREFIDX(refIdx);
+  return res;
 }

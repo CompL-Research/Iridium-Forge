@@ -12,4 +12,4 @@ typedef std::shared_ptr<IridiumBuildContext> IRIBUILDCONTEXT;
 double findParentClosureScope(double startingScope, std::unordered_map<int, IRIBUILDCONTEXT> &buildContext);
 double getLexicalScope(double startingScope, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext);
 void setClosureFlags(double flag, std::shared_ptr<BBContainerSEXP> bbContainer);
-void addBBToContainer(std::shared_ptr<BBSEXP> bb, std::shared_ptr<BBContainerSEXP> bbContainer);
+void addToListSEXP(IRISEXP list, IRISEXP elementToAdd);

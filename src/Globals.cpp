@@ -61,7 +61,12 @@ void setClosureFlags(double flag, std::shared_ptr<BBContainerSEXP> bbContainer)
 }
 
 
-void addBBToContainer(std::shared_ptr<BBSEXP> bb, std::shared_ptr<BBContainerSEXP> bbContainer)
+void addToListSEXP(IRISEXP list, IRISEXP elementToAdd)
 {
-  bbContainer->args.push_back(bb);
+  auto listSEXP = std::dynamic_pointer_cast<ListSEXP>(list);
+  assert(listSEXP && "Tried to add to a non-list");
+
+  if (listSEXP->hasTYPE()) assert(listSEXP->getTYPE() == elementToAdd->tag);
+  
+  listSEXP->args.push_back(elementToAdd);
 }
