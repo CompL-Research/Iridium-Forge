@@ -1,5 +1,6 @@
 #include "Iridium/IridiumSEXP.h"
-#include "Iridium/IridiumTypes.h"
+#include "generated/IridiumTypes.h"
+#include "generated/ParseIridiumTypes.h"
 
 IRISEXP parseSEXP(const msgpack::object &obj, std::unordered_map<int, std::shared_ptr<BBSEXP>> * bbIdxToSEXPMap)
 {
@@ -57,7 +58,7 @@ IRISEXP parseSEXP(const msgpack::object &obj, std::unordered_map<int, std::share
     }
   }
 
-  IRISEXP res = specializeSEXP(sexp);
+  IRISEXP res = ParseIridiumTypes::specialize(sexp);
 
   // Populate bbIdxToSEXPMap
   if (auto bb = std::dynamic_pointer_cast<BBSEXP>(res)) {

@@ -1,7 +1,6 @@
 #include "Iridium/Passes/4_1_groupIntoClosureGroups.h"
 #include "Iridium/Globals.h"
-#include "Iridium/IridiumTypes.h"
-#include "Iridium/IridiumConstructors.h"
+#include "generated/IridiumTypes.h"
 
 void groupIntoClosureGroups(IRISEXP fileSexp, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext)
 {
@@ -17,19 +16,20 @@ void groupIntoClosureGroups(IRISEXP fileSexp, std::unordered_map<int, IRIBUILDCO
     if (bbGroups.find(targetScopeIDX) == bbGroups.end())
     {
       auto parent = getLexicalScope(targetScopeIDX, iridiumBuildContext);
-      auto bbContainer = makeBBContainerSEXP(targetScopeIDX, parent);
+
+
+      auto localBindings = std::make_shared<ListSEXP>("EnvBinding");
+      auto remoteBindings = std::make_shared<ListSEXP>("RemoteEnvBinding");
+      auto poolBindings = std::make_shared<ListSEXP>("PoolBinding");
+
+      auto bindingsSEXP = std::make_shared<BindingsSEXP>(localBindings, remoteBindings, poolBindings, parent);
+      auto BBListSEXP = std::make_shared<ListSEXP>("BB");
+
       auto &currContext = iridiumBuildContext[targetScopeIDX];
 
-      if (currContext->isAsync)
-        bbContainer->setASYNC();
-      if (currContext->isGenerator)
-        bbContainer->setGENERATOR();
-      if (currContext->isStrict)
-        bbContainer->setSTRICT();
-      if (parent == -1)
-        bbContainer->setTopLevel();
+      bool isTopLevel = parent == -1;
 
-      bbContainer->setECMAArgs(currContext->ecmaArgs);
+      auto bbContainer = std::make_shared<BBContainerSEXP>(bindingsSEXP, BBListSEXP, false, currContext->isAsync, currContext->isStrict, currContext->isGenerator, false, false, false, false, false, false, isTopLevel, currContext->ecmaArgs, currContext->BB[0]->getIDX(), targetScopeIDX, -1);
 
       setClosureFlags(currContext->kind, bbContainer);
       bbGroups[targetScopeIDX] = bbContainer;

@@ -1,6 +1,6 @@
 #include "Iridium/Passes/5_initializeStackFrame.h"
 #include "Iridium/Globals.h"
-#include "Iridium/IridiumTypes.h"
+#include "generated/IridiumTypes.h"
 
 void initializeStackFrame(IRISEXP fileSexp, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext)
 {
@@ -33,13 +33,14 @@ void initializeStackFrame(IRISEXP fileSexp, std::unordered_map<int, IRIBUILDCONT
 
     // Initialize local bindings
     {
+      std::vector<std::shared_ptr<EnvBindingSEXP>> funcArgs;
       std::unordered_map<double, std::vector<std::shared_ptr<EnvBindingSEXP>>> mapping;
       for (auto &b : bindingsSEXP->getLocalBindings()->args)
       {
         auto bindingSEXP = std::dynamic_pointer_cast<EnvBindingSEXP>(b);
         assert(bindingSEXP && "Expected bindingSEXP");
-
-        mapping[bindingSEXP->getScope()].push_back(bindingSEXP);
+        if (bindingSEXP->hasJSARG() || bindingSEXP->hasJSRESTARG()) funcArgs.push_back(bindingSEXP);
+        else mapping[bindingSEXP->getScope()].push_back(bindingSEXP);
       }
 
       // Sort and flatten the stack frame
@@ -98,11 +99,16 @@ void initializeStackFrame(IRISEXP fileSexp, std::unordered_map<int, IRIBUILDCONT
       }
 
       std::vector<IRISEXP> converted;
-      converted.reserve(flattened.size());
+      converted.reserve(funcArgs.size() + flattened.size());
+
+      for (auto &arg : funcArgs)
+      {
+        converted.push_back(arg);
+      }
 
       for (auto &e : flattened)
       {
-        converted.push_back(e); // If IRISEXP can be constructed from shared_ptr<EnvBindingSEXP>
+        converted.push_back(e);
       }
 
       bindingsSEXP->getLocalBindings()->args = std::move(converted);

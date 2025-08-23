@@ -1,7 +1,7 @@
 #include "Iridium/Passes/4_5_populateExplicitBindings.h"
 #include "Iridium/Globals.h"
-#include "Iridium/IridiumTypes.h"
-#include "Iridium/IridiumConstructors.h"
+#include "generated/IridiumTypes.h"
+#include "Iridium/IridiumReductions.h"
 
 void populateExplicitBindings(IRISEXP fileSexp, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext)
 {
@@ -87,12 +87,12 @@ void populateExplicitBindings(IRISEXP fileSexp, std::unordered_map<int, IRIBUILD
             if (jsExplicitBindingDeclarationStmt->hasJSVAR())
             {
               // This statement is no longer needed
-              bb->args.at(i) = makeNOPSEXP();
+              bb->args.at(i) = std::make_shared<NOPSEXP>();
             }
             else
             {
               // This statement has been reduced to a simple EnvWriteSEXP
-              jsExplicitBindingDeclarationStmt->setRVal(makeGlobalBindingSEXP("undefined"));
+              jsExplicitBindingDeclarationStmt->setRVal(std::make_shared<GlobalBindingSEXP>("undefined"));
               bb->args.at(i) = reduceJSDecl(jsExplicitBindingDeclarationStmt);
             }
           }
@@ -111,7 +111,9 @@ void populateExplicitBindings(IRISEXP fileSexp, std::unordered_map<int, IRIBUILD
       for (auto &e : sloppyDeclarations)
       {
 
-        envWrites.push_back(makeJSSloppyDeclSEXP(e.first, e.second));
+        envWrites.push_back(
+          std::make_shared<JSSloppyDeclSEXP>(e.first, e.second == EnvBindingSEXPKindFlag::JSLET, e.second == EnvBindingSEXPKindFlag::JSCONST, e.second == EnvBindingSEXPKindFlag::JSVAR)
+        );
         // TODO: Is this needed???
 
         // IRISEXP lval = makeResolveEnvBindingSEXP(e.first);
@@ -149,34 +151,44 @@ void populateExplicitBindings(IRISEXP fileSexp, std::unordered_map<int, IRIBUILD
           assert(bindingsSEXP && "Expected bindingsSEXP");
           std::string bindingName = b.first;
 
-          IRISEXP lval = makeResolveEnvBindingSEXP(bindingName);
+          IRISEXP lval = std::make_shared<ResolveEnvBindingSEXP>(bindingName, false);
 
           IRISEXP rval;
           if (b.second == EnvBindingSEXPKindFlag::JSVAR)
           {
-            rval = makeEnvReadSEXP("undefined");
+            rval = std::make_shared<GlobalBindingSEXP>("undefined");
           }
           else
           {
-            rval = makeJSNUBDSEXP();
+            rval = std::make_shared<JSNUBDSEXP>();
           }
 
           if (!hasBindingReference(bindingsSEXP, containerBC->scopeIdx, bindingName, b.second, localScope, parentScope))
           {
             if (startBB->hasTopLevel())
             { // the place where it will be hoisted to, is it the top level container?
-              auto localBinding = makeEnvBindingSEXP(-1, containerBC->scopeIdx, bindingName, b.second, localScope, parentScope);
-              auto res = makeRemoteEnvBindingSEXP(localBinding, -1);
-              addToListSEXP(bindingsSEXP->getRemoteBindings(), res);
+              // std::string NAME, bool ASW, bool JSARG, bool JSRESTARG, bool JSLET, bool JSCONST, bool JSVAR, double IDX, double REFIDX, double Scope, double ParentScope, double NEXT
+              auto localBinding = std::make_shared<EnvBindingSEXP>(bindingName, false, false, false, b.second == EnvBindingSEXPKindFlag::JSLET, b.second == EnvBindingSEXPKindFlag::JSCONST, b.second == EnvBindingSEXPKindFlag::JSVAR, containerBC->scopeIdx, -1, localScope, parentScope, -1);
 
-              envWrites.push_back(makeEnvWrite(lval, rval, true, false));
+              // auto localBinding = makeEnvBindingSEXP(-1, containerBC->scopeIdx, bindingName, b.second, localScope, parentScope);
+              auto remoteBinding = std::make_shared<RemoteEnvBindingSEXP>(localBinding, false, -1);
+              
+              addToListSEXP(bindingsSEXP->getRemoteBindings(), remoteBinding);
+
+              envWrites.push_back(
+                // IRISEXP LValTarget, IRISEXP RVal, bool SLOPPY, bool SAFE, bool THISINIT
+                std::make_shared<EnvWriteSEXP>(lval, rval, false, true, false)
+              );
             }
             else
             {
-              auto res = makeEnvBindingSEXP(-1, containerBC->scopeIdx, bindingName, b.second, localScope, parentScope);
-              addToListSEXP(bindingsSEXP->getLocalBindings(), res);
+              auto localBinding = std::make_shared<EnvBindingSEXP>(bindingName, false, false, false, b.second == EnvBindingSEXPKindFlag::JSLET, b.second == EnvBindingSEXPKindFlag::JSCONST, b.second == EnvBindingSEXPKindFlag::JSVAR, containerBC->scopeIdx, -1, localScope, parentScope, -1);
+              addToListSEXP(bindingsSEXP->getLocalBindings(), localBinding);
 
-              envWrites.push_back(makeEnvWrite(lval, rval, true, false));
+              envWrites.push_back(
+                // IRISEXP LValTarget, IRISEXP RVal, bool SLOPPY, bool SAFE, bool THISINIT
+                std::make_shared<EnvWriteSEXP>(lval, rval, false, true, false)
+              );
             }
           }
         }

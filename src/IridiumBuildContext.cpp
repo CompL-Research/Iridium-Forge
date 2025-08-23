@@ -1,6 +1,6 @@
 #include "Iridium/IridiumBuildContext.h"
 #include "Iridium/IridiumSEXP.h"
-#include "Iridium/IridiumTypes.h"
+#include "generated/IridiumTypes.h"
 
 void parseBuildContexts(const msgpack::object &obj, std::unordered_map<int, std::shared_ptr<BBSEXP>> & bbIdxToSEXPMap, std::unordered_map<int, IRIBUILDCONTEXT> & iridiumBuildContext)
 {

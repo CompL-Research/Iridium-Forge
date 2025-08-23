@@ -1,20 +1,16 @@
 #include "Iridium/Passes/4_2_populateModuleBindings.h"
 #include "Iridium/Globals.h"
-#include "Iridium/IridiumTypes.h"
-#include "Iridium/IridiumConstructors.h"
+#include "generated/IridiumTypes.h"
 
 void populateModuleBindings(IRISEXP fileSexp, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext)
 {
-  auto moduleRequests = makeListSEXP();
-  moduleRequests->setTYPE("ModuleRequest");
+  auto moduleRequests = std::make_shared<ListSEXP>("ModuleRequest");
 
-  auto staticImports = makeListSEXP();
-  staticImports->setTYPE("StaticImport");
+  auto staticImports = std::make_shared<ListSEXP>("StaticImport");
 
-  auto staticExports = makeListSEXP();
+  auto staticExports = std::make_shared<ListSEXP>("");
 
-  auto staticStarExports = makeListSEXP();
-  staticStarExports->setTYPE("StarExport");
+  auto staticStarExports = std::make_shared<ListSEXP>("StarExport");
 
   bool isModule = false;
   double topLevelScopeIdx = 0;
@@ -68,15 +64,19 @@ void populateModuleBindings(IRISEXP fileSexp, std::unordered_map<int, IRIBUILDCO
           assert(storageTarget && "Expected storageTarget to be ResolveEnvBindingSEXP");
 
           std::string bindingName = storageTarget->getNAME();
-          auto binding = makeEnvBindingSEXP(-1, containerBC->scopeIdx, bindingName, EnvBindingSEXPKindFlag::JSLET, localScope, parentClosureScope);
-          auto remoteBinding = makeRemoteEnvBindingSEXP(binding, -1);
+
+          // std::string NAME, bool ASW, bool JSARG, bool JSRESTARG, bool JSLET, bool JSCONST, bool JSVAR, double IDX, double REFIDX, double Scope, double ParentScope, double NEXT
+          auto binding = std::make_shared<EnvBindingSEXP>(bindingName, false, false, false, true, false, false, containerBC->scopeIdx, -1, localScope, parentClosureScope, -1);
+          
+          // IRISEXP ParentReference, bool NSIMPORT, double REFIDX
+          auto remoteBinding = std::make_shared<RemoteEnvBindingSEXP>(binding, false, -1);
 
           auto bindingsSEXP = std::dynamic_pointer_cast<BindingsSEXP>(container->getBindings());
           assert(bindingsSEXP && "Expected bindingsSEXP");
           addToListSEXP(bindingsSEXP->getRemoteBindings(), remoteBinding);
 
           addToListSEXP(staticImports, staticImportStmt);
-          bb->args.at(i) = makeNOPSEXP();
+          bb->args.at(i) = std::make_shared<NOPSEXP>();
         }
 
         // export { a as b };
@@ -86,7 +86,7 @@ void populateModuleBindings(IRISEXP fileSexp, std::unordered_map<int, IRIBUILDCO
           auto localBinding = localStaticExportStmt->getStorageLocation();
           assert(std::dynamic_pointer_cast<ResolveEnvBindingSEXP>(localBinding) && "Expected localBinding to be ResolveEnvBindingSEXP");
           addToListSEXP(staticExports, localStaticExportStmt);
-          bb->args.at(i) = makeNOPSEXP();
+          bb->args.at(i) = std::make_shared<NOPSEXP>();
         }
 
         // export * as foo from "SOURCE";
@@ -94,7 +94,7 @@ void populateModuleBindings(IRISEXP fileSexp, std::unordered_map<int, IRIBUILDCO
         {
           assert(isTopLevel);
           addToListSEXP(staticExports, namedReexportStmt);
-          bb->args.at(i) = makeNOPSEXP();
+          bb->args.at(i) = std::make_shared<NOPSEXP>();
         }
 
         // export * from "SOURCE";
@@ -102,7 +102,7 @@ void populateModuleBindings(IRISEXP fileSexp, std::unordered_map<int, IRIBUILDCO
         {
           assert(isTopLevel);
           addToListSEXP(staticStarExports, starExportStmt); // Creates no binding
-          bb->args.at(i) = makeNOPSEXP();
+          bb->args.at(i) = std::make_shared<NOPSEXP>();
         }
       }
     }

@@ -57,6 +57,7 @@ export function genExpandedCtor(spec) {
   ].join(", ");
 
   const body = [
+    `    this->tag = "${spec.tag}";`,
     ...spec.args.map(a => `    this->args.push_back(${a});`),
     ...spec.flags.string.map(f => `    this->set${f}(${f});`),
     ...spec.flags.void.map(f => `    if (${f}) this->set${f}();`),

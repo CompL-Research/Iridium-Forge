@@ -1,6 +1,6 @@
 #include "Iridium/Passes/1_normailzeBBFlags.h"
 #include "Iridium/Globals.h"
-#include "Iridium/IridiumTypes.h"
+#include "generated/IridiumTypes.h"
 #include "Iridium/IridiumBuildContext.h"
 
 void normalizeBBFlags(std::unordered_map<int, IRIBUILDCONTEXT> & buildContext) {

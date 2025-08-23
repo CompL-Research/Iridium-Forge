@@ -1,7 +1,6 @@
 #include "Iridium/Passes/2_hoistFunctionDeclarations.h"
 #include "Iridium/Globals.h"
-#include "Iridium/IridiumTypes.h"
-#include "Iridium/IridiumConstructors.h"
+#include "generated/IridiumTypes.h"
 
 void funcDeclHandler(IRISEXP currSEXP, double currScope, std::unordered_map<double, std::set<std::shared_ptr<JSFuncDeclSEXP>>> & res)
 {
@@ -14,7 +13,7 @@ void funcDeclHandler(IRISEXP currSEXP, double currScope, std::unordered_map<doub
     IRISEXP s = currSEXP->args[i];
     if (auto funcDeclSEXP = std::dynamic_pointer_cast<JSFuncDeclSEXP>(s)) {
       res[currScope].insert(funcDeclSEXP);
-      currSEXP->args[i] = makeNOPSEXP();
+      currSEXP->args[i] = std::make_shared<NOPSEXP>();
     }
   }
 

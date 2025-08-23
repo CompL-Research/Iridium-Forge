@@ -1,7 +1,6 @@
 #include "Iridium/Passes/4_3_populateImplicitBindings.h"
 #include "Iridium/Globals.h"
-#include "Iridium/IridiumTypes.h"
-#include "Iridium/IridiumConstructors.h"
+#include "generated/IridiumTypes.h"
 
 void populateImplicitBindings(IRISEXP fileSexp, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext)
 {
@@ -46,7 +45,9 @@ void populateImplicitBindings(IRISEXP fileSexp, std::unordered_map<int, IRIBUILD
             throw std::runtime_error("Invalid kind for an implicit binding");
 
           assert(localScope == containerBC->scopeIdx);
-          auto bindingSEXP = makeEnvBindingSEXP(-1, containerBC->scopeIdx, bindingName, kind, containerBC->scopeIdx, containerBC->parent);
+
+          // std::string NAME, bool ASW, bool JSARG, bool JSRESTARG, bool JSLET, bool JSCONST, bool JSVAR, double IDX, double REFIDX, double Scope, double ParentScope, double NEXT
+          auto bindingSEXP = std::make_shared<EnvBindingSEXP>(bindingName, false, false, false, jsImplicitBindingDeclarationStmt->hasJSLET(), jsImplicitBindingDeclarationStmt->hasJSCONST(), jsImplicitBindingDeclarationStmt->hasJSVAR(), containerBC->scopeIdx, -1, containerBC->scopeIdx, containerBC->parent, -1);
 
           auto bindingsSEXP = std::dynamic_pointer_cast<BindingsSEXP>(container->getBindings());
           assert(bindingsSEXP && "Expected bindingsSEXP");
