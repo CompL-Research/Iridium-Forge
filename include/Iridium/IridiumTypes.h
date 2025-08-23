@@ -236,12 +236,7 @@ public:
   DEFINE_ARG_FUNCS(RetVal, 0)
 };
 
-enum BBSEXPFLAGS
-{
-  TopLevel,
-  ClosureBoundary,
-  Lexical
-};
+
 
 class BBSEXP : public IridiumSEXP
 {
@@ -630,9 +625,3 @@ public:
 
   DEFINE_DOUBLE_FLAG_FUNCS(IridiumPrimitive)
 };
-
-IRISEXP specializeSEXP(IRISEXP val);
-
-BBSEXPFLAGS getBBFlag(std::shared_ptr<BBSEXP> b);
-
-void setBBFlag(std::shared_ptr<BBSEXP> b, BBSEXPFLAGS flagToSet);

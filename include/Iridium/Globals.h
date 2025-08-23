@@ -12,6 +12,13 @@ enum EnvBindingSEXPKindFlag
   JSVAR
 };
 
+enum BBSEXPFLAGS
+{
+  TopLevel,
+  ClosureBoundary,
+  Lexical
+};
+
 class IridiumSEXP;
 class IridiumBuildContext;
 class BBSEXP;
@@ -52,3 +59,6 @@ class EnvBindingSEXP;
 class RemoteEnvBindingSEXP;
 std::shared_ptr<EnvBindingSEXP> resolveRemoteBinding(std::shared_ptr<RemoteEnvBindingSEXP> rbin);
 bool hasBindingReference(std::shared_ptr<BindingsSEXP> bindingsSEXP, double idx, std::string name, EnvBindingSEXPKindFlag kindFlag, double localScope, double parentScope);
+IRISEXP specializeSEXP(IRISEXP val);
+BBSEXPFLAGS getBBFlag(std::shared_ptr<BBSEXP> b);
+void setBBFlag(std::shared_ptr<BBSEXP> b, BBSEXPFLAGS flagToSet);
