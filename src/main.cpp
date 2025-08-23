@@ -10,15 +10,14 @@
 #include "Iridium/IridiumSEXP.h"
 #include "Iridium/Passes/1_normailzeBBFlags.h"
 #include "Iridium/Passes/2_hoistFunctionDeclarations.h"
-#include "Iridium/Passes/3_filterNops.h"
-#include "Iridium/Passes/4_1_groupIntoClosureGroups.h"
-#include "Iridium/Passes/4_2_populateModuleBindings.h"
-#include "Iridium/Passes/4_3_populateImplicitBindings.h"
-#include "Iridium/Passes/4_4_reduceFunctionDeclarations.h"
-#include "Iridium/Passes/4_5_populateExplicitBindings.h"
-#include "Iridium/Passes/4_6_addClosureArgsBindings.h"
-#include "Iridium/Passes/5_initializeStackFrame.h"
-// #include "Iridium/Passes/4_createStructure.h"
+// #include "Iridium/Passes/3_filterNops.h"
+// #include "Iridium/Passes/4_1_groupIntoClosureGroups.h"
+// #include "Iridium/Passes/4_2_populateModuleBindings.h"
+// #include "Iridium/Passes/4_3_populateImplicitBindings.h"
+// #include "Iridium/Passes/4_4_reduceFunctionDeclarations.h"
+// #include "Iridium/Passes/4_5_populateExplicitBindings.h"
+// #include "Iridium/Passes/4_6_addClosureArgsBindings.h"
+// #include "Iridium/Passes/5_initializeStackFrame.h"
 
 // --------- Read all bytes from file or stdin ----------
 static std::vector<uint8_t> read_all(const std::optional<std::string> &path)
@@ -301,37 +300,37 @@ int main(int argc, char **argv)
     hoistFunctionDeclarations(sexp, iridiumBuildContext);
     sexp->dump();
 
-    std::cout << "After [3_filterNops]" << std::endl;
-    filterNOPs(sexp);
-    sexp->dump();
+    // std::cout << "After [3_filterNops]" << std::endl;
+    // filterNOPs(sexp);
+    // sexp->dump();
 
-    std::cout << "Starting [4_1_groupIntoClosureGroups]" << std::endl;
-    groupIntoClosureGroups(sexp, iridiumBuildContext);
-    sexp->dump();
+    // std::cout << "Starting [4_1_groupIntoClosureGroups]" << std::endl;
+    // groupIntoClosureGroups(sexp, iridiumBuildContext);
+    // sexp->dump();
 
-    std::cout << "Starting [4_2_populateModuleBindings]" << std::endl;
-    populateModuleBindings(sexp, iridiumBuildContext);
-    sexp->dump();
+    // std::cout << "Starting [4_2_populateModuleBindings]" << std::endl;
+    // populateModuleBindings(sexp, iridiumBuildContext);
+    // sexp->dump();
 
-    std::cout << "Starting [4_3_populateImplicitBindings]" << std::endl;
-    populateImplicitBindings(sexp, iridiumBuildContext);
-    sexp->dump();
+    // std::cout << "Starting [4_3_populateImplicitBindings]" << std::endl;
+    // populateImplicitBindings(sexp, iridiumBuildContext);
+    // sexp->dump();
 
-    std::cout << "Starting [4_4_reduceFunctionDeclarations]" << std::endl;
-    reduceFunctionDeclarations(sexp, iridiumBuildContext);
-    sexp->dump();
+    // std::cout << "Starting [4_4_reduceFunctionDeclarations]" << std::endl;
+    // reduceFunctionDeclarations(sexp, iridiumBuildContext);
+    // sexp->dump();
 
-    std::cout << "Starting [4_5_populateExplicitBindings]" << std::endl;
-    populateExplicitBindings(sexp, iridiumBuildContext);
-    sexp->dump();
+    // std::cout << "Starting [4_5_populateExplicitBindings]" << std::endl;
+    // populateExplicitBindings(sexp, iridiumBuildContext);
+    // sexp->dump();
 
-    std::cout << "Starting [4_6_addClosureArgsBindings]" << std::endl;
-    addClosureArgsBindings(sexp, iridiumBuildContext);
-    sexp->dump();
+    // std::cout << "Starting [4_6_addClosureArgsBindings]" << std::endl;
+    // addClosureArgsBindings(sexp, iridiumBuildContext);
+    // sexp->dump();
 
-    std::cout << "Starting [5_initializeStackFrame]" << std::endl;
-    initializeStackFrame(sexp, iridiumBuildContext);
-    sexp->dump();
+    // std::cout << "Starting [5_initializeStackFrame]" << std::endl;
+    // initializeStackFrame(sexp, iridiumBuildContext);
+    // sexp->dump();
 
     return 0;
 

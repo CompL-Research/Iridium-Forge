@@ -1,0 +1,322 @@
+export default [
+  {
+    "tag": "File",
+    "args": [],
+    "flags": {
+      "string": [],
+      "void": ["JSScript", "JSModule"],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "ResolveEnvBinding",
+    "args": [],
+    "flags": {
+      "string": ["NAME"],
+      "void": ["ASW"],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "List",
+    "args": [],
+    "flags": {
+      "string": ["TYPE"],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "JSImplicitBindingDeclaration",
+    "args": ["Store", "Args"],
+    "flags": {
+      "string": ["NAME"],
+      "void": ["JSLET", "JSCONST", "JSVAR", "SLOPPY", "SKIPINIT"],
+      "bool": ["SAFE", "THISINIT"],
+      "double": ["OPID"],
+    }
+  },
+  {
+    "tag": "EnvRead",
+    "args": ["Obj"],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "IfJump",
+    "args": ["Test"],
+    "flags": {
+      "string": [],
+      "void": ["NOT"],
+      "bool": [],
+      "double": ["IDX"],
+    }
+  },
+  {
+    "tag": "String",
+    "args": [],
+    "flags": {
+      "string": ["IridiumPrimitive"],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "FieldRead",
+    "args": ["Obj","Field"],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "JSExplicitBindingDeclaration",
+    "args": ["LValTarget", "RVal"],
+    "flags": {
+      "string": [],
+      "void": ["JSLET", "JSCONST", "JSVAR", "SLOPPY"],
+      "bool": ["SAFE", "THISINIT"],
+      "double": [],
+    }
+  },
+  {
+    "tag": "CallSite",
+    "args": [],
+    "flags": {
+      "string": [],
+      "void": ["CCall", "ConstructorCall", "PrivateCall", "Import", "Super", "JSDirectEval"],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "ReturnAsync",
+    "args": ["RetVal"],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "BB",
+    "args": [],
+    "flags": {
+      "string": [],
+      "void": ["TopLevel", "ClosureBoundary", "Lexical"],
+      "bool": [],
+      "double": ["IDX", "ScopeIDX"],
+    }
+  },
+  {
+    "tag": "Return",
+    "args": [],
+    "flags": {
+      "string": [],
+      "void": ["ModuleEarlyReturn"],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "IfElseJump",
+    "args": ["Test"],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": [],
+      "double": ["TRUE", "FALSE"],
+    }
+  },
+  {
+    "tag": "Goto",
+    "args": [],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": [],
+      "double": ["IDX"],
+    }
+  },
+  {
+    "tag": "JSFuncDecl",
+    "args": ["LValTarget", "RVal"],
+    "flags": {
+      "string": [],
+      "void": ["JSLET", "JSCONST", "JSVAR", "SLOPPY"],
+      "bool": ["SAFE", "THISINIT"],
+      "double": [],
+    }
+  },
+  {
+    "tag": "Lambda",
+    "args": [],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": [],
+      "double": ["StartBBIDX"],
+    }
+  },
+  {
+    "tag": "NOP",
+    "args": [],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "BBContainer",
+    "args": ["Bindings", "BB"],
+    "flags": {
+      "string": [],
+      "void": ["ARGUMENTS", "ASYNC", "STRICT", "GENERATOR", "PROTO", "NEW", "SCALL", "SOBJ", "HOME", "DERIVED", "TopLevel"],
+      "bool": [],
+      "double": ["ECMAArgs", "StartBBIDX", "ScopeIDX", "ContainerFlagID"],
+    }
+  },
+  {
+    "tag": "Bindings",
+    "args": ["LocalBindings", "RemoteBindings", "Lambdas"],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": [],
+      "double": ["ParentScope"],
+    }
+  },
+  {
+    "tag": "StarExport",
+    "args": [],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": [],
+      "double": ["MODULEREQIDX"],
+    }
+  },
+  {
+    "tag": "StaticImport",
+    "args": ["StorageLocation"],
+    "flags": {
+      "string": ["FIELD"],
+      "void": [],
+      "bool": [],
+      "double": ["MODULEREQIDX"],
+    }
+  },
+  {
+    "tag": "LocalStaticExport",
+    "args": ["StorageLocation"],
+    "flags": {
+      "string": ["LOCALNAME", "EXPORTNAME"],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "NamedReexport",
+    "args": [],
+    "flags": {
+      "string": ["EXPORTNAME"],
+      "void": [],
+      "bool": [],
+      "double": ["MODULEREQIDX"],
+    }
+  },
+  {
+    "tag": "ModuleRequest",
+    "args": [],
+    "flags": {
+      "string": ["SOURCE"],
+      "void": [],
+      "bool": [],
+      "double": ["REQIDX"],
+    }
+  },
+  {
+    "tag": "EnvBinding",
+    "args": [],
+    "flags": {
+      "string": ["NAME"],
+      "void": ["ASW", "JSARG", "JSRESTARG", "JSLET", "JSCONST", "JSVAR"],
+      "bool": [],
+      "double": ["IDX", "REFIDX", "Scope", "ParentScope", "NEXT"],
+    }
+  },
+  {
+    "tag": "RemoteEnvBinding",
+    "args": ["ParentReference"],
+    "flags": {
+      "string": [],
+      "void": ["NSIMPORT"],
+      "bool": [],
+      "double": ["REFIDX"],
+    }
+  },
+  {
+    "tag": "GlobalBinding",
+    "args": [],
+    "flags": {
+      "string": ["NAME"],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "EnvWrite",
+    "args": ["LValTarget", "RVal"],
+    "flags": {
+      "string": [],
+      "void": ["SLOPPY"],
+      "bool": ["SAFE", "THISINIT"],
+      "double": [],
+    }
+  },
+  {
+    "tag": "JSNUBD",
+    "args": [],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "JSSloppyDecl",
+    "args": [],
+    "flags": {
+      "string": ["NAME"],
+      "void": ["JSLET", "JSCONST", "JSVAR"],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "Number",
+    "args": [],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": [],
+      "double": ["IridiumPrimitive"],
+    }
+  }
+];
