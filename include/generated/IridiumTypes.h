@@ -1,4 +1,4 @@
-// Generated: 2025-08-23 16:45:19
+// Generated: 2025-08-23 18:45:45
 #pragma once
 #include "Iridium/Globals.h"
 #include "Iridium/IridiumSEXP.h"
@@ -1465,5 +1465,139 @@ public:
   void unsetIridiumPrimitive() { removeFlag("IridiumPrimitive"); }
   bool hasIridiumPrimitive() { return hasFlag("IridiumPrimitive"); }
   double getIridiumPrimitive() { return getFlagDouble("IridiumPrimitive"); }
+
+};
+
+class JSClassSEXP : public IridiumSEXP {
+private:
+
+  JSClassSEXP() { this->tag = "JSClass"; }
+  
+public:
+  static std::shared_ptr<JSClassSEXP> generateFrom(IRISEXP obj) {
+    assert(obj->tag == "JSClass");
+    auto res = std::shared_ptr<JSClassSEXP>(new JSClassSEXP());
+
+    res->tag   = obj->tag;
+    res->args  = std::move(obj->args);
+    res->flags = std::move(obj->flags);
+    return res;
+  }
+
+
+  JSClassSEXP(IRISEXP NAME, IRISEXP Parent, IRISEXP Constructor, IRISEXP PropInit, IRISEXP MethodList, IRISEXP StaticMethodList, IRISEXP StaticPropInit, bool Derived, bool BrandPrototype, bool BrandConstructor) {
+    this->tag = "JSClass";
+    this->args.push_back(NAME);
+    this->args.push_back(Parent);
+    this->args.push_back(Constructor);
+    this->args.push_back(PropInit);
+    this->args.push_back(MethodList);
+    this->args.push_back(StaticMethodList);
+    this->args.push_back(StaticPropInit);
+    if (Derived) this->setDerived();
+    if (BrandPrototype) this->setBrandPrototype();
+    if (BrandConstructor) this->setBrandConstructor();
+  }
+
+
+  void setNAME(const IRISEXP &obj) { this->args.at(0) = obj; }
+  bool hasNAME() { return 0 < this->args.size(); }
+  IRISEXP getNAME() const { return this->args.at(0); }
+
+
+  void setParent(const IRISEXP &obj) { this->args.at(1) = obj; }
+  bool hasParent() { return 1 < this->args.size(); }
+  IRISEXP getParent() const { return this->args.at(1); }
+
+
+  void setConstructor(const IRISEXP &obj) { this->args.at(2) = obj; }
+  bool hasConstructor() { return 2 < this->args.size(); }
+  IRISEXP getConstructor() const { return this->args.at(2); }
+
+
+  void setPropInit(const IRISEXP &obj) { this->args.at(3) = obj; }
+  bool hasPropInit() { return 3 < this->args.size(); }
+  IRISEXP getPropInit() const { return this->args.at(3); }
+
+
+  void setMethodList(const IRISEXP &obj) { this->args.at(4) = obj; }
+  bool hasMethodList() { return 4 < this->args.size(); }
+  IRISEXP getMethodList() const { return this->args.at(4); }
+
+
+  void setStaticMethodList(const IRISEXP &obj) { this->args.at(5) = obj; }
+  bool hasStaticMethodList() { return 5 < this->args.size(); }
+  IRISEXP getStaticMethodList() const { return this->args.at(5); }
+
+
+  void setStaticPropInit(const IRISEXP &obj) { this->args.at(6) = obj; }
+  bool hasStaticPropInit() { return 6 < this->args.size(); }
+  IRISEXP getStaticPropInit() const { return this->args.at(6); }
+
+
+  void setDerived() { setFlag("Derived"); }
+  void unsetDerived() { removeFlag("Derived"); }
+  bool hasDerived() { return hasFlag("Derived"); }
+
+
+  void setBrandPrototype() { setFlag("BrandPrototype"); }
+  void unsetBrandPrototype() { removeFlag("BrandPrototype"); }
+  bool hasBrandPrototype() { return hasFlag("BrandPrototype"); }
+
+
+  void setBrandConstructor() { setFlag("BrandConstructor"); }
+  void unsetBrandConstructor() { removeFlag("BrandConstructor"); }
+  bool hasBrandConstructor() { return hasFlag("BrandConstructor"); }
+
+};
+
+class JSCheckConstructorSEXP : public IridiumSEXP {
+private:
+// default constructor and explicit one are the same, skipping...
+public:
+  static std::shared_ptr<JSCheckConstructorSEXP> generateFrom(IRISEXP obj) {
+    assert(obj->tag == "JSCheckConstructor");
+    auto res = std::shared_ptr<JSCheckConstructorSEXP>(new JSCheckConstructorSEXP());
+
+    res->tag   = obj->tag;
+    res->args  = std::move(obj->args);
+    res->flags = std::move(obj->flags);
+    return res;
+  }
+
+
+  JSCheckConstructorSEXP() {
+    this->tag = "JSCheckConstructor";
+  }
+
+};
+
+class StackRejectSEXP : public IridiumSEXP {
+private:
+
+  StackRejectSEXP() { this->tag = "StackReject"; }
+  
+public:
+  static std::shared_ptr<StackRejectSEXP> generateFrom(IRISEXP obj) {
+    assert(obj->tag == "StackReject");
+    auto res = std::shared_ptr<StackRejectSEXP>(new StackRejectSEXP());
+
+    res->tag   = obj->tag;
+    res->args  = std::move(obj->args);
+    res->flags = std::move(obj->flags);
+    return res;
+  }
+
+
+  StackRejectSEXP(double NVAL) {
+    this->tag = "StackReject";
+    this->setNVAL(NVAL);
+  }
+
+
+  void setNVAL(double value) { setFlag("NVAL", value); }
+  void unsetNVAL() { removeFlag("NVAL"); }
+  bool hasNVAL() { return hasFlag("NVAL"); }
+  double getNVAL() { return getFlagDouble("NVAL"); }
 
 };

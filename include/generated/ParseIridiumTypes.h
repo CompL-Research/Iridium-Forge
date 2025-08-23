@@ -1,4 +1,4 @@
-// Generated: 2025-08-23 16:45:19
+// Generated: 2025-08-23 18:45:45
 #pragma once
 #include "Iridium/Globals.h"
 #include "Iridium/IridiumSEXP.h"
@@ -39,6 +39,9 @@ public:
     if (tag == "JSNUBD") return JSNUBDSEXP::generateFrom(obj);
     if (tag == "JSSloppyDecl") return JSSloppyDeclSEXP::generateFrom(obj);
     if (tag == "Number") return NumberSEXP::generateFrom(obj);
+    if (tag == "JSClass") return JSClassSEXP::generateFrom(obj);
+    if (tag == "JSCheckConstructor") return JSCheckConstructorSEXP::generateFrom(obj);
+    if (tag == "StackReject") return StackRejectSEXP::generateFrom(obj);
     throw std::runtime_error("ParseIridiumTypes::specialize unhandled Tag: " + tag);
   }
 };

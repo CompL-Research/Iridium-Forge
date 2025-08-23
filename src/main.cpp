@@ -6,6 +6,8 @@
 #include <string>
 #include <cstdint>
 #include <optional>
+#include <filesystem> // C++17 or later
+
 #include "Iridium/IridiumBuildContext.h"
 #include "Iridium/IridiumSEXP.h"
 #include "Iridium/Passes/1_normailzeBBFlags.h"
@@ -18,6 +20,19 @@
 #include "Iridium/Passes/4_5_populateExplicitBindings.h"
 #include "Iridium/Passes/4_6_addClosureArgsBindings.h"
 #include "Iridium/Passes/5_initializeStackFrame.h"
+#include "Iridium/Passes/6_patchHeritageConstructorSuperCalls.h"
+
+void dumpPass(IRISEXP sexp, std::string passname)
+{
+  // PASS3
+  std::ofstream outFile("outputs/" + passname + ".json");
+  if (!outFile)
+  {
+    std::cerr << "Error: failed to save pass.\n";
+    return;
+  }
+  sexp->dumpJSON(0, outFile);
+}
 
 // --------- Read all bytes from file or stdin ----------
 static std::vector<uint8_t> read_all(const std::optional<std::string> &path)
@@ -261,6 +276,9 @@ int main(int argc, char **argv)
 {
   try
   {
+    // Ensure the folder "outputs" exists
+    std::filesystem::create_directories("outputs");
+
     auto opt = parse_args(argc, argv);
 
     // 1) Read gzipped bytes
@@ -289,48 +307,33 @@ int main(int argc, char **argv)
     msgpack::object buildContexts = obj.via.map.ptr[4].val; // find "iridium" properly by key
     parseBuildContexts(buildContexts, bbIdxToSEXPMap, iridiumBuildContext);
 
-    std::cout << "After Initial Parsing" << std::endl;
-    sexp->dump();
-
-    std::cout << "After [1_normailzeBBFlags]" << std::endl;
     normalizeBBFlags(iridiumBuildContext);
-    sexp->dump();
 
-    std::cout << "After [2_hoistFunctionDeclarations]" << std::endl;
     hoistFunctionDeclarations(sexp, iridiumBuildContext);
-    sexp->dump();
 
-    std::cout << "After [3_filterNops]" << std::endl;
     filterNOPs(sexp);
-    sexp->dump();
 
-    std::cout << "Starting [4_1_groupIntoClosureGroups]" << std::endl;
     groupIntoClosureGroups(sexp, iridiumBuildContext);
-    sexp->dump();
 
-    std::cout << "Starting [4_2_populateModuleBindings]" << std::endl;
     populateModuleBindings(sexp, iridiumBuildContext);
-    sexp->dump();
 
-    std::cout << "Starting [4_3_populateImplicitBindings]" << std::endl;
     populateImplicitBindings(sexp, iridiumBuildContext);
-    sexp->dump();
 
-    std::cout << "Starting [4_4_reduceFunctionDeclarations]" << std::endl;
     reduceFunctionDeclarations(sexp, iridiumBuildContext);
-    sexp->dump();
 
-    std::cout << "Starting [4_5_populateExplicitBindings]" << std::endl;
     populateExplicitBindings(sexp, iridiumBuildContext);
-    sexp->dump();
 
-    std::cout << "Starting [4_6_addClosureArgsBindings]" << std::endl;
     addClosureArgsBindings(sexp, iridiumBuildContext);
-    sexp->dump();
 
-    std::cout << "Starting [5_initializeStackFrame]" << std::endl;
+    
     initializeStackFrame(sexp, iridiumBuildContext);
-    sexp->dump();
+
+    // dumpPass(sexp, "pre_HeritageConstructorSuperCalls");
+    std::cout << "[<HeritageConstructorSuperCalls>]" << std::endl;
+    sexp->dump(2);
+    patchHeritageConstructorSuperCalls(sexp, iridiumBuildContext);
+    std::cout << "[</HeritageConstructorSuperCalls>]" << std::endl;
+    sexp->dump(2);
 
     return 0;
 

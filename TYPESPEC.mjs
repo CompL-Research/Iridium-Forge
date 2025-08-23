@@ -318,5 +318,35 @@ export default [
       "bool": [],
       "double": ["IridiumPrimitive"],
     }
+  },
+  {
+    "tag": "JSClass",
+    "args": ["NAME", "Parent", "Constructor", "PropInit", "MethodList", "StaticMethodList", "StaticPropInit"],
+    "flags": {
+      "string": [],
+      "void": ["Derived", "BrandPrototype", "BrandConstructor"],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "JSCheckConstructor",
+    "args": [],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "StackReject",
+    "args": [],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": [],
+      "double": ["NVAL"],
+    }
   }
 ];

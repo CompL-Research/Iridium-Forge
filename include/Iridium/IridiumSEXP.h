@@ -61,6 +61,26 @@ public:
     oss << ")\n";
   }
 
+  void dumpJSON(std::ostream &oss = std::cout) const
+  {
+    oss << "\"" << key << "\": ";
+    switch (valueKind)
+    {
+    case IridiumPrimitives::number:
+      oss << getNumber();
+      break;
+    case IridiumPrimitives::boolean:
+      oss << (getBoolean() ? "true" : "false");
+      break;
+    case IridiumPrimitives::string:
+      oss << "\"" << getString() << "\"";
+      break;
+    case IridiumPrimitives::null:
+      oss << "null";
+      break;
+    }
+  }
+
 private:
   std::string key;
   std::variant<double, bool, std::string> value;
@@ -70,7 +90,7 @@ private:
 class IridiumSEXP
 {
 public:
-  virtual ~IridiumSEXP() = default;  // makes it polymorphic? IDK how Cpp works!!
+  virtual ~IridiumSEXP() = default; // makes it polymorphic? IDK how Cpp works!!
   std::string tag;
   std::vector<IRISEXP> args;
   std::vector<std::shared_ptr<IridiumFlag>> flags;
@@ -112,6 +132,47 @@ public:
 
     for (auto &s : args)
       s->dump(indent + 2, oss);
+  }
+
+  void dumpJSON(int indent = 0, std::ostream &oss = std::cout) const
+  {
+    std::string pad(indent, ' ');
+    oss << pad << "{\n";
+
+    // Tag
+    oss << pad << "  \"tag\": \"" << tag << "\"";
+
+    // Flags
+    if (!flags.empty())
+    {
+      oss << ",\n"
+          << pad << "  \"flags\": {";
+      for (size_t i = 0; i < flags.size(); ++i)
+      {
+        flags[i]->dumpJSON(oss);
+        if (i + 1 < flags.size())
+          oss << ", ";
+      }
+      oss << "}";
+    }
+
+    // Args
+    if (!args.empty())
+    {
+      oss << ",\n"
+          << pad << "  \"args\": [\n";
+      for (size_t i = 0; i < args.size(); ++i)
+      {
+        args[i]->dumpJSON(indent + 4, oss);
+        if (i + 1 < args.size())
+          oss << ",";
+        oss << "\n";
+      }
+      oss << pad << "  ]";
+    }
+
+    oss << "\n"
+        << pad << "}";
   }
 
   void setFlag(const std::string &flagToSet)
@@ -201,4 +262,4 @@ public:
   }
 };
 
-IRISEXP parseSEXP(const msgpack::object &obj, std::unordered_map<int, std::shared_ptr<BBSEXP>> * bbIdxToSEXPMap = NULL);
+IRISEXP parseSEXP(const msgpack::object &obj, std::unordered_map<int, std::shared_ptr<BBSEXP>> *bbIdxToSEXPMap = NULL);

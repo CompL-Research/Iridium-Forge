@@ -176,3 +176,16 @@ void setBBFlag(std::shared_ptr<BBSEXP> b, BBSEXPFLAGS flagToSet)
   throw std::runtime_error("Impossible case reached setBBFlag");
 }
 
+
+int getRegularClosureFlag() { return 1; }
+int getConstructorClosureFlag() { return 2; }
+int getDerivedConstructorClosureFlag() { return 3; }
+int getDerivedMethodClosureFlag() { return 4; }
+int getPrivateMethodClosureFlag() { return 5; }
+int getPropInitNoPrivateClosureFlag() { return 6; }
+int getPropInitDerivedNoPrivateClosureFlag() { return 7; }
+int getPropInitPrivateClosureFlag() { return 8; }
+int getPropInitDerivedPrivateClosureFlag() { return 9; }
+int getPrivateDerivedMethodClosureFlag() { return 10; }
+int getStaticPropInitClosureFlag() { return 11; }
+int getStaticPropInitDerivedClosureFlag() { return 12; }

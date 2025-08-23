@@ -61,3 +61,17 @@ std::shared_ptr<EnvBindingSEXP> resolveRemoteBinding(std::shared_ptr<RemoteEnvBi
 bool hasBindingReference(std::shared_ptr<BindingsSEXP> bindingsSEXP, double idx, std::string name, EnvBindingSEXPKindFlag kindFlag, double localScope, double parentScope);
 BBSEXPFLAGS getBBFlag(std::shared_ptr<BBSEXP> b);
 void setBBFlag(std::shared_ptr<BBSEXP> b, BBSEXPFLAGS flagToSet);
+
+
+int getRegularClosureFlag();
+int getConstructorClosureFlag();
+int getDerivedConstructorClosureFlag();
+int getDerivedMethodClosureFlag();
+int getPrivateMethodClosureFlag();
+int getPropInitNoPrivateClosureFlag();
+int getPropInitDerivedNoPrivateClosureFlag();
+int getPropInitPrivateClosureFlag();
+int getPropInitDerivedPrivateClosureFlag();
+int getPrivateDerivedMethodClosureFlag();
+int getStaticPropInitClosureFlag();
+int getStaticPropInitDerivedClosureFlag();
