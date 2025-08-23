@@ -1,36 +1,7 @@
-// // 
-// // Hoist all function declarations to the top of their scope
-// // 
-// funcDeclHandler(currSEXP: IridiumSEXP, currScope: number, res: Map<number, Set<JSFuncDeclSEXP>>) {
-//   if (isBBSEXP(currSEXP)) currScope = currSEXP.getScopeIDX();
-//   for (let i = 0; i < currSEXP.args.length; i++) {
-//     let s = currSEXP.args[i];
-//     if (isJSFuncDeclSEXP(s)) {
-//       if (!res.has(currScope)) res.set(currScope, new Set());
-//       const funDeclList = res.get(currScope);
-//       if (!funDeclList) throw new Error("funDeclList is undefined");
-//       funDeclList.add(s);
-//       currSEXP.args[i] = new NOPSEXP();
-//     }
-//   }
-//   currSEXP.args.forEach(e => this.funcDeclHandler(e, currScope, res));
-// }
-
-// hoistFunctionDeclarations() {
-//   let toHoist: Map<number, Set<JSFuncDeclSEXP>> = new Map();
-//   if (!this.container) throw new Error("this.container is null");
-//   this.funcDeclHandler(this.container, -1, toHoist);
-
-//   for (let [scope, funDeclarations] of toHoist) {
-//     const buildContext = IridiumBuildContext.CONTEXT_MAP.get(scope);
-//     if (!buildContext) throw new Error("buildContext is undefined");
-//     const targetBB = buildContext.BB[0];
-//     targetBB.args = [...funDeclarations, ...targetBB.args];
-//   }
-// }
 #include "Iridium/Passes/2_hoistFunctionDeclarations.h"
 #include "Iridium/Globals.h"
 #include "Iridium/IridiumTypes.h"
+#include "Iridium/IridiumConstructors.h"
 
 void funcDeclHandler(IRISEXP currSEXP, double currScope, std::unordered_map<double, std::set<std::shared_ptr<JSFuncDeclSEXP>>> & res)
 {

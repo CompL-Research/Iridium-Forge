@@ -1,6 +1,7 @@
 #include "Iridium/Passes/4_2_populateModuleBindings.h"
 #include "Iridium/Globals.h"
 #include "Iridium/IridiumTypes.h"
+#include "Iridium/IridiumConstructors.h"
 
 void populateModuleBindings(IRISEXP fileSexp, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext)
 {

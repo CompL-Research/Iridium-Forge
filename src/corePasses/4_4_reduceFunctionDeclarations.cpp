@@ -1,6 +1,7 @@
 #include "Iridium/Passes/4_4_reduceFunctionDeclarations.h"
 #include "Iridium/Globals.h"
 #include "Iridium/IridiumTypes.h"
+#include "Iridium/IridiumConstructors.h"
 
 void reduceFunctionDeclarations(IRISEXP fileSexp, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext)
 {

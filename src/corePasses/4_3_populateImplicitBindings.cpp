@@ -1,6 +1,7 @@
 #include "Iridium/Passes/4_3_populateImplicitBindings.h"
 #include "Iridium/Globals.h"
 #include "Iridium/IridiumTypes.h"
+#include "Iridium/IridiumConstructors.h"
 
 void populateImplicitBindings(IRISEXP fileSexp, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext)
 {

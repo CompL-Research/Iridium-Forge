@@ -1,14 +1,3 @@
-// // 
-// // Filter NOPs
-// // 
-// filterNOPs(currSEXP: IridiumSEXP) {
-//   if (isBBSEXP(currSEXP)) {
-//     currSEXP.args = currSEXP.args.filter(e => !isNOPSEXP(e));
-//   } else {
-//     currSEXP.args.forEach(e => this.filterNOPs(e));
-//   }
-// }
-
 #include "Iridium/Passes/3_filterNops.h"
 #include "Iridium/Globals.h"
 #include "Iridium/IridiumTypes.h"

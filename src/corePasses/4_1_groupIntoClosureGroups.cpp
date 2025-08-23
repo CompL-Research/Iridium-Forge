@@ -1,6 +1,7 @@
 #include "Iridium/Passes/4_1_groupIntoClosureGroups.h"
 #include "Iridium/Globals.h"
 #include "Iridium/IridiumTypes.h"
+#include "Iridium/IridiumConstructors.h"
 
 void groupIntoClosureGroups(IRISEXP fileSexp, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext)
 {
