@@ -50,13 +50,20 @@ inline void prepend(std::vector<T> &vec, U &&value)
   vec.insert(vec.begin(), std::forward<U>(value));
 }
 
+class BindingsSEXP;
+class EnvBindingSEXP;
+class RemoteEnvBindingSEXP;
+class BBContainerSEXP;
+
+IRISEXP getBinding(std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext, std::shared_ptr<BindingsSEXP> bindingsSEXP, std::string name, double lookupScope);
+IRISEXP resolveScopedLookup(IRISEXP fileSEXP, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext, std::string name, double startScope, std::shared_ptr<BindingsSEXP> bindingsSEXP);
+bool isGlobalBinding(IRISEXP fileSEXP, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext, std::string name, double startScope, std::shared_ptr<BindingsSEXP> bindingsSEXP);
+std::shared_ptr<BBContainerSEXP> getBBContainerSEXPByScopeId(IRISEXP file, double scopeIDX);
 double findParentClosureScope(double startingScope, std::unordered_map<int, IRIBUILDCONTEXT> &buildContext);
 double getLexicalScope(double startingScope, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext);
 void setClosureFlags(double flag, std::shared_ptr<BBContainerSEXP> bbContainer);
 void addToListSEXP(IRISEXP list, IRISEXP elementToAdd);
-class BindingsSEXP;
-class EnvBindingSEXP;
-class RemoteEnvBindingSEXP;
+
 std::shared_ptr<EnvBindingSEXP> resolveRemoteBinding(std::shared_ptr<RemoteEnvBindingSEXP> rbin);
 bool hasBindingReference(std::shared_ptr<BindingsSEXP> bindingsSEXP, double idx, std::string name, EnvBindingSEXPKindFlag kindFlag, double localScope, double parentScope);
 BBSEXPFLAGS getBBFlag(std::shared_ptr<BBSEXP> b);

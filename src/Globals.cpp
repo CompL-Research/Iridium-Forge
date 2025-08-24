@@ -3,6 +3,84 @@
 #include "generated/IridiumTypes.h"
 #include "Iridium/IridiumBuildContext.h"
 
+IRISEXP getBinding(std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext, std::shared_ptr<BindingsSEXP> bindingsSEXP, std::string name, double lookupScope)
+{
+  if (lookupScope == -1) return NULL;
+  // Check if a local is declared
+  for (auto b : bindingsSEXP->getLocalBindings()->args)
+  {
+    auto bSEXP = std::dynamic_pointer_cast<EnvBindingSEXP>(b);
+    if (!bSEXP) throw std::runtime_error("Expected EnvBindingSEXP");
+    if (bSEXP->getScope() == lookupScope && bSEXP->getNAME() == name) return bSEXP;
+  }
+
+  for (auto b : bindingsSEXP->getRemoteBindings()->args)
+  {
+    auto rbSEXP = std::dynamic_pointer_cast<RemoteEnvBindingSEXP>(b);
+    if (!rbSEXP) throw std::runtime_error("Expected RemoteEnvBindingSEXP");
+    auto bSEXP = resolveRemoteBinding(rbSEXP);
+    if (bSEXP->getScope() == lookupScope && bSEXP->getNAME() == name) return rbSEXP;
+  }
+
+  assert(iridiumBuildContext.find(lookupScope) != iridiumBuildContext.end());
+  auto & buildContext = iridiumBuildContext[lookupScope];
+
+  double nextScope = buildContext->parent;
+
+  // If the scope is an ArgInit context, bypass lookup of non-argument bindings to parent scope
+  if (buildContext->isArgInitContext) {
+    if (buildContext->argInitContextWhitelist.find(name) != buildContext->argInitContextWhitelist.end())
+    {
+      nextScope = buildContext->bypassParent;
+    }
+  }
+  
+  return getBinding(iridiumBuildContext, bindingsSEXP, name, nextScope);
+}
+
+IRISEXP resolveScopedLookup(IRISEXP fileSEXP, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext, std::string name, double startScope, std::shared_ptr<BindingsSEXP> bindingsSEXP)
+{  
+  auto res = getBinding(iridiumBuildContext, bindingsSEXP, name, startScope);
+  if (res) return res;
+  auto parentScope = bindingsSEXP->getParentScope();
+  if (parentScope == -1) throw std::runtime_error("Failed to resolve lookup");
+  auto bbContainer = getBBContainerSEXPByScopeId(fileSEXP, findParentClosureScope(parentScope, iridiumBuildContext));
+  auto parentBindingsSEXP = std::dynamic_pointer_cast<BindingsSEXP>(bbContainer->getBindings());
+  if (!parentBindingsSEXP) throw std::runtime_error("Expected BindingsSEXP");
+  // Populate newly resolved remote bindings in the frame
+  auto res1 = std::make_shared<RemoteEnvBindingSEXP>(resolveScopedLookup(fileSEXP, iridiumBuildContext, name, startScope, parentBindingsSEXP), false, bindingsSEXP->getRemoteBindings()->args.size());
+  addToListSEXP(bindingsSEXP->getRemoteBindings(), res1);
+  return res1;
+  }
+
+bool isGlobalBinding(IRISEXP fileSEXP, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext, std::string name, double startScope, std::shared_ptr<BindingsSEXP> bindingsSEXP)
+{
+  auto res = getBinding(iridiumBuildContext, bindingsSEXP, name, startScope);
+  if (res) return false;
+  auto parentScope = bindingsSEXP->getParentScope();
+  if (parentScope == -1) return true;
+  auto bbContainer = getBBContainerSEXPByScopeId(fileSEXP, findParentClosureScope(parentScope, iridiumBuildContext));
+  auto parentBindingsSEXP = std::dynamic_pointer_cast<BindingsSEXP>(bbContainer->getBindings());
+  if (!parentBindingsSEXP) throw std::runtime_error("Expected BindingsSEXP");
+  return isGlobalBinding(fileSEXP, iridiumBuildContext, name, startScope, parentBindingsSEXP);
+}
+
+std::shared_ptr<BBContainerSEXP> getBBContainerSEXPByScopeId(IRISEXP file, double scopeIDX)
+{
+  auto fileSEXP = std::dynamic_pointer_cast<FileSEXP>(file);
+  if (!fileSEXP)
+    throw std::runtime_error("fileSexp is undefined");
+
+  for (auto & bbContainer : fileSEXP->args)
+  {
+    if (auto currBBContainer = std::dynamic_pointer_cast<BBContainerSEXP>(bbContainer))
+    {
+      if (currBBContainer->getScopeIDX() == scopeIDX) return currBBContainer;
+    }
+  }
+  throw std::runtime_error("BBContainerSEXP not found for idx " + std::to_string(scopeIDX));
+}
+
 double findParentClosureScope(double startingScope, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext)
 {
   if (startingScope == -1)
@@ -157,25 +235,30 @@ bool hasBindingReference(std::shared_ptr<BindingsSEXP> bindingsSEXP, double idx,
   return false;
 }
 
-BBSEXPFLAGS getBBFlag(std::shared_ptr<BBSEXP> b) 
+BBSEXPFLAGS getBBFlag(std::shared_ptr<BBSEXP> b)
 {
-  if (b->hasTopLevel()) return BBSEXPFLAGS::TopLevel;
-  if (b->hasClosureBoundary()) return BBSEXPFLAGS::ClosureBoundary;
-  if (b->hasLexical()) return BBSEXPFLAGS::Lexical;
+  if (b->hasTopLevel())
+    return BBSEXPFLAGS::TopLevel;
+  if (b->hasClosureBoundary())
+    return BBSEXPFLAGS::ClosureBoundary;
+  if (b->hasLexical())
+    return BBSEXPFLAGS::Lexical;
   throw std::runtime_error("Failed to get a valid flag from a BBSEXP");
 }
 
-void setBBFlag(std::shared_ptr<BBSEXP> b, BBSEXPFLAGS flagToSet) 
+void setBBFlag(std::shared_ptr<BBSEXP> b, BBSEXPFLAGS flagToSet)
 {
   b->unsetTopLevel();
   b->unsetClosureBoundary();
   b->unsetLexical();
-  if (flagToSet == BBSEXPFLAGS::TopLevel) return b->setTopLevel();
-  if (flagToSet == BBSEXPFLAGS::ClosureBoundary) return b->setClosureBoundary();
-  if (flagToSet == BBSEXPFLAGS::Lexical) return b->setLexical();
+  if (flagToSet == BBSEXPFLAGS::TopLevel)
+    return b->setTopLevel();
+  if (flagToSet == BBSEXPFLAGS::ClosureBoundary)
+    return b->setClosureBoundary();
+  if (flagToSet == BBSEXPFLAGS::Lexical)
+    return b->setLexical();
   throw std::runtime_error("Impossible case reached setBBFlag");
 }
-
 
 int getRegularClosureFlag() { return 1; }
 int getConstructorClosureFlag() { return 2; }
