@@ -14,6 +14,7 @@ void reduceResolvePrivateEnvBindingSEXP(IRISEXP currSEXP, std::unordered_map<int
     {
       auto pvtName = pvt->getNAME();
       auto targetScopeIDX = findParentClosureScope(currBBScope, iridiumBuildContext);
+      if (targetScopeIDX < 0) throw std::runtime_error("A binding must resolve in a valid scope, none found");
       while (true)
       {
         assert(iridiumBuildContext.find(targetScopeIDX) != iridiumBuildContext.end());
