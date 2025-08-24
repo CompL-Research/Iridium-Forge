@@ -348,5 +348,66 @@ export default [
       "bool": [],
       "double": ["NVAL"],
     }
-  }
+  },
+  {
+    "tag": "ResolvePrivateEnvBinding",
+    "args": [],
+    "flags": {
+      "string": ["NAME"],
+      "void": ["FULLY_RESOLVE"],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "PVTEnvRead",
+    "args": ["Obj"],
+    "flags": {
+      "string": [],
+      "void": ["SYMBOL", "METHOD", "FULLY_RESOLVE"],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "JSPrivate",
+    "args": [],
+    "flags": {
+      "string": ["IridiumPrimitive"],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "JSPrivateFieldWrite",
+    "args": ["Obj", "Field", "Value"],
+    "flags": {
+      "string": [],
+      "void": ["DECL"],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "JSADDBRAND",
+    "args": ["Obj", "HomeObj"],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "JSPrivateFieldRead",
+    "args": ["Obj", "Field"],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
+  },
+
 ];

@@ -1,4 +1,4 @@
-// Generated: 2025-08-23 18:45:45
+// Generated: 2025-08-25 02:23:45
 #pragma once
 #include "Iridium/Globals.h"
 #include "Iridium/IridiumSEXP.h"
@@ -42,6 +42,12 @@ public:
     if (tag == "JSClass") return JSClassSEXP::generateFrom(obj);
     if (tag == "JSCheckConstructor") return JSCheckConstructorSEXP::generateFrom(obj);
     if (tag == "StackReject") return StackRejectSEXP::generateFrom(obj);
+    if (tag == "ResolvePrivateEnvBinding") return ResolvePrivateEnvBindingSEXP::generateFrom(obj);
+    if (tag == "PVTEnvRead") return PVTEnvReadSEXP::generateFrom(obj);
+    if (tag == "JSPrivate") return JSPrivateSEXP::generateFrom(obj);
+    if (tag == "JSPrivateFieldWrite") return JSPrivateFieldWriteSEXP::generateFrom(obj);
+    if (tag == "JSADDBRAND") return JSADDBRANDSEXP::generateFrom(obj);
+    if (tag == "JSPrivateFieldRead") return JSPrivateFieldReadSEXP::generateFrom(obj);
     throw std::runtime_error("ParseIridiumTypes::specialize unhandled Tag: " + tag);
   }
 };

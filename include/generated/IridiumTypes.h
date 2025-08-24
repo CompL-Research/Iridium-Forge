@@ -1,4 +1,4 @@
-// Generated: 2025-08-23 18:45:45
+// Generated: 2025-08-25 02:23:44
 #pragma once
 #include "Iridium/Globals.h"
 #include "Iridium/IridiumSEXP.h"
@@ -1599,5 +1599,235 @@ public:
   void unsetNVAL() { removeFlag("NVAL"); }
   bool hasNVAL() { return hasFlag("NVAL"); }
   double getNVAL() { return getFlagDouble("NVAL"); }
+
+};
+
+class ResolvePrivateEnvBindingSEXP : public IridiumSEXP {
+private:
+
+  ResolvePrivateEnvBindingSEXP() { this->tag = "ResolvePrivateEnvBinding"; }
+  
+public:
+  static std::shared_ptr<ResolvePrivateEnvBindingSEXP> generateFrom(IRISEXP obj) {
+    assert(obj->tag == "ResolvePrivateEnvBinding");
+    auto res = std::shared_ptr<ResolvePrivateEnvBindingSEXP>(new ResolvePrivateEnvBindingSEXP());
+
+    res->tag   = obj->tag;
+    res->args  = std::move(obj->args);
+    res->flags = std::move(obj->flags);
+    return res;
+  }
+
+
+  ResolvePrivateEnvBindingSEXP(std::string NAME, bool FULLY_RESOLVE) {
+    this->tag = "ResolvePrivateEnvBinding";
+    this->setNAME(NAME);
+    if (FULLY_RESOLVE) this->setFULLY_RESOLVE();
+  }
+
+
+  void setNAME(const std::string &value) { setFlag("NAME", value); }
+  void unsetNAME() { removeFlag("NAME"); }
+  bool hasNAME() { return hasFlag("NAME"); }
+  std::string getNAME() { return getFlagString("NAME"); }
+
+
+  void setFULLY_RESOLVE() { setFlag("FULLY_RESOLVE"); }
+  void unsetFULLY_RESOLVE() { removeFlag("FULLY_RESOLVE"); }
+  bool hasFULLY_RESOLVE() { return hasFlag("FULLY_RESOLVE"); }
+
+};
+
+class PVTEnvReadSEXP : public IridiumSEXP {
+private:
+
+  PVTEnvReadSEXP() { this->tag = "PVTEnvRead"; }
+  
+public:
+  static std::shared_ptr<PVTEnvReadSEXP> generateFrom(IRISEXP obj) {
+    assert(obj->tag == "PVTEnvRead");
+    auto res = std::shared_ptr<PVTEnvReadSEXP>(new PVTEnvReadSEXP());
+
+    res->tag   = obj->tag;
+    res->args  = std::move(obj->args);
+    res->flags = std::move(obj->flags);
+    return res;
+  }
+
+
+  PVTEnvReadSEXP(IRISEXP Obj, bool SYMBOL, bool METHOD, bool FULLY_RESOLVE) {
+    this->tag = "PVTEnvRead";
+    this->args.push_back(Obj);
+    if (SYMBOL) this->setSYMBOL();
+    if (METHOD) this->setMETHOD();
+    if (FULLY_RESOLVE) this->setFULLY_RESOLVE();
+  }
+
+
+  void setObj(const IRISEXP &obj) { this->args.at(0) = obj; }
+  bool hasObj() { return 0 < this->args.size(); }
+  IRISEXP getObj() const { return this->args.at(0); }
+
+
+  void setSYMBOL() { setFlag("SYMBOL"); }
+  void unsetSYMBOL() { removeFlag("SYMBOL"); }
+  bool hasSYMBOL() { return hasFlag("SYMBOL"); }
+
+
+  void setMETHOD() { setFlag("METHOD"); }
+  void unsetMETHOD() { removeFlag("METHOD"); }
+  bool hasMETHOD() { return hasFlag("METHOD"); }
+
+
+  void setFULLY_RESOLVE() { setFlag("FULLY_RESOLVE"); }
+  void unsetFULLY_RESOLVE() { removeFlag("FULLY_RESOLVE"); }
+  bool hasFULLY_RESOLVE() { return hasFlag("FULLY_RESOLVE"); }
+
+};
+
+class JSPrivateSEXP : public IridiumSEXP {
+private:
+
+  JSPrivateSEXP() { this->tag = "JSPrivate"; }
+  
+public:
+  static std::shared_ptr<JSPrivateSEXP> generateFrom(IRISEXP obj) {
+    assert(obj->tag == "JSPrivate");
+    auto res = std::shared_ptr<JSPrivateSEXP>(new JSPrivateSEXP());
+
+    res->tag   = obj->tag;
+    res->args  = std::move(obj->args);
+    res->flags = std::move(obj->flags);
+    return res;
+  }
+
+
+  JSPrivateSEXP(std::string IridiumPrimitive) {
+    this->tag = "JSPrivate";
+    this->setIridiumPrimitive(IridiumPrimitive);
+  }
+
+
+  void setIridiumPrimitive(const std::string &value) { setFlag("IridiumPrimitive", value); }
+  void unsetIridiumPrimitive() { removeFlag("IridiumPrimitive"); }
+  bool hasIridiumPrimitive() { return hasFlag("IridiumPrimitive"); }
+  std::string getIridiumPrimitive() { return getFlagString("IridiumPrimitive"); }
+
+};
+
+class JSPrivateFieldWriteSEXP : public IridiumSEXP {
+private:
+
+  JSPrivateFieldWriteSEXP() { this->tag = "JSPrivateFieldWrite"; }
+  
+public:
+  static std::shared_ptr<JSPrivateFieldWriteSEXP> generateFrom(IRISEXP obj) {
+    assert(obj->tag == "JSPrivateFieldWrite");
+    auto res = std::shared_ptr<JSPrivateFieldWriteSEXP>(new JSPrivateFieldWriteSEXP());
+
+    res->tag   = obj->tag;
+    res->args  = std::move(obj->args);
+    res->flags = std::move(obj->flags);
+    return res;
+  }
+
+
+  JSPrivateFieldWriteSEXP(IRISEXP Obj, IRISEXP Field, IRISEXP Value, bool DECL) {
+    this->tag = "JSPrivateFieldWrite";
+    this->args.push_back(Obj);
+    this->args.push_back(Field);
+    this->args.push_back(Value);
+    if (DECL) this->setDECL();
+  }
+
+
+  void setObj(const IRISEXP &obj) { this->args.at(0) = obj; }
+  bool hasObj() { return 0 < this->args.size(); }
+  IRISEXP getObj() const { return this->args.at(0); }
+
+
+  void setField(const IRISEXP &obj) { this->args.at(1) = obj; }
+  bool hasField() { return 1 < this->args.size(); }
+  IRISEXP getField() const { return this->args.at(1); }
+
+
+  void setValue(const IRISEXP &obj) { this->args.at(2) = obj; }
+  bool hasValue() { return 2 < this->args.size(); }
+  IRISEXP getValue() const { return this->args.at(2); }
+
+
+  void setDECL() { setFlag("DECL"); }
+  void unsetDECL() { removeFlag("DECL"); }
+  bool hasDECL() { return hasFlag("DECL"); }
+
+};
+
+class JSADDBRANDSEXP : public IridiumSEXP {
+private:
+
+  JSADDBRANDSEXP() { this->tag = "JSADDBRAND"; }
+  
+public:
+  static std::shared_ptr<JSADDBRANDSEXP> generateFrom(IRISEXP obj) {
+    assert(obj->tag == "JSADDBRAND");
+    auto res = std::shared_ptr<JSADDBRANDSEXP>(new JSADDBRANDSEXP());
+
+    res->tag   = obj->tag;
+    res->args  = std::move(obj->args);
+    res->flags = std::move(obj->flags);
+    return res;
+  }
+
+
+  JSADDBRANDSEXP(IRISEXP Obj, IRISEXP HomeObj) {
+    this->tag = "JSADDBRAND";
+    this->args.push_back(Obj);
+    this->args.push_back(HomeObj);
+  }
+
+
+  void setObj(const IRISEXP &obj) { this->args.at(0) = obj; }
+  bool hasObj() { return 0 < this->args.size(); }
+  IRISEXP getObj() const { return this->args.at(0); }
+
+
+  void setHomeObj(const IRISEXP &obj) { this->args.at(1) = obj; }
+  bool hasHomeObj() { return 1 < this->args.size(); }
+  IRISEXP getHomeObj() const { return this->args.at(1); }
+
+};
+
+class JSPrivateFieldReadSEXP : public IridiumSEXP {
+private:
+
+  JSPrivateFieldReadSEXP() { this->tag = "JSPrivateFieldRead"; }
+  
+public:
+  static std::shared_ptr<JSPrivateFieldReadSEXP> generateFrom(IRISEXP obj) {
+    assert(obj->tag == "JSPrivateFieldRead");
+    auto res = std::shared_ptr<JSPrivateFieldReadSEXP>(new JSPrivateFieldReadSEXP());
+
+    res->tag   = obj->tag;
+    res->args  = std::move(obj->args);
+    res->flags = std::move(obj->flags);
+    return res;
+  }
+
+
+  JSPrivateFieldReadSEXP(IRISEXP Obj, IRISEXP Field) {
+    this->tag = "JSPrivateFieldRead";
+    this->args.push_back(Obj);
+    this->args.push_back(Field);
+  }
+
+
+  void setObj(const IRISEXP &obj) { this->args.at(0) = obj; }
+  bool hasObj() { return 0 < this->args.size(); }
+  IRISEXP getObj() const { return this->args.at(0); }
+
+
+  void setField(const IRISEXP &obj) { this->args.at(1) = obj; }
+  bool hasField() { return 1 < this->args.size(); }
+  IRISEXP getField() const { return this->args.at(1); }
 
 };
