@@ -71,7 +71,7 @@ export default [
   },
   {
     "tag": "FieldRead",
-    "args": ["Obj","Field"],
+    "args": ["Obj", "Field"],
     "flags": {
       "string": [],
       "void": [],
@@ -407,6 +407,16 @@ export default [
       "void": [],
       "bool": [],
       "double": [],
+    }
+  },
+  {
+    "tag": "PoolBinding",
+    "args": ["Lambda"],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": [],
+      "double": ["StartBBIDX", "REFIDX"],
     }
   },
 

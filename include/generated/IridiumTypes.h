@@ -1,4 +1,4 @@
-// Generated: 2025-08-25 02:23:44
+// Generated: 2025-08-25 14:24:50
 #pragma once
 #include "Iridium/Globals.h"
 #include "Iridium/IridiumSEXP.h"
@@ -1829,5 +1829,48 @@ public:
   void setField(const IRISEXP &obj) { this->args.at(1) = obj; }
   bool hasField() { return 1 < this->args.size(); }
   IRISEXP getField() const { return this->args.at(1); }
+
+};
+
+class PoolBindingSEXP : public IridiumSEXP {
+private:
+
+  PoolBindingSEXP() { this->tag = "PoolBinding"; }
+  
+public:
+  static std::shared_ptr<PoolBindingSEXP> generateFrom(IRISEXP obj) {
+    assert(obj->tag == "PoolBinding");
+    auto res = std::shared_ptr<PoolBindingSEXP>(new PoolBindingSEXP());
+
+    res->tag   = obj->tag;
+    res->args  = std::move(obj->args);
+    res->flags = std::move(obj->flags);
+    return res;
+  }
+
+
+  PoolBindingSEXP(IRISEXP Lambda, double StartBBIDX, double REFIDX) {
+    this->tag = "PoolBinding";
+    this->args.push_back(Lambda);
+    this->setStartBBIDX(StartBBIDX);
+    this->setREFIDX(REFIDX);
+  }
+
+
+  void setLambda(const IRISEXP &obj) { this->args.at(0) = obj; }
+  bool hasLambda() { return 0 < this->args.size(); }
+  IRISEXP getLambda() const { return this->args.at(0); }
+
+
+  void setStartBBIDX(double value) { setFlag("StartBBIDX", value); }
+  void unsetStartBBIDX() { removeFlag("StartBBIDX"); }
+  bool hasStartBBIDX() { return hasFlag("StartBBIDX"); }
+  double getStartBBIDX() { return getFlagDouble("StartBBIDX"); }
+
+
+  void setREFIDX(double value) { setFlag("REFIDX", value); }
+  void unsetREFIDX() { removeFlag("REFIDX"); }
+  bool hasREFIDX() { return hasFlag("REFIDX"); }
+  double getREFIDX() { return getFlagDouble("REFIDX"); }
 
 };
