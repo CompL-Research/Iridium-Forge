@@ -24,6 +24,7 @@
 #include "Iridium/Passes/7_reduceResolvePrivateEnvBindingSEXP.h"
 #include "Iridium/Passes/8_reduceResolveEnvBindingSEXP.h"
 #include "Iridium/Passes/9_resolveLambdaTargets.h"
+#include "Iridium/Passes/10_resolveBreakAndContinueTargets.h"
 
 void dumpPass(IRISEXP sexp, std::string passname)
 {
@@ -336,7 +337,15 @@ int main(int argc, char **argv)
     
     reduceResolveEnvBindingSEXP(sexp, iridiumBuildContext);
     
-    resolveLambdaTargets(sexp, sexp, iridiumBuildContext);
+    resolveLambdaTargets(sexp, sexp, iridiumBuildContext, -1);
+
+    std::cout << "[BEFORE: resolveBreakAndContinueTargets]" << std::endl;
+    sexp->dump();
+    resolveBreakAndContinueTargets(sexp, sexp, iridiumBuildContext);
+    std::cout << "[AFTER: resolveBreakAndContinueTargets]" << std::endl;
+    sexp->dump();
+
+
 
 
     return 0;
