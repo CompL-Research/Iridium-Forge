@@ -29,6 +29,7 @@
 #include "Iridium/Passes/12_promoteAsyncReturns.h"
 #include "Iridium/Passes/13_markNamespaceImports.h"
 #include "Iridium/Passes/14_markSloppyWrites.h"
+#include "Iridium/Passes/15_loosenWritestoASWs.h"
 
 void dumpPass(IRISEXP sexp, std::string passname)
 {
@@ -352,6 +353,8 @@ int main(int argc, char **argv)
     markNamespaceImports(sexp, iridiumBuildContext);
 
     markSloppyWrites(sexp, iridiumBuildContext, -1);
+
+    loosenWritestoASWs(sexp);
 
     return 0;
 
