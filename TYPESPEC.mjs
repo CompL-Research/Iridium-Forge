@@ -121,7 +121,7 @@ export default [
   },
   {
     "tag": "Return",
-    "args": [],
+    "args": ["Obj"],
     "flags": {
       "string": [],
       "void": ["ModuleEarlyReturn"],
@@ -562,6 +562,16 @@ export default [
   {
     "tag": "Ret",
     "args": [],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "ReturnAsync",
+    "args": ["RetVal"],
     "flags": {
       "string": [],
       "void": [],
