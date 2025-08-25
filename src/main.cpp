@@ -23,6 +23,7 @@
 #include "Iridium/Passes/6_patchHeritageConstructorSuperCalls.h"
 #include "Iridium/Passes/7_reduceResolvePrivateEnvBindingSEXP.h"
 #include "Iridium/Passes/8_reduceResolveEnvBindingSEXP.h"
+#include "Iridium/Passes/9_resolveLambdaTargets.h"
 
 void dumpPass(IRISEXP sexp, std::string passname)
 {
@@ -329,18 +330,14 @@ int main(int argc, char **argv)
 
     initializeStackFrame(sexp, iridiumBuildContext);
 
-    // dumpPass(sexp, "pre_HeritageConstructorSuperCalls");
-
     patchHeritageConstructorSuperCalls(sexp, iridiumBuildContext);
 
-    
     reduceResolvePrivateEnvBindingSEXP(sexp, iridiumBuildContext);
     
-    std::cout << "[BEFORE: reduceResolveEnvBindingSEXP]" << std::endl;
-    sexp->dump();
     reduceResolveEnvBindingSEXP(sexp, iridiumBuildContext);
-    std::cout << "[AFTER: reduceResolveEnvBindingSEXP]" << std::endl;
-    sexp->dump();
+    
+    resolveLambdaTargets(sexp, sexp, iridiumBuildContext);
+
 
     return 0;
 
