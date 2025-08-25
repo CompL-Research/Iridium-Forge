@@ -28,6 +28,7 @@
 #include "Iridium/Passes/11_decorateReturnTargets.h"
 #include "Iridium/Passes/12_promoteAsyncReturns.h"
 #include "Iridium/Passes/13_markNamespaceImports.h"
+#include "Iridium/Passes/14_markSloppyWrites.h"
 
 void dumpPass(IRISEXP sexp, std::string passname)
 {
@@ -349,6 +350,8 @@ int main(int argc, char **argv)
     promoteAsyncReturns(sexp, iridiumBuildContext);
     
     markNamespaceImports(sexp, iridiumBuildContext);
+
+    markSloppyWrites(sexp, iridiumBuildContext, -1);
 
     return 0;
 
