@@ -17,8 +17,8 @@ std::vector<IRISEXP> heritageThisInit(std::string thisValHolder, std::string pro
           true // <- This is about the only place where we set THISINIT flag to true
           ));
 
-  // bool CCall, bool ConstructorCall, bool PrivateCall, bool Import, bool Super, bool JSDirectEval
-  auto callSEXP = std::make_shared<CallSiteSEXP>(true, false, false, false, false,false);
+  // bool CCall, bool ConstructorCall, bool PrivateCall, bool Import, bool Super, bool V8Intrinsic, double JSDirectEval
+  auto callSEXP = std::make_shared<CallSiteSEXP>(true, false, false, false, false, false, 0);
 
   callSEXP->args.push_back(
       std::make_shared<EnvReadSEXP>(std::make_shared<ResolveEnvBindingSEXP>("this", false)));

@@ -1,4 +1,4 @@
-// Generated: 2025-08-26 00:33:46
+// Generated: 2025-08-26 01:24:02
 #pragma once
 #include "Iridium/Globals.h"
 #include "Iridium/IridiumSEXP.h"
@@ -422,14 +422,15 @@ public:
   }
 
 
-  CallSiteSEXP(bool CCall, bool ConstructorCall, bool PrivateCall, bool Import, bool Super, bool JSDirectEval) {
+  CallSiteSEXP(bool CCall, bool ConstructorCall, bool PrivateCall, bool Import, bool Super, bool V8Intrinsic, double JSDirectEval) {
     this->tag = "CallSite";
     if (CCall) this->setCCall();
     if (ConstructorCall) this->setConstructorCall();
     if (PrivateCall) this->setPrivateCall();
     if (Import) this->setImport();
     if (Super) this->setSuper();
-    if (JSDirectEval) this->setJSDirectEval();
+    if (V8Intrinsic) this->setV8Intrinsic();
+    this->setJSDirectEval(JSDirectEval);
   }
 
 
@@ -458,9 +459,15 @@ public:
   bool hasSuper() { return hasFlag("Super"); }
 
 
-  void setJSDirectEval() { setFlag("JSDirectEval"); }
+  void setV8Intrinsic() { setFlag("V8Intrinsic"); }
+  void unsetV8Intrinsic() { removeFlag("V8Intrinsic"); }
+  bool hasV8Intrinsic() { return hasFlag("V8Intrinsic"); }
+
+
+  void setJSDirectEval(double value) { setFlag("JSDirectEval", value); }
   void unsetJSDirectEval() { removeFlag("JSDirectEval"); }
   bool hasJSDirectEval() { return hasFlag("JSDirectEval"); }
+  double getJSDirectEval() { return getFlagDouble("JSDirectEval"); }
 
 };
 
