@@ -2,6 +2,7 @@
 #include <unordered_map>
 #include <memory>
 #include <vector>
+#include <functional>
 
 enum EnvBindingSEXPKindFlag
 {
@@ -55,6 +56,11 @@ class EnvBindingSEXP;
 class RemoteEnvBindingSEXP;
 class BBContainerSEXP;
 
+bool hasNode(const IRISEXP &currNode, const std::function<bool(const IRISEXP &)> &pred);
+void insertAfter(std::vector<IRISEXP> &vec, IRISEXP after, const std::vector<IRISEXP> &toInsert);
+void insertAfter(std::vector<IRISEXP> &vec, IRISEXP after, IRISEXP toInsert);
+void insertBefore(std::vector<IRISEXP> &vec, IRISEXP before, const std::vector<IRISEXP> &toInsert);
+void insertBefore(std::vector<IRISEXP> &vec, IRISEXP before, IRISEXP toInsert);
 IRISEXP getBinding(std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext, std::shared_ptr<BindingsSEXP> bindingsSEXP, std::string name, double lookupScope);
 IRISEXP resolveScopedLookup(IRISEXP fileSEXP, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext, std::string name, double startScope, std::shared_ptr<BindingsSEXP> bindingsSEXP);
 bool isGlobalBinding(IRISEXP fileSEXP, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext, std::string name, double startScope, std::shared_ptr<BindingsSEXP> bindingsSEXP);
