@@ -419,5 +419,154 @@ export default [
       "double": ["StartBBIDX", "REFIDX"],
     }
   },
-
+  {
+    "tag": "ResolveContinueTarget",
+    "args": [],
+    "flags": {
+      "string": ["Label"],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "ResolveBreakTarget",
+    "args": [],
+    "flags": {
+      "string": ["Label"],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "JSForOfIteratorClose",
+    "args": [],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "PopCatchContext",
+    "args": [],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "InvokeFinalizer",
+    "args": [],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": [],
+      "double": ["IDX"],
+    }
+  },
+  {
+    "tag": "JSForInStart",
+    "args": ["Obj"],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "JSForInNext",
+    "args": ["IteratorObj"],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "StackRetain",
+    "args": [],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": [],
+      "double": ["NVAL", "NIP"],
+    }
+  },
+  {
+    "tag": "StackPop",
+    "args": [],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "JSForOfStart",
+    "args": ["Obj"],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "JSForOfNext",
+    "args": [],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "PushCatchContext",
+    "args": [],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": [],
+      "double": ["IDX"],
+    }
+  },
+  {
+    "tag": "JSCatchContext",
+    "args": [],
+    "flags": {
+      "string": ["NAME"],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "Throw",
+    "args": ["ThrowVal"],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "Ret",
+    "args": [],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
+  },
 ];

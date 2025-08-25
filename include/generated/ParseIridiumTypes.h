@@ -1,4 +1,4 @@
-// Generated: 2025-08-25 14:24:50
+// Generated: 2025-08-25 21:44:10
 #pragma once
 #include "Iridium/Globals.h"
 #include "Iridium/IridiumSEXP.h"
@@ -49,6 +49,21 @@ public:
     if (tag == "JSADDBRAND") return JSADDBRANDSEXP::generateFrom(obj);
     if (tag == "JSPrivateFieldRead") return JSPrivateFieldReadSEXP::generateFrom(obj);
     if (tag == "PoolBinding") return PoolBindingSEXP::generateFrom(obj);
+    if (tag == "ResolveContinueTarget") return ResolveContinueTargetSEXP::generateFrom(obj);
+    if (tag == "ResolveBreakTarget") return ResolveBreakTargetSEXP::generateFrom(obj);
+    if (tag == "JSForOfIteratorClose") return JSForOfIteratorCloseSEXP::generateFrom(obj);
+    if (tag == "PopCatchContext") return PopCatchContextSEXP::generateFrom(obj);
+    if (tag == "InvokeFinalizer") return InvokeFinalizerSEXP::generateFrom(obj);
+    if (tag == "JSForInStart") return JSForInStartSEXP::generateFrom(obj);
+    if (tag == "JSForInNext") return JSForInNextSEXP::generateFrom(obj);
+    if (tag == "StackRetain") return StackRetainSEXP::generateFrom(obj);
+    if (tag == "StackPop") return StackPopSEXP::generateFrom(obj);
+    if (tag == "JSForOfStart") return JSForOfStartSEXP::generateFrom(obj);
+    if (tag == "JSForOfNext") return JSForOfNextSEXP::generateFrom(obj);
+    if (tag == "PushCatchContext") return PushCatchContextSEXP::generateFrom(obj);
+    if (tag == "JSCatchContext") return JSCatchContextSEXP::generateFrom(obj);
+    if (tag == "Throw") return ThrowSEXP::generateFrom(obj);
+    if (tag == "Ret") return RetSEXP::generateFrom(obj);
     throw std::runtime_error("ParseIridiumTypes::specialize unhandled Tag: " + tag);
   }
 };
