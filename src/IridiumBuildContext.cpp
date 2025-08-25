@@ -20,8 +20,8 @@ void parseBuildContexts(const msgpack::object &obj, std::unordered_map<int, std:
     int bypassParent = -1;
     std::unordered_set<std::string> argInitContextWhitelist;
     bool hasRestArgs = false;
-    std::optional<IridiumBuildContext::LoopConfig> loopConfig = std::nullopt;
-    std::optional<IridiumBuildContext::TryContext> tryContext = std::nullopt;
+    std::optional<LoopConfig> loopConfig = std::nullopt;
+    std::optional<TryContext> tryContext = std::nullopt;
     int kind = 0;
     std::optional<std::string> propInitClos = std::nullopt;
     int argumentsKind = 0;
@@ -64,7 +64,7 @@ void parseBuildContexts(const msgpack::object &obj, std::unordered_map<int, std:
       else if (key == "loopConfig")
       {
         if (valObj.type != msgpack::type::MAP) continue;
-        IridiumBuildContext::LoopConfig lc;
+        LoopConfig lc;
         for (uint32_t k = 0; k < valObj.via.map.size; k++)
         {
           auto lk = valObj.via.map.ptr[k].key.as<std::string>();
@@ -73,8 +73,8 @@ void parseBuildContexts(const msgpack::object &obj, std::unordered_map<int, std:
           {
             std::string kindStr = lv.as<std::string>();
             lc.kind = (kindStr == "for-of"
-                           ? IridiumBuildContext::LoopConfig::Kind::ForOf
-                           : IridiumBuildContext::LoopConfig::Kind::Standard);
+                           ? LoopConfig::Kind::ForOf
+                           : LoopConfig::Kind::Standard);
           }
           else if (lk == "loopHeadIDX")
             lc.loopHeadIDX = lv.as<int>();
@@ -100,7 +100,7 @@ void parseBuildContexts(const msgpack::object &obj, std::unordered_map<int, std:
       else if (key == "tryContext")
       {
         if (valObj.type != msgpack::type::MAP) continue;
-        IridiumBuildContext::TryContext tc;
+        TryContext tc;
         for (uint32_t k = 0; k < valObj.via.map.size; k++)
         {
           auto tk = valObj.via.map.ptr[k].key.as<std::string>();

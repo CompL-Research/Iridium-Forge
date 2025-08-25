@@ -3,7 +3,7 @@
 #include <memory>
 #include <vector>
 #include <functional>
-
+#include <variant>
 enum EnvBindingSEXPKindFlag
 {
   JSARG,
@@ -55,6 +55,15 @@ class BindingsSEXP;
 class EnvBindingSEXP;
 class RemoteEnvBindingSEXP;
 class BBContainerSEXP;
+
+struct LoopConfig;
+struct TryContext;
+
+IRIBUILDCONTEXT findReturnTarget(
+  double localScope,
+  std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext,
+  std::vector<std::variant<LoopConfig, TryContext>> & intermediateContexts
+);
 
 bool hasNode(const IRISEXP &currNode, const std::function<bool(const IRISEXP &)> &pred);
 void insertAfter(std::vector<IRISEXP> &vec, IRISEXP after, const std::vector<IRISEXP> &toInsert);

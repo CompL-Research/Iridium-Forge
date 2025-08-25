@@ -3,6 +3,41 @@
 #include "generated/IridiumTypes.h"
 #include "Iridium/IridiumBuildContext.h"
 
+IRIBUILDCONTEXT findReturnTarget(
+  double localScope,
+  std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext,
+  std::vector<std::variant<LoopConfig, TryContext>> & intermediateContexts
+) {
+  if (localScope == -1) throw std::runtime_error("Failed to find return target!!!");
+  assert(iridiumBuildContext.find(localScope) != iridiumBuildContext.end());
+  auto & buildContext = iridiumBuildContext[localScope];
+
+  if (buildContext->tryContext)
+  {
+    intermediateContexts.push_back(buildContext->tryContext.value());
+  }
+
+  if (buildContext->loopConfig)
+  {
+    intermediateContexts.push_back(buildContext->loopConfig.value());
+  }
+
+  auto & startBB = buildContext->BB[0];
+
+  if (startBB->hasTopLevel())
+  {
+    if (intermediateContexts.size() > 0) throw std::runtime_error("Top level return not expected to be wrapped inside intermediate contexts");
+    if (buildContext->isModule)
+    {
+      throw std::runtime_error("Expected async returns in module top level code...");
+    }
+  }
+
+  if (startBB->hasClosureBoundary()) return buildContext;
+
+  return findReturnTarget(buildContext->parent, iridiumBuildContext, intermediateContexts);
+}
+
 bool hasNode(const IRISEXP &currNode, const std::function<bool(const IRISEXP &)> &pred)
 {
   if (!currNode)
@@ -23,22 +58,6 @@ bool hasNode(const IRISEXP &currNode, const std::function<bool(const IRISEXP &)>
 
   return false;
 }
-
-// void insertBefore(std::vector<IRISEXP> &vec, IRISEXP before, const std::vector<IRISEXP> &toInsert)
-// {
-//   auto it = std::find(vec.begin(), vec.end(), before);
-//   if (it == vec.end())
-//     return;
-//   vec.insert(it, toInsert.begin(), toInsert.end());
-// }
-
-// void insertAfter(std::vector<IRISEXP> &vec, IRISEXP after, const std::vector<IRISEXP> &toInsert)
-// {
-//   auto it = std::find(vec.begin(), vec.end(), after);
-//   if (it == vec.end())
-//     return;
-//   vec.insert(it + 1, toInsert.begin(), toInsert.end());
-// }
 
 void insertAfter(std::vector<IRISEXP> &vec, IRISEXP after, const std::vector<IRISEXP> &toInsert)
 {

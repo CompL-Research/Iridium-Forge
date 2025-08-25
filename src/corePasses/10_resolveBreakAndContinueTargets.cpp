@@ -3,17 +3,11 @@
 #include "generated/IridiumTypes.h"
 
 
-typedef IridiumBuildContext::LoopConfig LoopConfig;
-typedef IridiumBuildContext::TryContext TryContext;
-
-typedef std::vector<std::variant<LoopConfig, TryContext>> IntermediateContextList;
-
-
 LoopConfig findLoopControlTarget(
   double localScope,
   std::variant<std::shared_ptr<ResolveBreakTargetSEXP>, std::shared_ptr<ResolveContinueTargetSEXP>> node,
   std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext,
-  IntermediateContextList & intermediateContexts
+  std::vector<std::variant<LoopConfig, TryContext>> & intermediateContexts
 ) {
   if (localScope == -1) throw std::runtime_error("Failed to find loop control target!!!");
   assert(iridiumBuildContext.find(localScope) != iridiumBuildContext.end());
@@ -64,8 +58,8 @@ void resolveBreakAndContinueTargets(IRISEXP fileSEXP, IRISEXP currSEXP, std::uno
   
   if (auto bbSEXP  = std::dynamic_pointer_cast<BBSEXP>(currSEXP))
   {
-    std::unordered_map<IRISEXP, std::vector<std::variant<IridiumBuildContext::LoopConfig, IridiumBuildContext::TryContext>>> decoratorMap;
-    std::unordered_map<IRISEXP, IridiumBuildContext::LoopConfig> isBreakTarget;
+    std::unordered_map<IRISEXP, std::vector<std::variant<LoopConfig, TryContext>>> decoratorMap;
+    std::unordered_map<IRISEXP, LoopConfig> isBreakTarget;
 
     for (int i = 0; i < bbSEXP->args.size(); i++)
     {
@@ -98,7 +92,7 @@ void resolveBreakAndContinueTargets(IRISEXP fileSEXP, IRISEXP currSEXP, std::uno
       for (auto & intermediateContext : intermediateContexts)
       {
         if (auto loopConfig = std::get_if<LoopConfig>(&intermediateContext)) {
-          if (loopConfig->kind == IridiumBuildContext::LoopConfig::Kind::ForOf)
+          if (loopConfig->kind == LoopConfig::Kind::ForOf)
           {
             auto stackReject = std::make_shared<StackRejectSEXP>(0);
             auto forOfIteratorClose = std::make_shared<JSForOfIteratorCloseSEXP>();
@@ -117,7 +111,7 @@ void resolveBreakAndContinueTargets(IRISEXP fileSEXP, IRISEXP currSEXP, std::uno
       if (isBreakTarget.find(element) != isBreakTarget.end())
       {
         auto & finalLoopConfig = isBreakTarget[element];
-        if (finalLoopConfig.kind == IridiumBuildContext::LoopConfig::Kind::ForOf)
+        if (finalLoopConfig.kind == LoopConfig::Kind::ForOf)
         {
           auto stackReject = std::make_shared<StackRejectSEXP>(0);
           auto forOfIteratorClose = std::make_shared<JSForOfIteratorCloseSEXP>();

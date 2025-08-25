@@ -14,6 +14,29 @@
 class IridiumSEXP;
 class BBSEXP;
 
+struct LoopConfig
+{
+  enum class Kind
+  {
+    ForOf,
+    Standard
+  } kind;
+  int loopHeadIDX;
+  int loopBodyIDX;
+  int loopInitIDX;
+  std::optional<std::string> label;
+  int breakTarget;
+  int continueTarget;
+};
+struct TryContext
+{
+  int tryContextIDX;
+  int tryIDX;
+  int udCatchIDX;
+  int imCatchIDX;
+  int finalizerIDX;
+};
+
 class IridiumBuildContext
 {
 public:
@@ -25,30 +48,8 @@ public:
   std::unordered_set<std::string> argInitContextWhitelist;
   bool hasRestArgs;
 
-  struct LoopConfig
-  {
-    enum class Kind
-    {
-      ForOf,
-      Standard
-    } kind;
-    int loopHeadIDX;
-    int loopBodyIDX;
-    int loopInitIDX;
-    std::optional<std::string> label;
-    int breakTarget;
-    int continueTarget;
-  };
   std::optional<LoopConfig> loopConfig;
 
-  struct TryContext
-  {
-    int tryContextIDX;
-    int tryIDX;
-    int udCatchIDX;
-    int imCatchIDX;
-    int finalizerIDX;
-  };
   std::optional<TryContext> tryContext;
 
   int kind;
@@ -109,7 +110,7 @@ public:
         BB(std::move(BB)) {}
 
   // Pretty printer
-  void dump(std::ostream & oss) const;
+  void dump(std::ostream &oss) const;
 };
 
-void parseBuildContexts(const msgpack::object &obj, std::unordered_map<int, std::shared_ptr<BBSEXP>> & bbIdxToSEXPMap, std::unordered_map<int, IRIBUILDCONTEXT> & iridiumBuildContext);
+void parseBuildContexts(const msgpack::object &obj, std::unordered_map<int, std::shared_ptr<BBSEXP>> &bbIdxToSEXPMap, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext);
