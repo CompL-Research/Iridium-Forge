@@ -27,6 +27,7 @@
 #include "Iridium/Passes/10_resolveBreakAndContinueTargets.h"
 #include "Iridium/Passes/11_decorateReturnTargets.h"
 #include "Iridium/Passes/12_promoteAsyncReturns.h"
+#include "Iridium/Passes/13_markNamespaceImports.h"
 
 void dumpPass(IRISEXP sexp, std::string passname)
 {
@@ -345,11 +346,9 @@ int main(int argc, char **argv)
 
     decorateReturnTargets(sexp, sexp, iridiumBuildContext);
 
-    std::cout << "[BEFORE: promoteAsyncReturns]" << std::endl;
-    sexp->dump();
     promoteAsyncReturns(sexp, iridiumBuildContext);
-    std::cout << "[AFTER: promoteAsyncReturns]" << std::endl;
-    sexp->dump();
+    
+    markNamespaceImports(sexp, iridiumBuildContext);
 
     return 0;
 
