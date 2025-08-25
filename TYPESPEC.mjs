@@ -568,5 +568,15 @@ export default [
       "bool": [],
       "double": [],
     }
+  },
+  {
+    "tag": "JSBinop",
+    "args": ["LBinop", "RBinop"],
+    "flags": {
+      "string": ["OP"],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
   }
 ];

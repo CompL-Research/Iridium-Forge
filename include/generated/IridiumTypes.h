@@ -1,4 +1,4 @@
-// Generated: 2025-08-25 23:51:17
+// Generated: 2025-08-26 00:33:46
 #pragma once
 #include "Iridium/Globals.h"
 #include "Iridium/IridiumSEXP.h"
@@ -2286,5 +2286,47 @@ public:
   RetSEXP() {
     this->tag = "Ret";
   }
+
+};
+
+class JSBinopSEXP : public IridiumSEXP {
+private:
+
+  JSBinopSEXP() { this->tag = "JSBinop"; }
+  
+public:
+  static std::shared_ptr<JSBinopSEXP> generateFrom(IRISEXP obj) {
+    assert(obj->tag == "JSBinop");
+    auto res = std::shared_ptr<JSBinopSEXP>(new JSBinopSEXP());
+
+    res->tag   = obj->tag;
+    res->args  = std::move(obj->args);
+    res->flags = std::move(obj->flags);
+    return res;
+  }
+
+
+  JSBinopSEXP(IRISEXP LBinop, IRISEXP RBinop, std::string OP) {
+    this->tag = "JSBinop";
+    this->args.push_back(LBinop);
+    this->args.push_back(RBinop);
+    this->setOP(OP);
+  }
+
+
+  void setLBinop(const IRISEXP &obj) { this->args.at(0) = obj; }
+  bool hasLBinop() { return 0 < this->args.size(); }
+  IRISEXP getLBinop() const { return this->args.at(0); }
+
+
+  void setRBinop(const IRISEXP &obj) { this->args.at(1) = obj; }
+  bool hasRBinop() { return 1 < this->args.size(); }
+  IRISEXP getRBinop() const { return this->args.at(1); }
+
+
+  void setOP(const std::string &value) { setFlag("OP", value); }
+  void unsetOP() { removeFlag("OP"); }
+  bool hasOP() { return hasFlag("OP"); }
+  std::string getOP() { return getFlagString("OP"); }
 
 };
