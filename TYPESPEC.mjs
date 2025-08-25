@@ -568,15 +568,5 @@ export default [
       "bool": [],
       "double": [],
     }
-  },
-  {
-    "tag": "ReturnAsync",
-    "args": ["RetVal"],
-    "flags": {
-      "string": [],
-      "void": [],
-      "bool": [],
-      "double": [],
-    }
-  },
+  }
 ];

@@ -1,4 +1,4 @@
-// Generated: 2025-08-25 23:39:31
+// Generated: 2025-08-25 23:51:17
 #pragma once
 #include "Iridium/Globals.h"
 #include "Iridium/IridiumSEXP.h"
@@ -64,7 +64,6 @@ public:
     if (tag == "JSCatchContext") return JSCatchContextSEXP::generateFrom(obj);
     if (tag == "Throw") return ThrowSEXP::generateFrom(obj);
     if (tag == "Ret") return RetSEXP::generateFrom(obj);
-    if (tag == "ReturnAsync") return ReturnAsyncSEXP::generateFrom(obj);
     throw std::runtime_error("ParseIridiumTypes::specialize unhandled Tag: " + tag);
   }
 };
