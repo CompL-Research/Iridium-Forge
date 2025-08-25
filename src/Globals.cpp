@@ -118,7 +118,8 @@ IRISEXP getBinding(std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext
 
   // If the scope is an ArgInit context, bypass lookup of non-argument bindings to parent scope
   if (buildContext->isArgInitContext) {
-    if (buildContext->argInitContextWhitelist.find(name) != buildContext->argInitContextWhitelist.end())
+    // If the binding is not in the whitelist, bypass lookup scope...
+    if (buildContext->argInitContextWhitelist.find(name) == buildContext->argInitContextWhitelist.end())
     {
       nextScope = buildContext->bypassParent;
     }
