@@ -1,4 +1,4 @@
-// Generated: 2025-08-25 21:44:10
+// Generated: 2025-08-25 23:39:31
 #pragma once
 #include "Iridium/Globals.h"
 #include "Iridium/IridiumSEXP.h"
@@ -565,10 +565,16 @@ public:
   }
 
 
-  ReturnSEXP(bool ModuleEarlyReturn) {
+  ReturnSEXP(IRISEXP Obj, bool ModuleEarlyReturn) {
     this->tag = "Return";
+    this->args.push_back(Obj);
     if (ModuleEarlyReturn) this->setModuleEarlyReturn();
   }
+
+
+  void setObj(const IRISEXP &obj) { this->args.at(0) = obj; }
+  bool hasObj() { return 0 < this->args.size(); }
+  IRISEXP getObj() const { return this->args.at(0); }
 
 
   void setModuleEarlyReturn() { setFlag("ModuleEarlyReturn"); }
@@ -2280,5 +2286,34 @@ public:
   RetSEXP() {
     this->tag = "Ret";
   }
+
+};
+
+class ReturnAsyncSEXP : public IridiumSEXP {
+private:
+
+  ReturnAsyncSEXP() { this->tag = "ReturnAsync"; }
+  
+public:
+  static std::shared_ptr<ReturnAsyncSEXP> generateFrom(IRISEXP obj) {
+    assert(obj->tag == "ReturnAsync");
+    auto res = std::shared_ptr<ReturnAsyncSEXP>(new ReturnAsyncSEXP());
+
+    res->tag   = obj->tag;
+    res->args  = std::move(obj->args);
+    res->flags = std::move(obj->flags);
+    return res;
+  }
+
+
+  ReturnAsyncSEXP(IRISEXP RetVal) {
+    this->tag = "ReturnAsync";
+    this->args.push_back(RetVal);
+  }
+
+
+  void setRetVal(const IRISEXP &obj) { this->args.at(0) = obj; }
+  bool hasRetVal() { return 0 < this->args.size(); }
+  IRISEXP getRetVal() const { return this->args.at(0); }
 
 };
