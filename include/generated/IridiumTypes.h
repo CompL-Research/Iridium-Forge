@@ -1,4 +1,4 @@
-// Generated: 2025-08-26 01:24:02
+// Generated: 2025-08-27 03:29:37
 #pragma once
 #include "Iridium/Globals.h"
 #include "Iridium/IridiumSEXP.h"
@@ -2335,5 +2335,891 @@ public:
   void unsetOP() { removeFlag("OP"); }
   bool hasOP() { return hasFlag("OP"); }
   std::string getOP() { return getFlagString("OP"); }
+
+};
+
+class FieldWriteSEXP : public IridiumSEXP {
+private:
+
+  FieldWriteSEXP() { this->tag = "FieldWrite"; }
+  
+public:
+  static std::shared_ptr<FieldWriteSEXP> generateFrom(IRISEXP obj) {
+    assert(obj->tag == "FieldWrite");
+    auto res = std::shared_ptr<FieldWriteSEXP>(new FieldWriteSEXP());
+
+    res->tag   = obj->tag;
+    res->args  = std::move(obj->args);
+    res->flags = std::move(obj->flags);
+    return res;
+  }
+
+
+  FieldWriteSEXP(IRISEXP Obj, IRISEXP Field, IRISEXP Value) {
+    this->tag = "FieldWrite";
+    this->args.push_back(Obj);
+    this->args.push_back(Field);
+    this->args.push_back(Value);
+  }
+
+
+  void setObj(const IRISEXP &obj) { this->args.at(0) = obj; }
+  bool hasObj() { return 0 < this->args.size(); }
+  IRISEXP getObj() const { return this->args.at(0); }
+
+
+  void setField(const IRISEXP &obj) { this->args.at(1) = obj; }
+  bool hasField() { return 1 < this->args.size(); }
+  IRISEXP getField() const { return this->args.at(1); }
+
+
+  void setValue(const IRISEXP &obj) { this->args.at(2) = obj; }
+  bool hasValue() { return 2 < this->args.size(); }
+  IRISEXP getValue() const { return this->args.at(2); }
+
+};
+
+class JSUnopSEXP : public IridiumSEXP {
+private:
+
+  JSUnopSEXP() { this->tag = "JSUnop"; }
+  
+public:
+  static std::shared_ptr<JSUnopSEXP> generateFrom(IRISEXP obj) {
+    assert(obj->tag == "JSUnop");
+    auto res = std::shared_ptr<JSUnopSEXP>(new JSUnopSEXP());
+
+    res->tag   = obj->tag;
+    res->args  = std::move(obj->args);
+    res->flags = std::move(obj->flags);
+    return res;
+  }
+
+
+  JSUnopSEXP(IRISEXP Val, std::string OP) {
+    this->tag = "JSUnop";
+    this->args.push_back(Val);
+    this->setOP(OP);
+  }
+
+
+  void setVal(const IRISEXP &obj) { this->args.at(0) = obj; }
+  bool hasVal() { return 0 < this->args.size(); }
+  IRISEXP getVal() const { return this->args.at(0); }
+
+
+  void setOP(const std::string &value) { setFlag("OP", value); }
+  void unsetOP() { removeFlag("OP"); }
+  bool hasOP() { return hasFlag("OP"); }
+  std::string getOP() { return getFlagString("OP"); }
+
+};
+
+class UnopSEXP : public IridiumSEXP {
+private:
+
+  UnopSEXP() { this->tag = "Unop"; }
+  
+public:
+  static std::shared_ptr<UnopSEXP> generateFrom(IRISEXP obj) {
+    assert(obj->tag == "Unop");
+    auto res = std::shared_ptr<UnopSEXP>(new UnopSEXP());
+
+    res->tag   = obj->tag;
+    res->args  = std::move(obj->args);
+    res->flags = std::move(obj->flags);
+    return res;
+  }
+
+
+  UnopSEXP(IRISEXP Val, std::string OP) {
+    this->tag = "Unop";
+    this->args.push_back(Val);
+    this->setOP(OP);
+  }
+
+
+  void setVal(const IRISEXP &obj) { this->args.at(0) = obj; }
+  bool hasVal() { return 0 < this->args.size(); }
+  IRISEXP getVal() const { return this->args.at(0); }
+
+
+  void setOP(const std::string &value) { setFlag("OP", value); }
+  void unsetOP() { removeFlag("OP"); }
+  bool hasOP() { return hasFlag("OP"); }
+  std::string getOP() { return getFlagString("OP"); }
+
+};
+
+class JSObjectSEXP : public IridiumSEXP {
+private:
+// default constructor and explicit one are the same, skipping...
+public:
+  static std::shared_ptr<JSObjectSEXP> generateFrom(IRISEXP obj) {
+    assert(obj->tag == "JSObject");
+    auto res = std::shared_ptr<JSObjectSEXP>(new JSObjectSEXP());
+
+    res->tag   = obj->tag;
+    res->args  = std::move(obj->args);
+    res->flags = std::move(obj->flags);
+    return res;
+  }
+
+
+  JSObjectSEXP() {
+    this->tag = "JSObject";
+  }
+
+};
+
+class BooleanSEXP : public IridiumSEXP {
+private:
+
+  BooleanSEXP() { this->tag = "Boolean"; }
+  
+public:
+  static std::shared_ptr<BooleanSEXP> generateFrom(IRISEXP obj) {
+    assert(obj->tag == "Boolean");
+    auto res = std::shared_ptr<BooleanSEXP>(new BooleanSEXP());
+
+    res->tag   = obj->tag;
+    res->args  = std::move(obj->args);
+    res->flags = std::move(obj->flags);
+    return res;
+  }
+
+
+  BooleanSEXP(bool IridiumPrimitive) {
+    this->tag = "Boolean";
+    this->setIridiumPrimitive(IridiumPrimitive);
+  }
+
+
+  void setIridiumPrimitive(bool value) { setFlag("IridiumPrimitive", value); }
+  void unsetIridiumPrimitive() { removeFlag("IridiumPrimitive"); }
+  bool hasIridiumPrimitive() { return hasFlag("IridiumPrimitive"); }
+  bool getIridiumPrimitive() { return getFlagBoolean("IridiumPrimitive"); }
+
+};
+
+class JSDefineObjPropSEXP : public IridiumSEXP {
+private:
+
+  JSDefineObjPropSEXP() { this->tag = "JSDefineObjProp"; }
+  
+public:
+  static std::shared_ptr<JSDefineObjPropSEXP> generateFrom(IRISEXP obj) {
+    assert(obj->tag == "JSDefineObjProp");
+    auto res = std::shared_ptr<JSDefineObjPropSEXP>(new JSDefineObjPropSEXP());
+
+    res->tag   = obj->tag;
+    res->args  = std::move(obj->args);
+    res->flags = std::move(obj->flags);
+    return res;
+  }
+
+
+  JSDefineObjPropSEXP(IRISEXP TargetObj, IRISEXP Key, IRISEXP Value) {
+    this->tag = "JSDefineObjProp";
+    this->args.push_back(TargetObj);
+    this->args.push_back(Key);
+    this->args.push_back(Value);
+  }
+
+
+  void setTargetObj(const IRISEXP &obj) { this->args.at(0) = obj; }
+  bool hasTargetObj() { return 0 < this->args.size(); }
+  IRISEXP getTargetObj() const { return this->args.at(0); }
+
+
+  void setKey(const IRISEXP &obj) { this->args.at(1) = obj; }
+  bool hasKey() { return 1 < this->args.size(); }
+  IRISEXP getKey() const { return this->args.at(1); }
+
+
+  void setValue(const IRISEXP &obj) { this->args.at(2) = obj; }
+  bool hasValue() { return 2 < this->args.size(); }
+  IRISEXP getValue() const { return this->args.at(2); }
+
+};
+
+class JSArraySEXP : public IridiumSEXP {
+private:
+// default constructor and explicit one are the same, skipping...
+public:
+  static std::shared_ptr<JSArraySEXP> generateFrom(IRISEXP obj) {
+    assert(obj->tag == "JSArray");
+    auto res = std::shared_ptr<JSArraySEXP>(new JSArraySEXP());
+
+    res->tag   = obj->tag;
+    res->args  = std::move(obj->args);
+    res->flags = std::move(obj->flags);
+    return res;
+  }
+
+
+  JSArraySEXP() {
+    this->tag = "JSArray";
+  }
+
+};
+
+class BinopSEXP : public IridiumSEXP {
+private:
+
+  BinopSEXP() { this->tag = "Binop"; }
+  
+public:
+  static std::shared_ptr<BinopSEXP> generateFrom(IRISEXP obj) {
+    assert(obj->tag == "Binop");
+    auto res = std::shared_ptr<BinopSEXP>(new BinopSEXP());
+
+    res->tag   = obj->tag;
+    res->args  = std::move(obj->args);
+    res->flags = std::move(obj->flags);
+    return res;
+  }
+
+
+  BinopSEXP(IRISEXP LBinop, IRISEXP RBinop, std::string OP) {
+    this->tag = "Binop";
+    this->args.push_back(LBinop);
+    this->args.push_back(RBinop);
+    this->setOP(OP);
+  }
+
+
+  void setLBinop(const IRISEXP &obj) { this->args.at(0) = obj; }
+  bool hasLBinop() { return 0 < this->args.size(); }
+  IRISEXP getLBinop() const { return this->args.at(0); }
+
+
+  void setRBinop(const IRISEXP &obj) { this->args.at(1) = obj; }
+  bool hasRBinop() { return 1 < this->args.size(); }
+  IRISEXP getRBinop() const { return this->args.at(1); }
+
+
+  void setOP(const std::string &value) { setFlag("OP", value); }
+  void unsetOP() { removeFlag("OP"); }
+  bool hasOP() { return hasFlag("OP"); }
+  std::string getOP() { return getFlagString("OP"); }
+
+};
+
+class NullSEXP : public IridiumSEXP {
+private:
+
+  NullSEXP() { this->tag = "Null"; }
+  
+public:
+  static std::shared_ptr<NullSEXP> generateFrom(IRISEXP obj) {
+    assert(obj->tag == "Null");
+    auto res = std::shared_ptr<NullSEXP>(new NullSEXP());
+
+    res->tag   = obj->tag;
+    res->args  = std::move(obj->args);
+    res->flags = std::move(obj->flags);
+    return res;
+  }
+
+
+  NullSEXP(bool IridiumPrimitive) {
+    this->tag = "Null";
+    if (IridiumPrimitive) this->setIridiumPrimitive();
+  }
+
+
+  void setIridiumPrimitive() { setFlag("IridiumPrimitive"); }
+  void unsetIridiumPrimitive() { removeFlag("IridiumPrimitive"); }
+  bool hasIridiumPrimitive() { return hasFlag("IridiumPrimitive"); }
+
+};
+
+class JSComputedFieldReadSEXP : public IridiumSEXP {
+private:
+
+  JSComputedFieldReadSEXP() { this->tag = "JSComputedFieldRead"; }
+  
+public:
+  static std::shared_ptr<JSComputedFieldReadSEXP> generateFrom(IRISEXP obj) {
+    assert(obj->tag == "JSComputedFieldRead");
+    auto res = std::shared_ptr<JSComputedFieldReadSEXP>(new JSComputedFieldReadSEXP());
+
+    res->tag   = obj->tag;
+    res->args  = std::move(obj->args);
+    res->flags = std::move(obj->flags);
+    return res;
+  }
+
+
+  JSComputedFieldReadSEXP(IRISEXP Obj, IRISEXP Field) {
+    this->tag = "JSComputedFieldRead";
+    this->args.push_back(Obj);
+    this->args.push_back(Field);
+  }
+
+
+  void setObj(const IRISEXP &obj) { this->args.at(0) = obj; }
+  bool hasObj() { return 0 < this->args.size(); }
+  IRISEXP getObj() const { return this->args.at(0); }
+
+
+  void setField(const IRISEXP &obj) { this->args.at(1) = obj; }
+  bool hasField() { return 1 < this->args.size(); }
+  IRISEXP getField() const { return this->args.at(1); }
+
+};
+
+class JSComputedFieldWriteSEXP : public IridiumSEXP {
+private:
+
+  JSComputedFieldWriteSEXP() { this->tag = "JSComputedFieldWrite"; }
+  
+public:
+  static std::shared_ptr<JSComputedFieldWriteSEXP> generateFrom(IRISEXP obj) {
+    assert(obj->tag == "JSComputedFieldWrite");
+    auto res = std::shared_ptr<JSComputedFieldWriteSEXP>(new JSComputedFieldWriteSEXP());
+
+    res->tag   = obj->tag;
+    res->args  = std::move(obj->args);
+    res->flags = std::move(obj->flags);
+    return res;
+  }
+
+
+  JSComputedFieldWriteSEXP(IRISEXP Obj, IRISEXP Field, IRISEXP Value) {
+    this->tag = "JSComputedFieldWrite";
+    this->args.push_back(Obj);
+    this->args.push_back(Field);
+    this->args.push_back(Value);
+  }
+
+
+  void setObj(const IRISEXP &obj) { this->args.at(0) = obj; }
+  bool hasObj() { return 0 < this->args.size(); }
+  IRISEXP getObj() const { return this->args.at(0); }
+
+
+  void setField(const IRISEXP &obj) { this->args.at(1) = obj; }
+  bool hasField() { return 1 < this->args.size(); }
+  IRISEXP getField() const { return this->args.at(1); }
+
+
+  void setValue(const IRISEXP &obj) { this->args.at(2) = obj; }
+  bool hasValue() { return 2 < this->args.size(); }
+  IRISEXP getValue() const { return this->args.at(2); }
+
+};
+
+class JSSuperFieldReadSEXP : public IridiumSEXP {
+private:
+
+  JSSuperFieldReadSEXP() { this->tag = "JSSuperFieldRead"; }
+  
+public:
+  static std::shared_ptr<JSSuperFieldReadSEXP> generateFrom(IRISEXP obj) {
+    assert(obj->tag == "JSSuperFieldRead");
+    auto res = std::shared_ptr<JSSuperFieldReadSEXP>(new JSSuperFieldReadSEXP());
+
+    res->tag   = obj->tag;
+    res->args  = std::move(obj->args);
+    res->flags = std::move(obj->flags);
+    return res;
+  }
+
+
+  JSSuperFieldReadSEXP(IRISEXP This, IRISEXP Super, IRISEXP Field) {
+    this->tag = "JSSuperFieldRead";
+    this->args.push_back(This);
+    this->args.push_back(Super);
+    this->args.push_back(Field);
+  }
+
+
+  void setThis(const IRISEXP &obj) { this->args.at(0) = obj; }
+  bool hasThis() { return 0 < this->args.size(); }
+  IRISEXP getThis() const { return this->args.at(0); }
+
+
+  void setSuper(const IRISEXP &obj) { this->args.at(1) = obj; }
+  bool hasSuper() { return 1 < this->args.size(); }
+  IRISEXP getSuper() const { return this->args.at(1); }
+
+
+  void setField(const IRISEXP &obj) { this->args.at(2) = obj; }
+  bool hasField() { return 2 < this->args.size(); }
+  IRISEXP getField() const { return this->args.at(2); }
+
+};
+
+class JSSuperFieldWriteSEXP : public IridiumSEXP {
+private:
+
+  JSSuperFieldWriteSEXP() { this->tag = "JSSuperFieldWrite"; }
+  
+public:
+  static std::shared_ptr<JSSuperFieldWriteSEXP> generateFrom(IRISEXP obj) {
+    assert(obj->tag == "JSSuperFieldWrite");
+    auto res = std::shared_ptr<JSSuperFieldWriteSEXP>(new JSSuperFieldWriteSEXP());
+
+    res->tag   = obj->tag;
+    res->args  = std::move(obj->args);
+    res->flags = std::move(obj->flags);
+    return res;
+  }
+
+
+  JSSuperFieldWriteSEXP(IRISEXP This, IRISEXP Super, IRISEXP Field, IRISEXP Value) {
+    this->tag = "JSSuperFieldWrite";
+    this->args.push_back(This);
+    this->args.push_back(Super);
+    this->args.push_back(Field);
+    this->args.push_back(Value);
+  }
+
+
+  void setThis(const IRISEXP &obj) { this->args.at(0) = obj; }
+  bool hasThis() { return 0 < this->args.size(); }
+  IRISEXP getThis() const { return this->args.at(0); }
+
+
+  void setSuper(const IRISEXP &obj) { this->args.at(1) = obj; }
+  bool hasSuper() { return 1 < this->args.size(); }
+  IRISEXP getSuper() const { return this->args.at(1); }
+
+
+  void setField(const IRISEXP &obj) { this->args.at(2) = obj; }
+  bool hasField() { return 2 < this->args.size(); }
+  IRISEXP getField() const { return this->args.at(2); }
+
+
+  void setValue(const IRISEXP &obj) { this->args.at(3) = obj; }
+  bool hasValue() { return 3 < this->args.size(); }
+  IRISEXP getValue() const { return this->args.at(3); }
+
+};
+
+class JSToObjectSEXP : public IridiumSEXP {
+private:
+
+  JSToObjectSEXP() { this->tag = "JSToObject"; }
+  
+public:
+  static std::shared_ptr<JSToObjectSEXP> generateFrom(IRISEXP obj) {
+    assert(obj->tag == "JSToObject");
+    auto res = std::shared_ptr<JSToObjectSEXP>(new JSToObjectSEXP());
+
+    res->tag   = obj->tag;
+    res->args  = std::move(obj->args);
+    res->flags = std::move(obj->flags);
+    return res;
+  }
+
+
+  JSToObjectSEXP(IRISEXP TargetObj) {
+    this->tag = "JSToObject";
+    this->args.push_back(TargetObj);
+  }
+
+
+  void setTargetObj(const IRISEXP &obj) { this->args.at(0) = obj; }
+  bool hasTargetObj() { return 0 < this->args.size(); }
+  IRISEXP getTargetObj() const { return this->args.at(0); }
+
+};
+
+class JSAppendSEXP : public IridiumSEXP {
+private:
+
+  JSAppendSEXP() { this->tag = "JSAppend"; }
+  
+public:
+  static std::shared_ptr<JSAppendSEXP> generateFrom(IRISEXP obj) {
+    assert(obj->tag == "JSAppend");
+    auto res = std::shared_ptr<JSAppendSEXP>(new JSAppendSEXP());
+
+    res->tag   = obj->tag;
+    res->args  = std::move(obj->args);
+    res->flags = std::move(obj->flags);
+    return res;
+  }
+
+
+  JSAppendSEXP(IRISEXP TargetObj, IRISEXP InsertionIdx, IRISEXP SpreadObj) {
+    this->tag = "JSAppend";
+    this->args.push_back(TargetObj);
+    this->args.push_back(InsertionIdx);
+    this->args.push_back(SpreadObj);
+  }
+
+
+  void setTargetObj(const IRISEXP &obj) { this->args.at(0) = obj; }
+  bool hasTargetObj() { return 0 < this->args.size(); }
+  IRISEXP getTargetObj() const { return this->args.at(0); }
+
+
+  void setInsertionIdx(const IRISEXP &obj) { this->args.at(1) = obj; }
+  bool hasInsertionIdx() { return 1 < this->args.size(); }
+  IRISEXP getInsertionIdx() const { return this->args.at(1); }
+
+
+  void setSpreadObj(const IRISEXP &obj) { this->args.at(2) = obj; }
+  bool hasSpreadObj() { return 2 < this->args.size(); }
+  IRISEXP getSpreadObj() const { return this->args.at(2); }
+
+};
+
+class JSDefineObjMethodSEXP : public IridiumSEXP {
+private:
+
+  JSDefineObjMethodSEXP() { this->tag = "JSDefineObjMethod"; }
+  
+public:
+  static std::shared_ptr<JSDefineObjMethodSEXP> generateFrom(IRISEXP obj) {
+    assert(obj->tag == "JSDefineObjMethod");
+    auto res = std::shared_ptr<JSDefineObjMethodSEXP>(new JSDefineObjMethodSEXP());
+
+    res->tag   = obj->tag;
+    res->args  = std::move(obj->args);
+    res->flags = std::move(obj->flags);
+    return res;
+  }
+
+
+  JSDefineObjMethodSEXP(IRISEXP TargetObj, IRISEXP Key, IRISEXP Value) {
+    this->tag = "JSDefineObjMethod";
+    this->args.push_back(TargetObj);
+    this->args.push_back(Key);
+    this->args.push_back(Value);
+  }
+
+
+  void setTargetObj(const IRISEXP &obj) { this->args.at(0) = obj; }
+  bool hasTargetObj() { return 0 < this->args.size(); }
+  IRISEXP getTargetObj() const { return this->args.at(0); }
+
+
+  void setKey(const IRISEXP &obj) { this->args.at(1) = obj; }
+  bool hasKey() { return 1 < this->args.size(); }
+  IRISEXP getKey() const { return this->args.at(1); }
+
+
+  void setValue(const IRISEXP &obj) { this->args.at(2) = obj; }
+  bool hasValue() { return 2 < this->args.size(); }
+  IRISEXP getValue() const { return this->args.at(2); }
+
+};
+
+class JSCopyDataPropertiesSEXP : public IridiumSEXP {
+private:
+
+  JSCopyDataPropertiesSEXP() { this->tag = "JSCopyDataProperties"; }
+  
+public:
+  static std::shared_ptr<JSCopyDataPropertiesSEXP> generateFrom(IRISEXP obj) {
+    assert(obj->tag == "JSCopyDataProperties");
+    auto res = std::shared_ptr<JSCopyDataPropertiesSEXP>(new JSCopyDataPropertiesSEXP());
+
+    res->tag   = obj->tag;
+    res->args  = std::move(obj->args);
+    res->flags = std::move(obj->flags);
+    return res;
+  }
+
+
+  JSCopyDataPropertiesSEXP(IRISEXP ExclusionObj, IRISEXP SourceObj, IRISEXP TargetObj) {
+    this->tag = "JSCopyDataProperties";
+    this->args.push_back(ExclusionObj);
+    this->args.push_back(SourceObj);
+    this->args.push_back(TargetObj);
+  }
+
+
+  void setExclusionObj(const IRISEXP &obj) { this->args.at(0) = obj; }
+  bool hasExclusionObj() { return 0 < this->args.size(); }
+  IRISEXP getExclusionObj() const { return this->args.at(0); }
+
+
+  void setSourceObj(const IRISEXP &obj) { this->args.at(1) = obj; }
+  bool hasSourceObj() { return 1 < this->args.size(); }
+  IRISEXP getSourceObj() const { return this->args.at(1); }
+
+
+  void setTargetObj(const IRISEXP &obj) { this->args.at(2) = obj; }
+  bool hasTargetObj() { return 2 < this->args.size(); }
+  IRISEXP getTargetObj() const { return this->args.at(2); }
+
+};
+
+class RegExpSEXP : public IridiumSEXP {
+private:
+
+  RegExpSEXP() { this->tag = "RegExp"; }
+  
+public:
+  static std::shared_ptr<RegExpSEXP> generateFrom(IRISEXP obj) {
+    assert(obj->tag == "RegExp");
+    auto res = std::shared_ptr<RegExpSEXP>(new RegExpSEXP());
+
+    res->tag   = obj->tag;
+    res->args  = std::move(obj->args);
+    res->flags = std::move(obj->flags);
+    return res;
+  }
+
+
+  RegExpSEXP(std::string EXP, std::string FLAGS) {
+    this->tag = "RegExp";
+    this->setEXP(EXP);
+    this->setFLAGS(FLAGS);
+  }
+
+
+  void setEXP(const std::string &value) { setFlag("EXP", value); }
+  void unsetEXP() { removeFlag("EXP"); }
+  bool hasEXP() { return hasFlag("EXP"); }
+  std::string getEXP() { return getFlagString("EXP"); }
+
+
+  void setFLAGS(const std::string &value) { setFlag("FLAGS", value); }
+  void unsetFLAGS() { removeFlag("FLAGS"); }
+  bool hasFLAGS() { return hasFlag("FLAGS"); }
+  std::string getFLAGS() { return getFlagString("FLAGS"); }
+
+};
+
+class UNOPDelMemberExprSEXP : public IridiumSEXP {
+private:
+
+  UNOPDelMemberExprSEXP() { this->tag = "UNOPDelMemberExpr"; }
+  
+public:
+  static std::shared_ptr<UNOPDelMemberExprSEXP> generateFrom(IRISEXP obj) {
+    assert(obj->tag == "UNOPDelMemberExpr");
+    auto res = std::shared_ptr<UNOPDelMemberExprSEXP>(new UNOPDelMemberExprSEXP());
+
+    res->tag   = obj->tag;
+    res->args  = std::move(obj->args);
+    res->flags = std::move(obj->flags);
+    return res;
+  }
+
+
+  UNOPDelMemberExprSEXP(IRISEXP Receiver, IRISEXP Field) {
+    this->tag = "UNOPDelMemberExpr";
+    this->args.push_back(Receiver);
+    this->args.push_back(Field);
+  }
+
+
+  void setReceiver(const IRISEXP &obj) { this->args.at(0) = obj; }
+  bool hasReceiver() { return 0 < this->args.size(); }
+  IRISEXP getReceiver() const { return this->args.at(0); }
+
+
+  void setField(const IRISEXP &obj) { this->args.at(1) = obj; }
+  bool hasField() { return 1 < this->args.size(); }
+  IRISEXP getField() const { return this->args.at(1); }
+
+};
+
+class UNOPDelVarSEXP : public IridiumSEXP {
+private:
+
+  UNOPDelVarSEXP() { this->tag = "UNOPDelVar"; }
+  
+public:
+  static std::shared_ptr<UNOPDelVarSEXP> generateFrom(IRISEXP obj) {
+    assert(obj->tag == "UNOPDelVar");
+    auto res = std::shared_ptr<UNOPDelVarSEXP>(new UNOPDelVarSEXP());
+
+    res->tag   = obj->tag;
+    res->args  = std::move(obj->args);
+    res->flags = std::move(obj->flags);
+    return res;
+  }
+
+
+  UNOPDelVarSEXP(std::string NAME) {
+    this->tag = "UNOPDelVar";
+    this->setNAME(NAME);
+  }
+
+
+  void setNAME(const std::string &value) { setFlag("NAME", value); }
+  void unsetNAME() { removeFlag("NAME"); }
+  bool hasNAME() { return hasFlag("NAME"); }
+  std::string getNAME() { return getFlagString("NAME"); }
+
+};
+
+class JSTemplateSEXP : public IridiumSEXP {
+private:
+// default constructor and explicit one are the same, skipping...
+public:
+  static std::shared_ptr<JSTemplateSEXP> generateFrom(IRISEXP obj) {
+    assert(obj->tag == "JSTemplate");
+    auto res = std::shared_ptr<JSTemplateSEXP>(new JSTemplateSEXP());
+
+    res->tag   = obj->tag;
+    res->args  = std::move(obj->args);
+    res->flags = std::move(obj->flags);
+    return res;
+  }
+
+
+  JSTemplateSEXP() {
+    this->tag = "JSTemplate";
+  }
+
+};
+
+class BitIntSEXP : public IridiumSEXP {
+private:
+
+  BitIntSEXP() { this->tag = "BitInt"; }
+  
+public:
+  static std::shared_ptr<BitIntSEXP> generateFrom(IRISEXP obj) {
+    assert(obj->tag == "BitInt");
+    auto res = std::shared_ptr<BitIntSEXP>(new BitIntSEXP());
+
+    res->tag   = obj->tag;
+    res->args  = std::move(obj->args);
+    res->flags = std::move(obj->flags);
+    return res;
+  }
+
+
+  BitIntSEXP(std::string IridiumPrimitive) {
+    this->tag = "BitInt";
+    this->setIridiumPrimitive(IridiumPrimitive);
+  }
+
+
+  void setIridiumPrimitive(const std::string &value) { setFlag("IridiumPrimitive", value); }
+  void unsetIridiumPrimitive() { removeFlag("IridiumPrimitive"); }
+  bool hasIridiumPrimitive() { return hasFlag("IridiumPrimitive"); }
+  std::string getIridiumPrimitive() { return getFlagString("IridiumPrimitive"); }
+
+};
+
+class JSSpreadSEXP : public IridiumSEXP {
+private:
+
+  JSSpreadSEXP() { this->tag = "JSSpread"; }
+  
+public:
+  static std::shared_ptr<JSSpreadSEXP> generateFrom(IRISEXP obj) {
+    assert(obj->tag == "JSSpread");
+    auto res = std::shared_ptr<JSSpreadSEXP>(new JSSpreadSEXP());
+
+    res->tag   = obj->tag;
+    res->args  = std::move(obj->args);
+    res->flags = std::move(obj->flags);
+    return res;
+  }
+
+
+  JSSpreadSEXP(IRISEXP Val) {
+    this->tag = "JSSpread";
+    this->args.push_back(Val);
+  }
+
+
+  void setVal(const IRISEXP &obj) { this->args.at(0) = obj; }
+  bool hasVal() { return 0 < this->args.size(); }
+  IRISEXP getVal() const { return this->args.at(0); }
+
+};
+
+class AwaitSEXP : public IridiumSEXP {
+private:
+
+  AwaitSEXP() { this->tag = "Await"; }
+  
+public:
+  static std::shared_ptr<AwaitSEXP> generateFrom(IRISEXP obj) {
+    assert(obj->tag == "Await");
+    auto res = std::shared_ptr<AwaitSEXP>(new AwaitSEXP());
+
+    res->tag   = obj->tag;
+    res->args  = std::move(obj->args);
+    res->flags = std::move(obj->flags);
+    return res;
+  }
+
+
+  AwaitSEXP(IRISEXP Obj) {
+    this->tag = "Await";
+    this->args.push_back(Obj);
+  }
+
+
+  void setObj(const IRISEXP &obj) { this->args.at(0) = obj; }
+  bool hasObj() { return 0 < this->args.size(); }
+  IRISEXP getObj() const { return this->args.at(0); }
+
+};
+
+class YieldSEXP : public IridiumSEXP {
+private:
+
+  YieldSEXP() { this->tag = "Yield"; }
+  
+public:
+  static std::shared_ptr<YieldSEXP> generateFrom(IRISEXP obj) {
+    assert(obj->tag == "Yield");
+    auto res = std::shared_ptr<YieldSEXP>(new YieldSEXP());
+
+    res->tag   = obj->tag;
+    res->args  = std::move(obj->args);
+    res->flags = std::move(obj->flags);
+    return res;
+  }
+
+
+  YieldSEXP(IRISEXP Obj, IRISEXP DoneTarget, IRISEXP NextValue) {
+    this->tag = "Yield";
+    this->args.push_back(Obj);
+    this->args.push_back(DoneTarget);
+    this->args.push_back(NextValue);
+  }
+
+
+  void setObj(const IRISEXP &obj) { this->args.at(0) = obj; }
+  bool hasObj() { return 0 < this->args.size(); }
+  IRISEXP getObj() const { return this->args.at(0); }
+
+
+  void setDoneTarget(const IRISEXP &obj) { this->args.at(1) = obj; }
+  bool hasDoneTarget() { return 1 < this->args.size(); }
+  IRISEXP getDoneTarget() const { return this->args.at(1); }
+
+
+  void setNextValue(const IRISEXP &obj) { this->args.at(2) = obj; }
+  bool hasNextValue() { return 2 < this->args.size(); }
+  IRISEXP getNextValue() const { return this->args.at(2); }
+
+};
+
+class JSInitialYieldSEXP : public IridiumSEXP {
+private:
+// default constructor and explicit one are the same, skipping...
+public:
+  static std::shared_ptr<JSInitialYieldSEXP> generateFrom(IRISEXP obj) {
+    assert(obj->tag == "JSInitialYield");
+    auto res = std::shared_ptr<JSInitialYieldSEXP>(new JSInitialYieldSEXP());
+
+    res->tag   = obj->tag;
+    res->args  = std::move(obj->args);
+    res->flags = std::move(obj->flags);
+    return res;
+  }
+
+
+  JSInitialYieldSEXP() {
+    this->tag = "JSInitialYield";
+  }
 
 };

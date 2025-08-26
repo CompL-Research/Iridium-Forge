@@ -578,5 +578,265 @@ export default [
       "bool": [],
       "double": [],
     }
-  }
+  },
+  {
+    "tag": "FieldWrite",
+    "args": ["Obj", "Field", "Value"],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "JSUnop",
+    "args": ["Val"],
+    "flags": {
+      "string": ["OP"],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "Unop",
+    "args": ["Val"],
+    "flags": {
+      "string": ["OP"],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "JSObject",
+    "args": [],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "Boolean",
+    "args": [],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": ["IridiumPrimitive"],
+      "double": [],
+    }
+  },
+  {
+    "tag": "JSDefineObjProp",
+    "args": ["TargetObj", "Key", "Value"],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "JSArray",
+    "args": [],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "Binop",
+    "args": ["LBinop", "RBinop"],
+    "flags": {
+      "string": ["OP"],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "Null",
+    "args": [],
+    "flags": {
+      "string": [],
+      "void": ["IridiumPrimitive"],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "JSComputedFieldRead",
+    "args": ["Obj", "Field"],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "JSComputedFieldWrite",
+    "args": ["Obj", "Field", "Value"],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "JSSuperFieldRead",
+    "args": ["This", "Super", "Field"],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "JSSuperFieldWrite",
+    "args": ["This", "Super", "Field", "Value"],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "JSToObject",
+    "args": ["TargetObj"],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "JSAppend",
+    "args": ["TargetObj", "InsertionIdx", "SpreadObj"],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "JSDefineObjMethod",
+    "args": ["TargetObj", "Key", "Value"],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "JSCopyDataProperties",
+    "args": ["ExclusionObj", "SourceObj", "TargetObj"],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "RegExp",
+    "args": [],
+    "flags": {
+      "string": ["EXP", "FLAGS"],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "UNOPDelMemberExpr",
+    "args": ["Receiver", "Field"],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "UNOPDelVar",
+    "args": [],
+    "flags": {
+      "string": ["NAME"],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "JSTemplate",
+    "args": [],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "BitInt",
+    "args": [],
+    "flags": {
+      "string": ["IridiumPrimitive"],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "JSSpread",
+    "args": ["Val"],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "Await",
+    "args": ["Obj"],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "Yield",
+    "args": ["Obj", "DoneTarget", "NextValue"],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "JSInitialYield",
+    "args": [],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
+  },
 ];

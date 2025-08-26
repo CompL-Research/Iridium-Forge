@@ -1,4 +1,4 @@
-// Generated: 2025-08-26 01:24:02
+// Generated: 2025-08-27 03:29:37
 #pragma once
 #include "Iridium/Globals.h"
 #include "Iridium/IridiumSEXP.h"
@@ -65,6 +65,32 @@ public:
     if (tag == "Throw") return ThrowSEXP::generateFrom(obj);
     if (tag == "Ret") return RetSEXP::generateFrom(obj);
     if (tag == "JSBinop") return JSBinopSEXP::generateFrom(obj);
+    if (tag == "FieldWrite") return FieldWriteSEXP::generateFrom(obj);
+    if (tag == "JSUnop") return JSUnopSEXP::generateFrom(obj);
+    if (tag == "Unop") return UnopSEXP::generateFrom(obj);
+    if (tag == "JSObject") return JSObjectSEXP::generateFrom(obj);
+    if (tag == "Boolean") return BooleanSEXP::generateFrom(obj);
+    if (tag == "JSDefineObjProp") return JSDefineObjPropSEXP::generateFrom(obj);
+    if (tag == "JSArray") return JSArraySEXP::generateFrom(obj);
+    if (tag == "Binop") return BinopSEXP::generateFrom(obj);
+    if (tag == "Null") return NullSEXP::generateFrom(obj);
+    if (tag == "JSComputedFieldRead") return JSComputedFieldReadSEXP::generateFrom(obj);
+    if (tag == "JSComputedFieldWrite") return JSComputedFieldWriteSEXP::generateFrom(obj);
+    if (tag == "JSSuperFieldRead") return JSSuperFieldReadSEXP::generateFrom(obj);
+    if (tag == "JSSuperFieldWrite") return JSSuperFieldWriteSEXP::generateFrom(obj);
+    if (tag == "JSToObject") return JSToObjectSEXP::generateFrom(obj);
+    if (tag == "JSAppend") return JSAppendSEXP::generateFrom(obj);
+    if (tag == "JSDefineObjMethod") return JSDefineObjMethodSEXP::generateFrom(obj);
+    if (tag == "JSCopyDataProperties") return JSCopyDataPropertiesSEXP::generateFrom(obj);
+    if (tag == "RegExp") return RegExpSEXP::generateFrom(obj);
+    if (tag == "UNOPDelMemberExpr") return UNOPDelMemberExprSEXP::generateFrom(obj);
+    if (tag == "UNOPDelVar") return UNOPDelVarSEXP::generateFrom(obj);
+    if (tag == "JSTemplate") return JSTemplateSEXP::generateFrom(obj);
+    if (tag == "BitInt") return BitIntSEXP::generateFrom(obj);
+    if (tag == "JSSpread") return JSSpreadSEXP::generateFrom(obj);
+    if (tag == "Await") return AwaitSEXP::generateFrom(obj);
+    if (tag == "Yield") return YieldSEXP::generateFrom(obj);
+    if (tag == "JSInitialYield") return JSInitialYieldSEXP::generateFrom(obj);
     throw std::runtime_error("ParseIridiumTypes::specialize unhandled Tag: " + tag);
   }
 };
