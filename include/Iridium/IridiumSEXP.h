@@ -39,47 +39,98 @@ public:
   bool getBoolean() const { return std::get<bool>(value); }
   const std::string &getString() const { return std::get<std::string>(value); }
 
-  void dump(int indent = 0, std::ostream &oss = std::cout) const
+  void dump(std::ostringstream &oss, bool compressed = false, int indent = 0) const
   {
-    std::string pad(indent, ' ');
-    oss << pad << "Flag(" << key << ": ";
+    std::string pad = compressed ? "" : std::string(indent, ' ');
+    oss << pad << "[\"" << key << "\",";
     switch (valueKind)
     {
     case IridiumPrimitives::number:
-      oss << getNumber();
+      oss << std::get<double>(value);
       break;
     case IridiumPrimitives::boolean:
-      oss << (getBoolean() ? "true" : "false");
+      oss << std::boolalpha << std::get<bool>(value);
       break;
     case IridiumPrimitives::string:
-      oss << "\"" << getString() << "\"";
+    {
+      const std::string &str = std::get<std::string>(value);
+      oss << "\"";
+      for (char c : str)
+      {
+        switch (c)
+        {
+        case '\"':
+          oss << "\\\"";
+          break;
+        case '\\':
+          oss << "\\\\";
+          break;
+        case '\n':
+          oss << "\\n";
+          break;
+        case '\r':
+          oss << "\\r";
+          break;
+        case '\t':
+          oss << "\\t";
+          break;
+        default:
+          oss << c;
+          break;
+        }
+      }
+      oss << "\"";
       break;
+    }
     case IridiumPrimitives::null:
       oss << "null";
       break;
     }
-    oss << ")\n";
+    oss << "]";
   }
 
-  void dumpJSON(std::ostream &oss = std::cout) const
-  {
-    oss << "\"" << key << "\": ";
-    switch (valueKind)
-    {
-    case IridiumPrimitives::number:
-      oss << getNumber();
-      break;
-    case IridiumPrimitives::boolean:
-      oss << (getBoolean() ? "true" : "false");
-      break;
-    case IridiumPrimitives::string:
-      oss << "\"" << getString() << "\"";
-      break;
-    case IridiumPrimitives::null:
-      oss << "null";
-      break;
-    }
-  }
+  // void dump(int indent = 0, std::ostream &oss = std::cout) const
+  // {
+  //   std::string pad(indent, ' ');
+  //   oss << pad << "Flag(" << key << ": ";
+  //   switch (valueKind)
+  //   {
+  //   case IridiumPrimitives::number:
+  //     oss << getNumber();
+  //     break;
+  //   case IridiumPrimitives::boolean:
+  //     oss << (getBoolean() ? "true" : "false");
+  //     break;
+  //   case IridiumPrimitives::string:
+  //     oss << "\"" << getString() << "\"";
+  //     break;
+  //   case IridiumPrimitives::null:
+  //     oss << "null";
+  //     break;
+  //   }
+  //   oss << ")\n";
+  // }
+
+  // void dumpJSON(std::ostream &oss = std::cout, bool compressed = false) const
+  // {
+  //   std::string space = compressed ? "" : " ";
+  //   oss << "\"" << key << "\":" << space;
+  //   switch (valueKind)
+  //   {
+  //   case IridiumPrimitives::number:
+  //     oss << getNumber();
+  //     break;
+  //   case IridiumPrimitives::boolean:
+  //     oss << (getBoolean() ? "true" : "false");
+  //     break;
+  //   case IridiumPrimitives::string:
+  //     oss << "\"" << getString() << "\"";
+  //     break;
+  //   case IridiumPrimitives::null:
+  //     oss << "null";
+  //     break;
+  //   }
+  // }
 
 private:
   std::string key;
@@ -95,85 +146,114 @@ public:
   std::vector<IRISEXP> args;
   std::vector<std::shared_ptr<IridiumFlag>> flags;
 
-  void dump(int indent = 0, std::ostream &oss = std::cout) const
+  void dump(std::ostringstream &oss, bool compressed = false, int indent = 0) const
   {
-    std::string pad(indent, ' ');
-    oss << pad << "SEXP(" << tag;
+    std::string pad = compressed ? "" : std::string(indent, ' ');
+    std::string nl = compressed ? "" : "\n";
 
-    if (!flags.empty())
+    oss << pad << "[\"" << tag << "\"," << nl;
+
+    // Serialize args
+    oss << pad << "[" << nl;
+    for (size_t i = 0; i < args.size(); ++i)
     {
-      oss << " [";
-      for (size_t i = 0; i < flags.size(); ++i)
-      {
-        auto &f = flags[i];
-        // oss << f->getKey() << "=";
-        switch (f->getKind())
-        {
-        case IridiumFlag::IridiumPrimitives::number:
-          oss << f->getKey() << "=" << f->getNumber();
-          break;
-        case IridiumFlag::IridiumPrimitives::boolean:
-          oss << f->getKey() << "=" << (f->getBoolean() ? "true" : "false");
-          break;
-        case IridiumFlag::IridiumPrimitives::string:
-          oss << f->getKey() << "=" << "\"" << f->getString() << "\"";
-          break;
-        case IridiumFlag::IridiumPrimitives::null:
-          oss << f->getKey();
-          break;
-        }
-        if (i + 1 < flags.size())
-          oss << ", ";
-      }
-      oss << "]";
+      args[i]->dump(oss, compressed, indent + 2);
+      if (i + 1 < args.size())
+        oss << "," << nl;
     }
+    oss << "]" << "," << nl;
 
-    oss << ")\n";
+    // Serialize flags
+    oss << pad << "[" << nl;
+    for (size_t i = 0; i < flags.size(); ++i)
+    {
+      flags[i]->dump(oss, compressed, indent + 2);
+      if (i + 1 < flags.size())
+        oss << "," << nl;
+    }
+    oss << "]" << nl;
 
-    for (auto &s : args)
-      s->dump(indent + 2, oss);
+    oss << pad << "]";
   }
+  // void dump(int indent = 0, std::ostream &oss = std::cout) const
+  // {
+  //   std::string pad(indent, ' ');
+  //   oss << pad << "SEXP(" << tag;
 
-  void dumpJSON(int indent = 0, std::ostream &oss = std::cout) const
-  {
-    std::string pad(indent, ' ');
-    oss << pad << "{\n";
+  //   if (!flags.empty())
+  //   {
+  //     oss << " [";
+  //     for (size_t i = 0; i < flags.size(); ++i)
+  //     {
+  //       auto &f = flags[i];
+  //       // oss << f->getKey() << "=";
+  //       switch (f->getKind())
+  //       {
+  //       case IridiumFlag::IridiumPrimitives::number:
+  //         oss << f->getKey() << "=" << f->getNumber();
+  //         break;
+  //       case IridiumFlag::IridiumPrimitives::boolean:
+  //         oss << f->getKey() << "=" << (f->getBoolean() ? "true" : "false");
+  //         break;
+  //       case IridiumFlag::IridiumPrimitives::string:
+  //         oss << f->getKey() << "=" << "\"" << f->getString() << "\"";
+  //         break;
+  //       case IridiumFlag::IridiumPrimitives::null:
+  //         oss << f->getKey();
+  //         break;
+  //       }
+  //       if (i + 1 < flags.size())
+  //         oss << ", ";
+  //     }
+  //     oss << "]";
+  //   }
 
-    // Tag
-    oss << pad << "  \"tag\": \"" << tag << "\"";
+  //   oss << ")\n";
 
-    // Flags
-    if (!flags.empty())
-    {
-      oss << ",\n"
-          << pad << "  \"flags\": {";
-      for (size_t i = 0; i < flags.size(); ++i)
-      {
-        flags[i]->dumpJSON(oss);
-        if (i + 1 < flags.size())
-          oss << ", ";
-      }
-      oss << "}";
-    }
+  //   for (auto &s : args)
+  //     s->dump(indent + 2, oss);
+  // }
 
-    // Args
-    if (!args.empty())
-    {
-      oss << ",\n"
-          << pad << "  \"args\": [\n";
-      for (size_t i = 0; i < args.size(); ++i)
-      {
-        args[i]->dumpJSON(indent + 4, oss);
-        if (i + 1 < args.size())
-          oss << ",";
-        oss << "\n";
-      }
-      oss << pad << "  ]";
-    }
+  // void dumpJSON(int indent = 0, std::ostream &oss = std::cout, bool compressed = false) const
+  // {
+  //   std::string pad = compressed ? "" : std::string(indent, ' ');
+  //   std::string newline = compressed ? "" : "\n";
+  //   std::string space = compressed ? "" : " ";
 
-    oss << "\n"
-        << pad << "}";
-  }
+  //   oss << pad << "{" << newline;
+
+  //   // Tag
+  //   oss << pad << (compressed ? "" : "  ") << "\"tag\":" << space << "\"" << tag << "\"";
+
+  //   // Flags
+  //   if (!flags.empty())
+  //   {
+  //     oss << "," << (compressed ? "" : "\n") << pad << (compressed ? "" : "  ") << "\"flags\":{";
+  //     for (size_t i = 0; i < flags.size(); ++i)
+  //     {
+  //       flags[i]->dumpJSON(oss, compressed);
+  //       if (i + 1 < flags.size())
+  //         oss << ",";
+  //     }
+  //     oss << "}";
+  //   }
+
+  //   // Args
+  //   if (!args.empty())
+  //   {
+  //     oss << "," << (compressed ? "" : "\n") << pad << (compressed ? "" : "  ") << "\"args\":[" << (compressed ? "" : "\n");
+  //     for (size_t i = 0; i < args.size(); ++i)
+  //     {
+  //       args[i]->dumpJSON(indent + (compressed ? 0 : 4), oss, compressed);
+  //       if (i + 1 < args.size())
+  //         oss << ",";
+  //       oss << (compressed ? "" : "\n");
+  //     }
+  //     oss << pad << (compressed ? "" : "  ") << "]";
+  //   }
+
+  //   oss << newline << pad << "}";
+  // }
 
   void setFlag(const std::string &flagToSet)
   {

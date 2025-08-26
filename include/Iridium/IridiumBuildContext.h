@@ -109,8 +109,8 @@ public:
         moduleRequestMap(std::move(moduleRequestMap)),
         BB(std::move(BB)) {}
 
-  // Pretty printer
-  void dump(std::ostream &oss) const;
+  // // Pretty printer
+  // void dump(std::ostream &oss) const;
 };
 
 void parseBuildContexts(const msgpack::object &obj, std::unordered_map<int, std::shared_ptr<BBSEXP>> &bbIdxToSEXPMap, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext);

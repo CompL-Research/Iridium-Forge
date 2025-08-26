@@ -2,7 +2,7 @@
 #include "Iridium/IridiumSEXP.h"
 #include "generated/IridiumTypes.h"
 
-void parseBuildContexts(const msgpack::object &obj, std::unordered_map<int, std::shared_ptr<BBSEXP>> & bbIdxToSEXPMap, std::unordered_map<int, IRIBUILDCONTEXT> & iridiumBuildContext)
+void parseBuildContexts(const msgpack::object &obj, std::unordered_map<int, std::shared_ptr<BBSEXP>> &bbIdxToSEXPMap, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext)
 {
   if (obj.type != msgpack::type::ARRAY)
     throw std::runtime_error("Expected ARRAY for build contexts");
@@ -63,7 +63,8 @@ void parseBuildContexts(const msgpack::object &obj, std::unordered_map<int, std:
         hasRestArgs = valObj.as<bool>();
       else if (key == "loopConfig")
       {
-        if (valObj.type != msgpack::type::MAP) continue;
+        if (valObj.type != msgpack::type::MAP)
+          continue;
         LoopConfig lc;
         for (uint32_t k = 0; k < valObj.via.map.size; k++)
         {
@@ -84,7 +85,8 @@ void parseBuildContexts(const msgpack::object &obj, std::unordered_map<int, std:
             lc.loopInitIDX = lv.as<int>();
           else if (lk == "label")
           {
-            if (lv.type != msgpack::type::NIL) lc.label = lv.as<std::string>();
+            if (lv.type != msgpack::type::NIL)
+              lc.label = lv.as<std::string>();
           }
           else if (lk == "breakTarget")
             lc.breakTarget = lv.as<int>();
@@ -99,7 +101,8 @@ void parseBuildContexts(const msgpack::object &obj, std::unordered_map<int, std:
       }
       else if (key == "tryContext")
       {
-        if (valObj.type != msgpack::type::MAP) continue;
+        if (valObj.type != msgpack::type::MAP)
+          continue;
         TryContext tc;
         for (uint32_t k = 0; k < valObj.via.map.size; k++)
         {
@@ -126,7 +129,8 @@ void parseBuildContexts(const msgpack::object &obj, std::unordered_map<int, std:
         kind = valObj.as<int>();
       else if (key == "propInitClos")
       {
-        if (valObj.type != msgpack::type::STR) continue;
+        if (valObj.type != msgpack::type::STR)
+          continue;
         propInitClos = valObj.as<std::string>();
       }
       else if (key == "argumentsKind")
@@ -143,7 +147,8 @@ void parseBuildContexts(const msgpack::object &obj, std::unordered_map<int, std:
         ecmaArgs = valObj.as<int>();
       else if (key == "privateMapping")
       {
-        if (valObj.type != msgpack::type::ARRAY) continue;
+        if (valObj.type != msgpack::type::ARRAY)
+          continue;
         std::unordered_map<std::string, std::pair<std::string, std::string>> pm;
         for (uint32_t k = 0; k < valObj.via.array.size; k++)
         {
@@ -156,7 +161,7 @@ void parseBuildContexts(const msgpack::object &obj, std::unordered_map<int, std:
             {
               std::string v1 = inner.via.array.ptr[0].as<std::string>();
               std::string v2 = inner.via.array.ptr[1].as<std::string>();
-              pm[k1] = { v1, v2 };
+              pm[k1] = {v1, v2};
             }
             else
             {
@@ -170,9 +175,10 @@ void parseBuildContexts(const msgpack::object &obj, std::unordered_map<int, std:
         }
         privateMapping = pm;
       }
-      else if (key == "moduleRequestMap") 
+      else if (key == "moduleRequestMap")
       {
-        if (valObj.type != msgpack::type::ARRAY) continue;
+        if (valObj.type != msgpack::type::ARRAY)
+          continue;
         std::unordered_map<std::string, IRISEXP> mrm;
         for (uint32_t k = 0; k < valObj.via.array.size; k++)
         {
@@ -195,7 +201,8 @@ void parseBuildContexts(const msgpack::object &obj, std::unordered_map<int, std:
         {
           const auto &val = valObj.via.array.ptr[k];
           int bbIdx = val.as<int>();
-          if (bbIdxToSEXPMap.find(bbIdx) == bbIdxToSEXPMap.end()) {
+          if (bbIdxToSEXPMap.find(bbIdx) == bbIdxToSEXPMap.end())
+          {
             throw std::runtime_error("bbIdx not found!!");
           }
 
@@ -215,114 +222,113 @@ void parseBuildContexts(const msgpack::object &obj, std::unordered_map<int, std:
             argInitContextWhitelist, hasRestArgs, loopConfig, tryContext,
             kind, propInitClos, argumentsKind, isAsync, isGenerator,
             isStrict, isModule, ecmaArgs, privateMapping, moduleRequestMap, bbs);
-
   }
 }
 
-void IridiumBuildContext::dump(std::ostream & oss = std::cout) const
-  {
-    oss << "IridiumBuildContext {\n";
-    oss << "  parent: " << parent << "\n";
-    oss << "  scopeIdx: " << scopeIdx << "\n";
-    oss << "  args: [";
-    for (size_t i = 0; i < args.size(); ++i)
-    {
-      oss << args[i];
-      if (i + 1 < args.size())
-        oss << ", ";
-    }
-    oss << "]\n";
-    oss << "  isArgInitContext: " << (isArgInitContext ? "true" : "false") << "\n";
-    oss << "  bypassParent: " << bypassParent << "\n";
+// void IridiumBuildContext::dump(std::ostream &oss = std::cout) const
+// {
+//   oss << "IridiumBuildContext {\n";
+//   oss << "  parent: " << parent << "\n";
+//   oss << "  scopeIdx: " << scopeIdx << "\n";
+//   oss << "  args: [";
+//   for (size_t i = 0; i < args.size(); ++i)
+//   {
+//     oss << args[i];
+//     if (i + 1 < args.size())
+//       oss << ", ";
+//   }
+//   oss << "]\n";
+//   oss << "  isArgInitContext: " << (isArgInitContext ? "true" : "false") << "\n";
+//   oss << "  bypassParent: " << bypassParent << "\n";
 
-    oss << "  argInitContextWhitelist: {";
-    bool first = true;
-    for (auto &s : argInitContextWhitelist)
-    {
-      if (!first)
-        oss << ", ";
-      oss << s;
-      first = false;
-    }
-    oss << "}\n";
+//   oss << "  argInitContextWhitelist: {";
+//   bool first = true;
+//   for (auto &s : argInitContextWhitelist)
+//   {
+//     if (!first)
+//       oss << ", ";
+//     oss << s;
+//     first = false;
+//   }
+//   oss << "}\n";
 
-    oss << "  hasRestArgs: " << (hasRestArgs ? "true" : "false") << "\n";
+//   oss << "  hasRestArgs: " << (hasRestArgs ? "true" : "false") << "\n";
 
-    if (loopConfig)
-    {
-      oss << "  loopConfig: { kind: "
-          << (loopConfig->kind == LoopConfig::Kind::ForOf ? "for-of" : "standard")
-          << ", loopHeadIDX: " << loopConfig->loopHeadIDX
-          << ", loopBodyIDX: " << loopConfig->loopBodyIDX
-          << ", loopInitIDX: " << loopConfig->loopInitIDX
-          << ", label: " << (loopConfig->label ? *loopConfig->label : "null")
-          << ", breakTarget: " << loopConfig->breakTarget
-          << ", continueTarget: " << loopConfig->continueTarget
-          << " }\n";
-    }
-    else
-    {
-      oss << "  loopConfig: null\n";
-    }
+//   if (loopConfig)
+//   {
+//     oss << "  loopConfig: { kind: "
+//         << (loopConfig->kind == LoopConfig::Kind::ForOf ? "for-of" : "standard")
+//         << ", loopHeadIDX: " << loopConfig->loopHeadIDX
+//         << ", loopBodyIDX: " << loopConfig->loopBodyIDX
+//         << ", loopInitIDX: " << loopConfig->loopInitIDX
+//         << ", label: " << (loopConfig->label ? *loopConfig->label : "null")
+//         << ", breakTarget: " << loopConfig->breakTarget
+//         << ", continueTarget: " << loopConfig->continueTarget
+//         << " }\n";
+//   }
+//   else
+//   {
+//     oss << "  loopConfig: null\n";
+//   }
 
-    if (tryContext)
-    {
-      oss << "  tryContext: { tryContextIDX: " << tryContext->tryContextIDX
-          << ", tryIDX: " << tryContext->tryIDX
-          << ", udCatchIDX: " << tryContext->udCatchIDX
-          << ", imCatchIDX: " << tryContext->imCatchIDX
-          << ", finalizerIDX: " << tryContext->finalizerIDX << " }\n";
-    }
-    else
-    {
-      oss << "  tryContext: null\n";
-    }
+//   if (tryContext)
+//   {
+//     oss << "  tryContext: { tryContextIDX: " << tryContext->tryContextIDX
+//         << ", tryIDX: " << tryContext->tryIDX
+//         << ", udCatchIDX: " << tryContext->udCatchIDX
+//         << ", imCatchIDX: " << tryContext->imCatchIDX
+//         << ", finalizerIDX: " << tryContext->finalizerIDX << " }\n";
+//   }
+//   else
+//   {
+//     oss << "  tryContext: null\n";
+//   }
 
-    oss << "  kind: " << kind << "\n";
-    oss << "  propInitClos: " << (propInitClos ? *propInitClos : "null") << "\n";
-    oss << "  argumentsKind: " << argumentsKind << "\n";
-    oss << "  isAsync: " << (isAsync ? "true" : "false") << "\n";
-    oss << "  isGenerator: " << (isGenerator ? "true" : "false") << "\n";
-    oss << "  isStrict: " << (isStrict ? "true" : "false") << "\n";
-    oss << "  isModule: " << (isModule ? "true" : "false") << "\n";
-    oss << "  ecmaArgs: " << ecmaArgs << "\n";
+//   oss << "  kind: " << kind << "\n";
+//   oss << "  propInitClos: " << (propInitClos ? *propInitClos : "null") << "\n";
+//   oss << "  argumentsKind: " << argumentsKind << "\n";
+//   oss << "  isAsync: " << (isAsync ? "true" : "false") << "\n";
+//   oss << "  isGenerator: " << (isGenerator ? "true" : "false") << "\n";
+//   oss << "  isStrict: " << (isStrict ? "true" : "false") << "\n";
+//   oss << "  isModule: " << (isModule ? "true" : "false") << "\n";
+//   oss << "  ecmaArgs: " << ecmaArgs << "\n";
 
-    if (privateMapping)
-    {
-      oss << "  privateMapping: [\n";
-      for (auto &entry : *privateMapping)
-      {
-        oss << "    { key: " << entry.first
-            << ", value: (" << entry.second.first << ", " << entry.second.second << ") }\n";
-      }
-      oss << "  ]\n";
-    }
-    else
-    {
-      oss << "  privateMapping: null\n";
-    }
+//   if (privateMapping)
+//   {
+//     oss << "  privateMapping: [\n";
+//     for (auto &entry : *privateMapping)
+//     {
+//       oss << "    { key: " << entry.first
+//           << ", value: (" << entry.second.first << ", " << entry.second.second << ") }\n";
+//     }
+//     oss << "  ]\n";
+//   }
+//   else
+//   {
+//     oss << "  privateMapping: null\n";
+//   }
 
-    if (moduleRequestMap)
-    {
-      oss << "  moduleRequestMap: [\n";
-      for (auto &entry : *moduleRequestMap)
-      {
-        oss << "    key: " << entry.first << "\n";
-        entry.second->dump(6, oss);
-      }
-      oss << "  ]\n";
-    }
-    else
-    {
-      oss << "  moduleRequestMap: null\n";
-    }
+//   if (moduleRequestMap)
+//   {
+//     oss << "  moduleRequestMap: [\n";
+//     for (auto &entry : *moduleRequestMap)
+//     {
+//       oss << "    key: " << entry.first << "\n";
+//       entry.second->dump(6, oss);
+//     }
+//     oss << "  ]\n";
+//   }
+//   else
+//   {
+//     oss << "  moduleRequestMap: null\n";
+//   }
 
-    oss << "  BB: [\n";
-    for (size_t i = 0; i < BB.size(); ++i)
-    {
-      BB[i]->dump(4, oss);
-    }
-    oss << "  ]\n";
+//   oss << "  BB: [\n";
+//   for (size_t i = 0; i < BB.size(); ++i)
+//   {
+//     BB[i]->dump(4, oss);
+//   }
+//   oss << "  ]\n";
 
-    oss << "}";
-  }
+//   oss << "}";
+// }
