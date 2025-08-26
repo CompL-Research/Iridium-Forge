@@ -8,7 +8,7 @@
       "name": "(gdb) Run ...outputs/test1.iri",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/build/iridium_forge",
+      "program": "${workspaceFolder}/build/forge",
       "args": [
         "-i",
         "/home/meetesh/wd/Iridium/outputs/test1.iri"
