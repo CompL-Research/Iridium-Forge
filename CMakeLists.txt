@@ -4,10 +4,13 @@ project(iridium_forge LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Get all C++ Source Files
+file(GLOB_RECURSE IRIDIUM_SRC CONFIGURE_DEPENDS src/*.cpp)
+
+# Gzip library
 find_package(ZLIB REQUIRED)
-# msgpack-c provides this target name when installed as C++ headers/lib:
-# On many systems: find_package(msgpackc-cxx CONFIG REQUIRED)
-# Fallback: try plain msgpack
+
+# Msgpack library
 find_package(msgpackc-cxx QUIET)
 if (NOT msgpackc-cxx_FOUND)
   find_package(msgpack QUIET)
@@ -21,12 +24,41 @@ else()
   message(FATAL_ERROR "msgpack-c++ not found. Install msgpack-cxx (e.g., via vcpkg or your package manager).")
 endif()
 
-# add_executable(iridium_forge src/main.cpp src/Globals.cpp src/IridiumBuildContext.cpp src/IridiumSEXP.cpp)
+# Node headers (from cmake-js)
+include_directories(${CMAKE_JS_INC})
 
-file(GLOB_RECURSE IRIDIUM_SRC CONFIGURE_DEPENDS src/*.cpp)
-add_executable(iridium_forge ${IRIDIUM_SRC})
+# Get node-addon-api include path
+execute_process(
+  COMMAND node -p "require('node-addon-api').include"
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  OUTPUT_VARIABLE NODE_ADDON_API_DIR
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+string(REPLACE "\"" "" NODE_ADDON_API_DIR ${NODE_ADDON_API_DIR})
 
-target_link_libraries(iridium_forge PRIVATE ZLIB::ZLIB ${MSGPACK_TARGET})
+# Include node-addon-api
+include_directories(${NODE_ADDON_API_DIR})
 
-# Add include folder
-target_include_directories(iridium_forge PUBLIC ${CMAKE_SOURCE_DIR}/include)
+# ----------------------
+# Shared library for Node.js
+# ----------------------
+add_library(iridiumForge SHARED
+    ${IRIDIUM_SRC}
+    node-api.cpp
+    ${CMAKE_JS_SRC}
+)
+
+set_target_properties(iridiumForge PROPERTIES PREFIX "" SUFFIX ".node")
+target_link_libraries(iridiumForge PRIVATE ZLIB::ZLIB ${MSGPACK_TARGET})
+target_include_directories(iridiumForge PUBLIC ${CMAKE_SOURCE_DIR}/include)
+
+# ----------------------
+# Standalone executable
+# ----------------------
+add_executable(forge
+    ${IRIDIUM_SRC}          # reuse same source files if needed
+    main.cpp            # your executable entry point
+)
+
+target_link_libraries(forge PRIVATE ZLIB::ZLIB ${MSGPACK_TARGET})
+target_include_directories(forge PUBLIC ${CMAKE_SOURCE_DIR}/include)
