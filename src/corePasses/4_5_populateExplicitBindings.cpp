@@ -92,6 +92,7 @@ void populateExplicitBindings(IRISEXP fileSexp, std::unordered_map<int, IRIBUILD
             else
             {
               // This statement has been reduced to a simple EnvWriteSEXP
+              jsExplicitBindingDeclarationStmt->args.resize(2);
               jsExplicitBindingDeclarationStmt->setRVal(std::make_shared<GlobalBindingSEXP>("undefined"));
               bb->args.at(i) = reduceJSDecl(jsExplicitBindingDeclarationStmt);
             }
