@@ -6,8 +6,6 @@ sudo apt-get install zlib1g-dev libmsgpack-dev
 ```
 
 ### Building
-
 ```
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-cmake --build build -j
+CMAKE_BUILD_PARALLEL_LEVEL=64 npx cmake-js build --debug
 ```
