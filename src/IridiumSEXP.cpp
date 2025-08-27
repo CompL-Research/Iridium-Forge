@@ -2,7 +2,7 @@
 #include "generated/IridiumTypes.h"
 #include "generated/ParseIridiumTypes.h"
 
-IRISEXP parseSEXP(const msgpack::object &obj, std::unordered_map<int, std::shared_ptr<BBSEXP>> * bbIdxToSEXPMap)
+IRISEXP parseSEXP(const msgpack::object &obj, std::unordered_map<int, std::shared_ptr<BBSEXP>> *bbIdxToSEXPMap)
 {
   if (obj.type != msgpack::type::ARRAY || obj.via.array.size != 3)
     throw std::runtime_error("Invalid SEXP object");
@@ -43,12 +43,43 @@ IRISEXP parseSEXP(const msgpack::object &obj, std::unordered_map<int, std::share
     case msgpack::type::BOOLEAN:
       sexp->flags.push_back(std::make_shared<IridiumFlag>(key, val.as<bool>()));
       break;
+    // case msgpack::type::FLOAT32:
+    // case msgpack::type::FLOAT64:
+    // case msgpack::type::POSITIVE_INTEGER:
+    // case msgpack::type::NEGATIVE_INTEGER:
+    //   sexp->flags.push_back(std::make_shared<IridiumFlag>(key, val.as<double>()));
+    //   break;
     case msgpack::type::FLOAT32:
-    case msgpack::type::FLOAT64:
-    case msgpack::type::POSITIVE_INTEGER:
-    case msgpack::type::NEGATIVE_INTEGER:
-      sexp->flags.push_back(std::make_shared<IridiumFlag>(key, val.as<double>()));
+    {
+      double d = val.via.f64; // still stored in f64
+      // std::cerr << "[DEBUG] FLOAT32 key=" << key
+      //           << " raw=" << std::setprecision(9) << static_cast<float>(d)
+      //           << " (stored=" << std::setprecision(17) << d << ")\n";
+      sexp->flags.push_back(std::make_shared<IridiumFlag>(key, d));
       break;
+    }
+    case msgpack::type::FLOAT64:
+    {
+      double d = val.via.f64;
+      // std::cerr << "[DEBUG] FLOAT64 key=" << key
+      //           << " raw=" << std::setprecision(17) << d << "\n";
+      sexp->flags.push_back(std::make_shared<IridiumFlag>(key, d));
+      break;
+    }
+    case msgpack::type::POSITIVE_INTEGER:
+    {
+      uint64_t u = val.via.u64;
+      // std::cerr << "[DEBUG] POS_INT key=" << key << " raw=" << u << std::endl;
+      sexp->flags.push_back(std::make_shared<IridiumFlag>(key, static_cast<double>(u)));
+      break;
+    }
+    case msgpack::type::NEGATIVE_INTEGER:
+    {
+      int64_t i = val.via.i64;
+      // std::cerr << "[DEBUG] NEG_INT key=" << key << " raw=" << i << std::endl;
+      sexp->flags.push_back(std::make_shared<IridiumFlag>(key, static_cast<double>(i)));
+      break;
+    }
     case msgpack::type::STR:
       sexp->flags.push_back(std::make_shared<IridiumFlag>(key, val.as<std::string>()));
       break;
@@ -61,8 +92,10 @@ IRISEXP parseSEXP(const msgpack::object &obj, std::unordered_map<int, std::share
   IRISEXP res = ParseIridiumTypes::specialize(sexp);
 
   // Populate bbIdxToSEXPMap
-  if (auto bb = std::dynamic_pointer_cast<BBSEXP>(res)) {
-    if (!bbIdxToSEXPMap) throw std::runtime_error("bbIdxToSEXPMap not passed to parseSEXP when parsing a BBSEXP");
+  if (auto bb = std::dynamic_pointer_cast<BBSEXP>(res))
+  {
+    if (!bbIdxToSEXPMap)
+      throw std::runtime_error("bbIdxToSEXPMap not passed to parseSEXP when parsing a BBSEXP");
     (*bbIdxToSEXPMap)[bb->getIDX()] = bb;
   }
 

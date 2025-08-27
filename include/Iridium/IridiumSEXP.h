@@ -39,6 +39,26 @@ public:
   bool getBoolean() const { return std::get<bool>(value); }
   const std::string &getString() const { return std::get<std::string>(value); }
 
+  void prettyPrint(std::ostream &oss) const
+  {
+    oss << key << "=";
+    switch (valueKind)
+    {
+    case IridiumPrimitives::number:
+      oss << std::setprecision(17) << std::get<double>(value);
+      break;
+    case IridiumPrimitives::boolean:
+      oss << (std::get<bool>(value) ? "true" : "false");
+      break;
+    case IridiumPrimitives::string:
+      oss << "\"" << std::get<std::string>(value) << "\"";
+      break;
+    case IridiumPrimitives::null:
+      oss << "null";
+      break;
+    }
+  }
+
   void dump(std::ostringstream &oss, bool compressed = false, int indent = 0) const
   {
     std::string pad = compressed ? "" : std::string(indent, ' ');
@@ -46,7 +66,7 @@ public:
     switch (valueKind)
     {
     case IridiumPrimitives::number:
-      oss << std::get<double>(value);
+      oss << std::setprecision(17) << std::get<double>(value);
       break;
     case IridiumPrimitives::boolean:
       oss << std::boolalpha << std::get<bool>(value);
@@ -146,6 +166,98 @@ public:
   std::vector<IRISEXP> args;
   std::vector<std::shared_ptr<IridiumFlag>> flags;
 
+  void prettyPrint(std::ostream &out, int indent = 0) const
+  {
+    std::string pad(indent, ' ');
+
+    // Tags that open a block scope
+    auto isScopeTag = [](const std::string &t)
+    {
+      return t == "BB" || t == "File" || t == "BBContainer" ||
+             t == "Bindings" || t == "List";
+    };
+
+    if (isScopeTag(tag))
+    {
+      // Print tag and possible flags
+      out << pad << tag;
+      if (!flags.empty())
+      {
+        out << "[";
+        for (size_t i = 0; i < flags.size(); i++)
+        {
+          flags[i]->prettyPrint(out);
+          if (i + 1 < flags.size())
+            out << ", ";
+        }
+        out << "]";
+      }
+
+      // Then the block body
+      out << " {\n";
+      for (size_t i = 0; i < args.size(); i++)
+      {
+        args[i]->prettyPrint(out, indent + 2);
+        out << "\n";
+      }
+      out << pad << "}";
+    }
+    else
+    {
+      // Statement / Expression
+      out << pad << tag;
+
+      // Special case: EnvBinding → only print NAME
+      if (tag == "EnvBinding")
+      {
+        for (auto &flag : flags)
+        {
+          if (flag->getKey() == "NAME")
+          {
+            out << "[";
+            flag->prettyPrint(out);
+            out << "]";
+            break;
+          }
+        }
+      }
+      // Normal case: all flags
+      else if (!flags.empty())
+      {
+        out << "[";
+        for (size_t i = 0; i < flags.size(); i++)
+        {
+          flags[i]->prettyPrint(out);
+          if (i + 1 < flags.size())
+            out << ", ";
+        }
+        out << "]";
+      }
+
+      // Arguments
+      if (!args.empty())
+      {
+        out << "(";
+        for (size_t i = 0; i < args.size(); i++)
+        {
+          if (isScopeTag(args[i]->tag))
+          {
+            out << "\n";
+            args[i]->prettyPrint(out, indent + 2);
+            out << "\n"
+                << pad;
+          }
+          else
+          {
+            args[i]->prettyPrint(out, 0); // inline
+          }
+          if (i + 1 < args.size())
+            out << ", ";
+        }
+        out << ")";
+      }
+    }
+  }
   void dump(std::ostringstream &oss, bool compressed = false, int indent = 0) const
   {
     std::string pad = compressed ? "" : std::string(indent, ' ');
