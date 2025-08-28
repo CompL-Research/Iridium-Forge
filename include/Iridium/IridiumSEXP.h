@@ -75,7 +75,7 @@ public:
     {
       const std::string &str = std::get<std::string>(value);
       oss << "\"";
-      for (char c : str)
+      for (unsigned char c : str)
       {
         switch (c)
         {
@@ -95,13 +95,55 @@ public:
           oss << "\\t";
           break;
         default:
-          oss << c;
+          if (c < 0x20 || c > 0x7E)
+          {
+            // Encode as \uXXXX
+            oss << "\\u"
+                << std::hex << std::setw(4) << std::setfill('0')
+                << static_cast<int>(c)
+                << std::dec; // restore decimal
+          }
+          else
+          {
+            oss << c;
+          }
           break;
         }
       }
       oss << "\"";
       break;
     }
+    // case IridiumPrimitives::string:
+    // {
+    //   const std::string &str = std::get<std::string>(value);
+    //   oss << "\"";
+    //   for (char c : str)
+    //   {
+    //     switch (c)
+    //     {
+    //     case '\"':
+    //       oss << "\\\"";
+    //       break;
+    //     case '\\':
+    //       oss << "\\\\";
+    //       break;
+    //     case '\n':
+    //       oss << "\\n";
+    //       break;
+    //     case '\r':
+    //       oss << "\\r";
+    //       break;
+    //     case '\t':
+    //       oss << "\\t";
+    //       break;
+    //     default:
+    //       oss << c;
+    //       break;
+    //     }
+    //   }
+    //   oss << "\"";
+    //   break;
+    // }
     case IridiumPrimitives::null:
       oss << "null";
       break;
