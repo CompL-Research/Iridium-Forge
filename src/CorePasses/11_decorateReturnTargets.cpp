@@ -1,4 +1,4 @@
-#include "Iridium/Passes/11_decorateReturnTargets.h"
+#include "Iridium/CorePasses/11_decorateReturnTargets.h"
 #include "Iridium/Globals.h"
 #include "generated/IridiumTypes.h"
 

@@ -1,4 +1,4 @@
-#include "Iridium/Passes/6_patchHeritageConstructorSuperCalls.h"
+#include "Iridium/CorePasses/6_patchHeritageConstructorSuperCalls.h"
 #include "Iridium/Globals.h"
 #include "generated/IridiumTypes.h"
 

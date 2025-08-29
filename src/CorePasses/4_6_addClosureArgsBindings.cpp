@@ -1,4 +1,4 @@
-#include "Iridium/Passes/4_6_addClosureArgsBindings.h"
+#include "Iridium/CorePasses/4_6_addClosureArgsBindings.h"
 #include "Iridium/Globals.h"
 #include "generated/IridiumTypes.h"
 

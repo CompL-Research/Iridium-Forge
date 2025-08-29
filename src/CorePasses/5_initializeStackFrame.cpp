@@ -1,4 +1,4 @@
-#include "Iridium/Passes/5_initializeStackFrame.h"
+#include "Iridium/CorePasses/5_initializeStackFrame.h"
 #include "Iridium/Globals.h"
 #include "generated/IridiumTypes.h"
 

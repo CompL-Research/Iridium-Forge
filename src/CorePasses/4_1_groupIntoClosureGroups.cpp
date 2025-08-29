@@ -1,4 +1,4 @@
-#include "Iridium/Passes/4_1_groupIntoClosureGroups.h"
+#include "Iridium/CorePasses/4_1_groupIntoClosureGroups.h"
 #include "Iridium/Globals.h"
 #include "generated/IridiumTypes.h"
 

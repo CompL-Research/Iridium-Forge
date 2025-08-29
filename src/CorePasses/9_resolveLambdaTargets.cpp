@@ -1,4 +1,4 @@
-#include "Iridium/Passes/9_resolveLambdaTargets.h"
+#include "Iridium/CorePasses/9_resolveLambdaTargets.h"
 #include "Iridium/Globals.h"
 #include "generated/IridiumTypes.h"
 

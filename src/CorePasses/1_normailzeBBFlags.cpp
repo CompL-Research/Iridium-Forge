@@ -1,4 +1,4 @@
-#include "Iridium/Passes/1_normailzeBBFlags.h"
+#include "Iridium/CorePasses/1_normailzeBBFlags.h"
 #include "Iridium/Globals.h"
 #include "generated/IridiumTypes.h"
 #include "Iridium/IridiumBuildContext.h"

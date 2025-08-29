@@ -1,4 +1,4 @@
-#include "Iridium/Passes/3_filterNops.h"
+#include "Iridium/CorePasses/3_filterNops.h"
 #include "Iridium/Globals.h"
 #include "generated/IridiumTypes.h"
 

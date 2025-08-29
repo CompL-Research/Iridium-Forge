@@ -1,4 +1,4 @@
-#include "Iridium/Passes/4_2_populateModuleBindings.h"
+#include "Iridium/CorePasses/4_2_populateModuleBindings.h"
 #include "Iridium/Globals.h"
 #include "generated/IridiumTypes.h"
 

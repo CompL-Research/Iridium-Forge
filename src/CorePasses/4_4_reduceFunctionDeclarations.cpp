@@ -1,4 +1,4 @@
-#include "Iridium/Passes/4_4_reduceFunctionDeclarations.h"
+#include "Iridium/CorePasses/4_4_reduceFunctionDeclarations.h"
 #include "Iridium/Globals.h"
 #include "generated/IridiumTypes.h"
 #include "Iridium/IridiumReductions.h"

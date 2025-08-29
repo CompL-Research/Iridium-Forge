@@ -1,4 +1,4 @@
-#include "Iridium/Passes/12_promoteAsyncReturns.h"
+#include "Iridium/CorePasses/12_promoteAsyncReturns.h"
 #include "Iridium/Globals.h"
 #include "generated/IridiumTypes.h"
 

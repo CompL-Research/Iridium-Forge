@@ -1,4 +1,4 @@
-#include "Iridium/Passes/7_reduceResolvePrivateEnvBindingSEXP.h"
+#include "Iridium/CorePasses/7_reduceResolvePrivateEnvBindingSEXP.h"
 #include "Iridium/Globals.h"
 #include "generated/IridiumTypes.h"
 

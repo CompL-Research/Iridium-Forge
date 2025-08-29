@@ -1,4 +1,4 @@
-#include "Iridium/Passes/10_resolveBreakAndContinueTargets.h"
+#include "Iridium/CorePasses/10_resolveBreakAndContinueTargets.h"
 #include "Iridium/Globals.h"
 #include "generated/IridiumTypes.h"
 

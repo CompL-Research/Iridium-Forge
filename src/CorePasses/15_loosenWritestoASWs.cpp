@@ -1,4 +1,4 @@
-#include "Iridium/Passes/15_loosenWritestoASWs.h"
+#include "Iridium/CorePasses/15_loosenWritestoASWs.h"
 #include "Iridium/Globals.h"
 #include "generated/IridiumTypes.h"
 

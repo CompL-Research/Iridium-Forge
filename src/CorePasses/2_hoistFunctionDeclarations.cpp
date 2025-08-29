@@ -1,4 +1,4 @@
-#include "Iridium/Passes/2_hoistFunctionDeclarations.h"
+#include "Iridium/CorePasses/2_hoistFunctionDeclarations.h"
 #include "Iridium/Globals.h"
 #include "generated/IridiumTypes.h"
 
