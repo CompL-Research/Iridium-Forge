@@ -8,6 +8,7 @@
 #include "Iridium/entrypoint.h"
 #include "Iridium/Globals.h"
 #include "Iridium/IridiumSEXP.h"
+#include "Iridium/Structure/BBContainerView.h"
 
 static std::vector<uint8_t> gunzip(const void *data, size_t size);
 
@@ -71,6 +72,17 @@ Napi::Value execute(const Napi::CallbackInfo &info)
     Napi::Error::New(env, "[Forge] Expected 'buildContext' to be ARRAY!").ThrowAsJavaScriptException();
 
   IRISEXP res = runCorePasses(iridium, buildContext);
+
+  for (auto & b : res->args)
+  {
+    if (auto bbCont = std::dynamic_pointer_cast<BBContainerSEXP>(b))
+    {
+      std::ostringstream oss;
+      BBContainerView view(bbCont);
+      view.dumpBDUChains(oss, true, 0);
+      std::cout << oss.str();
+    }
+  }
 
   // Add different passes here in the future...
 
