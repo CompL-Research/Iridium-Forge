@@ -73,16 +73,15 @@ Napi::Value execute(const Napi::CallbackInfo &info)
 
   IRISEXP res = runCorePasses(iridium, buildContext);
 
-  for (auto & b : res->args)
-  {
-    if (auto bbCont = std::dynamic_pointer_cast<BBContainerSEXP>(b))
-    {
-      std::ostringstream oss;
-      BBContainerView view(bbCont);
-      view.dumpBDUChains(oss, true, 0);
-      std::cout << oss.str();
-    }
-  }
+  // for (auto & b : res->args)
+  // {
+  //   if (auto bbCont = std::dynamic_pointer_cast<BBContainerSEXP>(b))
+  //   {
+  //     std::ostringstream oss;
+  //     BBContainerView view(bbCont);
+  //     view.dumpCFGDOT("IRID_" + std::to_string(bbCont->getStartBBIDX()) + ".DOT");
+  //   }
+  // }
 
   // Add different passes here in the future...
 
