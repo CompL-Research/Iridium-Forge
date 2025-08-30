@@ -1,4 +1,4 @@
-// Generated: 2025-08-27 03:29:37
+// Generated: 2025-08-31 02:59:18
 #pragma once
 #include "Iridium/Globals.h"
 #include "Iridium/IridiumSEXP.h"
@@ -12,7 +12,6 @@ public:
     if (tag == "List") return ListSEXP::generateFrom(obj);
     if (tag == "JSImplicitBindingDeclaration") return JSImplicitBindingDeclarationSEXP::generateFrom(obj);
     if (tag == "EnvRead") return EnvReadSEXP::generateFrom(obj);
-    if (tag == "IfJump") return IfJumpSEXP::generateFrom(obj);
     if (tag == "String") return StringSEXP::generateFrom(obj);
     if (tag == "FieldRead") return FieldReadSEXP::generateFrom(obj);
     if (tag == "JSExplicitBindingDeclaration") return JSExplicitBindingDeclarationSEXP::generateFrom(obj);
