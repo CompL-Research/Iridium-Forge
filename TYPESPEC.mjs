@@ -50,16 +50,6 @@ export default [
     }
   },
   {
-    "tag": "IfJump",
-    "args": ["Test"],
-    "flags": {
-      "string": [],
-      "void": ["NOT"],
-      "bool": [],
-      "double": ["IDX"],
-    }
-  },
-  {
     "tag": "String",
     "args": [],
     "flags": {
@@ -134,7 +124,7 @@ export default [
     "args": ["Test"],
     "flags": {
       "string": [],
-      "void": [],
+      "void": ["NOT"],
       "bool": [],
       "double": ["TRUE", "FALSE"],
     }
