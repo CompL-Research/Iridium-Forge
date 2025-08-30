@@ -144,7 +144,7 @@ void BBContainerView::initCFG()
     }
     else
     {
-      throw std::runtime_error("Unexpected LastNode in BB");
+      throw std::runtime_error("Unexpected LastNode in BB: " + lastStmt->tag);
     }
   }
 }
