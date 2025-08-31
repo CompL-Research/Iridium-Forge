@@ -73,64 +73,43 @@ void BBContainerView::initBDUChains()
 
 void BBContainerView::initCFG()
 {
+  auto startBBIdx = targetContainer->getStartBBIDX();
   auto bbList = std::dynamic_pointer_cast<ListSEXP>(targetContainer->getBB());
-  assert(bbList);
+  assert(bbList && "bbList is null");
 
+  // Add all BBs as vertices to the control flow graph
   for (auto &bb : bbList->args)
   {
     auto currBB = std::dynamic_pointer_cast<BBSEXP>(bb);
-    assert(currBB);
-    bbIdMap[currBB->getIDX()] = currBB;
-    auto vertexId = add_vertex(currBB, controlFlowGraph);
-    vertexMap[currBB] = vertexId;
+    assert(currBB && "currBB is null 1");
+    cfgManager.addNode(currBB, currBB->getIDX() == startBBIdx);
   }
 
-  for (auto &bb : bbIdMap)
+  // Add all BBs as vertices to the control flow graph
+  for (auto &bb : bbList->args)
   {
-    auto currBB = std::dynamic_pointer_cast<BBSEXP>(bb.second);
-    assert(currBB);
-    assert(vertexMap.find(currBB) != vertexMap.end());
+    auto currBB = std::dynamic_pointer_cast<BBSEXP>(bb);
+    assert(currBB && "currBB is null 2");
+    auto sourceBBIdx = currBB->getIDX();
 
-    auto currVertexId = vertexMap[currBB];
-
-    auto &lastStmt = currBB->args.back();
+    auto lastStmt = currBB->args.back();
+    
     if (auto gotoStmt = std::dynamic_pointer_cast<GotoSEXP>(lastStmt))
     {
-      double targetIdx = gotoStmt->getIDX();
-      assert(bbIdMap.find(targetIdx) != bbIdMap.end());
-
-      auto &targetBB = bbIdMap[targetIdx];
-
-      assert(vertexMap.find(targetBB) != vertexMap.end());
-
-      add_edge(currVertexId, vertexMap[targetBB], controlFlowGraph);
+      double targetBBIdx = gotoStmt->getIDX();
+      cfgManager.connect(sourceBBIdx, targetBBIdx);
     }
     else if (auto ifElseStmt = std::dynamic_pointer_cast<IfElseJumpSEXP>(lastStmt))
     {
       double targetTrueIdx = ifElseStmt->getTRUE();
       double targetFalseIdx = ifElseStmt->getFALSE();
-      assert(bbIdMap.find(targetTrueIdx) != bbIdMap.end());
-      assert(bbIdMap.find(targetFalseIdx) != bbIdMap.end());
 
-      auto &target1BB = bbIdMap[targetTrueIdx];
-      auto &target2BB = bbIdMap[targetFalseIdx];
-
-      assert(vertexMap.find(target1BB) != vertexMap.end());
-      assert(vertexMap.find(target2BB) != vertexMap.end());
-
-      add_edge(currVertexId, vertexMap[target1BB], controlFlowGraph);
-      add_edge(currVertexId, vertexMap[target2BB], controlFlowGraph);
+      cfgManager.connect(sourceBBIdx, targetTrueIdx);
+      cfgManager.connect(sourceBBIdx, targetFalseIdx);
+      
     }
     else if (auto invokeFinalizer = std::dynamic_pointer_cast<InvokeFinalizerSEXP>(lastStmt))
     {
-      double targetIdx = invokeFinalizer->getIDX();
-      assert(bbIdMap.find(targetIdx) != bbIdMap.end());
-
-      auto &targetBB = bbIdMap[targetIdx];
-
-      assert(vertexMap.find(targetBB) != vertexMap.end());
-
-      add_edge(currVertexId, vertexMap[targetBB], controlFlowGraph);
     }
     else if (auto returnStmt = std::dynamic_pointer_cast<ReturnSEXP>(lastStmt))
     {
@@ -213,19 +192,19 @@ std::string escapeDotLabel(const std::string &s)
   return out;
 }
 
-void BBContainerView::dumpCFGDOT(std::string filePath)
+void CFGManager::dumpCFGDOT(std::string filePath)
 {
   // Write to DOT file
   std::ofstream dot_file(filePath);
 
   boost::write_graphviz(
-      dot_file, controlFlowGraph,
+      dot_file, cfg,
       // Lambda to print custom vertex properties
       [&](std::ostream &out, auto v)
       {
         std::stringstream ss;
-        controlFlowGraph[v]->prettyPrint(ss);
-        out << "[label=\"BB" << controlFlowGraph[v]->getIDX() << "\\l"
+        cfg[v]->prettyPrint(ss);
+        out << "[label=\"BB" << cfg[v]->getIDX() << "\\l"
             << escapeDotLabel(ss.str())
             << "\", shape=box, style=rounded, fontname=\"Courier\", fontsize=10]";
       });

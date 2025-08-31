@@ -79,7 +79,8 @@ Napi::Value execute(const Napi::CallbackInfo &info)
   //   {
   //     std::ostringstream oss;
   //     BBContainerView view(bbCont);
-  //     view.dumpCFGDOT("IRID_" + std::to_string(bbCont->getStartBBIDX()) + ".DOT");
+  //     view.cfgManager.dumpCFGDOT("IRID_" + std::to_string(bbCont->getStartBBIDX()) + ".DOT");
+  //     view.cfgManager.printCFG(std::cout);
   //   }
   // }
 
