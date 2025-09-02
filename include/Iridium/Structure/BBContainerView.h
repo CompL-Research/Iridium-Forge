@@ -8,23 +8,22 @@
 
 //
 // A BBContainerView provides abstraction over an existing BBContainerSEXP,
-//  - Provides Binding-UseDefStmt maps
 //  - Provides control flow abstraction
 //  - BBContainerViewBBContainerView
 //
 class BBContainerView
 {
 public:
-  CFGManager cfgManager;
-private:
   std::shared_ptr<BBContainerSEXP> targetContainer;
+  CFGManager cfgManager;
+  double scopeIdx;
+private:
   SymbolTable & symbolTable;
-
-  // Initialization
-  void populateSymbolTable();
-  void initCFG();
 
 public:
   BBContainerView(std::shared_ptr<BBContainerSEXP> target, SymbolTable & symbolTable);
+
+  void initCFG();
+  void populateSymbolTable();
 
 };

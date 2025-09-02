@@ -4,6 +4,7 @@
 
 BBContainerView::BBContainerView(std::shared_ptr<BBContainerSEXP> target, SymbolTable &symbolTable) : targetContainer(target), symbolTable(symbolTable)
 {
+  scopeIdx = target->getScopeIDX();
   populateSymbolTable();
   initCFG();
 }
@@ -18,6 +19,8 @@ void BBContainerView::populateSymbolTable()
     assert(currBinding);
     if (symbolTable.find(currBinding) == symbolTable.end())
       symbolTable[currBinding] = SymbolMetadata();
+    symbolTable[currBinding].frame = targetContainer;
+    symbolTable[currBinding].binding = currBinding;
   }
 
   if (targetContainer->hasTopLevel())
@@ -30,6 +33,9 @@ void BBContainerView::populateSymbolTable()
       assert(currBinding);
       if (symbolTable.find(currBinding) == symbolTable.end())
         symbolTable[currBinding] = SymbolMetadata();
+      symbolTable[currBinding].frame = targetContainer;
+      symbolTable[currBinding].binding = currBinding;
+      symbolTable[currBinding].isTopLevelModuleBinding = true;
     }
   }
 
@@ -92,8 +98,6 @@ void BBContainerView::populateSymbolTable()
         return ele == b;
       };
 
-      symbolTable[currBinding].isTopLevelModuleBinding = true;
-
       // Collect stmts that contain are using this binding
       for (auto &bb : bbList->args)
       {
@@ -119,8 +123,10 @@ void BBContainerView::populateSymbolTable()
               }
               else if (auto remoteTargetWrite = std::dynamic_pointer_cast<RemoteEnvBindingSEXP>(envWrite->getLValTarget()))
               {
-                if (resolveRemoteBinding(remoteTargetWrite) == currBinding) symbolTable[currBinding].localWrites.push_back(path);
-                else symbolTable[currBinding].localReads.push_back(path);
+                if (resolveRemoteBinding(remoteTargetWrite) == currBinding)
+                  symbolTable[currBinding].localWrites.push_back(path);
+                else
+                  symbolTable[currBinding].localReads.push_back(path);
               }
               else
                 symbolTable[currBinding].localReads.push_back(path);
@@ -187,6 +193,8 @@ void BBContainerView::initCFG()
   auto bbList = std::dynamic_pointer_cast<ListSEXP>(targetContainer->getBB());
   assert(bbList && "bbList is null");
 
+  cfgManager.targetContainer = bbList;
+
   // Add all BBs as vertices to the control flow graph
   for (auto &bb : bbList->args)
   {
@@ -227,6 +235,10 @@ void BBContainerView::initCFG()
     {
     }
     else if (auto returnStmt = std::dynamic_pointer_cast<RetSEXP>(lastStmt))
+    {
+      // TODO, retSEXP
+    }
+    else if (auto throwStmt = std::dynamic_pointer_cast<ThrowSEXP>(lastStmt))
     {
       // TODO, retSEXP
     }
