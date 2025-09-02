@@ -9,6 +9,9 @@
 #include "Iridium/Globals.h"
 #include "Iridium/IridiumSEXP.h"
 #include "Iridium/Structure/BBContainerView.h"
+#include "Iridium/Structure/FileView.h"
+
+#include "Iridium/OptimizationPasses/RedundantGotoElimination.h"
 
 static std::vector<uint8_t> gunzip(const void *data, size_t size);
 
@@ -73,19 +76,17 @@ Napi::Value execute(const Napi::CallbackInfo &info)
 
   IRISEXP res = runCorePasses(iridium, buildContext);
 
-  // for (auto & b : res->args)
-  // {
-  //   if (auto bbCont = std::dynamic_pointer_cast<BBContainerSEXP>(b))
-  //   {
-  //     std::ostringstream oss;
-  //     BBContainerView view(bbCont);
-  //     view.cfgManager.dumpCFGDOT("IRID_" + std::to_string(bbCont->getStartBBIDX()) + ".DOT");
-  //     view.cfgManager.printCFG(std::cout);
-  //   }
-  // }
+  auto fileSEXP = std::dynamic_pointer_cast<FileSEXP>(res);
+  assert(fileSEXP);
+
+  FileView fileView(fileSEXP);
+  // std::ostringstream test;
+  // fileView.dumpSymbolTable(test);
+  // std::cout << test.str() << std::endl;
+
+  doRedundantGotoElimination(fileView);
 
   // Add different passes here in the future...
-
   std::ostringstream oss;
 
   if (returnJSON)
