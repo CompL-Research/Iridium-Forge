@@ -33,4 +33,6 @@ public:
 
   std::vector<BBContainerView> & getBBContainerViews() { return bbContainerViews; }
 
+  std::shared_ptr<BBSEXP> getBB(double scopeIDX, double bbIDX);
+
 };
