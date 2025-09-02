@@ -28,16 +28,12 @@
 #include "Iridium/CorePasses/15_loosenWritestoASWs.h"
 #include "Iridium/CorePasses/16_markDirectEvals.h"
 
-IRISEXP runCorePasses(msgpack::object & iridiumObj, msgpack::object & buildContexts)
+#include "Iridium/Structure/FileView.h"
+#include "Iridium/OptimizationPasses/RedundantGotoElimination.h"
+#include "Iridium/OptimizationPasses/UnreadBindingRemoval.h"
+
+IRISEXP runCorePasses(IRISEXP sexp, std::unordered_map<int, IRIBUILDCONTEXT> iridiumBuildContext)
 {
-
-  // Read Iridium SEXP
-  std::unordered_map<int, std::shared_ptr<BBSEXP>> bbIdxToSEXPMap;
-  std::unordered_map<int, IRIBUILDCONTEXT> iridiumBuildContext;
-  auto sexp = parseSEXP(iridiumObj, &bbIdxToSEXPMap);
-
-  // Read Iridium Build Contexts
-  parseBuildContexts(buildContexts, bbIdxToSEXPMap, iridiumBuildContext);
 
   // Run Core Passes
   normalizeBBFlags(iridiumBuildContext);
@@ -85,3 +81,34 @@ IRISEXP runCorePasses(msgpack::object & iridiumObj, msgpack::object & buildConte
   return sexp;
 }
 
+IRISEXP runOptPasses(std::shared_ptr<FileSEXP> fileSEXP, std::unordered_map<int, IRIBUILDCONTEXT> iridiumBuildContext)
+{
+  FileView fileView(fileSEXP);
+  // std::ostringstream test;
+  // fileView.dumpSymbolTable(test);
+  // std::cout << test.str() << std::endl;
+
+  // fileSEXP->prettyPrint(std::cout);
+  // std::cout << std::endl;
+
+  // doRedundantGotoElimination(fileView);
+
+  // fileSEXP->prettyPrint(std::cout);
+  // std::cout << std::endl;
+
+  doUnreadBindingRemoval(fileView, iridiumBuildContext);
+
+  // fileSEXP->prettyPrint(std::cout);
+  // std::cout << std::endl;
+
+  // doRedundantGotoElimination(fileView);
+  // doUnreadBindingRemoval(fileView, iridiumBuildContext);
+
+  // doRedundantGotoElimination(fileView);
+  // doUnreadBindingRemoval(fileView, iridiumBuildContext);
+
+  // doRedundantGotoElimination(fileView);
+  // doUnreadBindingRemoval(fileView, iridiumBuildContext);
+
+  return fileSEXP;
+}
