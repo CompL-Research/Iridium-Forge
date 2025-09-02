@@ -12,6 +12,9 @@
 #include "Iridium/Structure/FileView.h"
 
 #include "Iridium/OptimizationPasses/RedundantGotoElimination.h"
+#include "Iridium/OptimizationPasses/UnreadBindingRemoval.h"
+
+#include "shared.h"
 
 static std::vector<uint8_t> gunzip(const void *data, size_t size);
 
@@ -74,19 +77,17 @@ Napi::Value execute(const Napi::CallbackInfo &info)
   if (buildContext.type != msgpack::type::ARRAY)
     Napi::Error::New(env, "[Forge] Expected 'buildContext' to be ARRAY!").ThrowAsJavaScriptException();
 
-  IRISEXP res = runCorePasses(iridium, buildContext);
 
-  auto fileSEXP = std::dynamic_pointer_cast<FileSEXP>(res);
-  assert(fileSEXP);
+  // Read Iridium SEXP
+  std::unordered_map<int, std::shared_ptr<BBSEXP>> bbIdxToSEXPMap;
+  std::unordered_map<int, IRIBUILDCONTEXT> iridiumBuildContext;
+  auto sexp = parseSEXP(iridium, &bbIdxToSEXPMap);
 
-  FileView fileView(fileSEXP);
-  // std::ostringstream test;
-  // fileView.dumpSymbolTable(test);
-  // std::cout << test.str() << std::endl;
+  // Read Iridium Build Contexts
+  parseBuildContexts(buildContext, bbIdxToSEXPMap, iridiumBuildContext);
 
-  doRedundantGotoElimination(fileView);
+  auto res = sharedEntrypoint(sexp, iridiumBuildContext);
 
-  // Add different passes here in the future...
   std::ostringstream oss;
 
   if (returnJSON)

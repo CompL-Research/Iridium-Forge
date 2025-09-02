@@ -45,6 +45,7 @@ include_directories(${NODE_ADDON_API_DIR})
 add_library(iridiumForge SHARED
     ${IRIDIUM_SRC}
     node-api.cpp
+    shared.cpp
     ${CMAKE_JS_SRC}
 )
 
@@ -56,8 +57,9 @@ target_include_directories(iridiumForge PUBLIC ${CMAKE_SOURCE_DIR}/include)
 # Standalone executable
 # ----------------------
 add_executable(forge
-    ${IRIDIUM_SRC}          # reuse same source files if needed
-    main.cpp            # your executable entry point
+    ${IRIDIUM_SRC}
+    main.cpp 
+    shared.cpp
 )
 
 target_link_libraries(forge PRIVATE ZLIB::ZLIB ${MSGPACK_TARGET})
