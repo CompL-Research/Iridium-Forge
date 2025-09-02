@@ -1,6 +1,7 @@
 #pragma once
 
 #include "generated/IridiumTypes.h"
+#include "Iridium/Globals.h"
 #include "Iridium/Structure/CFGManager.h"
 #include "external/graph-boost-1.89.0/adjacency_list.hpp"
 #include <unordered_map>
@@ -17,19 +18,13 @@ public:
   CFGManager cfgManager;
 private:
   std::shared_ptr<BBContainerSEXP> targetContainer;
-  std::unordered_map<std::shared_ptr<EnvBindingSEXP>, std::vector<IRISEXP>> bDUStmtMap;
-  std::unordered_map<std::shared_ptr<RemoteEnvBindingSEXP>, std::vector<IRISEXP>> bDUStmtMapTopLevelModuleBindings;
+  SymbolTable & symbolTable;
 
   // Initialization
-  void initBDUChains();
+  void populateSymbolTable();
   void initCFG();
 
 public:
-  BBContainerView(std::shared_ptr<BBContainerSEXP> target);
-
-  void addBDUStmtElement(std::shared_ptr<EnvBindingSEXP> binding, IRISEXP stmt);
-  void addBDUStmtElement(std::shared_ptr<RemoteEnvBindingSEXP> binding, IRISEXP stmt);
-
-  void dumpBDUChains(std::ostringstream &oss, bool compressed = false, int indent = 0);
+  BBContainerView(std::shared_ptr<BBContainerSEXP> target, SymbolTable & symbolTable);
 
 };
