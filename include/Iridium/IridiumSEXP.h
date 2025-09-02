@@ -303,27 +303,36 @@ public:
   void dump(std::ostringstream &oss, bool compressed = false, int indent = 0) const
   {
     std::string pad = compressed ? "" : std::string(indent, ' ');
+    std::string pad1 = compressed ? "" : std::string(indent + 2, ' ');
     std::string nl = compressed ? "" : "\n";
 
-    oss << pad << "[\"" << tag << "\"," << nl;
+    oss << pad << "[" << nl;
+    oss << pad1 << "\"" << tag << "\"," << nl;
 
     // Serialize args
-    oss << pad << "[" << nl;
-    for (size_t i = 0; i < args.size(); ++i)
+    if (args.size() == 0)
     {
-      args[i]->dump(oss, compressed, indent + 2);
-      if (i + 1 < args.size())
-        oss << "," << nl;
+      oss << pad1 << "[]," << nl;
     }
-    oss << "]" << "," << nl;
+    else
+    {
+      oss << pad1 << "[" << nl;
+      for (size_t i = 0; i < args.size(); ++i)
+      {
+        args[i]->dump(oss, compressed, indent + 4);
+        if (i + 1 < args.size())
+          oss << "," << nl;
+      }
+      oss << nl << pad1 << "]," << nl;
+    }
 
     // Serialize flags
-    oss << pad << "[" << nl;
+    oss << pad1 << "[";
     for (size_t i = 0; i < flags.size(); ++i)
     {
-      flags[i]->dump(oss, compressed, indent + 2);
+      flags[i]->dump(oss, true, indent + 2);
       if (i + 1 < flags.size())
-        oss << "," << nl;
+        oss << ",";
     }
     oss << "]" << nl;
 
