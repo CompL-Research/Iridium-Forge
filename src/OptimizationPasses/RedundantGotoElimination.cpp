@@ -23,6 +23,7 @@ void doRedundantGotoElimination(FileView &fv)
   for (auto &view : bbContainerViews)
   {
     auto &cfgManager = view.cfgManager;
+    std::set<std::shared_ptr<BBSEXP>> toRemove;
     cfgManager.traverseCFG(
         [&](Vertex v, std::shared_ptr<BBSEXP> bb)
         {
@@ -34,8 +35,21 @@ void doRedundantGotoElimination(FileView &fv)
             {
               // std::cout << "mergeSequentialBlocks" << std::endl;
               cfgManager.mergeSequentialBlocks(v, s);
+              toRemove.insert(cfgManager.cfg[s]);
             }
           }
         });
+    
+    auto targetContainer = cfgManager.targetContainer;
+    for (auto & bbToRem : toRemove)
+    {
+      auto it = std::find(targetContainer->args.begin(), targetContainer->args.end(), bbToRem);
+      assert(it != targetContainer->args.end());
+      size_t index = std::distance(targetContainer->args.begin(), it);
+
+      targetContainer->args.erase(targetContainer->args.begin() + index);
+    }
+    view.populateSymbolTable();
+    view.initCFG();
   }
 }

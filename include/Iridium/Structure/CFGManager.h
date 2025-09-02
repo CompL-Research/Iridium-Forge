@@ -17,6 +17,7 @@ using Vertex = boost::graph_traits<CFG>::vertex_descriptor;
 class CFGManager
 {
 public:
+  std::shared_ptr<ListSEXP> targetContainer;
   std::unordered_map<double, Vertex> bbIdxToVertex;
 
   explicit CFGManager() : entry(boost::graph_traits<CFG>::null_vertex()) {}
@@ -178,7 +179,9 @@ public:
 
   Vertex entryBlock() const { return entry; }
 
-private:
   CFG cfg;
+
+private:
+  
   Vertex entry;
 };

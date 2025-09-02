@@ -28,6 +28,10 @@ class IridiumBuildContext;
 class BBSEXP;
 class BBContainerSEXP;
 
+class BindingsSEXP;
+class EnvBindingSEXP;
+class RemoteEnvBindingSEXP;
+
 typedef std::shared_ptr<IridiumSEXP> IRISEXP;
 typedef std::shared_ptr<IridiumBuildContext> IRIBUILDCONTEXT;
 
@@ -42,6 +46,8 @@ struct SEXPPath
 struct SymbolMetadata
 {
   bool isTopLevelModuleBinding = false;
+  std::shared_ptr<BBContainerSEXP> frame;
+  std::shared_ptr<EnvBindingSEXP> binding;
   std::vector<SEXPPath> localWrites;
   std::vector<SEXPPath> localReads;
   std::vector<SEXPPath> remoteWrites;
@@ -75,10 +81,7 @@ inline void prepend(std::vector<T> &vec, U &&value)
   vec.insert(vec.begin(), std::forward<U>(value));
 }
 
-class BindingsSEXP;
-class EnvBindingSEXP;
-class RemoteEnvBindingSEXP;
-class BBContainerSEXP;
+
 
 struct LoopConfig;
 struct TryContext;
@@ -108,7 +111,8 @@ bool hasBindingReference(std::shared_ptr<BindingsSEXP> bindingsSEXP, double idx,
 BBSEXPFLAGS getBBFlag(std::shared_ptr<BBSEXP> b);
 void setBBFlag(std::shared_ptr<BBSEXP> b, BBSEXPFLAGS flagToSet);
 
-
+void balanceStackFrame(std::shared_ptr<BBContainerSEXP> container, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext);
+void rebalanceStackFrame(std::shared_ptr<BBContainerSEXP> container, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext, bool isTopLevel);
 int getRegularClosureFlag();
 int getConstructorClosureFlag();
 int getDerivedConstructorClosureFlag();
