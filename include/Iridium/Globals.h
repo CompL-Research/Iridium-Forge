@@ -1,6 +1,9 @@
 #pragma once
 #include <unordered_map>
 #include <memory>
+#include <string>
+#include <sstream>
+#include <ostream>
 #include <vector>
 #include <functional>
 #include <variant>
@@ -27,6 +30,27 @@ class BBContainerSEXP;
 
 typedef std::shared_ptr<IridiumSEXP> IRISEXP;
 typedef std::shared_ptr<IridiumBuildContext> IRIBUILDCONTEXT;
+
+struct SEXPPath
+{
+  double scopeIdx;
+  double bbIdx;
+  IRISEXP inst;
+};
+
+// This is a synchronous data structure, meaning that it needs to be refreshed after every transformation...
+struct SymbolMetadata
+{
+  bool isTopLevelModuleBinding = false;
+  std::vector<SEXPPath> localWrites;
+  std::vector<SEXPPath> localReads;
+  std::vector<SEXPPath> remoteWrites;
+  std::vector<SEXPPath> remoteReads;
+
+  void dump(std::ostringstream &oss, bool compressed = false, int indent = 0) const;
+};
+
+using SymbolTable = std::unordered_map<IRISEXP, SymbolMetadata>;
 
 template <typename T>
 void prependArgs(std::vector<T> &target, const std::vector<T> &toPrepend)

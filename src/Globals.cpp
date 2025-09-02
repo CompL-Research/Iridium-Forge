@@ -362,3 +362,45 @@ int getPropInitDerivedPrivateClosureFlag() { return 9; }
 int getPrivateDerivedMethodClosureFlag() { return 10; }
 int getStaticPropInitClosureFlag() { return 11; }
 int getStaticPropInitDerivedClosureFlag() { return 12; }
+
+void SymbolMetadata::dump(std::ostringstream &oss, bool compressed, int indent) const
+  {
+    std::string pad = compressed ? "" : std::string(indent, ' ');
+    std::string nl = compressed ? "" : "\n";
+    oss << nl;
+    oss << pad << "[TOPLEVEL: " << isTopLevelModuleBinding << "]" << nl;
+    
+    oss << nl;
+    oss << pad << "[LOCAL WRITES]" << nl;
+    for (auto & stmt : localWrites)
+    {
+      stmt.inst->dump(oss, false, indent + 2);
+      oss << nl;
+    }
+
+    oss << nl;
+    oss << pad << "[LOCAL READS]" << nl;
+    for (auto & stmt : localReads)
+    {
+      stmt.inst->dump(oss, false, indent + 2);
+      oss << nl;
+    }
+
+    oss << nl;
+    oss << pad << "[REMOTE WRITES]" << nl;
+    for (auto & stmt : remoteWrites)
+    {
+      stmt.inst->dump(oss, false, indent + 2);
+      oss << nl;
+    }
+
+    oss << nl;
+    oss << pad << "[REMOTE READS]" << nl;
+    for (auto & stmt : remoteReads)
+    {
+      stmt.inst->dump(oss, false, indent + 2);
+      oss << nl;
+    }
+
+    oss << nl;
+  }
