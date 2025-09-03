@@ -46,23 +46,22 @@ void decorateReturnTargets(IRISEXP fileSEXP, IRISEXP currSEXP, std::unordered_ma
         }
         else if (auto tryContext = std::get_if<TryContext>(&intermediateContext))
         {
-          // Pop only if the reaching scope context is through try or catch context, do nothing for finalizer contexts...
-          if (tryContext->finalizerIDX == -1)
+          // If the context is reached via try or catch block, only then pop the catch context and decorate to finalizer (if applicable)
+          if (
+            hasScopePath(bbSEXP->getScopeIDX(), getBBScopeIDX(tryContext->tryIDX, iridiumBuildContext), iridiumBuildContext)
+            || (tryContext->udCatchIDX > -1 && hasScopePath(bbSEXP->getScopeIDX(), getBBScopeIDX(tryContext->udCatchIDX, iridiumBuildContext), iridiumBuildContext)))
           {
             insertBefore(bbSEXP->args, element, std::make_shared<PopCatchContextSEXP>());
+            if (tryContext->finalizerIDX > -1)
+            {
+              insertBefore(bbSEXP->args, element, std::make_shared<InvokeFinalizerSEXP>(tryContext->finalizerIDX));
+            }
           }
           else
           {
-            if (
-                hasScopePath(bbSEXP->getScopeIDX(), getBBScopeIDX(tryContext->tryIDX, iridiumBuildContext), iridiumBuildContext) || (tryContext->udCatchIDX > -1 && hasScopePath(bbSEXP->getScopeIDX(), getBBScopeIDX(tryContext->udCatchIDX, iridiumBuildContext), iridiumBuildContext)))
-            {
-              insertBefore(bbSEXP->args, element, std::make_shared<PopCatchContextSEXP>());
-              insertBefore(bbSEXP->args, element, std::make_shared<InvokeFinalizerSEXP>(tryContext->finalizerIDX));
-            }
-            else
-            {
-              assert(hasScopePath(bbSEXP->getScopeIDX(), getBBScopeIDX(tryContext->finalizerIDX, iridiumBuildContext), iridiumBuildContext));
-            }
+            insertBefore(bbSEXP->args, element, std::make_shared<PopFinalizerReturnTargetSEXP>()); // This pops the finalizer return target from the stack, should be renamed to prevent confusion
+            // This must be reached through a finalizer block, we dont expect any nesting inside the implicit catch block as its outside user interference...
+            assert(hasScopePath(bbSEXP->getScopeIDX(), getBBScopeIDX(tryContext->finalizerIDX, iridiumBuildContext), iridiumBuildContext));
           }
         }
       }
