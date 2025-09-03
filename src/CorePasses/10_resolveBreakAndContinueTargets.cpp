@@ -100,10 +100,23 @@ void resolveBreakAndContinueTargets(IRISEXP fileSEXP, IRISEXP currSEXP, std::uno
             insertBefore(bbSEXP->args, element, stackReject);
           }
         } else if (auto tryContext = std::get_if<TryContext>(&intermediateContext)) {
-          insertBefore(bbSEXP->args, element, std::make_shared<PopCatchContextSEXP>());
-          if (tryContext->finalizerIDX > -1)
+          // Pop only if the reaching scope context is through try or catch context, do nothing for finalizer contexts...
+          if (tryContext->finalizerIDX == -1)
           {
-            insertBefore(bbSEXP->args, element, std::make_shared<InvokeFinalizerSEXP>(tryContext->finalizerIDX));
+            insertBefore(bbSEXP->args, element, std::make_shared<PopCatchContextSEXP>());
+          }
+          else
+          {
+            if (
+                hasScopePath(bbSEXP->getScopeIDX(), getBBScopeIDX(tryContext->tryIDX, iridiumBuildContext), iridiumBuildContext) || (tryContext->udCatchIDX > -1 && hasScopePath(bbSEXP->getScopeIDX(), getBBScopeIDX(tryContext->udCatchIDX, iridiumBuildContext), iridiumBuildContext)))
+            {
+              insertBefore(bbSEXP->args, element, std::make_shared<PopCatchContextSEXP>());
+              insertBefore(bbSEXP->args, element, std::make_shared<InvokeFinalizerSEXP>(tryContext->finalizerIDX));
+            }
+            else
+            {
+              assert(hasScopePath(bbSEXP->getScopeIDX(), getBBScopeIDX(tryContext->finalizerIDX, iridiumBuildContext), iridiumBuildContext));
+            }
           }
         }
       }
