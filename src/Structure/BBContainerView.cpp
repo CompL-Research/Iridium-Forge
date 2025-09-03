@@ -2,9 +2,14 @@
 #include "Iridium/Structure/BBContainerView.h"
 #include <boost/graph/graphviz.hpp>
 
-BBContainerView::BBContainerView(std::shared_ptr<BBContainerSEXP> target, SymbolTable &symbolTable) : targetContainer(target), symbolTable(symbolTable)
+BBContainerView::BBContainerView(
+    std::shared_ptr<BBContainerSEXP> target,
+    SymbolTable &symbolTable,
+    std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext) : targetContainer(target),
+                                                                     symbolTable(symbolTable),
+                                                                     iridiumBuildContext(iridiumBuildContext),
+                                                                     cfgManager(iridiumBuildContext)
 {
-  scopeIdx = target->getScopeIDX();
   populateSymbolTable();
   initCFG();
 }
@@ -200,6 +205,7 @@ void BBContainerView::initCFG()
   {
     auto currBB = std::dynamic_pointer_cast<BBSEXP>(bb);
     assert(currBB && "currBB is null 1");
+    std::cout << "Adding node: " << currBB->getIDX() << std::endl;
     cfgManager.addNode(currBB, currBB->getIDX() == startBBIdx);
   }
 
@@ -210,41 +216,116 @@ void BBContainerView::initCFG()
     assert(currBB && "currBB is null 2");
     auto sourceBBIdx = currBB->getIDX();
 
-    auto lastStmt = currBB->args.back();
+    // Inside a BB, if there is a premature control stmt => due to lazily resolved resolved [continue] / [break] target, the rest of the code in the basic block becomes unreachable.
 
-    if (auto gotoStmt = std::dynamic_pointer_cast<GotoSEXP>(lastStmt))
+    for (auto &lastStmt : currBB->args)
     {
-      double targetBBIdx = gotoStmt->getIDX();
-      cfgManager.connect(sourceBBIdx, targetBBIdx);
-    }
-    else if (auto ifElseStmt = std::dynamic_pointer_cast<IfElseJumpSEXP>(lastStmt))
-    {
-      double targetTrueIdx = ifElseStmt->getTRUE();
-      double targetFalseIdx = ifElseStmt->getFALSE();
+      if (auto gotoStmt = std::dynamic_pointer_cast<GotoSEXP>(lastStmt))
+      {
+        double targetBBIdx = gotoStmt->getIDX();
+        cfgManager.connect(sourceBBIdx, targetBBIdx, {EdgeKind::Normal, gotoStmt});
+      }
+      else if (auto ifElseStmt = std::dynamic_pointer_cast<IfElseJumpSEXP>(lastStmt))
+      {
+        double targetTrueIdx = ifElseStmt->getTRUE();
+        double targetFalseIdx = ifElseStmt->getFALSE();
 
-      cfgManager.connect(sourceBBIdx, targetTrueIdx);
-      cfgManager.connect(sourceBBIdx, targetFalseIdx);
+        cfgManager.connect(sourceBBIdx, targetTrueIdx, {EdgeKind::Normal, ifElseStmt});
+        cfgManager.connect(sourceBBIdx, targetFalseIdx, {EdgeKind::Normal, ifElseStmt});
+      }
+      else if (auto invokeFinalizer = std::dynamic_pointer_cast<InvokeFinalizerSEXP>(lastStmt))
+      {
+        cfgManager.connect(sourceBBIdx, invokeFinalizer->getIDX(), {EdgeKind::Finalizer, invokeFinalizer});
+        continue;
+      }
+      else if (auto returnStmt = std::dynamic_pointer_cast<ReturnSEXP>(lastStmt))
+      {
+      }
+      else if (auto returnAsyncStmt = std::dynamic_pointer_cast<ReturnAsyncSEXP>(lastStmt))
+      {
+      }
+      else if (auto returnStmt = std::dynamic_pointer_cast<RetSEXP>(lastStmt))
+      {
+        // TODO, retSEXP
+      }
+      else if (auto throwStmt = std::dynamic_pointer_cast<ThrowSEXP>(lastStmt))
+      {
+        // TODO, retSEXP
+      }
+      else
+      {
+        continue;
+      }
+
+      // If this is indeed a inst which exists out of the basic block, delete the rest of the instructions...
+      auto it = std::find(currBB->args.begin(), currBB->args.end(), lastStmt);
+      if (it != currBB->args.end())
+      {
+        currBB->args.erase(it + 1, currBB->args.end());
+        break;
+      }
     }
-    else if (auto invokeFinalizer = std::dynamic_pointer_cast<InvokeFinalizerSEXP>(lastStmt))
+  }
+
+  std::function<std::vector<Vertex>(const CFG &g, Vertex start)> findSinks = [&](const CFG &g, Vertex start)
+  {
+    std::vector<Vertex> sinks;
+    std::set<Vertex> visited;
+
+    std::function<void(Vertex)> dfs = [&](Vertex u)
     {
-    }
-    else if (auto returnStmt = std::dynamic_pointer_cast<ReturnSEXP>(lastStmt))
+      if (!visited.insert(u).second)
+        return;
+
+      auto deg = boost::out_degree(u, g);
+      if (deg == 0)
+      {
+        sinks.push_back(u);
+        return;
+      }
+
+      auto [ei, ei_end] = boost::out_edges(u, g);
+      for (; ei != ei_end; ++ei)
+      {
+        Vertex tgt = boost::target(*ei, g);
+        dfs(tgt);
+      }
+    };
+
+    dfs(start);
+    return sinks;
+  };
+
+
+  // Add back edges from finalizer BB to all its invocation sites
+  for (auto &bb : bbList->args)
+  {
+    auto currBB = std::dynamic_pointer_cast<BBSEXP>(bb);
+    assert(currBB && "currBB is null 1");
+
+    auto &tryContext = iridiumBuildContext[currBB->getScopeIDX()]->tryContext;
+    if (tryContext)
     {
-    }
-    else if (auto returnAsyncStmt = std::dynamic_pointer_cast<ReturnAsyncSEXP>(lastStmt))
-    {
-    }
-    else if (auto returnStmt = std::dynamic_pointer_cast<RetSEXP>(lastStmt))
-    {
-      // TODO, retSEXP
-    }
-    else if (auto throwStmt = std::dynamic_pointer_cast<ThrowSEXP>(lastStmt))
-    {
-      // TODO, retSEXP
-    }
-    else
-    {
-      throw std::runtime_error("Unexpected LastNode in BB: " + lastStmt->tag);
+      auto & finalizerIdx = tryContext.value().finalizerIDX;
+      if (finalizerIdx != -1)
+      {
+        if (cfgManager.bbIdxToVertex.find(finalizerIdx) == cfgManager.bbIdxToVertex.end())
+        {
+          std::cout << "ERR: " << finalizerIdx << std::endl;
+        }
+        assert(cfgManager.bbIdxToVertex.find(finalizerIdx) != cfgManager.bbIdxToVertex.end());
+        auto finalizerVertex = cfgManager.bbIdxToVertex[finalizerIdx];
+        auto incoming = cfgManager.predecessors(finalizerVertex);
+        auto sinks = findSinks(cfgManager.cfg, finalizerVertex);
+
+        for (auto & sink : sinks)
+        {
+          for (auto & invocationSite : incoming)
+          {
+            cfgManager.connect(sink, invocationSite, {EdgeKind::FinalizerRet, NULL});
+          }
+        }
+      }
     }
   }
 }
@@ -291,4 +372,13 @@ void CFGManager::dumpCFGDOT(std::string filePath)
             << escapeDotLabel(ss.str())
             << "\", shape=box, style=rounded, fontname=\"Courier\", fontsize=10]";
       });
+}
+
+std::shared_ptr<BBContainerSEXP> BBContainerView::checkout()
+{
+  std::vector<IRISEXP> chapati = cfgManager.chapati();
+  std::shared_ptr<ListSEXP> bbList = std::make_shared<ListSEXP>("BB");
+  bbList->args = chapati;
+  targetContainer->setBB(bbList);
+  return targetContainer;
 }

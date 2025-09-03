@@ -16,14 +16,19 @@ class BBContainerView
 public:
   std::shared_ptr<BBContainerSEXP> targetContainer;
   CFGManager cfgManager;
-  double scopeIdx;
+  
 private:
   SymbolTable & symbolTable;
+  std::unordered_map<int, IRIBUILDCONTEXT> & iridiumBuildContext;
 
 public:
-  BBContainerView(std::shared_ptr<BBContainerSEXP> target, SymbolTable & symbolTable);
+  BBContainerView(std::shared_ptr<BBContainerSEXP> target, SymbolTable & symbolTable, std::unordered_map<int, IRIBUILDCONTEXT> & iridiumBuildContext);
 
   void initCFG();
   void populateSymbolTable();
+  
+  double getScopeIdx() { return targetContainer->getScopeIDX(); }
+  double getStartBBIDX() { return targetContainer->getStartBBIDX(); }
 
+  std::shared_ptr<BBContainerSEXP> checkout();
 };
