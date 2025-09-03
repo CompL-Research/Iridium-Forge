@@ -1,4 +1,4 @@
-// Generated: 2025-08-31 02:59:18
+// Generated: 2025-09-03 04:06:11
 #pragma once
 #include "Iridium/Globals.h"
 #include "Iridium/IridiumSEXP.h"
@@ -19,6 +19,7 @@ public:
     if (tag == "ReturnAsync") return ReturnAsyncSEXP::generateFrom(obj);
     if (tag == "BB") return BBSEXP::generateFrom(obj);
     if (tag == "Return") return ReturnSEXP::generateFrom(obj);
+    if (tag == "IfJump") return IfJumpSEXP::generateFrom(obj);
     if (tag == "IfElseJump") return IfElseJumpSEXP::generateFrom(obj);
     if (tag == "Goto") return GotoSEXP::generateFrom(obj);
     if (tag == "JSFuncDecl") return JSFuncDeclSEXP::generateFrom(obj);

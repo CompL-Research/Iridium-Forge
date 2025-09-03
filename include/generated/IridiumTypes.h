@@ -1,4 +1,4 @@
-// Generated: 2025-08-31 02:59:18
+// Generated: 2025-09-03 04:06:11
 #pragma once
 #include "Iridium/Globals.h"
 #include "Iridium/IridiumSEXP.h"
@@ -545,6 +545,48 @@ public:
   void setModuleEarlyReturn() { setFlag("ModuleEarlyReturn"); }
   void unsetModuleEarlyReturn() { removeFlag("ModuleEarlyReturn"); }
   bool hasModuleEarlyReturn() { return hasFlag("ModuleEarlyReturn"); }
+
+};
+
+class IfJumpSEXP : public IridiumSEXP {
+private:
+
+  IfJumpSEXP() { this->tag = "IfJump"; }
+  
+public:
+  static std::shared_ptr<IfJumpSEXP> generateFrom(IRISEXP obj) {
+    assert(obj->tag == "IfJump");
+    auto res = std::shared_ptr<IfJumpSEXP>(new IfJumpSEXP());
+
+    res->tag   = obj->tag;
+    res->args  = std::move(obj->args);
+    res->flags = std::move(obj->flags);
+    return res;
+  }
+
+
+  IfJumpSEXP(IRISEXP Test, bool NOT, double IDX) {
+    this->tag = "IfJump";
+    this->args.push_back(Test);
+    if (NOT) this->setNOT();
+    this->setIDX(IDX);
+  }
+
+
+  void setTest(const IRISEXP &obj) { this->args.at(0) = obj; }
+  bool hasTest() { return 0 < this->args.size(); }
+  IRISEXP getTest() const { return this->args.at(0); }
+
+
+  void setNOT() { setFlag("NOT"); }
+  void unsetNOT() { removeFlag("NOT"); }
+  bool hasNOT() { return hasFlag("NOT"); }
+
+
+  void setIDX(double value) { setFlag("IDX", value); }
+  void unsetIDX() { removeFlag("IDX"); }
+  bool hasIDX() { return hasFlag("IDX"); }
+  double getIDX() { return getFlagDouble("IDX"); }
 
 };
 
