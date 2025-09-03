@@ -2,12 +2,12 @@
 
 void FileView::init()
 {
-  for (auto &c : targetContainer->args)
+  while (true)
   {
-    if (auto bbContainer = std::dynamic_pointer_cast<BBContainerSEXP>(c))
-    {
-      bbContainerViews.push_back(BBContainerView(bbContainer, symbolTable));
-    }
+    auto bbContainer = std::dynamic_pointer_cast<BBContainerSEXP>(targetContainer->args.back());
+    if (!bbContainer) break;
+    bbContainerViews.push_back(BBContainerView(bbContainer, symbolTable, iridiumBuildContext));
+    targetContainer->args.pop_back(); // Remove the container completely while it is owned by the view.
   }
 }
 
@@ -22,17 +22,17 @@ void FileView::dumpSymbolTable(std::ostringstream &oss)
   }
 }
 
-std::shared_ptr<BBSEXP> FileView::getBB(double scopeIDX, double bbIDX)
+std::shared_ptr<BBSEXP> FileView::getBB(SEXPPath path)
 {
   for (auto & bbView : bbContainerViews)
   {
-    if (bbView.scopeIdx == scopeIDX)
+    if (bbView.getScopeIdx() == path.scopeIdx)
     {
       for (auto & bb : bbView.targetContainer->getBB()->args)
       {
         if (auto bbSEXP = std::dynamic_pointer_cast<BBSEXP>(bb))
         {
-          if (bbSEXP->getIDX() == bbIDX) return bbSEXP;
+          if (bbSEXP->getIDX() == path.bbIdx) return bbSEXP;
         } else throw std::runtime_error("Expected BBSEXP");
         
       }
@@ -40,4 +40,15 @@ std::shared_ptr<BBSEXP> FileView::getBB(double scopeIDX, double bbIDX)
   }
 
   throw std::runtime_error("getBB failed!!!");
+}
+
+std::shared_ptr<FileSEXP> FileView::checkout()
+{
+
+  for (auto & v : bbContainerViews)
+  {
+    targetContainer->args.push_back(v.checkout());
+  }
+
+  return targetContainer;
 }
