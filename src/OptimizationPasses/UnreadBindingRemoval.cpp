@@ -25,7 +25,7 @@ void doUnreadBindingRemoval(FileView &fv, std::unordered_map<int, IRIBUILDCONTEX
   {
     for (auto &path : btd.localWrites)
     {
-      auto bbSEXP = fv.getBB(path.scopeIdx, path.bbIdx);
+      auto bbSEXP = fv.getBB(path);
       auto it = std::find(bbSEXP->args.begin(), bbSEXP->args.end(), path.inst);
       assert(it != bbSEXP->args.end());
       size_t index = std::distance(bbSEXP->args.begin(), it);
@@ -52,7 +52,7 @@ void doUnreadBindingRemoval(FileView &fv, std::unordered_map<int, IRIBUILDCONTEX
 
     for (auto &path : btd.remoteWrites)
     {
-      auto bbSEXP = fv.getBB(path.scopeIdx, path.bbIdx);
+      auto bbSEXP = fv.getBB(path);
       auto it = std::find(bbSEXP->args.begin(), bbSEXP->args.end(), path.inst);
       assert(it != bbSEXP->args.end());
       size_t index = std::distance(bbSEXP->args.begin(), it);
@@ -117,7 +117,7 @@ void doUnreadBindingRemoval(FileView &fv, std::unordered_map<int, IRIBUILDCONTEX
       localBindingsSEXP->args.erase(localBindingsSEXP->args.begin() + index);
     }
 
-    std::cout << "Removing binding: " << btd.binding->getNAME() << std::endl;
+    // std::cout << "Removing binding: " << btd.binding->getNAME() << std::endl;
 
     rebalanceStackFrame(btd.frame, iridiumBuildContext, btd.isTopLevelModuleBinding);
     symbolTable.erase(btd.binding);
