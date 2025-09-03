@@ -8,8 +8,14 @@ IRISEXP sharedEntrypoint(IRISEXP sexp, std::unordered_map<int, IRIBUILDCONTEXT> 
   IRISEXP res = runCorePasses(sexp, iridiumBuildContext);
   auto fileSEXP = std::dynamic_pointer_cast<FileSEXP>(res);
   assert(fileSEXP);
+
+  // res->prettyPrint(std::cout);
+  // std::cout << std::endl;
   
   res = runOptPasses(fileSEXP, iridiumBuildContext);
+
+  // res->prettyPrint(std::cout);
+  // std::cout << std::endl;
 
   return res;
 }

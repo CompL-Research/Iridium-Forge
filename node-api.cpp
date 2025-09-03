@@ -11,9 +11,6 @@
 #include "Iridium/Structure/BBContainerView.h"
 #include "Iridium/Structure/FileView.h"
 
-#include "Iridium/OptimizationPasses/RedundantGotoElimination.h"
-#include "Iridium/OptimizationPasses/UnreadBindingRemoval.h"
-
 #include "shared.h"
 
 static std::vector<uint8_t> gunzip(const void *data, size_t size);

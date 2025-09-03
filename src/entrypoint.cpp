@@ -29,7 +29,6 @@
 #include "Iridium/CorePasses/16_markDirectEvals.h"
 
 #include "Iridium/Structure/FileView.h"
-#include "Iridium/OptimizationPasses/RedundantGotoElimination.h"
 #include "Iridium/OptimizationPasses/UnreadBindingRemoval.h"
 
 IRISEXP runCorePasses(IRISEXP sexp, std::unordered_map<int, IRIBUILDCONTEXT> iridiumBuildContext)
@@ -83,32 +82,25 @@ IRISEXP runCorePasses(IRISEXP sexp, std::unordered_map<int, IRIBUILDCONTEXT> iri
 
 IRISEXP runOptPasses(std::shared_ptr<FileSEXP> fileSEXP, std::unordered_map<int, IRIBUILDCONTEXT> iridiumBuildContext)
 {
-  FileView fileView(fileSEXP);
-  // std::ostringstream test;
-  // fileView.dumpSymbolTable(test);
-  // std::cout << test.str() << std::endl;
-
   // fileSEXP->prettyPrint(std::cout);
   // std::cout << std::endl;
 
-  // doRedundantGotoElimination(fileView);
+  // FileView fileView(fileSEXP, iridiumBuildContext);
+  // // // std::ostringstream test;
+  // // // fileView.dumpSymbolTable(test);
+  // // // std::cout << test.str() << std::endl;
 
-  // fileSEXP->prettyPrint(std::cout);
-  // std::cout << std::endl;
+  // // // fileSEXP->prettyPrint(std::cout);
+  // // // std::cout << std::endl;
 
-  doUnreadBindingRemoval(fileView, iridiumBuildContext);
+  // // // doRedundantGotoElimination(fileView);
 
-  // fileSEXP->prettyPrint(std::cout);
-  // std::cout << std::endl;
+  // // fileSEXP->prettyPrint(std::cout);
+  // // std::cout << std::endl;
 
-  // doRedundantGotoElimination(fileView);
-  // doUnreadBindingRemoval(fileView, iridiumBuildContext);
+  // // doUnreadBindingRemoval(fileView, iridiumBuildContext);
 
-  // doRedundantGotoElimination(fileView);
-  // doUnreadBindingRemoval(fileView, iridiumBuildContext);
-
-  // doRedundantGotoElimination(fileView);
-  // doUnreadBindingRemoval(fileView, iridiumBuildContext);
+  // return fileView.checkout();
 
   return fileSEXP;
 }
