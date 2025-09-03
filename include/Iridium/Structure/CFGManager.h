@@ -5,22 +5,40 @@
 #include <unordered_map>
 #include <queue>
 
+enum class EdgeKind
+{
+  Normal,
+  Exception,
+  Finalizer,
+  FinalizerRet
+};
+
+struct EdgeInfo
+{
+  EdgeKind kind;
+  IRISEXP inst;
+};
+
 // CFG
 using CFG = boost::adjacency_list<
     boost::vecS,
     boost::vecS,
     boost::bidirectionalS,
-    std::shared_ptr<BBSEXP>>;
+    std::shared_ptr<BBSEXP>,
+    EdgeInfo
+>;
 
 using Vertex = boost::graph_traits<CFG>::vertex_descriptor;
+using Edge   = boost::graph_traits<CFG>::edge_descriptor;
 
 class CFGManager
 {
 public:
   std::shared_ptr<ListSEXP> targetContainer;
   std::unordered_map<double, Vertex> bbIdxToVertex;
+  std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext;
 
-  explicit CFGManager() : entry(boost::graph_traits<CFG>::null_vertex()) {}
+  explicit CFGManager(std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext) : entry(boost::graph_traits<CFG>::null_vertex()), iridiumBuildContext(iridiumBuildContext) {}
 
   // Add node
   Vertex addNode(std::shared_ptr<BBSEXP> bb, bool isEntryNode = false)
@@ -29,6 +47,7 @@ public:
     if (isEntryNode)
       entry = v;
     bbIdxToVertex[bb->getIDX()] = v;
+    std::cout << bb->getIDX() << " -> " << v << std::endl;
     return v;
   }
 
@@ -45,21 +64,21 @@ public:
   }
 
   // Add edge
-  void connect(std::shared_ptr<BBSEXP> from, std::shared_ptr<BBSEXP> to)
+  void connect(std::shared_ptr<BBSEXP> from, std::shared_ptr<BBSEXP> to, EdgeInfo info)
   {
-    connect(from->getIDX(), to->getIDX());
+    connect(from->getIDX(), to->getIDX(), info);
   }
 
-  void connect(double from, double to)
+  void connect(double from, double to, EdgeInfo info)
   {
     assert((bbIdxToVertex.find(from) != bbIdxToVertex.end()) && "connect failed 1");
     assert((bbIdxToVertex.find(to) != bbIdxToVertex.end()) && "connect failed 2");
-    connect(bbIdxToVertex[from], bbIdxToVertex[to]);
+    connect(bbIdxToVertex[from], bbIdxToVertex[to], info);
   }
 
-  void connect(Vertex from, Vertex to)
+  void connect(Vertex from, Vertex to, EdgeInfo info)
   {
-    boost::add_edge(from, to, cfg);
+    boost::add_edge(from, to, info, cfg);
   }
 
   // Get successors
@@ -84,17 +103,50 @@ public:
     return preds;
   }
 
-  void mergeSequentialBlocks(Vertex a, Vertex b)
+  void mergeBlocks(Vertex a, Vertex b)
   {
-    assert(successors(a).size() == 1 && successors(a)[0] == b);
-    assert(predecessors(b).size() == 1 && predecessors(b)[0] == a);
-
     // Step 1: merge B into A at the IR level
-    auto & lastStmtinA = cfg[a]->args.back();
-    assert(std::dynamic_pointer_cast<GotoSEXP>(lastStmtinA));
-    cfg[a]->args.pop_back();
+    auto &lastStmtinA = cfg[a]->args.back();
 
-    for (auto & stmt : cfg[b]->args)
+    if (auto gotoSEXP = std::dynamic_pointer_cast<GotoSEXP>(lastStmtinA))
+    {
+      assert(cfg[b]->getIDX() == gotoSEXP->getIDX());
+      cfg[a]->args.pop_back();
+    }
+    else if (auto ifElseJumpSEXP = std::dynamic_pointer_cast<IfElseJumpSEXP>(lastStmtinA))
+    {
+      cfg[a]->args.pop_back(); // remove the statement...
+
+      auto cond = ifElseJumpSEXP->getTest();
+      auto isNegated = ifElseJumpSEXP->hasNOT();
+
+      auto actualTrueTarget = isNegated ? ifElseJumpSEXP->getFALSE() : ifElseJumpSEXP->getTRUE();
+      auto actualFalseTarget = isNegated ? ifElseJumpSEXP->getTRUE() : ifElseJumpSEXP->getFALSE();
+
+      auto isTrueBranch = cfg[b]->getIDX() == actualTrueTarget;
+      auto isFalseBranch = cfg[b]->getIDX() == actualFalseTarget;
+
+      assert(isTrueBranch || isFalseBranch); // both cannot be simultaneously false
+
+      if (isTrueBranch)
+      {
+        // Merging with true branch, so jump happens when the condition is false
+        auto ifJump = std::make_shared<IfJumpSEXP>(cond, true, actualFalseTarget);
+        cfg[a]->args.push_back(ifJump);
+      }
+      else
+      {
+        // Merging with false branch, so jump happens when the condition is true
+        auto ifJump = std::make_shared<IfJumpSEXP>(cond, false, actualTrueTarget);
+        cfg[a]->args.push_back(ifJump);
+      }
+    }
+    else
+    {
+      throw std::runtime_error("Unexpected merge");
+    }
+
+    for (auto &stmt : cfg[b]->args)
     {
       cfg[a]->args.push_back(stmt);
     }
@@ -110,7 +162,6 @@ public:
     double idxB = cfg[b]->getIDX();
     bbIdxToVertex.erase(idxB);
     boost::clear_vertex(b, cfg);
-    boost::remove_vertex(b, cfg);
   }
 
   // Traverse CFG from entry
@@ -179,9 +230,10 @@ public:
 
   Vertex entryBlock() const { return entry; }
 
+  std::vector<IRISEXP> chapati();
+
   CFG cfg;
 
 private:
-  
   Vertex entry;
 };
