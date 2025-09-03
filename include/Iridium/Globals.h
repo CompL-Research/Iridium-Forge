@@ -98,6 +98,8 @@ void insertAfter(std::vector<IRISEXP> &vec, IRISEXP after, IRISEXP toInsert);
 void insertBefore(std::vector<IRISEXP> &vec, IRISEXP before, const std::vector<IRISEXP> &toInsert);
 void insertBefore(std::vector<IRISEXP> &vec, IRISEXP before, IRISEXP toInsert);
 IRISEXP getBinding(std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext, std::shared_ptr<BindingsSEXP> bindingsSEXP, std::string name, double lookupScope);
+bool hasScopePath(int currScope, int targetScope, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext);
+int getBBScopeIDX(int bbIDX, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext);
 IRISEXP resolveScopedLookup(IRISEXP fileSEXP, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext, std::string name, double startScope, std::shared_ptr<BindingsSEXP> bindingsSEXP);
 bool isGlobalBinding(IRISEXP fileSEXP, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext, std::string name, double startScope, std::shared_ptr<BindingsSEXP> bindingsSEXP);
 std::shared_ptr<BBContainerSEXP> getBBContainerSEXPByScopeId(IRISEXP file, double scopeIDX);

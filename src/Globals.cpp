@@ -136,6 +136,29 @@ IRISEXP getBinding(std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext
   return getBinding(iridiumBuildContext, bindingsSEXP, name, nextScope);
 }
 
+int getBBScopeIDX(int bbIDX, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext)
+{
+  for (auto & e: iridiumBuildContext)
+  {
+    auto scopeIDX = e.first;
+    for (auto & bb : e.second->BB)
+    {
+      if (bb->getIDX() == bbIDX) return scopeIDX;
+    }
+  }
+  throw std::runtime_error("Failed to get scopeIDX for a bbIDX");
+}
+
+bool hasScopePath(int currScope, int targetScope, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext)
+{
+  if (currScope == targetScope) return true;
+  if (currScope < 0) return false;
+
+  assert(iridiumBuildContext.count(currScope) > 0);
+
+  return hasScopePath(iridiumBuildContext[currScope]->parent, targetScope, iridiumBuildContext);
+}
+
 IRISEXP resolveScopedLookup(IRISEXP fileSEXP, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext, std::string name, double startScope, std::shared_ptr<BindingsSEXP> bindingsSEXP)
 {
   auto res = getBinding(iridiumBuildContext, bindingsSEXP, name, startScope);
