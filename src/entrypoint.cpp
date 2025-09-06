@@ -31,53 +31,88 @@
 #include "Iridium/Structure/FileView.h"
 #include "Iridium/OptimizationPasses/UnreadBindingRemoval.h"
 
-IRISEXP runCorePasses(IRISEXP sexp, std::unordered_map<int, IRIBUILDCONTEXT> iridiumBuildContext)
+// Toggle debug output here
+// #define IRIDIUM_DEBUG 1  
+
+#ifdef IRIDIUM_DEBUG
+#define DBG(msg) \
+    do { std::cerr << "[DEBUG] " << msg << std::endl; } while (0)
+#else
+#define DBG(msg) \
+    do { } while (0)
+#endif
+
+IRISEXP runCorePasses(
+    IRISEXP sexp,
+    std::unordered_map<int, IRIBUILDCONTEXT> iridiumBuildContext)
 {
+    DBG("Starting runCorePasses");
 
-  // Run Core Passes
-  normalizeBBFlags(iridiumBuildContext);
+    normalizeBBFlags(iridiumBuildContext);
+    DBG("After normalizeBBFlags");
 
-  hoistFunctionDeclarations(sexp, iridiumBuildContext);
+    hoistFunctionDeclarations(sexp, iridiumBuildContext);
+    DBG("After hoistFunctionDeclarations");
 
-  filterNOPs(sexp);
+    filterNOPs(sexp);
+    DBG("After filterNOPs");
 
-  groupIntoClosureGroups(sexp, iridiumBuildContext);
+    groupIntoClosureGroups(sexp, iridiumBuildContext);
+    DBG("After groupIntoClosureGroups");
 
-  populateModuleBindings(sexp, iridiumBuildContext);
+    populateModuleBindings(sexp, iridiumBuildContext);
+    DBG("After populateModuleBindings");
 
-  populateImplicitBindings(sexp, iridiumBuildContext);
+    populateImplicitBindings(sexp, iridiumBuildContext);
+    DBG("After populateImplicitBindings");
 
-  reduceFunctionDeclarations(sexp, iridiumBuildContext);
+    reduceFunctionDeclarations(sexp, iridiumBuildContext);
+    DBG("After reduceFunctionDeclarations");
 
-  populateExplicitBindings(sexp, iridiumBuildContext);
+    populateExplicitBindings(sexp, iridiumBuildContext);
+    DBG("After populateExplicitBindings");
 
-  addClosureArgsBindings(sexp, iridiumBuildContext);
+    addClosureArgsBindings(sexp, iridiumBuildContext);
+    DBG("After addClosureArgsBindings");
 
-  initializeStackFrame(sexp, iridiumBuildContext);
+    initializeStackFrame(sexp, iridiumBuildContext);
+    DBG("After initializeStackFrame");
 
-  patchHeritageConstructorSuperCalls(sexp, iridiumBuildContext);
+    patchHeritageConstructorSuperCalls(sexp, iridiumBuildContext);
+    DBG("After patchHeritageConstructorSuperCalls");
 
-  reduceResolvePrivateEnvBindingSEXP(sexp, iridiumBuildContext);
+    reduceResolvePrivateEnvBindingSEXP(sexp, iridiumBuildContext);
+    DBG("After reduceResolvePrivateEnvBindingSEXP");
 
-  reduceResolveEnvBindingSEXP(sexp, iridiumBuildContext);
+    reduceResolveEnvBindingSEXP(sexp, iridiumBuildContext);
+    DBG("After reduceResolveEnvBindingSEXP");
 
-  resolveLambdaTargets(sexp, sexp, iridiumBuildContext, -1);
+    resolveLambdaTargets(sexp, sexp, iridiumBuildContext, -1);
+    DBG("After resolveLambdaTargets");
 
-  resolveBreakAndContinueTargets(sexp, sexp, iridiumBuildContext);
+    resolveBreakAndContinueTargets(sexp, sexp, iridiumBuildContext);
+    DBG("After resolveBreakAndContinueTargets");
 
-  decorateReturnTargets(sexp, sexp, iridiumBuildContext);
+    decorateReturnTargets(sexp, sexp, iridiumBuildContext);
+    DBG("After decorateReturnTargets");
 
-  promoteAsyncReturns(sexp, iridiumBuildContext);
+    promoteAsyncReturns(sexp, iridiumBuildContext);
+    DBG("After promoteAsyncReturns");
 
-  markNamespaceImports(sexp, iridiumBuildContext);
+    markNamespaceImports(sexp, iridiumBuildContext);
+    DBG("After markNamespaceImports");
 
-  markSloppyWrites(sexp, iridiumBuildContext, -1);
+    markSloppyWrites(sexp, iridiumBuildContext, -1);
+    DBG("After markSloppyWrites");
 
-  loosenWritestoASWs(sexp);
+    loosenWritestoASWs(sexp);
+    DBG("After loosenWritestoASWs");
 
-  markDirectEvals(sexp, iridiumBuildContext, -1);
+    markDirectEvals(sexp, iridiumBuildContext, -1);
+    DBG("After markDirectEvals");
 
-  return sexp;
+    DBG("Finished runCorePasses");
+    return sexp;
 }
 
 IRISEXP runOptPasses(std::shared_ptr<FileSEXP> fileSEXP, std::unordered_map<int, IRIBUILDCONTEXT> iridiumBuildContext)
@@ -85,22 +120,10 @@ IRISEXP runOptPasses(std::shared_ptr<FileSEXP> fileSEXP, std::unordered_map<int,
   // fileSEXP->prettyPrint(std::cout);
   // std::cout << std::endl;
 
-  // FileView fileView(fileSEXP, iridiumBuildContext);
-  // // // std::ostringstream test;
-  // // // fileView.dumpSymbolTable(test);
-  // // // std::cout << test.str() << std::endl;
-
-  // // // fileSEXP->prettyPrint(std::cout);
-  // // // std::cout << std::endl;
-
-  // // // doRedundantGotoElimination(fileView);
-
-  // // fileSEXP->prettyPrint(std::cout);
-  // // std::cout << std::endl;
-
-  // // doUnreadBindingRemoval(fileView, iridiumBuildContext);
-
-  // return fileView.checkout();
-
-  return fileSEXP;
+  FileView fileView(fileSEXP, iridiumBuildContext);
+  doUnreadBindingRemoval(fileView, iridiumBuildContext);
+  auto res = fileView.checkout();
+  return res;
+  
+  // return fileSEXP;
 }
