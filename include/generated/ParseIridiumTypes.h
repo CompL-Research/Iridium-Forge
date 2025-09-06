@@ -1,4 +1,4 @@
-// Generated: 2025-09-03 04:06:11
+// Generated: 2025-09-04 03:04:33
 #pragma once
 #include "Iridium/Globals.h"
 #include "Iridium/IridiumSEXP.h"
@@ -53,6 +53,7 @@ public:
     if (tag == "ResolveBreakTarget") return ResolveBreakTargetSEXP::generateFrom(obj);
     if (tag == "JSForOfIteratorClose") return JSForOfIteratorCloseSEXP::generateFrom(obj);
     if (tag == "PopCatchContext") return PopCatchContextSEXP::generateFrom(obj);
+    if (tag == "PopFinalizerReturnTarget") return PopFinalizerReturnTargetSEXP::generateFrom(obj);
     if (tag == "InvokeFinalizer") return InvokeFinalizerSEXP::generateFrom(obj);
     if (tag == "JSForInStart") return JSForInStartSEXP::generateFrom(obj);
     if (tag == "JSForInNext") return JSForInNextSEXP::generateFrom(obj);
