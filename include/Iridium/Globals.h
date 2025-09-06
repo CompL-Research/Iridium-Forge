@@ -46,7 +46,6 @@ struct SEXPPath
 struct SymbolMetadata
 {
   bool isTopLevelModuleBinding = false;
-  std::shared_ptr<BBContainerSEXP> frame;
   std::shared_ptr<EnvBindingSEXP> binding;
   std::vector<SEXPPath> localWrites;
   std::vector<SEXPPath> localReads;
@@ -105,6 +104,7 @@ bool isGlobalBinding(IRISEXP fileSEXP, std::unordered_map<int, IRIBUILDCONTEXT> 
 std::shared_ptr<BBContainerSEXP> getBBContainerSEXPByScopeId(IRISEXP file, double scopeIDX);
 double findParentClosureScope(double startingScope, std::unordered_map<int, IRIBUILDCONTEXT> &buildContext);
 double getLexicalScope(double startingScope, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext);
+IRIBUILDCONTEXT maybeGetEnclosingTryCatchContext(int currScope, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext);
 void setClosureFlags(double flag, std::shared_ptr<BBContainerSEXP> bbContainer);
 void addToListSEXP(IRISEXP list, IRISEXP elementToAdd);
 

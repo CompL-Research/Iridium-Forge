@@ -149,6 +149,22 @@ int getBBScopeIDX(int bbIDX, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBu
   throw std::runtime_error("Failed to get scopeIDX for a bbIDX");
 }
 
+IRIBUILDCONTEXT maybeGetEnclosingTryCatchContext(int currScope, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext)
+{
+  if (currScope < 0) return NULL;
+  assert(iridiumBuildContext.count(currScope) > 0);
+
+  auto &buildContext = iridiumBuildContext[currScope];
+  auto &startBB = buildContext->BB[0];
+
+  if (startBB->hasTopLevel()) return NULL;
+  if (startBB->hasClosureBoundary()) return NULL;
+  
+  if (buildContext->tryContext) return iridiumBuildContext[currScope];
+
+  return maybeGetEnclosingTryCatchContext(iridiumBuildContext[currScope]->parent, iridiumBuildContext);
+}
+
 bool hasScopePath(int currScope, int targetScope, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext)
 {
   if (currScope == targetScope) return true;
