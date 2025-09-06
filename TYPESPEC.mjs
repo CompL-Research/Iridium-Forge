@@ -460,6 +460,16 @@ export default [
     }
   },
   {
+    "tag": "PopFinalizerReturnTarget",
+    "args": [],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
     "tag": "InvokeFinalizer",
     "args": [],
     "flags": {

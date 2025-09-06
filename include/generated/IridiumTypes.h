@@ -1,4 +1,4 @@
-// Generated: 2025-09-03 04:06:11
+// Generated: 2025-09-04 03:04:33
 #pragma once
 #include "Iridium/Globals.h"
 #include "Iridium/IridiumSEXP.h"
@@ -1992,6 +1992,27 @@ public:
 
   PopCatchContextSEXP() {
     this->tag = "PopCatchContext";
+  }
+
+};
+
+class PopFinalizerReturnTargetSEXP : public IridiumSEXP {
+private:
+// default constructor and explicit one are the same, skipping...
+public:
+  static std::shared_ptr<PopFinalizerReturnTargetSEXP> generateFrom(IRISEXP obj) {
+    assert(obj->tag == "PopFinalizerReturnTarget");
+    auto res = std::shared_ptr<PopFinalizerReturnTargetSEXP>(new PopFinalizerReturnTargetSEXP());
+
+    res->tag   = obj->tag;
+    res->args  = std::move(obj->args);
+    res->flags = std::move(obj->flags);
+    return res;
+  }
+
+
+  PopFinalizerReturnTargetSEXP() {
+    this->tag = "PopFinalizerReturnTarget";
   }
 
 };
