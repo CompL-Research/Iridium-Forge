@@ -8,7 +8,8 @@ BBContainerView::BBContainerView(
     std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext) : targetContainer(target),
                                                                      symbolTable(symbolTable),
                                                                      iridiumBuildContext(iridiumBuildContext),
-                                                                     cfgManager(iridiumBuildContext)
+                                                                     cfgManager(iridiumBuildContext),
+                                                                     bindingsView(targetContainer->getScopeIDX(), targetContainer->getBindings(), iridiumBuildContext)
 {
   populateSymbolTable();
   initCFG();
@@ -16,21 +17,20 @@ BBContainerView::BBContainerView(
 
 void BBContainerView::populateSymbolTable()
 {
-  auto bindingsSEXP = std::dynamic_pointer_cast<BindingsSEXP>(targetContainer->getBindings());
-  assert(bindingsSEXP);
-  for (auto &b : bindingsSEXP->getLocalBindings()->args)
+
+  for (auto &b : bindingsView.bindings)
   {
-    auto currBinding = std::dynamic_pointer_cast<EnvBindingSEXP>(b);
-    assert(currBinding);
-    if (symbolTable.find(currBinding) == symbolTable.end())
-      symbolTable[currBinding] = SymbolMetadata();
-    symbolTable[currBinding].frame = targetContainer;
-    symbolTable[currBinding].binding = currBinding;
+    for (auto &currBinding : b.second)
+    {
+      if (symbolTable.find(currBinding) == symbolTable.end())
+        symbolTable[currBinding] = SymbolMetadata();
+      symbolTable[currBinding].binding = currBinding;
+    }
   }
 
   if (targetContainer->hasTopLevel())
   {
-    for (auto &b : bindingsSEXP->getRemoteBindings()->args)
+    for (auto &b : bindingsView.remoteBindings->args)
     {
       auto currRemoteBinding = std::dynamic_pointer_cast<RemoteEnvBindingSEXP>(b);
       assert(currRemoteBinding);
@@ -38,7 +38,6 @@ void BBContainerView::populateSymbolTable()
       assert(currBinding);
       if (symbolTable.find(currBinding) == symbolTable.end())
         symbolTable[currBinding] = SymbolMetadata();
-      symbolTable[currBinding].frame = targetContainer;
       symbolTable[currBinding].binding = currBinding;
       symbolTable[currBinding].isTopLevelModuleBinding = true;
     }
@@ -47,14 +46,62 @@ void BBContainerView::populateSymbolTable()
   // For each binding, create an entry in the symbol table
   auto bbList = std::dynamic_pointer_cast<ListSEXP>(targetContainer->getBB());
   assert(bbList);
-  for (auto &b : bindingsSEXP->getLocalBindings()->args)
+  for (auto &b : bindingsView.bindings)
   {
-    auto currBinding = std::dynamic_pointer_cast<EnvBindingSEXP>(b);
+    for (auto &currBinding : b.second)
+    {
+      auto predicate = [&](const IRISEXP &ele)
+      {
+        return ele == currBinding;
+      };
+      // Collect stmts that contain are using this binding
+      for (auto &bb : bbList->args)
+      {
+        auto currBB = std::dynamic_pointer_cast<BBSEXP>(bb);
+        assert(currBB);
+        for (auto &stmt : currBB->args)
+        {
+          if (hasNode(stmt, predicate))
+          {
+            SEXPPath path = {targetContainer->getScopeIDX(), currBB->getIDX(), stmt};
+            if (auto implicitBindingDecl = std::dynamic_pointer_cast<JSImplicitBindingDeclarationSEXP>(stmt))
+            {
+              if (implicitBindingDecl->getStore() == currBinding)
+                symbolTable[currBinding].localWrites.push_back(path);
+              else
+                symbolTable[currBinding].localReads.push_back(path);
+            }
+            else if (auto envWrite = std::dynamic_pointer_cast<EnvWriteSEXP>(stmt))
+            {
+              if (envWrite->getLValTarget() == currBinding)
+                symbolTable[currBinding].localWrites.push_back(path);
+              else
+                symbolTable[currBinding].localReads.push_back(path);
+            }
+            else
+            {
+              symbolTable[currBinding].localReads.push_back(path);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  for (auto &b : bindingsView.remoteBindings->args)
+  {
+    auto currRemoteBinding = std::dynamic_pointer_cast<RemoteEnvBindingSEXP>(b);
+    assert(currRemoteBinding);
+    auto currBinding = resolveRemoteBinding(currRemoteBinding);
     assert(currBinding);
     auto predicate = [&](const IRISEXP &ele)
     {
       return ele == b;
     };
+
+    auto & readsVector = targetContainer->hasTopLevel() ? symbolTable[currBinding].localReads : symbolTable[currBinding].remoteReads;
+    auto & writesVector = targetContainer->hasTopLevel() ? symbolTable[currBinding].localWrites : symbolTable[currBinding].remoteWrites;
+
     // Collect stmts that contain are using this binding
     for (auto &bb : bbList->args)
     {
@@ -67,124 +114,21 @@ void BBContainerView::populateSymbolTable()
           SEXPPath path = {targetContainer->getScopeIDX(), currBB->getIDX(), stmt};
           if (auto implicitBindingDecl = std::dynamic_pointer_cast<JSImplicitBindingDeclarationSEXP>(stmt))
           {
-            if (implicitBindingDecl->getStore() == currBinding)
-              symbolTable[currBinding].localWrites.push_back(path);
+            if (implicitBindingDecl->getStore() == b)
+              writesVector.push_back(path);
             else
-              symbolTable[currBinding].localReads.push_back(path);
+              readsVector.push_back(path);
           }
           else if (auto envWrite = std::dynamic_pointer_cast<EnvWriteSEXP>(stmt))
           {
-            if (envWrite->getLValTarget() == currBinding)
-              symbolTable[currBinding].localWrites.push_back(path);
+            if (envWrite->getLValTarget() == b)
+              writesVector.push_back(path);
             else
-              symbolTable[currBinding].localReads.push_back(path);
+              readsVector.push_back(path);
           }
           else
           {
-            symbolTable[currBinding].localReads.push_back(path);
-          }
-        }
-      }
-    }
-  }
-
-  // Top level scopes in modules make these bindings, in case of a script this will be empty,
-  // as all top level declaration becoma part of the global object...
-  if (targetContainer->hasTopLevel())
-  {
-    for (auto &b : bindingsSEXP->getRemoteBindings()->args)
-    {
-      auto currRemoteBinding = std::dynamic_pointer_cast<RemoteEnvBindingSEXP>(b);
-      assert(currRemoteBinding);
-      auto currBinding = resolveRemoteBinding(currRemoteBinding);
-      assert(currBinding);
-      auto predicate = [&](const IRISEXP &ele)
-      {
-        return ele == b;
-      };
-
-      // Collect stmts that contain are using this binding
-      for (auto &bb : bbList->args)
-      {
-        auto currBB = std::dynamic_pointer_cast<BBSEXP>(bb);
-        assert(currBB);
-        for (auto &stmt : currBB->args)
-        {
-          if (hasNode(stmt, predicate))
-          {
-            SEXPPath path = {targetContainer->getScopeIDX(), currBB->getIDX(), stmt};
-            if (auto implicitBindingDecl = std::dynamic_pointer_cast<JSImplicitBindingDeclarationSEXP>(stmt))
-            {
-              if (implicitBindingDecl->getStore() == currBinding)
-                symbolTable[currBinding].localWrites.push_back(path);
-              else
-                symbolTable[currBinding].localReads.push_back(path);
-            }
-            else if (auto envWrite = std::dynamic_pointer_cast<EnvWriteSEXP>(stmt))
-            {
-              if (envWrite->getLValTarget() == currBinding)
-              {
-                symbolTable[currBinding].localWrites.push_back(path);
-              }
-              else if (auto remoteTargetWrite = std::dynamic_pointer_cast<RemoteEnvBindingSEXP>(envWrite->getLValTarget()))
-              {
-                if (resolveRemoteBinding(remoteTargetWrite) == currBinding)
-                  symbolTable[currBinding].localWrites.push_back(path);
-                else
-                  symbolTable[currBinding].localReads.push_back(path);
-              }
-              else
-                symbolTable[currBinding].localReads.push_back(path);
-            }
-            else
-            {
-              symbolTable[currBinding].localReads.push_back(path);
-            }
-          }
-        }
-      }
-    }
-  }
-  else
-  {
-    for (auto &b : bindingsSEXP->getRemoteBindings()->args)
-    {
-      auto currRemoteBinding = std::dynamic_pointer_cast<RemoteEnvBindingSEXP>(b);
-      assert(currRemoteBinding);
-      auto currBinding = resolveRemoteBinding(currRemoteBinding);
-      assert(currBinding);
-      auto predicate = [&](const IRISEXP &ele)
-      {
-        return ele == b;
-      };
-      // Collect stmts that contain are using this binding
-      for (auto &bb : bbList->args)
-      {
-        auto currBB = std::dynamic_pointer_cast<BBSEXP>(bb);
-        assert(currBB);
-        for (auto &stmt : currBB->args)
-        {
-          if (hasNode(stmt, predicate))
-          {
-            SEXPPath path = {targetContainer->getScopeIDX(), currBB->getIDX(), stmt};
-            if (auto implicitBindingDecl = std::dynamic_pointer_cast<JSImplicitBindingDeclarationSEXP>(stmt))
-            {
-              if (implicitBindingDecl->getStore() == currBinding)
-                symbolTable[currBinding].remoteWrites.push_back(path);
-              else
-                symbolTable[currBinding].remoteReads.push_back(path);
-            }
-            else if (auto envWrite = std::dynamic_pointer_cast<EnvWriteSEXP>(stmt))
-            {
-              if (envWrite->getLValTarget() == currBinding)
-                symbolTable[currBinding].remoteWrites.push_back(path);
-              else
-                symbolTable[currBinding].remoteReads.push_back(path);
-            }
-            else
-            {
-              symbolTable[currBinding].remoteReads.push_back(path);
-            }
+            readsVector.push_back(path);
           }
         }
       }
@@ -205,7 +149,6 @@ void BBContainerView::initCFG()
   {
     auto currBB = std::dynamic_pointer_cast<BBSEXP>(bb);
     assert(currBB && "currBB is null 1");
-    std::cout << "Adding node: " << currBB->getIDX() << std::endl;
     cfgManager.addNode(currBB, currBB->getIDX() == startBBIdx);
   }
 
@@ -296,7 +239,6 @@ void BBContainerView::initCFG()
     return sinks;
   };
 
-
   // Add back edges from finalizer BB to all its invocation sites
   for (auto &bb : bbList->args)
   {
@@ -306,25 +248,51 @@ void BBContainerView::initCFG()
     auto &tryContext = iridiumBuildContext[currBB->getScopeIDX()]->tryContext;
     if (tryContext)
     {
-      auto & finalizerIdx = tryContext.value().finalizerIDX;
-      if (finalizerIdx != -1)
+      // Add edges from all finalizer sinks to their respective call sites
+      auto &finalizerIdx = tryContext.value().finalizerIDX;
+      if (finalizerIdx > -1)
       {
-        if (cfgManager.bbIdxToVertex.find(finalizerIdx) == cfgManager.bbIdxToVertex.end())
-        {
-          std::cout << "ERR: " << finalizerIdx << std::endl;
-        }
         assert(cfgManager.bbIdxToVertex.find(finalizerIdx) != cfgManager.bbIdxToVertex.end());
         auto finalizerVertex = cfgManager.bbIdxToVertex[finalizerIdx];
         auto incoming = cfgManager.predecessors(finalizerVertex);
         auto sinks = findSinks(cfgManager.cfg, finalizerVertex);
 
-        for (auto & sink : sinks)
+        for (auto &sink : sinks)
         {
-          for (auto & invocationSite : incoming)
+          for (auto &invocationSite : incoming)
           {
             cfgManager.connect(sink, invocationSite, {EdgeKind::FinalizerRet, NULL});
           }
         }
+      }
+    }
+  }
+
+  // Add edges from all nested Try blocks to their respective udCatchBB or imCatchBB
+  for (auto &bb : bbList->args)
+  {
+    auto currBB = std::dynamic_pointer_cast<BBSEXP>(bb);
+    assert(currBB && "currBB is null X");
+    auto context = maybeGetEnclosingTryCatchContext(currBB->getScopeIDX(), iridiumBuildContext);
+    if (context)
+    {
+      auto tryContext = context->tryContext.value();
+      // Path from tryBB
+      if (hasScopePath(currBB->getScopeIDX(), getBBScopeIDX(tryContext.tryIDX, iridiumBuildContext), iridiumBuildContext))
+      {
+        if (tryContext.udCatchIDX > -1)
+        {
+          cfgManager.connect(currBB->getIDX(), tryContext.udCatchIDX, {EdgeKind::Exception, NULL});
+        }
+        else
+        {
+          assert(tryContext.imCatchIDX > -1);
+          cfgManager.connect(currBB->getIDX(), tryContext.imCatchIDX, {EdgeKind::Exception, NULL});
+        }
+      }
+      else if (tryContext.udCatchIDX > -1 && hasScopePath(currBB->getScopeIDX(), getBBScopeIDX(tryContext.udCatchIDX, iridiumBuildContext), iridiumBuildContext))
+      {
+        cfgManager.connect(currBB->getIDX(), tryContext.imCatchIDX, {EdgeKind::Exception, NULL});
       }
     }
   }
@@ -380,5 +348,6 @@ std::shared_ptr<BBContainerSEXP> BBContainerView::checkout()
   std::shared_ptr<ListSEXP> bbList = std::make_shared<ListSEXP>("BB");
   bbList->args = chapati;
   targetContainer->setBB(bbList);
+  targetContainer->setBindings(bindingsView.checkout());
   return targetContainer;
 }
