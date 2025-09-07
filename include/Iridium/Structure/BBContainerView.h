@@ -3,6 +3,7 @@
 #include "generated/IridiumTypes.h"
 #include "Iridium/Globals.h"
 #include "Iridium/Structure/CFGManager.h"
+#include "Iridium/Structure/BindingsView.h"
 #include "external/graph-boost-1.89.0/adjacency_list.hpp"
 #include <unordered_map>
 
@@ -16,6 +17,7 @@ class BBContainerView
 public:
   std::shared_ptr<BBContainerSEXP> targetContainer;
   CFGManager cfgManager;
+  BindingsView bindingsView;
   
 private:
   SymbolTable & symbolTable;
