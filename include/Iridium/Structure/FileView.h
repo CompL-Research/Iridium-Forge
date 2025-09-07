@@ -15,14 +15,15 @@ class FileView
 {
 private:
   std::shared_ptr<FileSEXP> targetContainer;
-  std::vector<BBContainerView> bbContainerViews;
   std::unordered_map<int, IRIBUILDCONTEXT> iridiumBuildContext;
-
-  SymbolTable symbolTable;
 
   void init();
 
 public:
+  std::vector<BBContainerView> bbContainerViews;
+
+  SymbolTable symbolTable;
+
   FileView(
       std::shared_ptr<FileSEXP> file,
       std::unordered_map<int, IRIBUILDCONTEXT> iridiumBuildContext) : targetContainer(file), iridiumBuildContext(iridiumBuildContext)
@@ -30,9 +31,11 @@ public:
     init();
   }
 
-  SymbolTable &getSymbolTable() { return symbolTable; }
-
   void dumpSymbolTable(std::ostringstream &oss);
+
+  void deleteBinding(std::shared_ptr<EnvBindingSEXP> binding);
+
+  void refreshSymbolTable();
 
   std::vector<BBContainerView> &getBBContainerViews() { return bbContainerViews; }
 

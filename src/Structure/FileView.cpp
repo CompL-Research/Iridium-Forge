@@ -22,6 +22,23 @@ void FileView::dumpSymbolTable(std::ostringstream &oss)
   }
 }
 
+void FileView::refreshSymbolTable()
+{
+  symbolTable.clear();
+  for (auto &bbCont : bbContainerViews)
+  {
+    bbCont.populateSymbolTable();
+  }
+}
+
+void FileView::deleteBinding(std::shared_ptr<EnvBindingSEXP> binding)
+{
+  for (auto &bbCont : bbContainerViews)
+  {
+    bbCont.bindingsView.removeBinding(binding);
+  }
+}
+
 std::shared_ptr<BBSEXP> FileView::getBB(SEXPPath path)
 {
   for (auto & bbView : bbContainerViews)
