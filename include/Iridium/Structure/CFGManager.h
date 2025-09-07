@@ -47,7 +47,6 @@ public:
     if (isEntryNode)
       entry = v;
     bbIdxToVertex[bb->getIDX()] = v;
-    std::cout << bb->getIDX() << " -> " << v << std::endl;
     return v;
   }
 
