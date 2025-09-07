@@ -39,7 +39,7 @@ public:
   bool getBoolean() const { return std::get<bool>(value); }
   const std::string &getString() const { return std::get<std::string>(value); }
 
-  void prettyPrint(std::ostream &oss) const
+  void prettyPrint(std::ostream &oss = std::cout) const
   {
     oss << key << "=";
     switch (valueKind)
