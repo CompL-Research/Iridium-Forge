@@ -7,6 +7,32 @@
 #include <vector>
 #include <functional>
 #include <variant>
+
+#define IRIDIUM_OUTPUTS_FOLDER "outputs/"
+
+#define IRIDIUM_DEBUG_STATEMENTS 0
+#define IRIDIUM_DUMP_INITIAL_SEXP 0
+#define IRIDIUM_DUMP_FINAL_SEXP 0
+#define IRIDIUM_DUMP_AFTER_CORE_PASSES 0
+
+#define IRIDIUM_DUMP_INITIAL_CFG 0
+#define IRIDIUM_DUMP_FINAL_CFG 0
+#define IRIDIUM_DUMP_FLATTENING_CFG 0
+
+
+#if IRIDIUM_DEBUG_STATEMENTS == 1
+#define DBG(msg)                                                                       \
+  do                                                                                   \
+  {                                                                                    \
+    std::cerr << "[DEBUG] " << __FILE__ << ":" << __LINE__ << " " << msg << std::endl; \
+  } while (0)
+#else
+#define DBG(msg) \
+  do             \
+  {              \
+  } while (0)
+#endif
+
 enum EnvBindingSEXPKindFlag
 {
   JSARG,
@@ -86,10 +112,9 @@ struct LoopConfig;
 struct TryContext;
 
 IRIBUILDCONTEXT findReturnTarget(
-  double localScope,
-  std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext,
-  std::vector<std::variant<LoopConfig, TryContext>> & intermediateContexts
-);
+    double localScope,
+    std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext,
+    std::vector<std::variant<LoopConfig, TryContext>> &intermediateContexts);
 
 bool hasNode(const IRISEXP &currNode, const std::function<bool(const IRISEXP &)> &pred);
 void insertAfter(std::vector<IRISEXP> &vec, IRISEXP after, const std::vector<IRISEXP> &toInsert);

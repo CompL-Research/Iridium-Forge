@@ -31,99 +31,86 @@
 #include "Iridium/Structure/FileView.h"
 #include "Iridium/OptimizationPasses/UnreadBindingRemoval.h"
 
-// Toggle debug output here
-// #define IRIDIUM_DEBUG 1  
-
-#ifdef IRIDIUM_DEBUG
-#define DBG(msg) \
-    do { std::cerr << "[DEBUG] " << msg << std::endl; } while (0)
-#else
-#define DBG(msg) \
-    do { } while (0)
-#endif
-
 IRISEXP runCorePasses(
     IRISEXP sexp,
     std::unordered_map<int, IRIBUILDCONTEXT> iridiumBuildContext)
 {
-    DBG("Starting runCorePasses");
+  normalizeBBFlags(iridiumBuildContext);
+  DBG("Completed normalizeBBFlags");
 
-    normalizeBBFlags(iridiumBuildContext);
-    DBG("After normalizeBBFlags");
+  hoistFunctionDeclarations(sexp, iridiumBuildContext);
+  DBG("Completed hoistFunctionDeclarations");
 
-    hoistFunctionDeclarations(sexp, iridiumBuildContext);
-    DBG("After hoistFunctionDeclarations");
+  filterNOPs(sexp);
+  DBG("Completed filterNOPs");
 
-    filterNOPs(sexp);
-    DBG("After filterNOPs");
+  groupIntoClosureGroups(sexp, iridiumBuildContext);
+  DBG("Completed groupIntoClosureGroups");
 
-    groupIntoClosureGroups(sexp, iridiumBuildContext);
-    DBG("After groupIntoClosureGroups");
+  populateModuleBindings(sexp, iridiumBuildContext);
+  DBG("Completed populateModuleBindings");
 
-    populateModuleBindings(sexp, iridiumBuildContext);
-    DBG("After populateModuleBindings");
+  populateImplicitBindings(sexp, iridiumBuildContext);
+  DBG("Completed populateImplicitBindings");
 
-    populateImplicitBindings(sexp, iridiumBuildContext);
-    DBG("After populateImplicitBindings");
+  reduceFunctionDeclarations(sexp, iridiumBuildContext);
+  DBG("Completed reduceFunctionDeclarations");
 
-    reduceFunctionDeclarations(sexp, iridiumBuildContext);
-    DBG("After reduceFunctionDeclarations");
+  populateExplicitBindings(sexp, iridiumBuildContext);
+  DBG("Completed populateExplicitBindings");
 
-    populateExplicitBindings(sexp, iridiumBuildContext);
-    DBG("After populateExplicitBindings");
+  addClosureArgsBindings(sexp, iridiumBuildContext);
+  DBG("Completed addClosureArgsBindings");
 
-    addClosureArgsBindings(sexp, iridiumBuildContext);
-    DBG("After addClosureArgsBindings");
+  initializeStackFrame(sexp, iridiumBuildContext);
+  DBG("Completed initializeStackFrame");
 
-    initializeStackFrame(sexp, iridiumBuildContext);
-    DBG("After initializeStackFrame");
+  patchHeritageConstructorSuperCalls(sexp, iridiumBuildContext);
+  DBG("Completed patchHeritageConstructorSuperCalls");
 
-    patchHeritageConstructorSuperCalls(sexp, iridiumBuildContext);
-    DBG("After patchHeritageConstructorSuperCalls");
+  reduceResolvePrivateEnvBindingSEXP(sexp, iridiumBuildContext);
+  DBG("Completed reduceResolvePrivateEnvBindingSEXP");
 
-    reduceResolvePrivateEnvBindingSEXP(sexp, iridiumBuildContext);
-    DBG("After reduceResolvePrivateEnvBindingSEXP");
+  reduceResolveEnvBindingSEXP(sexp, iridiumBuildContext);
+  DBG("Completed reduceResolveEnvBindingSEXP");
 
-    reduceResolveEnvBindingSEXP(sexp, iridiumBuildContext);
-    DBG("After reduceResolveEnvBindingSEXP");
+  resolveLambdaTargets(sexp, sexp, iridiumBuildContext, -1);
+  DBG("Completed resolveLambdaTargets");
 
-    resolveLambdaTargets(sexp, sexp, iridiumBuildContext, -1);
-    DBG("After resolveLambdaTargets");
+  resolveBreakAndContinueTargets(sexp, sexp, iridiumBuildContext);
+  DBG("Completed resolveBreakAndContinueTargets");
 
-    resolveBreakAndContinueTargets(sexp, sexp, iridiumBuildContext);
-    DBG("After resolveBreakAndContinueTargets");
+  decorateReturnTargets(sexp, sexp, iridiumBuildContext);
+  DBG("Completed decorateReturnTargets");
 
-    decorateReturnTargets(sexp, sexp, iridiumBuildContext);
-    DBG("After decorateReturnTargets");
+  promoteAsyncReturns(sexp, iridiumBuildContext);
+  DBG("Completed promoteAsyncReturns");
 
-    promoteAsyncReturns(sexp, iridiumBuildContext);
-    DBG("After promoteAsyncReturns");
+  markNamespaceImports(sexp, iridiumBuildContext);
+  DBG("Completed markNamespaceImports");
 
-    markNamespaceImports(sexp, iridiumBuildContext);
-    DBG("After markNamespaceImports");
+  markSloppyWrites(sexp, iridiumBuildContext, -1);
+  DBG("Completed markSloppyWrites");
 
-    markSloppyWrites(sexp, iridiumBuildContext, -1);
-    DBG("After markSloppyWrites");
+  loosenWritestoASWs(sexp);
+  DBG("Completed loosenWritestoASWs");
 
-    loosenWritestoASWs(sexp);
-    DBG("After loosenWritestoASWs");
+  markDirectEvals(sexp, iridiumBuildContext, -1);
+  DBG("Completed markDirectEvals");
 
-    markDirectEvals(sexp, iridiumBuildContext, -1);
-    DBG("After markDirectEvals");
-
-    DBG("Finished runCorePasses");
-    return sexp;
+  return sexp;
 }
 
 IRISEXP runOptPasses(std::shared_ptr<FileSEXP> fileSEXP, std::unordered_map<int, IRIBUILDCONTEXT> iridiumBuildContext)
 {
-  // fileSEXP->prettyPrint(std::cout);
-  // std::cout << std::endl;
 
   FileView fileView(fileSEXP, iridiumBuildContext);
+
   doUnreadBindingRemoval(fileView, iridiumBuildContext);
+  DBG("Completed UnreadBindingRemoval");
+
   auto res = fileView.checkout();
   return res;
-  
+
   // return fileSEXP;
 }

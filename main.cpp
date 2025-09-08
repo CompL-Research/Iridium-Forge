@@ -59,19 +59,44 @@ int main(int argc, char **argv)
     std::vector<uint8_t> raw = gunzip(gz);
     msgpack::object_handle oh = msgpack::unpack(reinterpret_cast<const char *>(raw.data()), raw.size());
     msgpack::object obj = oh.get();
+    
+    msgpack::object VERSION = obj.via.map.ptr[0].val;
+    msgpack::object path = obj.via.map.ptr[1].val;
+    msgpack::object iridium = obj.via.map.ptr[2].val;
+    msgpack::object buildContext = obj.via.map.ptr[3].val;
+
+    // Ensure the data is in order before we start
+    if (VERSION.type != msgpack::type::STR)
+      throw std::runtime_error("[Forge] Expected 'version' to be STR!");
+
+    if (path.type != msgpack::type::STR)
+      throw std::runtime_error("[Forge] Expected 'path' to be STR!");
+
+    if (iridium.type != msgpack::type::ARRAY)
+      throw std::runtime_error("[Forge] Expected 'iridium' to be ARRAY!");
+
+    if (buildContext.type != msgpack::type::ARRAY)
+      throw std::runtime_error("[Forge] Expected 'buildContext' to be ARRAY!");
 
     // Read Iridium SEXP
-    msgpack::object iridiumObj = obj.via.map.ptr[2].val; 
     std::unordered_map<int, std::shared_ptr<BBSEXP>> bbIdxToSEXPMap;
     std::unordered_map<int, IRIBUILDCONTEXT> iridiumBuildContext;
-    auto sexp = parseSEXP(iridiumObj, &bbIdxToSEXPMap);
+    auto sexp = parseSEXP(iridium, &bbIdxToSEXPMap);
 
     // Read Iridium Build Contexts
-    msgpack::object buildContexts = obj.via.map.ptr[3].val;
-    parseBuildContexts(buildContexts, bbIdxToSEXPMap, iridiumBuildContext);
+    parseBuildContexts(buildContext, bbIdxToSEXPMap, iridiumBuildContext);
 
     auto res = sharedEntrypoint(sexp, iridiumBuildContext);
 
+    std::ostringstream oss;
+    oss << "{";
+    oss << "\"version\":" << "\"" << std::string(VERSION.via.str.ptr, VERSION.via.str.size) << "\",";
+    oss << "\"absoluteFilePath\":" << "\"" << std::string(path.via.str.ptr, path.via.str.size) << "\",";
+    oss << "\"iridium\":";
+    res->dump(oss, true);
+    oss << "}";
+
+    std::cout << oss.str();
     return 0;
   }
   catch (const std::exception &ex)

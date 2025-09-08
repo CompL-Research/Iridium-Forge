@@ -1,6 +1,7 @@
 #include "Iridium/Globals.h"
 #include "Iridium/Structure/BBContainerView.h"
 #include <boost/graph/graphviz.hpp>
+#include <filesystem>
 
 BBContainerView::BBContainerView(
     std::shared_ptr<BBContainerSEXP> target,
@@ -99,8 +100,8 @@ void BBContainerView::populateSymbolTable()
       return ele == b;
     };
 
-    auto & readsVector = targetContainer->hasTopLevel() ? symbolTable[currBinding].localReads : symbolTable[currBinding].remoteReads;
-    auto & writesVector = targetContainer->hasTopLevel() ? symbolTable[currBinding].localWrites : symbolTable[currBinding].remoteWrites;
+    auto &readsVector = targetContainer->hasTopLevel() ? symbolTable[currBinding].localReads : symbolTable[currBinding].remoteReads;
+    auto &writesVector = targetContainer->hasTopLevel() ? symbolTable[currBinding].localWrites : symbolTable[currBinding].remoteWrites;
 
     // Collect stmts that contain are using this binding
     for (auto &bb : bbList->args)
@@ -344,10 +345,49 @@ void CFGManager::dumpCFGDOT(std::string filePath)
 
 std::shared_ptr<BBContainerSEXP> BBContainerView::checkout()
 {
+
+#if IRIDIUM_DUMP_INITIAL_CFG == 1
+  {
+    DBG("IRIDIUM_DUMP_INITIAL_CFG");
+    std::string savePath = IRIDIUM_OUTPUTS_FOLDER + std::string("Initial_CFG_BB") + std::to_string(this->getStartBBIDX()) + ".DOT";
+    std::filesystem::path dir = IRIDIUM_OUTPUTS_FOLDER;
+    try
+    {
+      if (!std::filesystem::exists(dir))
+      {
+        std::filesystem::create_directories(dir);
+      }
+      cfgManager.dumpCFGDOT(savePath);
+    }
+    catch (const std::filesystem::filesystem_error &e)
+    {
+      std::cerr << "[IRIDIUM_DUMP_INITIAL_CFG] Filesystem error: " << e.what() << '\n';
+    }
+  }
+#endif
   std::vector<IRISEXP> chapati = cfgManager.chapati();
   std::shared_ptr<ListSEXP> bbList = std::make_shared<ListSEXP>("BB");
   bbList->args = chapati;
   targetContainer->setBB(bbList);
   targetContainer->setBindings(bindingsView.checkout());
+#if IRIDIUM_DUMP_FINAL_CFG == 1
+  {
+    DBG("IRIDIUM_DUMP_FINAL_CFG");
+    std::string savePath = IRIDIUM_OUTPUTS_FOLDER + std::string("Final_CFG_BB") + std::to_string(this->getStartBBIDX()) + ".DOT";
+    std::filesystem::path dir = IRIDIUM_OUTPUTS_FOLDER;
+    try
+    {
+      if (!std::filesystem::exists(dir))
+      {
+        std::filesystem::create_directories(dir);
+      }
+      cfgManager.dumpCFGDOT(savePath);
+    }
+    catch (const std::filesystem::filesystem_error &e)
+    {
+      std::cerr << "[IRIDIUM_DUMP_FINAL_CFG] Filesystem error: " << e.what() << '\n';
+    }
+  }
+#endif
   return targetContainer;
 }

@@ -2,6 +2,7 @@
 #include "external/graph-boost-1.89.0/adjacency_list.hpp"
 #include "external/graph-boost-1.89.0/graph_traits.hpp"
 #include "external/graph-boost-1.89.0/iteration_macros.hpp"
+#include <filesystem>
 
 // DFS with memoization, handles multiple exits
 int dfsHeight(const CFG &g, Vertex u,
@@ -48,6 +49,22 @@ std::unordered_map<Vertex, int> computeHeights(const CFG &g, Vertex entry)
 
 std::vector<IRISEXP> CFGManager::chapati()
 {
+#if IRIDIUM_DUMP_FLATTENING_CFG == 1
+  int step = 0;
+  std::string debugPathPrefix = IRIDIUM_OUTPUTS_FOLDER + std::to_string((int)cfg[entry]->getIDX()) + "/";
+  std::filesystem::path dir = debugPathPrefix;
+  try
+  {
+    if (!std::filesystem::exists(dir))
+    {
+      std::filesystem::create_directories(dir);
+    }
+  }
+  catch (const std::filesystem::filesystem_error &e)
+  {
+    std::cerr << "[IRIDIUM_DUMP_FLATTENING_CFG] Filesystem error: " << e.what() << '\n';
+  }
+#endif
   std::unordered_map<Vertex, int> heightMap = computeHeights(cfg, entry);
   
   std::set<Vertex> processed;
@@ -99,10 +116,11 @@ std::vector<IRISEXP> CFGManager::chapati()
     return false;
   };
 
-  int step = 0;
   std::function<void(Vertex)> chap = [&](Vertex curr)
   {
-    dumpCFGDOT("mergeDump/ENTRY" + std::to_string(reinterpret_cast<uintptr_t>(targetContainer.get())) + "_step_" + std::to_string(step++) + "_BB" + std::to_string((int)cfg[curr]->getIDX()) + ".DOT");
+#if IRIDIUM_DUMP_FLATTENING_CFG == 1
+    dumpCFGDOT(debugPathPrefix + "step_" + std::to_string(step++) + "_BB" + std::to_string((int)cfg[curr]->getIDX()) + ".DOT");
+#endif
     if (processed.find(curr) != processed.end())
       return;
 
