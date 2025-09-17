@@ -32,5 +32,7 @@ public:
   double getScopeIdx() { return targetContainer->getScopeIDX(); }
   double getStartBBIDX() { return targetContainer->getStartBBIDX(); }
 
+  std::set<IRISEXP> getUncapturedStackBindings();
+
   std::shared_ptr<BBContainerSEXP> checkout();
 };

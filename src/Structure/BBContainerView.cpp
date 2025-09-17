@@ -391,3 +391,18 @@ std::shared_ptr<BBContainerSEXP> BBContainerView::checkout()
 #endif
   return targetContainer;
 }
+
+
+std::set<IRISEXP> BBContainerView::getUncapturedStackBindings()
+{
+  std::set<IRISEXP> res;
+  for (auto & e : bindingsView.bindings)
+  {
+    for (auto & b : e.second)
+    {
+      auto & curr = symbolTable[b];
+      if (curr.remoteReads.size() == 0 && curr.remoteWrites.size() == 0) res.insert(b);
+    }
+  }
+  return res;
+}
