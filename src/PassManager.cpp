@@ -5,6 +5,7 @@
 #include "Iridium/Analysis/DataflowSolver.h"
 #include "Iridium/OptimizationPasses/UnreadBindingRemoval.h"
 #include "Iridium/OptimizationPasses/ConstantProp.h"
+#include "Iridium/OptimizationPasses/WriteBarrierReduction.h"
 
 void PassManager::optimize(int level)
 {
@@ -17,19 +18,23 @@ void PassManager::optimize(int level)
     DataflowSolver<ConstantsAtStmt> constantsAtStmtSolver(bbContView.cfgManager.cfg, bbContView.cfgManager.entryBlock(), true, [&]() {
       return ConstantsAtStmt::bottom();
     });
-    auto res = constantsAtStmtSolver.run(ConstantsAtStmt::boundary());
+    // auto res = constantsAtStmtSolver.run(ConstantsAtStmt::boundary());
 
-    for (auto & e : res)
+    for (auto & e : constantsAtStmtSolver.run(ConstantsAtStmt::boundary()))
     {
       ConstantProp::Transform(bbContView.cfgManager.cfg[e.first], e.second);
     }
 
-    // auto bindingsUnderAnalysis = bbContView.getUncapturedStackBindings();
-
-    // DataflowSolver<TDZA> tdzaSolver(bbContView.cfgManager.cfg, bbContView.cfgManager.entryBlock(), true, [&]() {
-    //   return TDZA::bottom(bindingsUnderAnalysis);
-    // });
+    auto bindingsUnderAnalysis = bbContView.getUncapturedStackBindings();
+    DataflowSolver<TDZA> tdzaSolver(bbContView.cfgManager.cfg, bbContView.cfgManager.entryBlock(), true, [&]() {
+      return TDZA::bottom(bindingsUnderAnalysis);
+    });
     // auto res = tdzaSolver.run(TDZA::boundary(bindingsUnderAnalysis));
+
+    for (auto & e : tdzaSolver.run(TDZA::boundary(bindingsUnderAnalysis)))
+    {
+      WriteBarrierReduction::Transform(bbContView.cfgManager.cfg[e.first], e.second);
+    }
     
     // std::ostringstream ss;
     // for (auto & e : res)
