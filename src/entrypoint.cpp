@@ -30,6 +30,7 @@
 
 #include "Iridium/Structure/FileView.h"
 #include "Iridium/OptimizationPasses/UnreadBindingRemoval.h"
+#include "Iridium/PassManager.h"
 
 IRISEXP runCorePasses(
     IRISEXP sexp,
@@ -103,14 +104,8 @@ IRISEXP runCorePasses(
 
 IRISEXP runOptPasses(std::shared_ptr<FileSEXP> fileSEXP, std::unordered_map<int, IRIBUILDCONTEXT> iridiumBuildContext)
 {
-
   FileView fileView(fileSEXP, iridiumBuildContext);
-
-  doUnreadBindingRemoval(fileView, iridiumBuildContext);
-  DBG("Completed UnreadBindingRemoval");
-
-  auto res = fileView.checkout();
-  return res;
-
-  // return fileSEXP;
+  PassManager pm(fileView, iridiumBuildContext);
+  pm.optimize(1);
+  return pm.checkout();
 }
