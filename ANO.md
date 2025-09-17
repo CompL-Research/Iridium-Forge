@@ -115,14 +115,6 @@ WriteBarrierReduction <: (TDZA: D1)
 
 ```
 ConstantLattice:
-  generate(rval):
-    if (NUBD) return NUBD
-    if (Null) return Null
-    if (Boolean) return Boolean
-    if (Number) return Number
-    if (String) return String
-    if (JSBigInt) return JSBigInt
-    return NAC
 
   kind = enum {
     NAC,
@@ -137,6 +129,15 @@ ConstantLattice:
   };
 
   val : IRISEXP;
+
+  generate(rval):
+    if (NUBD) return NUBD
+    if (Null) return Null
+    if (Boolean) return Boolean
+    if (Number) return Number
+    if (String) return String
+    if (JSBigInt) return JSBigInt
+    return NAC
 
   Equality(this, other):
     if (this.kind == other.kind)
@@ -170,14 +171,15 @@ ConstantLattice:
 ```
 TDZLattice:
 
-  generate(rval):
-    if (NUBD) return TDZ
-    return SAFE
-
   kind = enum {
     TDZ,
     SAFE
   };
+
+  generate(rval):
+    if (NUBD) return TDZ
+    return SAFE
+
 
   Equality(this, other):
     return this.kind == other.kind
