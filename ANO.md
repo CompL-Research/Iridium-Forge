@@ -115,7 +115,7 @@ WriteBarrierReduction <: (TDZA: D1)
 
 ```
 ConstantLattice:
-  new(rval):
+  generate(rval):
     if (NUBD) return NUBD
     if (Null) return Null
     if (Boolean) return Boolean
@@ -170,7 +170,7 @@ ConstantLattice:
 ```
 TDZLattice:
 
-  new(rval):
+  generate(rval):
     if (NUBD) return TDZ
     return SAFE
 
