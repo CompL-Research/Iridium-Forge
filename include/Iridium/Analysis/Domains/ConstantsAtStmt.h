@@ -187,4 +187,6 @@ struct ConstantsAtStmt
   }
 
   ConstantsAtStmt transfer(const std::shared_ptr<BBSEXP> &bb) const;
+
+  ConstantsAtStmt iter(const std::shared_ptr<BBSEXP> & bb, std::function<void(size_t, ConstantsAtStmt)> callback) const;
 };
