@@ -173,7 +173,8 @@ TDZLattice:
 
   kind = enum {
     TDZ,
-    SAFE
+    SAFE,
+    BOTTOM
   };
 
   generate(rval):
@@ -185,6 +186,7 @@ TDZLattice:
     return this.kind == other.kind
 
   Merge(this, other):
+    if either one is BOTTOM return the other
     if either one is TDZ return TDZ
     return SAFE
 ```
