@@ -101,5 +101,5 @@ struct TDZA
 
   TDZA transfer(const std::shared_ptr<BBSEXP> &bb) const;
 
-  TDZA transferDump(const std::shared_ptr<BBSEXP> &bb, std::ostringstream &oss) const;
+  TDZA iter(const std::shared_ptr<BBSEXP> & bb, std::function<void(size_t, TDZA)> callback) const;
 };
