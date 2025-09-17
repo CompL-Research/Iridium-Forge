@@ -1,13 +1,15 @@
 #pragma once
 #include "Iridium/Structure/CFGManager.h"
 #include <sstream>
+#include <functional>
+
 
 template <typename Domain>
 class DataflowSolver
 {
 public:
-  DataflowSolver(CFG &cfg, Vertex entry, bool forward = true)
-      : cfg(cfg), entry(entry), forward(forward) {}
+  DataflowSolver(CFG &cfg, Vertex entry, bool forward, std::function<Domain(void)> bottomInit)
+      : cfg(cfg), entry(entry), forward(forward), bottomInitClosure(bottomInit) {}
 
   std::unordered_map<Vertex, Domain> run(const Domain &init)
   {
@@ -16,8 +18,8 @@ public:
     // initialize all blocks
     for (auto v : boost::make_iterator_range(boost::vertices(cfg)))
     {
-      in[v] = Domain::bottom();
-      out[v] = Domain::bottom();
+      in[v] = bottomInitClosure();
+      out[v] = bottomInitClosure();
     }
 
     // entry condition (often init != top)
@@ -39,7 +41,7 @@ public:
           // }
           
           // in[v] = meet of predecessors' out
-          newIn = (v == entry ? in[v] : Domain::bottom());
+          newIn = (v == entry ? in[v] : bottomInitClosure());
           for (auto p : predecessors(v))
           {
             newIn = newIn.merge(out[p]);
@@ -50,7 +52,7 @@ public:
           //   std::cout << "IN" << std::endl;
           //   std::ostringstream ss;
           //   newIn.dump(ss);
-          //   std::cout << ss.str();
+          //   std::cout << ss.str() << std::endl;
           // }
 
           // out[v] = transfer(in[v], block)
@@ -60,13 +62,13 @@ public:
           //   std::cout << "OUT" << std::endl;
           //   std::ostringstream ss;
           //   newOut.dump(ss);
-          //   std::cout << ss.str();
+          //   std::cout << ss.str() << std::endl;
           // }
         }
         else
         {
           // out[v] = meet of successors' in
-          newOut = Domain::bottom();
+          newOut = bottomInitClosure();
           for (auto s : successors(v))
           {
             newOut = newOut.merge(in[s]);
@@ -93,6 +95,7 @@ private:
   CFG &cfg;
   Vertex entry;
   bool forward;
+  std::function<Domain(void)> bottomInitClosure;
 
   std::vector<Vertex> predecessors(Vertex v)
   {
