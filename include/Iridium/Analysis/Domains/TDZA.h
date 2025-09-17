@@ -8,7 +8,8 @@ struct TDZLattice
   enum ValKind
   {
     TDZ,
-    SAFE
+    SAFE,
+    BOTTOM
   } kind;
 
   void dump(std::ostringstream &oss) const
@@ -18,8 +19,11 @@ struct TDZLattice
     case TDZ:
       oss << "TDZ";
       break;
-    default:
+    case SAFE:
       oss << "SAFE";
+      break;
+    default:
+      oss << "BOTTOM";
       break;
     }
   }
@@ -33,11 +37,14 @@ struct TDZLattice
 
   bool operator==(const TDZLattice &other) const
   {
-    return kind != other.kind;
+    return kind == other.kind;
   }
 
   TDZLattice merge(const TDZLattice &other) const
   {
+    if (kind == BOTTOM) return TDZLattice{other.kind};
+    if (other.kind == BOTTOM) return TDZLattice{kind};
+
     if (kind == TDZ || other.kind == TDZ) return TDZLattice{TDZ};
     return TDZLattice{SAFE};
   }
@@ -73,7 +80,17 @@ struct TDZA
     return res;
   }
 
-  static TDZA bottom() { return TDZA(); }
+  static TDZA boundary(std::set<IRISEXP> initialBindings) {
+    TDZA res;
+    for (auto & b : initialBindings) res.dfv.store[b] = TDZLattice{TDZLattice::ValKind::SAFE};
+    return res;
+  }
+
+  static TDZA bottom(std::set<IRISEXP> initialBindings) {
+    TDZA res;
+    for (auto & b : initialBindings) res.dfv.store[b] = TDZLattice{TDZLattice::ValKind::BOTTOM};
+    return res;
+  }
 
   TDZA clone() const
   {
@@ -83,4 +100,6 @@ struct TDZA
   }
 
   TDZA transfer(const std::shared_ptr<BBSEXP> &bb) const;
+
+  TDZA transferDump(const std::shared_ptr<BBSEXP> &bb, std::ostringstream &oss) const;
 };
