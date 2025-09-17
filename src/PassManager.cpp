@@ -1,9 +1,10 @@
 #include "Iridium/PassManager.h"
-// #include "Iridium/OptimizationPasses/UnreadBindingRemoval.h"
 
 #include "Iridium/Analysis/Domains/ConstantsAtStmt.h"
 #include "Iridium/Analysis/Domains/TDZA.h"
 #include "Iridium/Analysis/DataflowSolver.h"
+#include "Iridium/OptimizationPasses/UnreadBindingRemoval.h"
+#include "Iridium/OptimizationPasses/ConstantProp.h"
 
 void PassManager::optimize(int level)
 {
@@ -13,11 +14,30 @@ void PassManager::optimize(int level)
     // std::cout << "==Entry Block==" << std::endl;
     // bbContView.cfgManager.cfg[bbContView.cfgManager.entryBlock()]->prettyPrint(std::cout);
     // std::cout << "===============" << std::endl;
-    // DataflowSolver<ConstantsAtStmt> constantsAtStmtSolver(bbContView.cfgManager.cfg, bbContView.cfgManager.entryBlock(), true, [&]() {
-    //   return ConstantsAtStmt::bottom();
+    DataflowSolver<ConstantsAtStmt> constantsAtStmtSolver(bbContView.cfgManager.cfg, bbContView.cfgManager.entryBlock(), true, [&]() {
+      return ConstantsAtStmt::bottom();
+    });
+    auto res = constantsAtStmtSolver.run(ConstantsAtStmt::boundary());
+
+    for (auto & e : res)
+    {
+      ConstantProp::Transform(bbContView.cfgManager.cfg[e.first], e.second);
+    }
+
+    // auto bindingsUnderAnalysis = bbContView.getUncapturedStackBindings();
+
+    // DataflowSolver<TDZA> tdzaSolver(bbContView.cfgManager.cfg, bbContView.cfgManager.entryBlock(), true, [&]() {
+    //   return TDZA::bottom(bindingsUnderAnalysis);
     // });
-    // auto res = constantsAtStmtSolver.run(ConstantsAtStmt::boundary());
+    // auto res = tdzaSolver.run(TDZA::boundary(bindingsUnderAnalysis));
     
+    // std::ostringstream ss;
+    // for (auto & e : res)
+    // {
+    //   e.second.transferDump(bbContView.cfgManager.cfg[e.first], ss);
+    // }
+    // std::cout << ss.str() << std::endl;
+
     // for (auto & e : res)
     // {
     //   std::ostringstream ss;
@@ -27,32 +47,11 @@ void PassManager::optimize(int level)
     //   std::cout << ss.str();
     // }
 
-    auto bindingsUnderAnalysis = bbContView.getUncapturedStackBindings();
-
-    DataflowSolver<TDZA> tdzaSolver(bbContView.cfgManager.cfg, bbContView.cfgManager.entryBlock(), true, [&]() {
-      return TDZA::bottom(bindingsUnderAnalysis);
-    });
-    auto res = tdzaSolver.run(TDZA::boundary(bindingsUnderAnalysis));
-    
-    // std::ostringstream ss;
-    // for (auto & e : res)
-    // {
-    //   e.second.transferDump(bbContView.cfgManager.cfg[e.first], ss);
-    // }
-    // std::cout << ss.str() << std::endl;
-
-    for (auto & e : res)
-    {
-      std::ostringstream ss;
-      ss << std::endl << "OUT(BB): " << bbContView.cfgManager.cfg[e.first]->getIDX() << std::endl;
-      e.second.dump(ss);
-      ss << std::endl;
-      std::cout << ss.str();
-    }
-
   }
+
+  fileView.refreshSymbolTable();
   
-  // doUnreadBindingRemoval(fileView, iridiumBuildContext);
+  doUnreadBindingRemoval(fileView, iridiumBuildContext);
 
   // switch (level)
   // {
