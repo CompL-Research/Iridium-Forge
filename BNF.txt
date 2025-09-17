@@ -1,0 +1,95 @@
+=========x=========x=========x=========x=========x=========
+# Useless Stuff
+
+FileSEXP :=
+    List<ModuleRequest>
+    List<StaticImport>
+    List<LocalStaticExportSEXP | NamedReexportSEXP>
+    List<StarExport>
+    BBContainerSEXP+
+
+=========x=========x=========x=========x=========x=========
+# Useful Stuff
+
+BBContainerSEXP :=
+    BindingsSEXP
+    List<BBSEXP>
+
+BindingsSEXP :=
+    List<EnvBindingSEXP>
+    List<RemoteEnvBindingSEXP>
+    List<PoolBindingSEXP>
+
+{RVAL = 37} ==
+    StackPopSEXP
+    | UnopSEXP
+    | BinopSEXP
+    | ListSEXP
+    | JSArraySEXP
+    | JSBinopSEXP
+    | JSClassSEXP
+    | JSSpreadSEXP
+    | JSTemplateSEXP
+    | JSUnopSEXP
+    | UNOPDelMemberExprSEXP
+    | UNOPDelVarSEXP
+    | AwaitSEXP
+    | JSComputedFieldReadSEXP
+    | JSComputedFieldWriteSEXP
+    | JSPrivateFieldReadSEXP
+    | JSPrivateFieldWriteSEXP
+    | JSSuperFieldReadSEXP
+    | JSSuperFieldWriteSEXP
+    | PVTEnvReadSEXP
+    | EnvReadSEXP
+    | FieldReadSEXP
+    | FieldWriteSEXP
+    | EnvWriteSEXP
+    | CallSiteSEXP
+    | JSToObjectSEXP
+    | JSCatchContextSEXP
+    | JSADDBRANDSEXP
+    | JSCheckConstructorSEXP
+    | JSForInNextSEXP
+    | JSForInStartSEXP
+    | JSForOfIteratorCloseSEXP
+    | JSForOfNextSEXP
+    | JSForOfStartSEXP
+    | JSAppendSEXP
+    | JSCopyDataPropertiesSEXP
+    | JSDefineObjMethodSEXP
+    {RVAL_TERMINAL}
+
+{RVAL_TERMINAL = 10} ==
+    BooleanSEXP
+    | LambdaSEXP
+    | NullSEXP
+    | NumberSEXP
+    | RegExpSEXP
+    | StringSEXP
+    | JSBitIntSEXP
+    | JSNUBDSEXP
+    | JSObjectSEXP
+    | JSPrivateSEXP
+
+{STMT = 18} ==
+    StackRejectSEXP
+    | StackRetainSEXP
+    | GotoSEXP
+    | IfElseJumpSEXP
+    | IfJumpSEXP
+    | InvokeFinalizerSEXP
+    | PopCatchContextSEXP
+    | PushCatchContextSEXP
+    | RetSEXP
+    | ReturnSEXP 
+    | ThrowSEXP
+    | JSInitialYieldSEXP
+    | ReturnAsyncSEXP
+    | YieldSEXP
+    | JSDefineObjPropSEXP
+    | JSFuncDeclSEXP
+    | JSImplicitBindingDeclarationSEXP
+    | JSSloppyDeclSEXP
+
+BBSEXP := {STMT}*
