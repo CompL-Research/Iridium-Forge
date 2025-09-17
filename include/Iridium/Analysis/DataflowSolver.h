@@ -1,5 +1,6 @@
 #pragma once
 #include "Iridium/Structure/CFGManager.h"
+#include <sstream>
 
 template <typename Domain>
 class DataflowSolver
@@ -15,8 +16,8 @@ public:
     // initialize all blocks
     for (auto v : boost::make_iterator_range(boost::vertices(cfg)))
     {
-      in[v] = Domain::top();
-      out[v] = Domain::top();
+      in[v] = Domain::bottom();
+      out[v] = Domain::bottom();
     }
 
     // entry condition (often init != top)
@@ -33,21 +34,39 @@ public:
 
         if (forward)
         {
+          // {
+          //   std::cout << std::endl << "SOLVERAT(BB): " << cfg[v]->getIDX() << std::endl;
+          // }
+          
           // in[v] = meet of predecessors' out
-          newIn = (v == entry ? in[v] : Domain::top());
+          newIn = (v == entry ? in[v] : Domain::bottom());
           for (auto p : predecessors(v))
           {
             newIn = newIn.merge(out[p]);
           }
           in[v] = newIn;
 
+          // {
+          //   std::cout << "IN" << std::endl;
+          //   std::ostringstream ss;
+          //   newIn.dump(ss);
+          //   std::cout << ss.str();
+          // }
+
           // out[v] = transfer(in[v], block)
-          newOut = in[v].transfer(*cfg[v]);
+          newOut = in[v].transfer(cfg[v]);
+
+          // {
+          //   std::cout << "OUT" << std::endl;
+          //   std::ostringstream ss;
+          //   newOut.dump(ss);
+          //   std::cout << ss.str();
+          // }
         }
         else
         {
           // out[v] = meet of successors' in
-          newOut = Domain::top();
+          newOut = Domain::bottom();
           for (auto s : successors(v))
           {
             newOut = newOut.merge(in[s]);
@@ -55,7 +74,7 @@ public:
           out[v] = newOut;
 
           // in[v] = transfer(out[v], block)
-          newIn = out[v].transfer(*cfg[v]);
+          newIn = out[v].transfer(cfg[v]);
         }
 
         // check change
