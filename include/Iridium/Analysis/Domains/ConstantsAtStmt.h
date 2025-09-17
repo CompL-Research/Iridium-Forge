@@ -176,6 +176,7 @@ struct ConstantsAtStmt
     return res;
   }
 
+  static ConstantsAtStmt boundary() { return ConstantsAtStmt(); }
   static ConstantsAtStmt bottom() { return ConstantsAtStmt(); }
 
   ConstantsAtStmt clone() const
