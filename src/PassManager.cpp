@@ -2,6 +2,7 @@
 
 #include "Iridium/Analysis/Domains/ConstantsAtStmt.h"
 #include "Iridium/Analysis/Domains/TDZA.h"
+#include "Iridium/Analysis/Domains/Liveness.h"
 #include "Iridium/Analysis/DataflowSolver.h"
 #include "Iridium/OptimizationPasses/UnreadBindingRemoval.h"
 #include "Iridium/OptimizationPasses/ConstantProp.h"
@@ -25,16 +26,28 @@ void PassManager::optimize(int level)
       ConstantProp::Transform(bbContView.cfgManager.cfg[e.first], e.second);
     }
 
-    auto bindingsUnderAnalysis = bbContView.getUncapturedStackBindings();
+    auto uncapturedStackBindings = bbContView.getUncapturedStackBindings();
     DataflowSolver<TDZA> tdzaSolver(bbContView.cfgManager.cfg, bbContView.cfgManager.entryBlock(), true, [&]() {
-      return TDZA::bottom(bindingsUnderAnalysis);
+      return TDZA::bottom(uncapturedStackBindings);
     });
     // auto res = tdzaSolver.run(TDZA::boundary(bindingsUnderAnalysis));
 
-    for (auto & e : tdzaSolver.run(TDZA::boundary(bindingsUnderAnalysis)))
+    for (auto & e : tdzaSolver.run(TDZA::boundary(uncapturedStackBindings)))
     {
       WriteBarrierReduction::Transform(bbContView.cfgManager.cfg[e.first], e.second);
     }
+
+    // std::set<std::shared_ptr<EnvBindingSEXP>> capturedStackBindings = bbContView.getCapturedStackBindings();
+    // DataflowSolver<Liveness> livenessSolver(bbContView.cfgManager.cfg, bbContView.cfgManager.entryBlock(), false, [&]() {
+    //   return Liveness::bottom();
+    // });
+    // // auto res = tdzaSolver.run(TDZA::boundary(bindingsUnderAnalysis));
+
+    // for (auto & e : livenessSolver.run(Liveness::boundary(capturedStackBindings)))
+    // {
+    //   // WriteBarrierReduction::Transform(bbContView.cfgManager.cfg[e.first], e.second);
+    // }
+
     
     // std::ostringstream ss;
     // for (auto & e : res)
