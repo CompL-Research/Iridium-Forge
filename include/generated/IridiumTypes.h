@@ -1,4 +1,4 @@
-// Generated: 2025-09-04 03:04:33
+// Generated: 2025-09-19 00:09:27
 #pragma once
 #include "Iridium/Globals.h"
 #include "Iridium/IridiumSEXP.h"
@@ -213,15 +213,21 @@ public:
   }
 
 
-  EnvReadSEXP(IRISEXP Obj) {
+  EnvReadSEXP(IRISEXP Obj, bool SAFE) {
     this->tag = "EnvRead";
     this->args.push_back(Obj);
+    if (SAFE) this->setSAFE();
   }
 
 
   void setObj(const IRISEXP &obj) { this->args.at(0) = obj; }
   bool hasObj() { return 0 < this->args.size(); }
   IRISEXP getObj() const { return this->args.at(0); }
+
+
+  void setSAFE() { setFlag("SAFE"); }
+  void unsetSAFE() { removeFlag("SAFE"); }
+  bool hasSAFE() { return hasFlag("SAFE"); }
 
 };
 

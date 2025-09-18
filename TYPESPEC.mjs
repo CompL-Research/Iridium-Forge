@@ -44,7 +44,7 @@ export default [
     "args": ["Obj"],
     "flags": {
       "string": [],
-      "void": [],
+      "void": ["SAFE"],
       "bool": [],
       "double": [],
     }
