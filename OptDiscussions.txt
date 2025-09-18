@@ -95,3 +95,31 @@ return
 return
 
  -- Liveness analysis
+
+
+
+
+ {}
+a .= NUBD // <- This also cannot be deleted
+{}
+a = 13; // UNSAFE
+{a}
+console.log(a);
+{}
+a .= 22;
+{}
+
+
+
+// Remove code which is useless
+
+1. Remove effectless expressions completely
+2. Delete code only if it is safe:
+    - What are the predicates
+        - TDZ info
+        - What else
+3. If a branch is always/never taken
+    - Replace if else with goto
+
+4. - Handle closures in the future -
+
