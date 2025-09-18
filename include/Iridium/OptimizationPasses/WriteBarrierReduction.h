@@ -11,15 +11,22 @@ class WriteBarrierReduction
       {
         envWriteSEXP->setSAFE(true);
       }
-      if (std::dynamic_pointer_cast<EnvWriteSEXP>(envWriteSEXP->getRVal())) patchExpr(envWriteSEXP->getRVal(), binding);
     }
+    if (auto envReadSEXP = std::dynamic_pointer_cast<EnvReadSEXP>(curr))
+    {
+      if (auto o = std::dynamic_pointer_cast<EnvBindingSEXP>(envReadSEXP->getObj()))
+        if (o == binding)
+          envReadSEXP->setSAFE();
+    }
+    for (auto e : curr->args)
+      patchExpr(e, binding);
   }
 
 public:
   static void Transform(std::shared_ptr<BBSEXP> &bb, TDZA inData)
   {
     inData.iter(bb, [&](size_t idx, TDZA val)
-    {
+                {
       for (auto &[binding, latticeVal] : val.dfv.store)
       {
         // assert(latticeVal.kind != TDZLattice::BOTTOM);
@@ -28,7 +35,6 @@ public:
           // continue;
 
         // Recursively patch AST for the current statement
-      }
-    });
+      } });
   }
 };
