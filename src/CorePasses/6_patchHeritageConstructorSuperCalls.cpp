@@ -11,7 +11,7 @@ std::vector<IRISEXP> heritageThisInit(std::string thisValHolder, std::string pro
   res.push_back(
       std::make_shared<EnvWriteSEXP>(
           std::make_shared<ResolveEnvBindingSEXP>("this", false),
-          std::make_shared<EnvReadSEXP>(std::make_shared<ResolveEnvBindingSEXP>(thisValHolder, false)),
+          std::make_shared<EnvReadSEXP>(std::make_shared<ResolveEnvBindingSEXP>(thisValHolder, false), false),
           false,
           false,
           true // <- This is about the only place where we set THISINIT flag to true
@@ -21,10 +21,10 @@ std::vector<IRISEXP> heritageThisInit(std::string thisValHolder, std::string pro
   auto callSEXP = std::make_shared<CallSiteSEXP>(true, false, false, false, false, false, 0);
 
   callSEXP->args.push_back(
-      std::make_shared<EnvReadSEXP>(std::make_shared<ResolveEnvBindingSEXP>("this", false)));
+      std::make_shared<EnvReadSEXP>(std::make_shared<ResolveEnvBindingSEXP>("this", false), false));
 
   callSEXP->args.push_back(
-      std::make_shared<EnvReadSEXP>(std::make_shared<ResolveEnvBindingSEXP>(propInitClos, false)));
+      std::make_shared<EnvReadSEXP>(std::make_shared<ResolveEnvBindingSEXP>(propInitClos, false), false));
 
   auto stackReject = std::make_shared<StackRejectSEXP>(1);
   stackReject->args.push_back(
