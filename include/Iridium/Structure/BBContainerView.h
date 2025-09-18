@@ -34,5 +34,7 @@ public:
 
   std::set<IRISEXP> getUncapturedStackBindings();
 
+  std::set<std::shared_ptr<EnvBindingSEXP>> getCapturedStackBindings();
+
   std::shared_ptr<BBContainerSEXP> checkout();
 };

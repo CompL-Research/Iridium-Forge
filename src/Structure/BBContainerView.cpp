@@ -406,3 +406,17 @@ std::set<IRISEXP> BBContainerView::getUncapturedStackBindings()
   }
   return res;
 }
+
+std::set<std::shared_ptr<EnvBindingSEXP>> BBContainerView::getCapturedStackBindings()
+{
+  std::set<std::shared_ptr<EnvBindingSEXP>> res;
+  for (auto & e : bindingsView.bindings)
+  {
+    for (auto & b : e.second)
+    {
+      auto & curr = symbolTable[b];
+      if (curr.remoteReads.size() == 0 && curr.remoteWrites.size() == 0) res.insert(b);
+    }
+  }
+  return res;
+}
