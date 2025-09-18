@@ -87,6 +87,39 @@ TDZA:
     return nextDfv
 ```
 
+## 3. Liveness
+```
+Liveness:
+  List of live variables at a program point.
+
+  Auxlilary Data: alwaysLiveSet
+
+  Boundary = { Empty Set U alwaysLiveSet }
+
+  Bottom = { Empty Set }
+
+  Dataflow Value: 
+    Set<IRISEXP{EnvBindingSEXP}> dfv
+
+  Equality:
+    Same Set...
+
+  Merge:
+    Union
+
+  Transfer (block):
+    nextDfv = clone(dfv)
+    for (stmt of block)
+    {
+      uses = find all EnvBindingSEXP inside EnvReadSEXP
+
+      defList = find all EnvBindingSEXP outside EnvReadSEXP / Whitelist
+
+      nextDfv = useList U (nextDfv.dfv - defList)
+    }
+    return nextDfv
+```
+
 # Transformations
 
 ## 1. ConstantProp
