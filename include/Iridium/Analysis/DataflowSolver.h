@@ -8,15 +8,17 @@ template <typename Domain>
 class DataflowSolver
 {
 public:
-  DataflowSolver(CFG &cfg, Vertex entry, bool forward, std::function<Domain(void)> bottomInit)
-      : cfg(cfg), entry(entry), forward(forward), bottomInitClosure(bottomInit) {}
+  DataflowSolver(CFGManager &manager, bool forward, std::function<Domain(void)> bottomInit)
+      : cfgManager(manager), forward(forward), bottomInitClosure(bottomInit) {}
 
   std::unordered_map<Vertex, Domain> run(const Domain &init)
   {
     std::unordered_map<Vertex, Domain> in, out;
 
+    Vertex entry = cfgManager.entryBlock();
+
     // initialize all blocks
-    for (auto v : boost::make_iterator_range(boost::vertices(cfg)))
+    for (auto v : boost::make_iterator_range(boost::vertices(cfgManager.cfg)))
     {
       in[v] = bottomInitClosure();
       out[v] = bottomInitClosure();
@@ -30,19 +32,19 @@ public:
     {
       changed = false;
 
-      for (auto v : boost::make_iterator_range(boost::vertices(cfg)))
+      for (auto v : boost::make_iterator_range(boost::vertices(cfgManager.cfg)))
       {
         Domain newIn, newOut;
 
         if (forward)
         {
           // {
-          //   std::cout << std::endl << "SOLVERAT(BB): " << cfg[v]->getIDX() << std::endl;
+          //   std::cout << std::endl << "SOLVERAT(BB): " << cfgManager.cfg[v]->getIDX() << std::endl;
           // }
           
           // in[v] = meet of predecessors' out
           newIn = (v == entry ? in[v] : bottomInitClosure());
-          for (auto p : predecessors(v))
+          for (auto p : cfgManager.predecessors(v))
           {
             newIn = newIn.merge(out[p]);
           }
@@ -56,7 +58,7 @@ public:
           // }
 
           // out[v] = transfer(in[v], block)
-          newOut = in[v].transfer(cfg[v]);
+          newOut = in[v].transfer(cfgManager.cfg[v]);
 
           // {
           //   std::cout << "OUT" << std::endl;
@@ -69,14 +71,14 @@ public:
         {
           // out[v] = meet of successors' in
           newOut = bottomInitClosure();
-          for (auto s : successors(v))
+          for (auto s : cfgManager.successors(v))
           {
             newOut = newOut.merge(in[s]);
           }
           out[v] = newOut;
 
           // in[v] = transfer(out[v], block)
-          newIn = out[v].transfer(cfg[v]);
+          newIn = out[v].transfer(cfgManager.cfg[v]);
         }
 
         // check change
@@ -88,32 +90,13 @@ public:
       }
     }
 
-    return forward ? out : in; // return final solution
+    // return forward ? out : in; // return final solution
+    return forward ? in : out; // return final solution
   }
 
 private:
-  CFG &cfg;
-  Vertex entry;
+  CFGManager &cfgManager;
   bool forward;
   std::function<Domain(void)> bottomInitClosure;
 
-  std::vector<Vertex> predecessors(Vertex v)
-  {
-    std::vector<Vertex> preds;
-    for (auto e : boost::make_iterator_range(boost::in_edges(v, cfg)))
-    {
-      preds.push_back(boost::source(e, cfg));
-    }
-    return preds;
-  }
-
-  std::vector<Vertex> successors(Vertex v)
-  {
-    std::vector<Vertex> succs;
-    for (auto e : boost::make_iterator_range(boost::out_edges(v, cfg)))
-    {
-      succs.push_back(boost::target(e, cfg));
-    }
-    return succs;
-  }
 };
