@@ -1,5 +1,7 @@
 #include "Iridium/Analysis/Domains/Liveness.h"
 
+std::set<std::shared_ptr<EnvBindingSEXP>> Liveness::blacklist;
+
 Liveness Liveness::transfer(const std::shared_ptr<BBSEXP> &bb) const
 {
   return iter(bb, [&](size_t idx, Liveness val) {});
@@ -7,20 +9,43 @@ Liveness Liveness::transfer(const std::shared_ptr<BBSEXP> &bb) const
 
 static void populateUsesAndDefs(IRISEXP currSEXP, std::set<std::shared_ptr<EnvBindingSEXP>> &uses, std::set<std::shared_ptr<EnvBindingSEXP>> &defs)
 {
-  if (auto envRead = std::dynamic_pointer_cast<EnvReadSEXP>(currSEXP))
-  {
-    if (auto binding = std::dynamic_pointer_cast<EnvBindingSEXP>(envRead->getObj()))
-      uses.insert(binding);
+  if (auto envWriteStmt = std::dynamic_pointer_cast<EnvWriteSEXP>(currSEXP))
+  { // Unsafe writes to EnvBindingSEXPs create a read.
+    if (auto envBinding = std::dynamic_pointer_cast<EnvBindingSEXP>(envWriteStmt->getLValTarget()))
+    {
+      if (envWriteStmt->getSAFE())
+      {
+        defs.insert(envBinding);
+      }
+      else
+      {
+        uses.insert(envBinding);
+      }
+    }
+
+    populateUsesAndDefs(envWriteStmt->getRVal(), uses, defs);
+    return;
   }
-  else if (auto envBinding = std::dynamic_pointer_cast<EnvBindingSEXP>(currSEXP))
+
+  if (auto implicitDecl = std::dynamic_pointer_cast<JSImplicitBindingDeclarationSEXP>(currSEXP))
   {
-    defs.insert(envBinding);
+    if (auto envBinding = std::dynamic_pointer_cast<EnvBindingSEXP>(implicitDecl->getStore()))
+    {
+      if (implicitDecl->getSAFE())
+        defs.insert(envBinding);
+      else
+        uses.insert(envBinding);
+    }
+
+    populateUsesAndDefs(implicitDecl->getArgs(), uses, defs);
+    return;
   }
-  else
-  {
-    for (auto e : currSEXP->args)
-      populateUsesAndDefs(e, uses, defs);
-  }
+
+  if (auto binding = std::dynamic_pointer_cast<EnvBindingSEXP>(currSEXP))
+    uses.insert(binding);
+
+  for (auto e : currSEXP->args)
+    populateUsesAndDefs(e, uses, defs);
 }
 
 Liveness Liveness::iter(
@@ -35,6 +60,9 @@ Liveness Liveness::iter(
   // Walk statements in reverse (backward analysis)
   for (size_t i = n; i-- > 0;)
   {
+    // Callback with the *real* statement index
+    callback(i, next);
+
     const auto &stmt = bb->args[i];
 
     std::set<std::shared_ptr<EnvBindingSEXP>> uses;
@@ -49,11 +77,9 @@ Liveness Liveness::iter(
       updated.dfv.erase(d);
 
     updated.dfv.insert(uses.begin(), uses.end());
+    updated.dfv.insert(blacklist.begin(), blacklist.end());
 
     next = std::move(updated);
-
-    // Callback with the *real* statement index
-    callback(i, next);
   }
 
   return next;
