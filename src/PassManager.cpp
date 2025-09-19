@@ -9,13 +9,23 @@
 #include "Iridium/OptimizationPasses/ConstantProp.h"
 #include "Iridium/OptimizationPasses/WriteBarrierReduction.h"
 #include "Iridium/OptimizationPasses/CopyProp.h"
+#include "Iridium/OptimizationPasses/DCE.h"
+#include "Iridium/CorePasses/3_filterNops.h"
 
 void PassManager::optimize(int level)
 {
-  for (int i = 0; i < 1; i++)
+  for (int i = 0; i < 5; i++)
   {
+    DBG("Iter: " + std::to_string(i));
     for (auto &bbContView : fileView.bbContainerViews)
     {
+      fileView.refreshSymbolTable();
+      auto capturedStackBindings = bbContView.getCapturedStackBindings();
+      auto uncapturedStackBindings = bbContView.getUncapturedStackBindings();
+
+      CopyPropInfo::blacklist = capturedStackBindings;
+      Liveness::blacklist = capturedStackBindings;
+
       {
         DataflowSolver<ConstantsAtStmt> constantsAtStmtSolver(bbContView.cfgManager, true, [&]()
                                                               { return ConstantsAtStmt::bottom(); });
@@ -26,7 +36,16 @@ void PassManager::optimize(int level)
       }
 
       {
-        auto uncapturedStackBindings = bbContView.getUncapturedStackBindings();
+        DataflowSolver<CopyPropInfo> copyPropInfoSolver(bbContView.cfgManager, true, [&]()
+                                                        { return CopyPropInfo(); });
+        for (auto &e : copyPropInfoSolver.run(CopyPropInfo()))
+        {
+          auto currBB = bbContView.cfgManager.cfg[e.first];
+          CopyProp::Transform(currBB, e.second);
+        }
+      }
+
+      {
         DataflowSolver<TDZA> tdzaSolver(bbContView.cfgManager, true, [&]()
                                         { return TDZA::bottom(uncapturedStackBindings); });
         for (auto &e : tdzaSolver.run(TDZA::boundary(uncapturedStackBindings)))
@@ -35,41 +54,16 @@ void PassManager::optimize(int level)
         }
       }
 
-      // {
-      //   std::set<std::shared_ptr<EnvBindingSEXP>> capturedStackBindings = bbContView.getCapturedStackBindings();
-      //   DataflowSolver<Liveness> livenessSolver(bbContView.cfgManager.cfg, bbContView.cfgManager.entryBlock(), false, [&]() {
-      //     return Liveness::bottom();
-      //   });
-      //   auto res = livenessSolver.run(Liveness::boundary(capturedStackBindings));
-      // }
-
       {
-        std::set<std::shared_ptr<EnvBindingSEXP>> capturedStackBindings = bbContView.getCapturedStackBindings();
-        CopyPropInfo::blacklist = capturedStackBindings;
-        DataflowSolver<CopyPropInfo> copyPropInfoSolver(bbContView.cfgManager, true, [&]()
-                                                        { return CopyPropInfo(); });
-
-        for (auto &e : copyPropInfoSolver.run(CopyPropInfo()))
+        DataflowSolver<Liveness> livenessSolver(bbContView.cfgManager, false, [&]()
+                                                { return Liveness::bottom(); });
+        for (auto &e : livenessSolver.run(Liveness::boundary(capturedStackBindings)))
         {
           auto currBB = bbContView.cfgManager.cfg[e.first];
-          
-          // std::cout << "BB(" << currBB->getIDX() << "):" << std::endl;
-          // e.second.iter(currBB, [&](size_t idx, CopyPropInfo dfVal) {
-          //   dfVal.dump(std::cout);
-          //   currBB->args.at(idx)->prettyPrint(std::cout, 2);
-          //   std::cout << std::endl;
-          // });
-
-          // std::cout << std::endl;
-
-          CopyProp::Transform(currBB, e.second);
+          DCE::Transform(currBB, e.second);
+          filterNOPs(currBB);
         }
       }
-
-    }
-    {
-      fileView.refreshSymbolTable();
-      doUnreadBindingRemoval(fileView, iridiumBuildContext);
     }
   }
 }
