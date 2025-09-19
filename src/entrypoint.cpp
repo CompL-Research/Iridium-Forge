@@ -107,5 +107,9 @@ IRISEXP runOptPasses(std::shared_ptr<FileSEXP> fileSEXP, std::unordered_map<int,
   FileView fileView(fileSEXP, iridiumBuildContext);
   PassManager pm(fileView, iridiumBuildContext);
   pm.optimize(1);
-  return pm.checkout();
+  auto res = pm.checkout();
+  
+  filterNOPs(res);
+  
+  return res;
 }
