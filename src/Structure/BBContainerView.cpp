@@ -415,7 +415,7 @@ std::set<std::shared_ptr<EnvBindingSEXP>> BBContainerView::getCapturedStackBindi
     for (auto & b : e.second)
     {
       auto & curr = symbolTable[b];
-      if (curr.remoteReads.size() == 0 && curr.remoteWrites.size() == 0) res.insert(b);
+      if (curr.remoteReads.size() > 0 || curr.remoteWrites.size() > 0) res.insert(b);
     }
   }
   return res;
