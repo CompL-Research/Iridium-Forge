@@ -12,14 +12,17 @@ struct Liveness
 
   DFVT dfv;
 
-  void dump(std::ostringstream &oss) const
+  static std::set<std::shared_ptr<EnvBindingSEXP>> blacklist;
+
+  void dump(std::ostream &oss) const
   {
-    oss << "{ ";
-    for (auto & val : dfv)
+    oss << "{";
+    for (const auto &v : dfv)
     {
-      oss << val->getNAME() << " ";
+      oss << "  " << v->getNAME();
+      ;
     }
-    oss << "}";
+    oss << " }";
   }
 
   bool operator==(const Liveness &other) const
@@ -48,11 +51,8 @@ struct Liveness
     return Liveness{}; // empty set
   }
 
-  Liveness clone() const
-  {
-    Liveness copy;
-    copy.dfv = dfv; // copy underlying set
-    return copy;
+  Liveness clone() const {
+    return *this; // since copy constructor does same
   }
 
   Liveness transfer(const std::shared_ptr<BBSEXP> &bb) const;
