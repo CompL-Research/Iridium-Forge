@@ -93,7 +93,7 @@ void populateExplicitBindings(IRISEXP fileSexp, std::unordered_map<int, IRIBUILD
             {
               // This statement has been reduced to a simple EnvWriteSEXP
               jsExplicitBindingDeclarationStmt->args.resize(2);
-              jsExplicitBindingDeclarationStmt->setRVal(std::make_shared<GlobalBindingSEXP>("undefined"));
+              jsExplicitBindingDeclarationStmt->setRVal(std::make_shared<EnvReadSEXP>(std::make_shared<GlobalBindingSEXP>("undefined"), false));
               bb->args.at(i) = reduceJSDecl(jsExplicitBindingDeclarationStmt);
             }
           }
@@ -157,7 +157,7 @@ void populateExplicitBindings(IRISEXP fileSexp, std::unordered_map<int, IRIBUILD
           IRISEXP rval;
           if (b.second == EnvBindingSEXPKindFlag::JSVAR)
           {
-            rval = std::make_shared<GlobalBindingSEXP>("undefined");
+            rval = std::make_shared<EnvReadSEXP>(std::make_shared<GlobalBindingSEXP>("undefined"), false);
           }
           else
           {
