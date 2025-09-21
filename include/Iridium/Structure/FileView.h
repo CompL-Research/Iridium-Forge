@@ -5,6 +5,7 @@
 #include "Iridium/Structure/BBContainerView.h"
 #include "external/graph-boost-1.89.0/adjacency_list.hpp"
 #include <unordered_map>
+#include "Iridium/Analysis/Domains/TDZA.h"
 
 //
 // A FileView provides abstraction over an existing FileSEXP,
@@ -21,6 +22,7 @@ private:
 
 public:
   std::vector<BBContainerView> bbContainerViews;
+  std::set<IRISEXP> safelyCapturedBindings;
 
   SymbolTable symbolTable;
 
@@ -36,6 +38,8 @@ public:
   void deleteBinding(std::shared_ptr<EnvBindingSEXP> binding);
 
   void refreshSymbolTable();
+
+  void updateSafelyCapturedBindingsSet(double bbIDX, TDZA val);
 
   std::vector<BBContainerView> &getBBContainerViews() { return bbContainerViews; }
 
