@@ -20,6 +20,7 @@ void PassManager::optimize(int level)
     for (auto &bbContView : fileView.bbContainerViews)
     {
       fileView.refreshSymbolTable();
+      auto allStackBindings = bbContView.getAllStackBindings();
       auto capturedStackBindings = bbContView.getCapturedStackBindings();
       auto uncapturedStackBindings = bbContView.getUncapturedStackBindings();
 
@@ -46,9 +47,10 @@ void PassManager::optimize(int level)
       }
 
       {
+        WriteBarrierReduction::currFileView = &fileView;
         DataflowSolver<TDZA> tdzaSolver(bbContView.cfgManager, true, [&]()
-                                        { return TDZA::bottom(uncapturedStackBindings); });
-        for (auto &e : tdzaSolver.run(TDZA::boundary(uncapturedStackBindings)))
+                                        { return TDZA::bottom(allStackBindings); });
+        for (auto &e : tdzaSolver.run(TDZA::boundary(allStackBindings)))
         {
           WriteBarrierReduction::Transform(bbContView.cfgManager.cfg[e.first], e.second);
         }
