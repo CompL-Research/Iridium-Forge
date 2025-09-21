@@ -5,11 +5,11 @@
 #include "Iridium/Analysis/Domains/Liveness.h"
 #include "Iridium/Analysis/Domains/CopyPropInfo.h"
 #include "Iridium/Analysis/DataflowSolver.h"
-#include "Iridium/OptimizationPasses/UnreadBindingRemoval.h"
 #include "Iridium/OptimizationPasses/ConstantProp.h"
 #include "Iridium/OptimizationPasses/WriteBarrierReduction.h"
 #include "Iridium/OptimizationPasses/CopyProp.h"
 #include "Iridium/OptimizationPasses/DCE.h"
+#include "Iridium/OptimizationPasses/DeadBindingRemoval.h"
 #include "Iridium/CorePasses/3_filterNops.h"
 
 void PassManager::optimize(int level)
@@ -64,6 +64,8 @@ void PassManager::optimize(int level)
           filterNOPs(currBB);
         }
       }
+
+      doDeadBindingRemoval(fileView);
     }
   }
 }

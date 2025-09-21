@@ -29,7 +29,7 @@
 #include "Iridium/CorePasses/16_markDirectEvals.h"
 
 #include "Iridium/Structure/FileView.h"
-#include "Iridium/OptimizationPasses/UnreadBindingRemoval.h"
+
 #include "Iridium/PassManager.h"
 
 IRISEXP runCorePasses(
@@ -108,8 +108,6 @@ IRISEXP runOptPasses(std::shared_ptr<FileSEXP> fileSEXP, std::unordered_map<int,
   PassManager pm(fileView, iridiumBuildContext);
   pm.optimize(1);
   auto res = pm.checkout();
-  
   filterNOPs(res);
-  
   return res;
 }
