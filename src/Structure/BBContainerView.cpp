@@ -392,6 +392,18 @@ std::shared_ptr<BBContainerSEXP> BBContainerView::checkout()
   return targetContainer;
 }
 
+std::set<IRISEXP> BBContainerView::getAllStackBindings()
+{
+  std::set<IRISEXP> res;
+  for (auto & e : bindingsView.bindings)
+  {
+    for (auto & b : e.second)
+    {
+      res.insert(b);
+    }
+  }
+  return res;
+}
 
 std::set<IRISEXP> BBContainerView::getUncapturedStackBindings()
 {

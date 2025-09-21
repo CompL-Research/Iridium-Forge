@@ -32,6 +32,8 @@ public:
   double getScopeIdx() { return targetContainer->getScopeIDX(); }
   double getStartBBIDX() { return targetContainer->getStartBBIDX(); }
 
+  std::set<IRISEXP> getAllStackBindings();
+  
   std::set<IRISEXP> getUncapturedStackBindings();
 
   std::set<std::shared_ptr<EnvBindingSEXP>> getCapturedStackBindings();
