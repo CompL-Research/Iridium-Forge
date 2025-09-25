@@ -2,6 +2,7 @@
 #include "Iridium/Globals.h"
 #include "generated/IridiumTypes.h"
 #include "Iridium/Analysis/Helpers/UnionedDataMap.h"
+#include <set>
 
 template <typename T>
 static bool compareAs(const std::shared_ptr<IridiumSEXP> &lhs,
@@ -151,6 +152,7 @@ struct ConstantsAtStmt
   using DFVT = UnionedDataMap<IRISEXP, ConstantLatticeValue>;
 
   DFVT dfv;
+  static std::set<std::shared_ptr<EnvBindingSEXP>> blacklist;
 
   void dump(std::ostringstream &oss) const
   {

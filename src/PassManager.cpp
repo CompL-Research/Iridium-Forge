@@ -26,6 +26,7 @@ void PassManager::optimize(int level)
 
       CopyPropInfo::blacklist = capturedStackBindings;
       Liveness::blacklist = capturedStackBindings;
+      ConstantsAtStmt::blacklist = capturedStackBindings;
 
       {
         DataflowSolver<ConstantsAtStmt> constantsAtStmtSolver(bbContView.cfgManager, true, [&]()
