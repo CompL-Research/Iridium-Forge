@@ -59,4 +59,6 @@ struct Liveness
 
   Liveness iter(const std::shared_ptr<BBSEXP> &bb,
                 std::function<void(size_t, Liveness)> callback) const;
+  Liveness iterAlt(const std::shared_ptr<BBSEXP> &bb,
+                std::function<void(size_t, Liveness)> callback) const;
 };
