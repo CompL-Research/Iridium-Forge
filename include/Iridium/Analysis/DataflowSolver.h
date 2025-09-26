@@ -2,7 +2,7 @@
 #include "Iridium/Structure/CFGManager.h"
 #include <sstream>
 #include <functional>
-
+#define DEBUG 0
 
 template <typename Domain>
 class DataflowSolver
@@ -36,11 +36,13 @@ public:
       {
         Domain newIn, newOut;
 
+        #if DEBUG == 1
+        {
+          std::cout << std::endl << "SOLVERAT(BB): " << cfgManager.cfg[v]->getIDX() << std::endl;
+        }
+        #endif
         if (forward)
         {
-          // {
-          //   std::cout << std::endl << "SOLVERAT(BB): " << cfgManager.cfg[v]->getIDX() << std::endl;
-          // }
           
           // in[v] = meet of predecessors' out
           newIn = (v == entry ? in[v] : bottomInitClosure());
@@ -49,23 +51,8 @@ public:
             newIn = newIn.merge(out[p]);
           }
           in[v] = newIn;
-
-          // {
-          //   std::cout << "IN" << std::endl;
-          //   std::ostringstream ss;
-          //   newIn.dump(ss);
-          //   std::cout << ss.str() << std::endl;
-          // }
-
           // out[v] = transfer(in[v], block)
           newOut = in[v].transfer(cfgManager.cfg[v]);
-
-          // {
-          //   std::cout << "OUT" << std::endl;
-          //   std::ostringstream ss;
-          //   newOut.dump(ss);
-          //   std::cout << ss.str() << std::endl;
-          // }
         }
         else
         {
@@ -80,7 +67,19 @@ public:
           // in[v] = transfer(out[v], block)
           newIn = out[v].transfer(cfgManager.cfg[v]);
         }
+        #if DEBUG == 1
+        {
+          std::cout << "IN" << std::endl;
+          newIn.dump(std::cout);
+          std::cout << std::endl;
+        }
 
+        {
+          std::cout << "OUT" << std::endl;
+          newOut.dump(std::cout);
+          std::cout << std::endl;
+        }
+        #endif
         // check change
         if (newOut == out[v] && newIn == in[v])
           continue;
