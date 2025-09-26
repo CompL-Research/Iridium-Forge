@@ -123,3 +123,11 @@ a .= 22;
 
 4. - Handle closures in the future -
 
+
+
+
+
+
+
+1. Contextual calls (quickjs)
+
