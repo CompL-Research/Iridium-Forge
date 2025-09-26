@@ -4,6 +4,8 @@
 #include "external/graph-boost-1.89.0/adjacency_list.hpp"
 #include <unordered_map>
 #include <queue>
+#include "external/json.hpp"
+using json = nlohmann::json;
 
 enum class EdgeKind
 {
@@ -225,6 +227,24 @@ public:
       }
       os << "\n";
     }
+  }
+
+  // Print entire CFG-JSON
+  json getDebugJSON() const
+  {
+    json data;
+    for (auto v : boost::make_iterator_range(boost::vertices(cfg)))
+    {
+      std::stringstream ss;
+
+      for (auto & stmt : cfg[v]->args)
+      {
+        stmt->vistaPrint(ss, 0);
+      }
+
+      data[std::to_string(cfg[v]->getIDX())] = ss.str();
+    }
+    return data;
   }
 
   Vertex entryBlock() const { return entry; }

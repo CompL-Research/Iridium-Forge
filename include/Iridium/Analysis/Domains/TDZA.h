@@ -12,7 +12,7 @@ struct TDZLattice
     BOTTOM
   } kind;
 
-  void dump(std::ostringstream &oss) const
+  void dump(std::ostream &oss) const
   {
     switch (kind)
     {
@@ -56,7 +56,7 @@ struct TDZA
 
   DFVT dfv;
 
-  void dump(std::ostringstream &oss) const
+  void dump(std::ostream &oss) const
   {
     oss << "{" << std::endl;
     for (const auto &kv : dfv.store)
