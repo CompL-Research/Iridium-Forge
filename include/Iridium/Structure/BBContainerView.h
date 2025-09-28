@@ -6,6 +6,8 @@
 #include "Iridium/Structure/BindingsView.h"
 #include "external/graph-boost-1.89.0/adjacency_list.hpp"
 #include <unordered_map>
+#include "external/json.hpp"
+using json = nlohmann::json;
 
 //
 // A BBContainerView provides abstraction over an existing BBContainerSEXP,
@@ -39,4 +41,6 @@ public:
   std::set<std::shared_ptr<EnvBindingSEXP>> getCapturedStackBindings();
 
   std::shared_ptr<BBContainerSEXP> checkout();
+
+  json getDebugJSON(const std::string & title);
 };

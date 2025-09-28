@@ -5,6 +5,7 @@
 #include <sstream>
 #include <ostream>
 #include <vector>
+#include <set>
 #include <functional>
 #include <variant>
 
@@ -14,6 +15,8 @@
 #define IRIDIUM_DUMP_INITIAL_SEXP 0
 #define IRIDIUM_DUMP_FINAL_SEXP 1
 #define IRIDIUM_DUMP_AFTER_CORE_PASSES 1 // <- Right before Opt
+
+#define PASSMGR_DEBUG 0
 
 #define IRIDIUM_DUMP_INITIAL_CFG 0
 #define IRIDIUM_DUMP_FINAL_CFG 0
@@ -117,6 +120,7 @@ IRIBUILDCONTEXT findReturnTarget(
     std::vector<std::variant<LoopConfig, TryContext>> &intermediateContexts);
 
 bool hasNode(const IRISEXP &currNode, const std::function<bool(const IRISEXP &)> &pred);
+std::set<IRISEXP> getAllNodes(const IRISEXP &currNode, const std::function<bool(const IRISEXP &)> &pred, std::set<IRISEXP> & result);
 void insertAfter(std::vector<IRISEXP> &vec, IRISEXP after, const std::vector<IRISEXP> &toInsert);
 void insertAfter(std::vector<IRISEXP> &vec, IRISEXP after, IRISEXP toInsert);
 void insertBefore(std::vector<IRISEXP> &vec, IRISEXP before, const std::vector<IRISEXP> &toInsert);

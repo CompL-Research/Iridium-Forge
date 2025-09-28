@@ -70,6 +70,9 @@
     "thread": "cpp",
     "csignal": "cpp",
     "strstream": "cpp",
-    "filesystem": "cpp"
+    "filesystem": "cpp",
+    "any": "cpp",
+    "ranges": "cpp",
+    "valarray": "cpp"
   }
 }

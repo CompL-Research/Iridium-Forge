@@ -2,6 +2,9 @@
 #include "Iridium/Structure/BBContainerView.h"
 #include <boost/graph/graphviz.hpp>
 #include <filesystem>
+#include "external/json.hpp"
+
+using json = nlohmann::json;
 
 BBContainerView::BBContainerView(
     std::shared_ptr<BBContainerSEXP> target,
@@ -395,9 +398,9 @@ std::shared_ptr<BBContainerSEXP> BBContainerView::checkout()
 std::set<IRISEXP> BBContainerView::getAllStackBindings()
 {
   std::set<IRISEXP> res;
-  for (auto & e : bindingsView.bindings)
+  for (auto &e : bindingsView.bindings)
   {
-    for (auto & b : e.second)
+    for (auto &b : e.second)
     {
       res.insert(b);
     }
@@ -408,12 +411,13 @@ std::set<IRISEXP> BBContainerView::getAllStackBindings()
 std::set<IRISEXP> BBContainerView::getUncapturedStackBindings()
 {
   std::set<IRISEXP> res;
-  for (auto & e : bindingsView.bindings)
+  for (auto &e : bindingsView.bindings)
   {
-    for (auto & b : e.second)
+    for (auto &b : e.second)
     {
-      auto & curr = symbolTable[b];
-      if (curr.remoteReads.size() == 0 && curr.remoteWrites.size() == 0) res.insert(b);
+      auto &curr = symbolTable[b];
+      if (curr.remoteReads.size() == 0 && curr.remoteWrites.size() == 0)
+        res.insert(b);
     }
   }
   return res;
@@ -422,13 +426,24 @@ std::set<IRISEXP> BBContainerView::getUncapturedStackBindings()
 std::set<std::shared_ptr<EnvBindingSEXP>> BBContainerView::getCapturedStackBindings()
 {
   std::set<std::shared_ptr<EnvBindingSEXP>> res;
-  for (auto & e : bindingsView.bindings)
+  for (auto &e : bindingsView.bindings)
   {
-    for (auto & b : e.second)
+    for (auto &b : e.second)
     {
-      auto & curr = symbolTable[b];
-      if (curr.remoteReads.size() > 0 || curr.remoteWrites.size() > 0) res.insert(b);
+      auto &curr = symbolTable[b];
+      if (curr.remoteReads.size() > 0 || curr.remoteWrites.size() > 0)
+        res.insert(b);
     }
   }
   return res;
+}
+
+json BBContainerView::getDebugJSON(const std::string &title)
+{
+  json data_object = {
+      {"title", title},
+  };
+
+  data_object["codeText"] = cfgManager.getDebugJSON();
+  return data_object;
 }

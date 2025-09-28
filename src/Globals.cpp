@@ -62,6 +62,23 @@ bool hasNode(const IRISEXP &currNode, const std::function<bool(const IRISEXP &)>
   return false;
 }
 
+std::set<IRISEXP> getAllNodes(const IRISEXP &currNode, const std::function<bool(const IRISEXP &)> &pred, std::set<IRISEXP> & result)
+{
+  if (!currNode)
+    return result;
+
+  if (pred(currNode))
+  {
+    result.insert(currNode);
+  }
+
+  for (const auto &e : currNode->args)
+  {
+    getAllNodes(e, pred, result);
+  }
+  return result;
+}
+
 void insertAfter(std::vector<IRISEXP> &vec, IRISEXP after, const std::vector<IRISEXP> &toInsert)
 {
   auto it = std::find(vec.begin(), vec.end(), after);

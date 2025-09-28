@@ -300,6 +300,184 @@ public:
       }
     }
   }
+
+  void vistaPrint(std::ostream &out, int indent = 0) const
+  {
+    std::string pad(indent, ' ');
+
+    // Tags that open a block scope
+    auto isScopeTag = [](const std::string &t)
+    {
+      return t == "BB" || t == "File" || t == "BBContainer" ||
+             t == "Bindings" || t == "List";
+    };
+
+    if (isScopeTag(tag))
+    {
+      out << pad << tag;
+      for (size_t i = 0; i < args.size(); i++)
+      {
+        args[i]->vistaPrint(out, indent + 2);
+        out << "\n";
+      }
+      // out << pad << "}";
+    }
+    else if (tag == "EnvWrite")
+    {
+      args.at(0)->vistaPrint(out, 0);
+      out << " = ";
+      // out << hasFlag(std::string("SAFE")) ? " = " : " .= ";
+      args.at(1)->vistaPrint(out, 0);
+      out << "\n";
+    }
+    else if (tag == "EnvBinding")
+    {
+      out << "@";
+      out << getFlagString(std::string("NAME"));
+    }
+    else if (tag == "RemoteEnvBinding")
+    {
+      out << "@";
+      args[0]->vistaPrint(out);
+    }
+    else if (tag == "FieldRead")
+    {
+      args[0]->vistaPrint(out);
+      out << ".";
+      args[1]->vistaPrint(out);
+    }
+    else if (tag == "JSComputedFieldRead")
+    {
+      args[0]->vistaPrint(out);
+      out << "[";
+      args[1]->vistaPrint(out);
+      out << "]";
+    }
+    else if (tag == "JSDefineObjMethod")
+    {
+      args[0]->vistaPrint(out);
+      out << " =" << "METH(";
+      args[1]->vistaPrint(out);
+      out << ")= ";
+      args[2]->vistaPrint(out);
+    }
+    else if (tag == "JSDefineObjProp")
+    {
+      args[0]->vistaPrint(out);
+      out << " =" << "PROP(";
+      args[1]->vistaPrint(out);
+      out << ")= ";
+      args[2]->vistaPrint(out);
+    }
+    else if (tag == "PoolBinding")
+    {
+      args[0]->vistaPrint(out);
+    }
+    else if (tag == "StackReject")
+    {
+      args[0]->vistaPrint(out);
+      out << "\n";
+    }
+    else if (tag == "Lambda")
+    {
+      out << "Lambda@" << getFlagDouble("StartBBIDX");
+    }
+    else if (tag == "String")
+    {
+      out << "\"" << getFlagString(std::string("IridiumPrimitive")) << "\"";
+    }
+    else if (tag == "Number")
+    {
+      out << getFlagDouble(std::string("IridiumPrimitive"));
+    }
+    else if (tag == "CallSite")
+    {
+      out << pad << tag;
+      if (!flags.empty())
+      {
+        out << "[";
+        for (size_t i = 0; i < flags.size(); i++)
+        {
+          flags[i]->prettyPrint(out);
+          if (i + 1 < flags.size())
+            out << ", ";
+        }
+        out << "]";
+      }
+      out << "(\n";
+      for (int i = 0; i < args.size(); i++)
+      {
+        out << "  " << "Arg" << i << " : ";
+        args[i]->vistaPrint(out);
+        out << "\n";
+      }
+      out << pad << ")\n";
+    }
+    else if (tag == "GlobalBinding")
+    {
+      out << getFlagString(std::string("NAME"));
+    }
+    else if (tag == "JSImplicitBindingDeclaration")
+    {
+      out << "IMPLICIT@" << getFlagString(std::string("NAME")) << "\n";
+    }
+    else if (tag == "Return")
+    {
+      out << "Return ";
+      args.at(0)->vistaPrint(out, 0);
+      out << "\n";
+    }
+    else if (tag == "IfElseJump")
+    {
+      args.at(0)->vistaPrint(out, 0);
+      out << " ? ";
+      out << getFlagDouble(std::string("TRUE"));
+      out << " : ";
+      out << getFlagDouble(std::string("FALSE"));
+      out << "\n";
+    }
+    else
+    {
+      // Statement / Expression
+      out << pad << tag;
+
+      if (!flags.empty())
+      {
+        out << "[";
+        for (size_t i = 0; i < flags.size(); i++)
+        {
+          flags[i]->prettyPrint(out);
+          if (i + 1 < flags.size())
+            out << ", ";
+        }
+        out << "]";
+      }
+
+      // Arguments
+      if (!args.empty())
+      {
+        out << "(";
+        for (size_t i = 0; i < args.size(); i++)
+        {
+          if (isScopeTag(args[i]->tag))
+          {
+            out << "\n";
+            args[i]->vistaPrint(out, indent + 2);
+            out << "\n"
+                << pad;
+          }
+          else
+          {
+            args[i]->vistaPrint(out, 0); // inline
+          }
+          if (i + 1 < args.size())
+            out << ", ";
+        }
+        out << ")";
+      }
+    }
+  }
+
   void dump(std::ostringstream &oss, bool compressed = false, int indent = 0) const
   {
     std::string pad = compressed ? "" : std::string(indent, ' ');
@@ -442,7 +620,7 @@ public:
     flags.push_back(std::make_shared<IridiumFlag>(flagToSet, str));
   }
 
-  bool hasFlag(const std::string &flagToCheck)
+  bool hasFlag(const std::string &flagToCheck) const 
   {
     for (auto &flag : flags)
     {
@@ -465,7 +643,7 @@ public:
         flags.end());
   }
 
-  double getFlagDouble(const std::string &flagToGet)
+  double getFlagDouble(const std::string &flagToGet) const
   {
     for (auto &flag : flags)
     {
@@ -478,7 +656,7 @@ public:
     throw std::runtime_error("getFlagDouble failed");
   }
 
-  std::string getFlagString(const std::string &flagToGet)
+  std::string getFlagString(const std::string &flagToGet) const
   {
     for (auto &flag : flags)
     {

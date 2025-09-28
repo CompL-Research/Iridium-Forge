@@ -31,7 +31,7 @@ struct ConstantLatticeValue
 
   IRISEXP value;
 
-  void dump(std::ostringstream &oss) const
+  void dump(std::ostream &oss) const
   {
     switch (kind)
     {
@@ -154,7 +154,7 @@ struct ConstantsAtStmt
   DFVT dfv;
   static std::set<std::shared_ptr<EnvBindingSEXP>> blacklist;
 
-  void dump(std::ostringstream &oss) const
+  void dump(std::ostream &oss) const
   {
     oss << "{" << std::endl;
     for (const auto &kv : dfv.store)

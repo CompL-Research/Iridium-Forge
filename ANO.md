@@ -1,6 +1,21 @@
 
 > This file documents the analysis and optimizations passes implemented for Iridium IR
 
+
+Cause Effect Pair..
+
+Cause -- Something <--- Analysis
+
+  ...Model all analysis as PURE...
+
+  - We never store statement level information.
+
+    - We compute it on demand, we store it at boundaries. Hence it must be pure.
+
+Effect -- When that something is true <---
+
+       -- What that something might be true
+
 # Analysis
 
 ## 1. ConstantsAtStmt
