@@ -11,13 +11,13 @@ file(GLOB_RECURSE IRIDIUM_SRC CONFIGURE_DEPENDS src/*.cpp)
 find_package(ZLIB REQUIRED)
 
 # Msgpack library
-find_package(msgpackc-cxx QUIET)
-if (NOT msgpackc-cxx_FOUND)
+find_package(msgpack-cxx QUIET)
+if (NOT msgpack-cxx_FOUND)
   find_package(msgpack QUIET)
 endif()
 
-if (TARGET msgpackc-cxx)
-  set(MSGPACK_TARGET msgpackc-cxx)
+if (TARGET msgpack-cxx)
+  set(MSGPACK_TARGET msgpack-cxx)
 elseif (TARGET msgpack)
   set(MSGPACK_TARGET msgpack)
 else()

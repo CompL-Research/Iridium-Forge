@@ -44,6 +44,7 @@ void PassManager::optimize(int level)
 
       CopyPropInfo::blacklist = capturedStackBindings;
       Liveness::blacklist = capturedStackBindings;
+      ConstantsAtStmt::blacklist = capturedStackBindings;
       EffectAtStmt::blacklist = capturedStackBindings;
 
       std::string passBasename = "Iter"+std::to_string((int)i) + "_BB" + std::to_string((int)bbContView.getStartBBIDX());
