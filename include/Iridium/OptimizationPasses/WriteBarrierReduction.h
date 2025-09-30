@@ -27,6 +27,7 @@ class WriteBarrierReduction
     {
       if (latticeVal.kind == TDZLattice::SAFE && !envWriteSEXP->getSAFE() && envWriteSEXP->getLValTarget() == binding)
       {
+        if (binding->hasFlag("JSCONST")) envWriteSEXP->setTHROWERR();
         envWriteSEXP->setSAFE(true);
       }
 
@@ -34,6 +35,7 @@ class WriteBarrierReduction
       {
         if (!envWriteSEXP->getSAFE() && currFileView->safelyCapturedBindings.count(remEnvBindingWrite) > 0)
         {
+          if (resolveRemoteBinding(remEnvBindingWrite)->hasFlag("JSCONST")) envWriteSEXP->setTHROWERR();
           envWriteSEXP->setSAFE(true);
         }
       }
