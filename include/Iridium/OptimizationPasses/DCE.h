@@ -76,11 +76,16 @@ class DCE
           // std::cout << "KILLING (outer): "; 
           // curr->prettyPrint(std::cout);
           // std::cout << std::endl;
-
+          
+          // If writing to a const location, we cannot remove it as dead code
           if (auto innerEnvWriteSEXP = std::dynamic_pointer_cast<EnvWriteSEXP>(envWriteSEXP->getRVal()))
           {
+            if (innerEnvWriteSEXP->hasTHROWERR()) return std::make_shared<ThrowSEXP>(std::make_shared<StringSEXP>("Write to const (inner Write) @ " + LVAL->getNAME()));
             return envWriteSEXP->getRVal();
           }
+
+          if (envWriteSEXP->hasTHROWERR()) return std::make_shared<ThrowSEXP>(std::make_shared<StringSEXP>(LVAL->getNAME()));
+
 
           if (!maybeSideEffect(envWriteSEXP->getRVal()))
           {
