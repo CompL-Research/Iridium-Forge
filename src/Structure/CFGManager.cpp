@@ -181,5 +181,28 @@ std::vector<IRISEXP> CFGManager::chapati()
         result.push_back(cfg[v]);
       });
 
+  // remove reduntant gotos
+  for (size_t i = 0; i < result.size(); i++)
+  {
+    auto bb = std::dynamic_pointer_cast<BBSEXP>(result[i]);
+    assert(bb);
+
+    auto lastStmtOfCurrentBB = bb->args[bb->args.size() - 1];
+
+    if (auto gotoStmt = std::dynamic_pointer_cast<GotoSEXP>(lastStmtOfCurrentBB))
+    {
+      if (i + 1 < result.size())
+      {
+        auto nextBB = std::dynamic_pointer_cast<BBSEXP>(result[i + 1]);
+        assert(nextBB);
+
+        if (gotoStmt->getIDX() == nextBB->getIDX())
+        {
+          bb->args.pop_back();
+        }
+      }
+    }
+  }
+
   return result;
 }
