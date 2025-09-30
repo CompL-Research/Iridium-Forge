@@ -252,19 +252,25 @@ public:
       // Special case: EnvBinding → only print NAME
       if (tag == "EnvBinding")
       {
+        out << "[";
         for (auto &flag : flags)
         {
           if (flag->getKey() == "NAME")
           {
-            out << "[";
             flag->prettyPrint(out);
-            out << "]";
-            break;
+            out << " ";
+          }
+          if (flag->getKey() == "REFIDX")
+          {
+            flag->prettyPrint(out);
+            out << " ";
           }
         }
+        out << "]";
       }
       // Normal case: all flags
-      else if (!flags.empty())
+      else 
+      if (!flags.empty())
       {
         out << "[";
         for (size_t i = 0; i < flags.size(); i++)
