@@ -284,7 +284,7 @@ export default [
     "args": ["LValTarget", "RVal"],
     "flags": {
       "string": [],
-      "void": ["SLOPPY"],
+      "void": ["SLOPPY", "THROWERR"],
       "bool": ["SAFE", "THISINIT"],
       "double": [],
     }
