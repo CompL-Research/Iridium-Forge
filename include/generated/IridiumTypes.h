@@ -1,4 +1,4 @@
-// Generated: 2025-09-19 00:09:27
+// Generated: 2025-09-30 18:45:59
 #pragma once
 #include "Iridium/Globals.h"
 #include "Iridium/IridiumSEXP.h"
@@ -1356,11 +1356,12 @@ public:
   }
 
 
-  EnvWriteSEXP(IRISEXP LValTarget, IRISEXP RVal, bool SLOPPY, bool SAFE, bool THISINIT) {
+  EnvWriteSEXP(IRISEXP LValTarget, IRISEXP RVal, bool SLOPPY, bool THROWERR, bool SAFE, bool THISINIT) {
     this->tag = "EnvWrite";
     this->args.push_back(LValTarget);
     this->args.push_back(RVal);
     if (SLOPPY) this->setSLOPPY();
+    if (THROWERR) this->setTHROWERR();
     this->setSAFE(SAFE);
     this->setTHISINIT(THISINIT);
   }
@@ -1379,6 +1380,11 @@ public:
   void setSLOPPY() { setFlag("SLOPPY"); }
   void unsetSLOPPY() { removeFlag("SLOPPY"); }
   bool hasSLOPPY() { return hasFlag("SLOPPY"); }
+
+
+  void setTHROWERR() { setFlag("THROWERR"); }
+  void unsetTHROWERR() { removeFlag("THROWERR"); }
+  bool hasTHROWERR() { return hasFlag("THROWERR"); }
 
 
   void setSAFE(bool value) { setFlag("SAFE", value); }
