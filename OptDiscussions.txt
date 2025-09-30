@@ -113,7 +113,7 @@ a .= 22;
 
 // Remove code which is useless
 
-1. Remove effectless expressions completely
+1. Remove effectless expressions completely -- microopt
 2. Delete code only if it is safe:
     - What are the predicates
         - TDZ info
@@ -123,11 +123,22 @@ a .= 22;
 
 4. - Handle closures in the future -
 
+5. Contextual calls (quickjs)
+
+
+4. Stack Collapse
+
+- Interference Graph
+  // Such that its usable by boost graph library...
+  V = { EnvBinding } // assert(never captured binding)
+  E = { EnvBinding -- EnvBinding }
+
+- Implementation
+  1. Create Interference Graph
+  2. perform allocation with Kempe's heuristic
+  3. 
 
 
 
-
-
-
-1. Contextual calls (quickjs)
+5. Stack Prioritization
 
