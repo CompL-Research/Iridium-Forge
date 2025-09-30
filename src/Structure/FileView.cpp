@@ -1,5 +1,6 @@
 #include "Iridium/Structure/FileView.h"
 
+
 void FileView::init()
 {
   while (true)
@@ -61,6 +62,8 @@ std::shared_ptr<BBSEXP> FileView::getBB(SEXPPath path)
 
 std::shared_ptr<FileSEXP> FileView::checkout()
 {
+  refreshSymbolTable();
+  
 
   for (auto & v : bbContainerViews)
   {

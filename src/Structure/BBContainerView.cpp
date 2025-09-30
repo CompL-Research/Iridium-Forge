@@ -4,6 +4,124 @@
 #include <filesystem>
 #include "external/json.hpp"
 
+#include "Iridium/Analysis/Domains/Liveness.h"
+#include "Iridium/Analysis/DataflowSolver.h"
+
+struct RAGC
+{
+  std::set<std::shared_ptr<EnvBindingSEXP>> nodes;
+  std::unordered_map<std::shared_ptr<EnvBindingSEXP>, std::set<std::shared_ptr<EnvBindingSEXP>>> edges;
+
+  std::unordered_map<std::shared_ptr<EnvBindingSEXP>, size_t> allocation;
+
+  size_t K = 4;
+  size_t spillIdx = 4;
+  size_t maxIdx = 0;
+
+  void addNode(std::shared_ptr<EnvBindingSEXP> n)
+  {
+    nodes.insert(n);
+  }
+
+  void addEdge(std::shared_ptr<EnvBindingSEXP> u, std::shared_ptr<EnvBindingSEXP> v)
+  {
+    addNode(u);
+    addNode(v);
+    edges[u].insert(v);
+    edges[v].insert(u);
+  }
+
+  void allocate()
+  {
+    std::vector<std::shared_ptr<EnvBindingSEXP>> stack;
+
+    // --- Simplify phase ---
+    std::unordered_map<std::shared_ptr<EnvBindingSEXP>, std::set<std::shared_ptr<EnvBindingSEXP>>> graph = edges;
+    std::set<std::shared_ptr<EnvBindingSEXP>> remaining(nodes.begin(), nodes.end());
+
+    while (!remaining.empty())
+    {
+      bool removed = false;
+      for (auto it = remaining.begin(); it != remaining.end();)
+      {
+        auto node = *it;
+        size_t degree = graph[node].size();
+
+        if (degree < K)
+        {
+          stack.push_back(node);
+          // remove node from graph
+          for (auto &nbr : graph[node])
+          {
+            graph[nbr].erase(node);
+          }
+          graph.erase(node);
+          it = remaining.erase(it);
+          removed = true;
+          break;
+        }
+        else
+        {
+          ++it;
+        }
+      }
+
+      // If no node had degree < K, spill candidate
+      if (!removed)
+      {
+        auto node = *remaining.begin();
+        stack.push_back(node); // force push
+        for (auto &nbr : graph[node])
+        {
+          graph[nbr].erase(node);
+        }
+        graph.erase(node);
+        remaining.erase(node);
+      }
+    }
+
+    // --- Select phase ---
+    while (!stack.empty())
+    {
+      // TODO: Remove random, maybe better heuristic
+      auto node = stack.back();
+      stack.pop_back();
+
+      // Collect neighbor allocations
+      std::set<size_t> used;
+      for (auto &nbr : edges[node])
+      {
+        if (allocation.count(nbr))
+        {
+          used.insert(allocation[nbr]);
+        }
+      }
+
+      // Assign a free register if available
+      size_t assigned = K; // sentinel
+      for (size_t r = 0; r < K; ++r)
+      {
+        if (!used.count(r))
+        {
+          assigned = r;
+          break;
+        }
+      }
+
+      if (assigned == K)
+      {
+        // Spill
+        assigned = spillIdx++;
+      }
+
+      if (assigned > maxIdx)
+        maxIdx = assigned;
+      allocation[node] = assigned;
+      node->setREFIDX(assigned); // assumes EnvBindingSEXP has setIDX
+    }
+  }
+};
+
 using json = nlohmann::json;
 
 BBContainerView::BBContainerView(
@@ -368,11 +486,160 @@ std::shared_ptr<BBContainerSEXP> BBContainerView::checkout()
     }
   }
 #endif
+
+  auto capturedStackBindings = getCapturedStackBindings();
+  Liveness::blacklist = capturedStackBindings;
+  DataflowSolver<Liveness> livenessSolver(cfgManager, false, [&]()
+                                          { return Liveness::bottom(); });
+
+  auto livenessResult = livenessSolver.run(Liveness::boundary(capturedStackBindings));
+
   std::vector<IRISEXP> chapati = cfgManager.chapati();
   std::shared_ptr<ListSEXP> bbList = std::make_shared<ListSEXP>("BB");
   bbList->args = chapati;
   targetContainer->setBB(bbList);
   targetContainer->setBindings(bindingsView.checkout());
+
+#if IRIDIUM_DUMP_BEFORE_STACK_COLLAPSE == 1
+  {
+    std::string savePath = IRIDIUM_OUTPUTS_FOLDER + std::string("BeforeStackCollapse_") + std::to_string(getStartBBIDX()) + ".iridump";
+    std::filesystem::path dir = IRIDIUM_OUTPUTS_FOLDER;
+    try
+    {
+      if (!std::filesystem::exists(dir))
+      {
+        std::filesystem::create_directories(dir);
+      }
+
+      std::ofstream outFile(savePath);
+      if (!outFile)
+      {
+        throw std::runtime_error("Could not open file: " + savePath);
+      }
+      DBG("IRIDIUM_DUMP_BEFORE_STACK_COLLAPSE");
+      targetContainer->prettyPrint(outFile);
+      outFile << std::endl;
+    }
+    catch (const std::filesystem::filesystem_error &e)
+    {
+      std::cerr << "[IRIDIUM_DUMP_BEFORE_STACK_COLLAPSE] Filesystem error: " << e.what() << '\n';
+    }
+  }
+#endif
+
+  { // Stack collapse
+    RAGC regAlloc;
+    for (auto &e : livenessResult)
+    { // e.second.dfv is a set std::set<std::shared_ptr<EnvBindingSEXP>>
+      auto &bb = cfgManager.cfg[e.first];
+      auto &boundaryLivenessInfo = e.second;
+      boundaryLivenessInfo.iter(bb,
+                                [&](size_t idx, const Liveness &val)
+                                {
+                                  for (auto it1 = val.dfv.begin(); it1 != val.dfv.end(); ++it1)
+                                  {
+                                    if ((*it1)->hasJSARG() || (*it1)->hasJSRESTARG())
+                                      continue;
+                                    regAlloc.addNode(*it1);
+                                    for (auto it2 = val.dfv.begin(); it2 != val.dfv.end(); ++it2)
+                                    {
+                                      if ((*it2)->hasJSARG() || (*it2)->hasJSRESTARG())
+                                        continue;
+                                      regAlloc.addNode(*it2);
+                                      if (*it1 != *it2)
+                                      {
+                                        regAlloc.addEdge(*it1, *it2);
+                                      }
+                                    }
+                                  }
+                                });
+    }
+
+    // std::cout << "REGALLOC OP NODES" << std::endl;
+    // for (auto & b : regAlloc.nodes)
+    // {
+    //   b->prettyPrint(std::cout);
+    //   std::cout << std::endl;
+    // }
+
+    regAlloc.allocate();
+
+    for (auto &cBinding : capturedStackBindings)
+    {
+      cBinding->setIDX(regAlloc.maxIdx++);
+    }
+
+    std::unordered_map<double, std::vector<std::shared_ptr<EnvBindingSEXP>>> stackMap;
+    std::vector<IRISEXP> finalStack;
+
+    auto bindingsObj = std::dynamic_pointer_cast<BindingsSEXP>(targetContainer->getBindings());
+    assert(bindingsObj);
+
+    for (auto e : bindingsObj->getLocalBindings()->args)
+    {
+      auto currB = std::dynamic_pointer_cast<EnvBindingSEXP>(e);
+      assert(currB);
+      if (currB->hasJSARG() || currB->hasJSRESTARG())
+      {
+        finalStack.push_back(currB);
+      }
+      else
+      {
+        stackMap[currB->getREFIDX()].push_back(currB);
+      }
+    }
+
+    for (auto &e : stackMap)
+    {
+      if (e.second.size() == 1)
+      {
+        finalStack.push_back(e.second.back());
+      }
+      else
+      {
+        std::stringstream ss;
+        for (auto &b : e.second)
+        {
+          ss << b->getNAME() << " ";
+        }
+        auto compositeBinding = std::make_shared<EnvBindingSEXP>(ss.str(), false, false, false, false, false, true, -1, e.first, -1, -1, -1);
+        finalStack.push_back(compositeBinding);
+      }
+      // std::string NAME, bool ASW, bool JSARG, bool JSRESTARG, bool JSLET, bool JSCONST, bool JSVAR, double IDX, double REFIDX, double Scope, double ParentScope, double NEXT
+    }
+
+    std::cout << "Stack collapse: " << bindingsObj->getLocalBindings()->args.size() << " -> " << finalStack.size() << std::endl;
+
+    bindingsObj->getLocalBindings()->args = std::move(finalStack);
+  }
+
+#if IRIDIUM_DUMP_AFTER_STACK_COLLAPSE == 1
+  {
+    std::string savePath = IRIDIUM_OUTPUTS_FOLDER + std::string("AfterStackCollapse_") + std::to_string(getStartBBIDX()) + ".iridump";
+    std::filesystem::path dir = IRIDIUM_OUTPUTS_FOLDER;
+    try
+    {
+      if (!std::filesystem::exists(dir))
+      {
+        std::filesystem::create_directories(dir);
+      }
+
+      std::ofstream outFile(savePath);
+      if (!outFile)
+      {
+        throw std::runtime_error("Could not open file: " + savePath);
+      }
+      DBG("IRIDIUM_DUMP_BEFORE_STACK_COLLAPSE");
+      targetContainer->prettyPrint(outFile);
+      outFile << std::endl;
+    }
+    catch (const std::filesystem::filesystem_error &e)
+    {
+      std::cerr << "[IRIDIUM_DUMP_BEFORE_STACK_COLLAPSE] Filesystem error: " << e.what() << '\n';
+    }
+  }
+#endif
+
 #if IRIDIUM_DUMP_FINAL_CFG == 1
   {
     DBG("IRIDIUM_DUMP_FINAL_CFG");
