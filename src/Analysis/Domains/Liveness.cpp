@@ -41,6 +41,9 @@ static void populateUsesAndDefs(IRISEXP currSEXP, std::set<std::shared_ptr<EnvBi
     return;
   }
 
+  if (auto binding = std::dynamic_pointer_cast<RemoteEnvBindingSEXP>(currSEXP))
+    return;
+
   if (auto binding = std::dynamic_pointer_cast<EnvBindingSEXP>(currSEXP))
     uses.insert(binding);
 
