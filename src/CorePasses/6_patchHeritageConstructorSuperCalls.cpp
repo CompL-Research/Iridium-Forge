@@ -7,11 +7,12 @@ std::vector<IRISEXP> heritageThisInit(std::string thisValHolder, std::string pro
 {
   std::vector<IRISEXP> res;
 
-  // IRISEXP LValTarget, IRISEXP RVal, bool SLOPPY, bool SAFE, bool THISINIT
+  // IRISEXP LValTarget, IRISEXP RVal, bool SLOPPY, bool THROWERR, bool SAFE, bool THISINIT
   res.push_back(
       std::make_shared<EnvWriteSEXP>(
           std::make_shared<ResolveEnvBindingSEXP>("this", false),
           std::make_shared<EnvReadSEXP>(std::make_shared<ResolveEnvBindingSEXP>(thisValHolder, false), false),
+          false,
           false,
           false,
           true // <- This is about the only place where we set THISINIT flag to true

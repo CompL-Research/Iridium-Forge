@@ -177,8 +177,8 @@ void populateExplicitBindings(IRISEXP fileSexp, std::unordered_map<int, IRIBUILD
               addToListSEXP(bindingsSEXP->getRemoteBindings(), remoteBinding);
 
               envWrites.push_back(
-                // IRISEXP LValTarget, IRISEXP RVal, bool SLOPPY, bool SAFE, bool THISINIT
-                std::make_shared<EnvWriteSEXP>(lval, rval, false, true, false)
+                // IRISEXP LValTarget, IRISEXP RVal, bool SLOPPY, bool THROWERR, bool SAFE, bool THISINIT
+                std::make_shared<EnvWriteSEXP>(lval, rval, false, false, true, false)
               );
             }
             else
@@ -187,8 +187,8 @@ void populateExplicitBindings(IRISEXP fileSexp, std::unordered_map<int, IRIBUILD
               addToListSEXP(bindingsSEXP->getLocalBindings(), localBinding);
 
               envWrites.push_back(
-                // IRISEXP LValTarget, IRISEXP RVal, bool SLOPPY, bool SAFE, bool THISINIT
-                std::make_shared<EnvWriteSEXP>(lval, rval, false, true, false)
+                // IRISEXP LValTarget, IRISEXP RVal, bool SLOPPY, bool THROWERR, bool SAFE, bool THISINIT
+                std::make_shared<EnvWriteSEXP>(lval, rval, false, false, true, false)
               );
             }
           }
