@@ -12,6 +12,7 @@
 #include "Iridium/OptimizationPasses/PropEffects.h"
 #include "Iridium/OptimizationPasses/DCE.h"
 #include "Iridium/OptimizationPasses/DeadBindingRemoval.h"
+#include "Iridium/OptimizationPasses/ReduceComputedFieldOps.h"
 #include "Iridium/CorePasses/3_filterNops.h"
 #include "external/json.hpp"
 #include <fstream>
@@ -158,6 +159,8 @@ void PassManager::optimize(int level)
       #if PASSMGR_DEBUG == 1
       PASSMGR_DEBUGVector.push_back(bbContView.getDebugJSON(passBasename + "_5_EFFECT_PROP"));
       #endif
+
+      reduceComputedFieldOps(bbContView);
 
       doDeadBindingRemoval(fileView);
     }
