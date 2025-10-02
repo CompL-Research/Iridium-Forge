@@ -163,6 +163,25 @@ void PassManager::optimize(int level)
     }
   }
 
+  // Mark Tail Calls
+  for (auto &bbContView : fileView.bbContainerViews)
+  {
+    bbContView.cfgManager.traverseCFG(
+      [&](Vertex v, std::shared_ptr<BBSEXP> bb)
+      {
+        for (auto & stmt : bb->args)
+        {
+          if (auto retStmt = std::dynamic_pointer_cast<ReturnSEXP>(stmt))
+          {
+            if (auto tailCall = std::dynamic_pointer_cast<CallSiteSEXP>(retStmt->getObj()))
+            {
+              tailCall->setTAILCALL();
+            }
+          }
+        }
+      });
+  }
+
   #if PASSMGR_DEBUG == 1
   std::filesystem::create_directories(out_path.parent_path());
 
