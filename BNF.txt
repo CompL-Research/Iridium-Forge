@@ -20,7 +20,7 @@ BindingsSEXP :=
     List<RemoteEnvBindingSEXP>
     List<PoolBindingSEXP>
 
-{RVAL = 37} ==
+{RVAL = 38} ==
     StackPopSEXP
     | UnopSEXP
     | BinopSEXP
@@ -58,6 +58,7 @@ BindingsSEXP :=
     | JSAppendSEXP
     | JSCopyDataPropertiesSEXP
     | JSDefineObjMethodSEXP
+    | JSDefineObjPropSEXP
     {RVAL_TERMINAL}
 
 {RVAL_TERMINAL = 10} ==
@@ -67,12 +68,12 @@ BindingsSEXP :=
     | NumberSEXP
     | RegExpSEXP
     | StringSEXP
-    | JSBitIntSEXP
+    | BitIntSEXP
     | JSNUBDSEXP
     | JSObjectSEXP
     | JSPrivateSEXP
 
-{STMT = 18} ==
+{STMT = 17} ==
     StackRejectSEXP
     | StackRetainSEXP
     | GotoSEXP
@@ -87,7 +88,6 @@ BindingsSEXP :=
     | JSInitialYieldSEXP
     | ReturnAsyncSEXP
     | YieldSEXP
-    | JSDefineObjPropSEXP
     | JSFuncDeclSEXP
     | JSImplicitBindingDeclarationSEXP
     | JSSloppyDeclSEXP
