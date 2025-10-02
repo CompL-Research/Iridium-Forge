@@ -38,93 +38,413 @@ class PropEffects
         std::dynamic_pointer_cast<StackPopSEXP>(rVAL));
   }
 
-  static bool patchExpr(IRISEXP expr, std::set<IRISEXP> &killset, EffectAtStmt &val)
+  static bool patchExprNew(IRISEXP expr, std::set<IRISEXP> &killset, EffectAtStmt &val)
   {
-    // If any effectful node comes before, quit early, its unsafe
-    // Population is only safe RTL
+    if (auto o = std::dynamic_pointer_cast<BooleanSEXP>(expr)) return true;
+    if (auto o = std::dynamic_pointer_cast<LambdaSEXP>(expr)) return true;
+    if (auto o = std::dynamic_pointer_cast<NullSEXP>(expr)) return true;
+    if (auto o = std::dynamic_pointer_cast<NumberSEXP>(expr)) return true;
+    if (auto o = std::dynamic_pointer_cast<RegExpSEXP>(expr)) return true;
+    if (auto o = std::dynamic_pointer_cast<StringSEXP>(expr)) return true;
+    if (auto o = std::dynamic_pointer_cast<BitIntSEXP>(expr)) return true;
+    if (auto o = std::dynamic_pointer_cast<JSNUBDSEXP>(expr)) return true;
+    if (auto o = std::dynamic_pointer_cast<JSObjectSEXP>(expr)) return true;
+    if (auto o = std::dynamic_pointer_cast<JSPrivateSEXP>(expr)) return true;
 
-    // WIP
-    // if (auto obj = std::dynamic_pointer_cast<JSComputedFieldReadSEXP>(expr))
-    // {
-    //   if (!patchExpr(obj->getObj(), killset, val))
-    //     return false;
-    //   if (!patchExpr(obj->getField(), killset, val))
-    //     return false;
-    // }
+    if (auto o = std::dynamic_pointer_cast<StackPopSEXP>(expr)) return false;
 
-    // if (auto obj = std::dynamic_pointer_cast<JSComputedFieldWriteSEXP>(expr))
-    // {
-    //   if (!patchExpr(obj->getObj(), killset, val))
-    //     return false;
-    //   if (!patchExpr(obj->getField(), killset, val))
-    //     return false;
-    //   if (!patchExpr(obj->getValue(), killset, val))
-    //     return false;
-    // }
-
-    // if (auto obj = std::dynamic_pointer_cast<JSPrivateFieldReadSEXP>(expr))
-    // {
-    //   if (!patchExpr(obj->getObj(), killset, val))
-    //     return false;
-    //   if (!patchExpr(obj->getField(), killset, val))
-    //     return false;
-    // }
-
-    // if (auto obj = std::dynamic_pointer_cast<JSPrivateFieldWriteSEXP>(expr))
-    // {
-    //   if (!patchExpr(obj->getObj(), killset, val))
-    //     return false;
-    //   if (!patchExpr(obj->getField(), killset, val))
-    //     return false;
-    //   if (!patchExpr(obj->getValue(), killset, val))
-    //     return false;
-    // }
-
-    // if (auto obj = std::dynamic_pointer_cast<JSSuperFieldReadSEXP>(expr))
-    // {
-    //   return false;
-    // }
-    // if (auto obj = std::dynamic_pointer_cast<JSSuperFieldWriteSEXP>(expr))
-    // {
-    //   return false;
-    // }
-
-    // if (auto obj = std::dynamic_pointer_cast<FieldReadSEXP>(expr))
-    // {
-    //   if (!patchExpr(obj->getObj(), killset, val))
-    //     return false;
-    //   if (!patchExpr(obj->getField(), killset, val))
-    //     return false;
-    // }
-
-    // if (auto obj = std::dynamic_pointer_cast<FieldWriteSEXP>(expr))
-    // {
-    //   if (!patchExpr(obj->getObj(), killset, val))
-    //     return false;
-    //   if (!patchExpr(obj->getField(), killset, val))
-    //     return false;
-    //   if (!patchExpr(obj->getValue(), killset, val))
-    //     return false;
-    // }
-
-    if (maybeEffect(expr))
-      return false;
-
-    for (size_t i = 0; i < expr->args.size(); i++)
-    {
-      auto &curr = expr->args[i];
-      if (auto envReadNode = std::dynamic_pointer_cast<EnvReadSEXP>(curr))
+    if (auto o = std::dynamic_pointer_cast<UnopSEXP>(expr)) {
+      if (auto node = std::dynamic_pointer_cast<EnvReadSEXP>(o->getVal()))
       {
-        if (envReadNode->getObj() == val.store)
+        if (node->getObj() == val.store)
         {
-          expr->args[i] = val.effect;
+          o->setVal(val.effect);
           killset.insert(val.stmt);
+          return false;
+        }
+      } else return patchExprNew(o->getVal(), killset, val);
+      return true;
+    }
+
+    if (auto o = std::dynamic_pointer_cast<BinopSEXP>(expr)) {
+      if (auto node = std::dynamic_pointer_cast<EnvReadSEXP>(o->getLBinop()))
+      {
+        if (node->getObj() == val.store)
+        {
+          o->setLBinop(val.effect);
+          killset.insert(val.stmt);
+          return false;
         }
       }
-      if (!patchExpr(expr->args[i], killset, val))
-        return false;
+      else
+      {
+        if (!patchExprNew(o->getLBinop(), killset, val)) return false;
+      }
+
+      if (auto node = std::dynamic_pointer_cast<EnvReadSEXP>(o->getRBinop()))
+      {
+        if (node->getObj() == val.store)
+        {
+          o->setRBinop(val.effect);
+          killset.insert(val.stmt);
+          return false;
+        }
+      }
+      else
+      {
+        if (!patchExprNew(o->getRBinop(), killset, val)) return false;
+      }
+      return true;
     }
-    return true;
+
+    if (auto l = std::dynamic_pointer_cast<ListSEXP>(expr)) {
+
+      for (size_t i = 0; i < l->args.size(); i++)
+      {
+        auto o = l->args.at(i);
+        if (auto node = std::dynamic_pointer_cast<EnvReadSEXP>(o))
+        {
+          if (node->getObj() == val.store)
+          {
+            l->args.at(i) = val.effect;
+            killset.insert(val.stmt);
+            return false;
+          }
+        }
+        else if (!patchExprNew(o, killset, val)) return false;
+      }
+
+      return true;
+    }
+
+    if (auto l = std::dynamic_pointer_cast<JSArraySEXP>(expr)) {
+
+      for (size_t i = 0; i < l->args.size(); i++)
+      {
+        auto o = l->args.at(i);
+        if (auto node = std::dynamic_pointer_cast<EnvReadSEXP>(o))
+        {
+          if (node->getObj() == val.store)
+          {
+            l->args.at(i) = val.effect;
+            killset.insert(val.stmt);
+            return false;
+          }
+        }
+        else if (!patchExprNew(o, killset, val)) return false;
+      }
+
+      return true;
+    }
+
+    if (auto o = std::dynamic_pointer_cast<JSBinopSEXP>(expr)) {
+      if (auto node = std::dynamic_pointer_cast<EnvReadSEXP>(o->getLBinop()))
+      {
+        if (node->getObj() == val.store)
+        {
+          o->setLBinop(val.effect);
+          killset.insert(val.stmt);
+          return false;
+        }
+      }
+      else
+      {
+        if (!patchExprNew(o->getLBinop(), killset, val)) return false;
+      }
+
+      if (auto node = std::dynamic_pointer_cast<EnvReadSEXP>(o->getRBinop()))
+      {
+        if (node->getObj() == val.store)
+        {
+          o->setRBinop(val.effect);
+          killset.insert(val.stmt);
+          return false;
+        }
+      }
+      else
+      {
+        if (!patchExprNew(o->getRBinop(), killset, val)) return false;
+      }
+      return true;
+    }
+
+    if (auto o = std::dynamic_pointer_cast<JSClassSEXP>(expr)) return false;
+    if (auto o = std::dynamic_pointer_cast<JSSpreadSEXP>(expr)) return false;
+    if (auto o = std::dynamic_pointer_cast<JSTemplateSEXP>(expr)) return false;
+
+    if (auto o = std::dynamic_pointer_cast<JSUnopSEXP>(expr)) {
+      if (o->getOP() == "delete") return false;
+      if (auto node = std::dynamic_pointer_cast<EnvReadSEXP>(o->getVal()))
+      {
+        if (node->getObj() == val.store)
+        {
+          o->setVal(val.effect);
+          killset.insert(val.stmt);
+          return false;
+        }
+      } else return patchExprNew(o->getVal(), killset, val);
+      return true;
+    }
+
+    if (auto o = std::dynamic_pointer_cast<UNOPDelMemberExprSEXP>(expr)) return false;
+    if (auto o = std::dynamic_pointer_cast<UNOPDelVarSEXP>(expr)) return false;
+
+    if (auto o = std::dynamic_pointer_cast<AwaitSEXP>(expr)) return false;
+
+    if (auto o = std::dynamic_pointer_cast<JSComputedFieldReadSEXP>(expr)) 
+    {
+      if (auto node = std::dynamic_pointer_cast<EnvReadSEXP>(o->getObj()))
+      {
+        if (node->getObj() == val.store)
+        {
+          o->setObj(val.effect);
+          killset.insert(val.stmt);
+          return false;
+        }
+      }
+      else
+      {
+        if (!patchExprNew(o->getObj(), killset, val)) return false;
+      }
+
+      if (auto node = std::dynamic_pointer_cast<EnvReadSEXP>(o->getField()))
+      {
+        if (node->getObj() == val.store)
+        {
+          o->setField(val.effect);
+          killset.insert(val.stmt);
+          return false;
+        }
+      }
+      else
+      {
+        if (!patchExprNew(o->getField(), killset, val)) return false;
+      }
+
+      return false;
+    }
+
+    if (auto o = std::dynamic_pointer_cast<JSComputedFieldWriteSEXP>(expr)) 
+    {
+      if (auto node = std::dynamic_pointer_cast<EnvReadSEXP>(o->getObj()))
+      {
+        if (node->getObj() == val.store)
+        {
+          o->setObj(val.effect);
+          killset.insert(val.stmt);
+          return false;
+        }
+      }
+      else
+      {
+        if (!patchExprNew(o->getObj(), killset, val)) return false;
+      }
+
+      if (auto node = std::dynamic_pointer_cast<EnvReadSEXP>(o->getField()))
+      {
+        if (node->getObj() == val.store)
+        {
+          o->setField(val.effect);
+          killset.insert(val.stmt);
+          return false;
+        }
+      }
+      else
+      {
+        if (!patchExprNew(o->getField(), killset, val)) return false;
+      }
+
+      if (auto node = std::dynamic_pointer_cast<EnvReadSEXP>(o->getValue()))
+      {
+        if (node->getObj() == val.store)
+        {
+          o->setValue(val.effect);
+          killset.insert(val.stmt);
+          return false;
+        }
+      }
+      else
+      {
+        if (!patchExprNew(o->getValue(), killset, val)) return false;
+      }
+
+      return false;
+    }
+
+    if (auto o = std::dynamic_pointer_cast<JSPrivateFieldReadSEXP>(expr)) 
+    {
+      // WIP
+
+      return false;
+    }
+
+    if (auto o = std::dynamic_pointer_cast<JSPrivateFieldWriteSEXP>(expr)) 
+    {
+      // WIP
+
+      return false;
+    }
+
+    if (auto o = std::dynamic_pointer_cast<JSSuperFieldReadSEXP>(expr)) 
+    {
+      // WIP
+
+      return false;
+    }
+
+    if (auto o = std::dynamic_pointer_cast<JSSuperFieldWriteSEXP>(expr)) 
+    {
+      // WIP
+
+      return false;
+    }
+
+    if (auto o = std::dynamic_pointer_cast<PVTEnvReadSEXP>(expr)) return false;
+
+    if (auto o = std::dynamic_pointer_cast<EnvReadSEXP>(expr)) {
+      throw std::runtime_error("Unreachable case... prop effects");
+      return false;
+    }
+
+    if (auto o = std::dynamic_pointer_cast<FieldReadSEXP>(expr)) 
+    {
+      // WIP
+      if (auto node = std::dynamic_pointer_cast<EnvReadSEXP>(o->getObj()))
+      {
+        if (node->getObj() == val.store)
+        {
+          o->setObj(val.effect);
+          killset.insert(val.stmt);
+          return false;
+        }
+      }
+      else
+      {
+        if (!patchExprNew(o->getObj(), killset, val)) return false;
+      }
+
+      return false;
+    }
+
+    if (auto o = std::dynamic_pointer_cast<FieldWriteSEXP>(expr)) 
+    {
+      if (auto node = std::dynamic_pointer_cast<EnvReadSEXP>(o->getObj()))
+      {
+        if (node->getObj() == val.store)
+        {
+          o->setObj(val.effect);
+          killset.insert(val.stmt);
+          return false;
+        }
+      }
+      else
+      {
+        if (!patchExprNew(o->getObj(), killset, val)) return false;
+      }
+
+      if (auto node = std::dynamic_pointer_cast<EnvReadSEXP>(o->getValue()))
+      {
+        if (node->getObj() == val.store)
+        {
+          o->setValue(val.effect);
+          killset.insert(val.stmt);
+          return false;
+        }
+      }
+      else
+      {
+        if (!patchExprNew(o->getValue(), killset, val)) return false;
+      }
+
+      return false;
+    }
+
+    if (auto o = std::dynamic_pointer_cast<EnvWriteSEXP>(expr)) 
+    {
+      return patchExprNew(o->getRVal(), killset, val);
+    }
+
+    if (auto o = std::dynamic_pointer_cast<CallSiteSEXP>(expr)) 
+    {
+      for (size_t i = 0; i < expr->args.size(); i++)
+      {
+        auto o = expr->args.at(i);
+        if (auto node = std::dynamic_pointer_cast<EnvReadSEXP>(o))
+        {
+          if (node->getObj() == val.store)
+          {
+            expr->args.at(i) = val.effect;
+            killset.insert(val.stmt);
+            return false;
+          }
+        }
+        else if (!patchExprNew(o, killset, val)) return false;
+      }
+
+      return false;
+    }
+
+    if (auto o = std::dynamic_pointer_cast<JSToObjectSEXP>(expr)) return false;
+    if (auto o = std::dynamic_pointer_cast<JSCatchContextSEXP>(expr)) return false;
+    if (auto o = std::dynamic_pointer_cast<JSADDBRANDSEXP>(expr)) return false;
+    if (auto o = std::dynamic_pointer_cast<JSCheckConstructorSEXP>(expr)) return false;
+    if (auto o = std::dynamic_pointer_cast<JSForInNextSEXP>(expr)) return false;
+    if (auto o = std::dynamic_pointer_cast<JSForInStartSEXP>(expr)) return false;
+    if (auto o = std::dynamic_pointer_cast<JSForOfIteratorCloseSEXP>(expr)) return false;
+    if (auto o = std::dynamic_pointer_cast<JSForOfNextSEXP>(expr)) return false;
+    if (auto o = std::dynamic_pointer_cast<JSForOfStartSEXP>(expr)) return false;
+    if (auto o = std::dynamic_pointer_cast<JSAppendSEXP>(expr)) return false;
+    if (auto o = std::dynamic_pointer_cast<JSCopyDataPropertiesSEXP>(expr)) return false;
+    if (auto o = std::dynamic_pointer_cast<JSDefineObjMethodSEXP>(expr)) return false;
+
+    if (auto o = std::dynamic_pointer_cast<JSDefineObjPropSEXP>(expr)) {
+      if (auto node = std::dynamic_pointer_cast<EnvReadSEXP>(o->getTargetObj()))
+      {
+        if (node->getObj() == val.store)
+        {
+          o->setTargetObj(val.effect);
+          killset.insert(val.stmt);
+          return false;
+        }
+      }
+      else
+      {
+        if (!patchExprNew(o->getTargetObj(), killset, val)) return false;
+      }
+
+      if (auto node = std::dynamic_pointer_cast<EnvReadSEXP>(o->getKey()))
+      {
+        if (node->getObj() == val.store)
+        {
+          o->setKey(val.effect);
+          killset.insert(val.stmt);
+          return false;
+        }
+      }
+      else
+      {
+        if (!patchExprNew(o->getKey(), killset, val)) return false;
+      }
+
+      if (auto node = std::dynamic_pointer_cast<EnvReadSEXP>(o->getValue()))
+      {
+        if (node->getObj() == val.store)
+        {
+          o->setValue(val.effect);
+          killset.insert(val.stmt);
+          return false;
+        }
+      }
+      else
+      {
+        if (!patchExprNew(o->getValue(), killset, val)) return false;
+      }
+      return true; // Under thought, can this really have any side effect???
+      // assuming no for now...
+    }
+
+    throw std::runtime_error("Unhandled case... prop effects TAG: " + expr->tag);
+    return false;
   }
 
   static void patchExprOuter(IRISEXP expr, std::set<IRISEXP> &killset, EffectAtStmt &val)
@@ -148,15 +468,29 @@ class PropEffects
     // | JSImplicitBindingDeclarationSEXP
     // | JSSloppyDeclSEXP
 
+    auto numOccurences = countNode(expr, [&](IRISEXP val1) {
+      if (auto vv = std::dynamic_pointer_cast<EnvReadSEXP>(val1))
+      {
+        return vv->getObj() == val.store;
+      }
+      return false;
+    });
+
+    if (numOccurences != 1) return;
+
     if (auto stackRej = std::dynamic_pointer_cast<StackRejectSEXP>(expr))
     {
       for (auto a : stackRej->args)
-        patchExprOuter(a, killset, val);
+      {
+        patchExprNew(a, killset, val);
+      }
     }
     else if (auto stackRetain = std::dynamic_pointer_cast<StackRetainSEXP>(expr))
     {
       for (auto a : stackRetain->args)
-        patchExprOuter(a, killset, val);
+      {
+        patchExprNew(a, killset, val);
+      }
     }
     else if (auto ifElseJump = std::dynamic_pointer_cast<IfElseJumpSEXP>(expr))
     {
@@ -167,6 +501,10 @@ class PropEffects
           ifElseJump->setTest(val.effect);
           killset.insert(val.stmt);
         }
+      }
+      else
+      {
+        patchExprNew(ifElseJump->getTest(), killset, val);
       }
     }
     else if (auto ret = std::dynamic_pointer_cast<ReturnSEXP>(expr))
@@ -179,6 +517,10 @@ class PropEffects
           killset.insert(val.stmt);
         }
       }
+      else
+      {
+        patchExprNew(ret->getObj(), killset, val);
+      }
     }
     else if (auto thr = std::dynamic_pointer_cast<ThrowSEXP>(expr))
     {
@@ -190,6 +532,10 @@ class PropEffects
           killset.insert(val.stmt);
         }
       }
+      else
+      {
+        patchExprNew(thr->getThrowVal(), killset, val);
+      }
     }
     else if (auto yield = std::dynamic_pointer_cast<YieldSEXP>(expr))
     {
@@ -200,6 +546,10 @@ class PropEffects
           yield->setObj(val.effect);
           killset.insert(val.stmt);
         }
+      }
+      else
+      {
+        patchExprNew(yield->getObj(), killset, val);
       }
     }
     else if (auto envWriteSEXP = std::dynamic_pointer_cast<EnvWriteSEXP>(expr))
@@ -214,6 +564,10 @@ class PropEffects
             killset.insert(val.stmt);
           }
         }
+        else
+        {
+          patchExprNew(innerWriteSEXP->getRVal(), killset, val);
+        }
       }
       else
       {
@@ -225,37 +579,10 @@ class PropEffects
             killset.insert(val.stmt);
           }
         }
-      }
-    }
-    else if (auto cSite = std::dynamic_pointer_cast<CallSiteSEXP>(expr))
-    {
-      for (size_t i = 0; i < cSite->args.size(); i++)
-      {
-        auto &curr = cSite->args[i];
-        if (auto envReadNode = std::dynamic_pointer_cast<EnvReadSEXP>(curr))
+        else
         {
-          if (envReadNode->getObj() == val.store)
-          {
-            auto hasCurrBinding = [&](IRISEXP val){
-              return val == envReadNode->getObj();
-            };
-            bool safeToProp = true;
-            for (size_t j = i + 1; j < cSite->args.size(); j++)
-            {
-              if (hasNode(cSite->args[j], hasCurrBinding))
-              {
-                safeToProp = false;
-                break;
-              }
-            }
-            if (safeToProp)
-            {
-              expr->args[i] = val.effect; // Transformation finally happens here <-
-              killset.insert(val.stmt);
-            }
-          }
+          patchExprNew(envWriteSEXP->getRVal(), killset, val);
         }
-        else if (maybeEffect(curr)) return;
       }
     }
   }
