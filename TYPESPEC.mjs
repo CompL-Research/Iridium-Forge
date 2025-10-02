@@ -849,4 +849,24 @@ export default [
       "double": [],
     }
   },
+  {
+    "tag": "IDOP",
+    "args": ["Obj"],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": ["PREFIX", "INCREMENT"],
+      "double": [],
+    }
+  },
+  {
+    "tag": "JSIDOP",
+    "args": ["Obj"],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": ["PREFIX", "INCREMENT"],
+      "double": [],
+    }
+  },
 ];

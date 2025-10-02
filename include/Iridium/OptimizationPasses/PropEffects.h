@@ -443,6 +443,18 @@ class PropEffects
       // assuming no for now...
     }
 
+    if (auto o = std::dynamic_pointer_cast<IDOPSEXP>(expr)) 
+    {
+      patchExprNew(o->getObj(), killset, val);
+      return false;
+    }
+
+    if (auto o = std::dynamic_pointer_cast<JSIDOPSEXP>(expr)) 
+    {
+      patchExprNew(o->getObj(), killset, val);
+      return false;
+    }
+
     throw std::runtime_error("Unhandled case... prop effects TAG: " + expr->tag);
     return false;
   }

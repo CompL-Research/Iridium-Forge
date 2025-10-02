@@ -1,4 +1,4 @@
-// Generated: 2025-10-01 23:43:27
+// Generated: 2025-10-02 16:34:46
 #pragma once
 #include "Iridium/Globals.h"
 #include "Iridium/IridiumSEXP.h"
@@ -3266,5 +3266,91 @@ public:
   JSInitialYieldSEXP() {
     this->tag = "JSInitialYield";
   }
+
+};
+
+class IDOPSEXP : public IridiumSEXP {
+private:
+
+  IDOPSEXP() { this->tag = "IDOP"; }
+  
+public:
+  static std::shared_ptr<IDOPSEXP> generateFrom(IRISEXP obj) {
+    assert(obj->tag == "IDOP");
+    auto res = std::shared_ptr<IDOPSEXP>(new IDOPSEXP());
+
+    res->tag   = obj->tag;
+    res->args  = std::move(obj->args);
+    res->flags = std::move(obj->flags);
+    return res;
+  }
+
+
+  IDOPSEXP(IRISEXP Obj, bool PREFIX, bool INCREMENT) {
+    this->tag = "IDOP";
+    this->args.push_back(Obj);
+    this->setPREFIX(PREFIX);
+    this->setINCREMENT(INCREMENT);
+  }
+
+
+  void setObj(const IRISEXP &obj) { this->args.at(0) = obj; }
+  bool hasObj() { return 0 < this->args.size(); }
+  IRISEXP getObj() const { return this->args.at(0); }
+
+
+  void setPREFIX(bool value) { setFlag("PREFIX", value); }
+  void unsetPREFIX() { removeFlag("PREFIX"); }
+  bool hasPREFIX() { return hasFlag("PREFIX"); }
+  bool getPREFIX() { return getFlagBoolean("PREFIX"); }
+
+
+  void setINCREMENT(bool value) { setFlag("INCREMENT", value); }
+  void unsetINCREMENT() { removeFlag("INCREMENT"); }
+  bool hasINCREMENT() { return hasFlag("INCREMENT"); }
+  bool getINCREMENT() { return getFlagBoolean("INCREMENT"); }
+
+};
+
+class JSIDOPSEXP : public IridiumSEXP {
+private:
+
+  JSIDOPSEXP() { this->tag = "JSIDOP"; }
+  
+public:
+  static std::shared_ptr<JSIDOPSEXP> generateFrom(IRISEXP obj) {
+    assert(obj->tag == "JSIDOP");
+    auto res = std::shared_ptr<JSIDOPSEXP>(new JSIDOPSEXP());
+
+    res->tag   = obj->tag;
+    res->args  = std::move(obj->args);
+    res->flags = std::move(obj->flags);
+    return res;
+  }
+
+
+  JSIDOPSEXP(IRISEXP Obj, bool PREFIX, bool INCREMENT) {
+    this->tag = "JSIDOP";
+    this->args.push_back(Obj);
+    this->setPREFIX(PREFIX);
+    this->setINCREMENT(INCREMENT);
+  }
+
+
+  void setObj(const IRISEXP &obj) { this->args.at(0) = obj; }
+  bool hasObj() { return 0 < this->args.size(); }
+  IRISEXP getObj() const { return this->args.at(0); }
+
+
+  void setPREFIX(bool value) { setFlag("PREFIX", value); }
+  void unsetPREFIX() { removeFlag("PREFIX"); }
+  bool hasPREFIX() { return hasFlag("PREFIX"); }
+  bool getPREFIX() { return getFlagBoolean("PREFIX"); }
+
+
+  void setINCREMENT(bool value) { setFlag("INCREMENT", value); }
+  void unsetINCREMENT() { removeFlag("INCREMENT"); }
+  bool hasINCREMENT() { return hasFlag("INCREMENT"); }
+  bool getINCREMENT() { return getFlagBoolean("INCREMENT"); }
 
 };

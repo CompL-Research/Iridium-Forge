@@ -1,4 +1,4 @@
-// Generated: 2025-10-01 23:43:27
+// Generated: 2025-10-02 16:34:46
 #pragma once
 #include "Iridium/Globals.h"
 #include "Iridium/IridiumSEXP.h"
@@ -92,6 +92,8 @@ public:
     if (tag == "Await") return AwaitSEXP::generateFrom(obj);
     if (tag == "Yield") return YieldSEXP::generateFrom(obj);
     if (tag == "JSInitialYield") return JSInitialYieldSEXP::generateFrom(obj);
+    if (tag == "IDOP") return IDOPSEXP::generateFrom(obj);
+    if (tag == "JSIDOP") return JSIDOPSEXP::generateFrom(obj);
     throw std::runtime_error("ParseIridiumTypes::specialize unhandled Tag: " + tag);
   }
 };
