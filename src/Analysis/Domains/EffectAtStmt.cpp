@@ -103,6 +103,7 @@ static bool maybeEffect(IRISEXP rVAL)
 EffectAtStmt EffectAtStmt::iter(const std::shared_ptr<BBSEXP> &bb, std::function<void(size_t, EffectAtStmt &)> callback) const
 {
   auto next = this->clone();
+  next.bottom = false;
 
   auto anyReadsOrWritesToCapturedVariablesPredicate = [&](IRISEXP val)
   {
@@ -134,6 +135,7 @@ EffectAtStmt EffectAtStmt::iter(const std::shared_ptr<BBSEXP> &bb, std::function
       auto LVAL = std::dynamic_pointer_cast<EnvBindingSEXP>(envWrite->getLValTarget());
       if (LVAL && supportedTransferEffect(envWrite->getRVal()))
       {
+        next.bottom = false;
         next.validEffect = true;
         next.store = LVAL;
         next.effect = envWrite->getRVal();
@@ -156,6 +158,7 @@ EffectAtStmt EffectAtStmt::iter(const std::shared_ptr<BBSEXP> &bb, std::function
         {
           if (bUsedInEffect == LVAL) // AnyWritesToBindingsUsedInEffect
           {
+            next.bottom = false;
             next.validEffect = false;
             next.store = NULL;
             next.effect = NULL;
@@ -171,6 +174,7 @@ EffectAtStmt EffectAtStmt::iter(const std::shared_ptr<BBSEXP> &bb, std::function
 
         if (hasNode(envWrite->getRVal(), anyReadsToStorePredicate)) // AnyReadsToStore
         {
+          next.bottom = false;
           next.validEffect = false;
           next.store = NULL;
           next.effect = NULL;
@@ -180,6 +184,7 @@ EffectAtStmt EffectAtStmt::iter(const std::shared_ptr<BBSEXP> &bb, std::function
 
         if (hasNode(envWrite, anyReadsOrWritesToCapturedVariablesPredicate)) // AnyReadsOrWritesToCapturedVariables
         {
+          next.bottom = false;
           next.validEffect = false;
           next.store = NULL;
           next.effect = NULL;
@@ -189,6 +194,7 @@ EffectAtStmt EffectAtStmt::iter(const std::shared_ptr<BBSEXP> &bb, std::function
 
         if (hasNode(envWrite->getRVal(), maybeEffect)) // RVAL maybeEffectful
         {
+          next.bottom = false;
           next.validEffect = false;
           next.store = NULL;
           next.effect = NULL;
@@ -198,6 +204,7 @@ EffectAtStmt EffectAtStmt::iter(const std::shared_ptr<BBSEXP> &bb, std::function
     }
     else if (hasNode(stmt, maybeEffect)) // maybeEffectful
     {
+      next.bottom = false;
       next.validEffect = false;
       next.store = NULL;
       next.effect = NULL;
@@ -205,6 +212,7 @@ EffectAtStmt EffectAtStmt::iter(const std::shared_ptr<BBSEXP> &bb, std::function
     }
     else if (hasNode(envWrite, anyReadsOrWritesToCapturedVariablesPredicate)) // AnyReadsOrWritesToCapturedVariables
     {
+      next.bottom = false;
       next.validEffect = false;
       next.store = NULL;
       next.effect = NULL;
