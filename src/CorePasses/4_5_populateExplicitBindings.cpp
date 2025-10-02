@@ -75,6 +75,7 @@ void populateExplicitBindings(IRISEXP fileSexp, std::unordered_map<int, IRIBUILD
           {
             // Top Level Global Declaration for script mode
             sloppyDeclarations.push_back(std::make_pair(binding->getNAME(), flag));
+            // explicitBindings[scopeToHoistTo].push_back(std::make_pair(binding->getNAME(), flag));
           }
           else
           {
