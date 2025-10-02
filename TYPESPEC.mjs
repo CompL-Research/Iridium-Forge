@@ -684,7 +684,7 @@ export default [
     "args": ["Obj", "Field"],
     "flags": {
       "string": [],
-      "void": [],
+      "void": ["SAFE"],
       "bool": [],
       "double": [],
     }
@@ -694,7 +694,7 @@ export default [
     "args": ["Obj", "Field", "Value"],
     "flags": {
       "string": [],
-      "void": [],
+      "void": ["SAFE"],
       "bool": [],
       "double": [],
     }

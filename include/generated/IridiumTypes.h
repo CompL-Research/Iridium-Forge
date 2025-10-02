@@ -1,4 +1,4 @@
-// Generated: 2025-10-02 16:34:46
+// Generated: 2025-10-02 23:46:41
 #pragma once
 #include "Iridium/Globals.h"
 #include "Iridium/IridiumSEXP.h"
@@ -2697,10 +2697,11 @@ public:
   }
 
 
-  JSComputedFieldReadSEXP(IRISEXP Obj, IRISEXP Field) {
+  JSComputedFieldReadSEXP(IRISEXP Obj, IRISEXP Field, bool SAFE) {
     this->tag = "JSComputedFieldRead";
     this->args.push_back(Obj);
     this->args.push_back(Field);
+    if (SAFE) this->setSAFE();
   }
 
 
@@ -2712,6 +2713,11 @@ public:
   void setField(const IRISEXP &obj) { this->args.at(1) = obj; }
   bool hasField() { return 1 < this->args.size(); }
   IRISEXP getField() const { return this->args.at(1); }
+
+
+  void setSAFE() { setFlag("SAFE"); }
+  void unsetSAFE() { removeFlag("SAFE"); }
+  bool hasSAFE() { return hasFlag("SAFE"); }
 
 };
 
@@ -2732,11 +2738,12 @@ public:
   }
 
 
-  JSComputedFieldWriteSEXP(IRISEXP Obj, IRISEXP Field, IRISEXP Value) {
+  JSComputedFieldWriteSEXP(IRISEXP Obj, IRISEXP Field, IRISEXP Value, bool SAFE) {
     this->tag = "JSComputedFieldWrite";
     this->args.push_back(Obj);
     this->args.push_back(Field);
     this->args.push_back(Value);
+    if (SAFE) this->setSAFE();
   }
 
 
@@ -2753,6 +2760,11 @@ public:
   void setValue(const IRISEXP &obj) { this->args.at(2) = obj; }
   bool hasValue() { return 2 < this->args.size(); }
   IRISEXP getValue() const { return this->args.at(2); }
+
+
+  void setSAFE() { setFlag("SAFE"); }
+  void unsetSAFE() { removeFlag("SAFE"); }
+  bool hasSAFE() { return hasFlag("SAFE"); }
 
 };
 
