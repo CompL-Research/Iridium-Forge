@@ -62,7 +62,23 @@ bool hasNode(const IRISEXP &currNode, const std::function<bool(const IRISEXP &)>
   return false;
 }
 
-std::set<IRISEXP> getAllNodes(const IRISEXP &currNode, const std::function<bool(const IRISEXP &)> &pred, std::set<IRISEXP> & result)
+size_t countNode(const IRISEXP &currNode, const std::function<bool(const IRISEXP &)> &pred)
+{
+  if (!currNode)
+    return 0;
+
+  size_t count = 0;
+
+  if (pred(currNode))
+    count++;
+
+  for (const auto &e : currNode->args)
+    count += countNode(e, pred);
+
+  return count;
+}
+
+std::set<IRISEXP> getAllNodes(const IRISEXP &currNode, const std::function<bool(const IRISEXP &)> &pred, std::set<IRISEXP> &result)
 {
   if (!currNode)
     return result;
@@ -155,12 +171,13 @@ IRISEXP getBinding(std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext
 
 int getBBScopeIDX(int bbIDX, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext)
 {
-  for (auto & e: iridiumBuildContext)
+  for (auto &e : iridiumBuildContext)
   {
     auto scopeIDX = e.first;
-    for (auto & bb : e.second->BB)
+    for (auto &bb : e.second->BB)
     {
-      if (bb->getIDX() == bbIDX) return scopeIDX;
+      if (bb->getIDX() == bbIDX)
+        return scopeIDX;
     }
   }
   throw std::runtime_error("Failed to get scopeIDX for a bbIDX");
@@ -168,24 +185,30 @@ int getBBScopeIDX(int bbIDX, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBu
 
 IRIBUILDCONTEXT maybeGetEnclosingTryCatchContext(int currScope, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext)
 {
-  if (currScope < 0) return NULL;
+  if (currScope < 0)
+    return NULL;
   assert(iridiumBuildContext.count(currScope) > 0);
 
   auto &buildContext = iridiumBuildContext[currScope];
   auto &startBB = buildContext->BB[0];
 
-  if (startBB->hasTopLevel()) return NULL;
-  if (startBB->hasClosureBoundary()) return NULL;
-  
-  if (buildContext->tryContext) return iridiumBuildContext[currScope];
+  if (startBB->hasTopLevel())
+    return NULL;
+  if (startBB->hasClosureBoundary())
+    return NULL;
+
+  if (buildContext->tryContext)
+    return iridiumBuildContext[currScope];
 
   return maybeGetEnclosingTryCatchContext(iridiumBuildContext[currScope]->parent, iridiumBuildContext);
 }
 
 bool hasScopePath(int currScope, int targetScope, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext)
 {
-  if (currScope == targetScope) return true;
-  if (currScope < 0) return false;
+  if (currScope == targetScope)
+    return true;
+  if (currScope < 0)
+    return false;
 
   assert(iridiumBuildContext.count(currScope) > 0);
 
@@ -596,7 +619,8 @@ void rebalanceStackFrame(std::shared_ptr<BBContainerSEXP> container, std::unorde
   assert(bindingsSEXP && "Expected bindingsSEXP");
 
   // Initialize remote bindings, this only holds valid for top level module references...
-  if (isTopLevel) {
+  if (isTopLevel)
+  {
     int i = 0;
     for (auto &b : bindingsSEXP->getRemoteBindings()->args)
     {

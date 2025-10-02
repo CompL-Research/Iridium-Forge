@@ -18,7 +18,7 @@
 #define IRIDIUM_DUMP_AFTER_STACK_COLLAPSE 1
 #define IRIDIUM_DUMP_AFTER_CORE_PASSES 1 // <- Right before Opt
 
-#define PASSMGR_DEBUG 0
+#define PASSMGR_DEBUG 1
 
 #define IRIDIUM_DUMP_INITIAL_CFG 0
 #define IRIDIUM_DUMP_FINAL_CFG 0
@@ -122,6 +122,7 @@ IRIBUILDCONTEXT findReturnTarget(
     std::vector<std::variant<LoopConfig, TryContext>> &intermediateContexts);
 
 bool hasNode(const IRISEXP &currNode, const std::function<bool(const IRISEXP &)> &pred);
+size_t countNode(const IRISEXP &currNode, const std::function<bool(const IRISEXP &)> &pred);
 std::set<IRISEXP> getAllNodes(const IRISEXP &currNode, const std::function<bool(const IRISEXP &)> &pred, std::set<IRISEXP> & result);
 void insertAfter(std::vector<IRISEXP> &vec, IRISEXP after, const std::vector<IRISEXP> &toInsert);
 void insertAfter(std::vector<IRISEXP> &vec, IRISEXP after, IRISEXP toInsert);
