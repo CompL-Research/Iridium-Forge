@@ -5,6 +5,7 @@
 #include "Iridium/Analysis/Domains/Liveness.h"
 #include "Iridium/Analysis/Domains/EffectAtStmt.h"
 #include "Iridium/Analysis/Domains/CopyPropInfo.h"
+#include "Iridium/Analysis/Domains/SetSafePropKeyAccesses.h"
 #include "Iridium/Analysis/DataflowSolver.h"
 #include "Iridium/OptimizationPasses/ConstantProp.h"
 #include "Iridium/OptimizationPasses/WriteBarrierReduction.h"
@@ -13,6 +14,7 @@
 #include "Iridium/OptimizationPasses/DCE.h"
 #include "Iridium/OptimizationPasses/DeadBindingRemoval.h"
 #include "Iridium/OptimizationPasses/ReduceComputedFieldOps.h"
+#include "Iridium/OptimizationPasses/RemoveRedundantPropKeyCast.h"
 #include "Iridium/CorePasses/3_filterNops.h"
 #include "external/json.hpp"
 #include <fstream>
@@ -47,6 +49,7 @@ void PassManager::optimize(int level)
       Liveness::blacklist = capturedStackBindings;
       ConstantsAtStmt::blacklist = capturedStackBindings;
       EffectAtStmt::blacklist = capturedStackBindings;
+      SetSafePropKeyAccesses::blacklist = capturedStackBindings;
 
       std::string passBasename = "Iter"+std::to_string((int)i) + "_BB" + std::to_string((int)bbContView.getStartBBIDX());
 
@@ -64,6 +67,7 @@ void PassManager::optimize(int level)
       }
 
       #if PASSMGR_DEBUG == 1
+      // DBG("End ConstantProp");
       PASSMGR_DEBUGVector.push_back(bbContView.getDebugJSON(passBasename + "_1_CONSTANT_PROP"));
       #endif
       {
@@ -77,6 +81,7 @@ void PassManager::optimize(int level)
       }
 
       #if PASSMGR_DEBUG == 1
+      // DBG("End CopyProp");
       PASSMGR_DEBUGVector.push_back(bbContView.getDebugJSON(passBasename + "_2_COPY_PROP"));
       #endif
 
@@ -91,6 +96,7 @@ void PassManager::optimize(int level)
       }
 
       #if PASSMGR_DEBUG == 1
+      // DBG("End WriteBarrierReduction");
       PASSMGR_DEBUGVector.push_back(bbContView.getDebugJSON(passBasename + "_3_WBR"));
       #endif
 
@@ -106,6 +112,7 @@ void PassManager::optimize(int level)
       }
 
       #if PASSMGR_DEBUG == 1
+      // DBG("End DCE");
       PASSMGR_DEBUGVector.push_back(bbContView.getDebugJSON(passBasename + "_4_DCE"));
       #endif
 
@@ -157,7 +164,24 @@ void PassManager::optimize(int level)
       }
 
       #if PASSMGR_DEBUG == 1
+      // DBG("End Effect Prop");
       PASSMGR_DEBUGVector.push_back(bbContView.getDebugJSON(passBasename + "_5_EFFECT_PROP"));
+      #endif
+
+      {
+        // std::cout << "Starting SetSafePropKeyAccesses" << std::endl;
+        DataflowSolver<SetSafePropKeyAccesses> setSafePropKeyAccesses(bbContView.cfgManager, true, [&]()
+                                                              { return SetSafePropKeyAccesses::bottom(uncapturedStackBindings); });
+
+        for (auto &e : setSafePropKeyAccesses.run(SetSafePropKeyAccesses::boundary(uncapturedStackBindings)))
+        {
+          RemoveRedundantPropKeyCast::Transform(bbContView.cfgManager.cfg[e.first], e.second);
+        }
+      }
+
+      #if PASSMGR_DEBUG == 1
+      // DBG("End SetSafePropKeyAccesses");
+      PASSMGR_DEBUGVector.push_back(bbContView.getDebugJSON(passBasename + "_5_SAFE_PROP_KEY_ACCESS"));
       #endif
 
       reduceComputedFieldOps(bbContView);

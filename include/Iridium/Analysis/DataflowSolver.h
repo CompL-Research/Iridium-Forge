@@ -31,6 +31,11 @@ public:
     while (changed)
     {
       changed = false;
+      #if DEBUG == 1
+      {
+        std::cout << std::endl << "Dataflow Solver Iteration " << std::endl;
+      }
+      #endif
 
       for (auto v : boost::make_iterator_range(boost::vertices(cfgManager.cfg)))
       {
