@@ -84,7 +84,7 @@ export default [
     "args": [],
     "flags": {
       "string": [],
-      "void": ["CCall", "ConstructorCall", "PrivateCall", "Import", "Super", "V8Intrinsic"],
+      "void": ["CCall", "ConstructorCall", "PrivateCall", "Import", "Super", "V8Intrinsic", "TAILCALL"],
       "bool": [],
       "double": ["JSDirectEval"],
     }
