@@ -21,7 +21,7 @@ void patchExpr(IRISEXP currSEXP)
       auto currField = computedFieldRead->getField();
       if (auto booleanField = std::dynamic_pointer_cast<BooleanSEXP>(currField))
       {
-        std::cout << "Reduced Computed Field Read -> Boolean" << std::endl;
+        // std::cout << "Reduced Computed Field Read -> Boolean" << std::endl;
         currSEXP->args.at(i) = std::make_shared<FieldReadSEXP>(
           computedFieldRead->getObj(), 
           std::make_shared<StringSEXP>(booleanField->getIridiumPrimitive() ? "true" : "false")
@@ -29,7 +29,7 @@ void patchExpr(IRISEXP currSEXP)
       }
       else if (auto nullObj = std::dynamic_pointer_cast<NullSEXP>(currField))
       {
-        std::cout << "Reduced Computed Field Read -> Null" << std::endl;
+        // std::cout << "Reduced Computed Field Read -> Null" << std::endl;
         currSEXP->args.at(i) = std::make_shared<FieldReadSEXP>(
           computedFieldRead->getObj(), 
           std::make_shared<StringSEXP>("null")
@@ -40,7 +40,7 @@ void patchExpr(IRISEXP currSEXP)
         double numberStored = numberObj->getIridiumPrimitive();
         if (!hasFractionalPart(numberStored))
         {
-          std::cout << "Reduced Computed Field Read -> Number (non fractional)" << std::endl;
+          // std::cout << "Reduced Computed Field Read -> Number (non fractional)" << std::endl;
           currSEXP->args.at(i) = std::make_shared<FieldReadSEXP>(
             computedFieldRead->getObj(), 
             std::make_shared<StringSEXP>(std::to_string(static_cast<int>(std::trunc(numberStored))))
@@ -48,7 +48,7 @@ void patchExpr(IRISEXP currSEXP)
         }
         else
         {
-          std::cout << "Reduced Computed Field Read -> Number (fractional)" << std::endl;
+          // std::cout << "Reduced Computed Field Read -> Number (fractional)" << std::endl;
           currSEXP->args.at(i) = std::make_shared<FieldReadSEXP>(
             computedFieldRead->getObj(), 
             std::make_shared<StringSEXP>(std::to_string(numberStored))
@@ -57,7 +57,7 @@ void patchExpr(IRISEXP currSEXP)
       }
       else if (auto stringObj = std::dynamic_pointer_cast<StringSEXP>(currField))
       {
-        std::cout << "Reduced Computed Field Read -> String" << std::endl;
+        // std::cout << "Reduced Computed Field Read -> String" << std::endl;
         currSEXP->args.at(i) = std::make_shared<FieldReadSEXP>(
           computedFieldRead->getObj(), 
           std::make_shared<StringSEXP>(stringObj->getIridiumPrimitive())
@@ -74,7 +74,7 @@ void patchExpr(IRISEXP currSEXP)
       auto currField = computedFieldWrite->getField();
       if (auto booleanField = std::dynamic_pointer_cast<BooleanSEXP>(currField))
       {
-        std::cout << "Reduced Computed Field Write -> Boolean" << std::endl;
+        // std::cout << "Reduced Computed Field Write -> Boolean" << std::endl;
         currSEXP->args.at(i) = std::make_shared<FieldWriteSEXP>(
           computedFieldWrite->getObj(), 
           std::make_shared<StringSEXP>(booleanField->getIridiumPrimitive() ? "true" : "false"),
@@ -83,7 +83,7 @@ void patchExpr(IRISEXP currSEXP)
       }
       else if (auto nullObj = std::dynamic_pointer_cast<NullSEXP>(currField))
       {
-        std::cout << "Reduced Computed Field Write -> Null" << std::endl;
+        // std::cout << "Reduced Computed Field Write -> Null" << std::endl;
         currSEXP->args.at(i) = std::make_shared<FieldWriteSEXP>(
           computedFieldWrite->getObj(), 
           std::make_shared<StringSEXP>("null"),
@@ -95,7 +95,7 @@ void patchExpr(IRISEXP currSEXP)
         double numberStored = numberObj->getIridiumPrimitive();
         if (!hasFractionalPart(numberStored))
         {
-          std::cout << "Reduced Computed Field Write -> Number (non fractional)" << std::endl;
+          // std::cout << "Reduced Computed Field Write -> Number (non fractional)" << std::endl;
           currSEXP->args.at(i) = std::make_shared<FieldWriteSEXP>(
             computedFieldWrite->getObj(), 
             std::make_shared<StringSEXP>(std::to_string(static_cast<int>(std::trunc(numberStored)))),
@@ -104,7 +104,7 @@ void patchExpr(IRISEXP currSEXP)
         }
         else
         {
-          std::cout << "Reduced Computed Field Write -> Number (fractional)" << std::endl;
+          // std::cout << "Reduced Computed Field Write -> Number (fractional)" << std::endl;
           currSEXP->args.at(i) = std::make_shared<FieldWriteSEXP>(
             computedFieldWrite->getObj(), 
             std::make_shared<StringSEXP>(std::to_string(numberStored)),
@@ -114,7 +114,7 @@ void patchExpr(IRISEXP currSEXP)
       }
       else if (auto stringObj = std::dynamic_pointer_cast<StringSEXP>(currField))
       {
-        std::cout << "Reduced Computed Field Write -> String" << std::endl;
+        // std::cout << "Reduced Computed Field Write -> String" << std::endl;
         currSEXP->args.at(i) = std::make_shared<FieldWriteSEXP>(
           computedFieldWrite->getObj(), 
           std::make_shared<StringSEXP>(stringObj->getIridiumPrimitive()),
