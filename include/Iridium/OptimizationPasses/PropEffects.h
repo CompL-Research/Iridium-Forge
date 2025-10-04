@@ -302,8 +302,10 @@ class PropEffects
     if (auto o = std::dynamic_pointer_cast<PVTEnvReadSEXP>(expr)) return false;
 
     if (auto o = std::dynamic_pointer_cast<EnvReadSEXP>(expr)) {
-      throw std::runtime_error("Unreachable case... prop effects");
+      // If this happens, this might be an unsafe read, possibly side effect prone...
       return false;
+      // throw std::runtime_error("Unreachable case... prop effects");
+      // return false;
     }
 
     if (auto o = std::dynamic_pointer_cast<FieldReadSEXP>(expr)) 

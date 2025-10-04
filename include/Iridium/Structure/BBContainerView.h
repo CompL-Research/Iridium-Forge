@@ -33,11 +33,13 @@ public:
     CFGManager & cfgManager,
     BindingsView & bindingsView,
     SymbolTable & symbolTable,
-    std::unordered_map<int, IRIBUILDCONTEXT> & iridiumBuildContext
+    std::unordered_map<int, IRIBUILDCONTEXT> & iridiumBuildContext,
+    std::unordered_map<std::shared_ptr<EnvBindingSEXP>, std::shared_ptr<EnvBindingSEXP>> & localIndirectionMap,
+    std::unordered_map<std::shared_ptr<RemoteEnvBindingSEXP>, std::shared_ptr<RemoteEnvBindingSEXP>> & remoteIndirectionMap
   ) : 
   targetContainer(targetContainer),
-  cfgManager(cfgManager.clone()),
-  bindingsView(bindingsView.clone()),
+  bindingsView(bindingsView.clone(localIndirectionMap, remoteIndirectionMap)),
+  cfgManager(cfgManager.clone(localIndirectionMap, remoteIndirectionMap)),
   symbolTable(symbolTable),
   iridiumBuildContext(iridiumBuildContext) {}
 
@@ -59,7 +61,9 @@ public:
 
   BBContainerView clone()
   {
-    BBContainerView res(targetContainer, cfgManager, bindingsView, symbolTable, iridiumBuildContext);
+    std::unordered_map<std::shared_ptr<EnvBindingSEXP>, std::shared_ptr<EnvBindingSEXP>> localIndirectionMap;
+    std::unordered_map<std::shared_ptr<RemoteEnvBindingSEXP>, std::shared_ptr<RemoteEnvBindingSEXP>> remoteIndirectionMap;
+    BBContainerView res(targetContainer, cfgManager, bindingsView, symbolTable, iridiumBuildContext, localIndirectionMap, remoteIndirectionMap);
     return res;
   }
 

@@ -1,11 +1,14 @@
 #include "Iridium/Structure/CFGManager.h"
-#include "Iridium/Globals.h"
+#include "Iridium/Cloning.h"
 #include "external/graph-boost-1.89.0/adjacency_list.hpp"
 #include "external/graph-boost-1.89.0/graph_traits.hpp"
 #include "external/graph-boost-1.89.0/iteration_macros.hpp"
 #include <filesystem>
 
-CFGManager CFGManager::clone()
+CFGManager CFGManager::clone(
+  std::unordered_map<std::shared_ptr<EnvBindingSEXP>, std::shared_ptr<EnvBindingSEXP>> & localIndirectionMap, 
+  std::unordered_map<std::shared_ptr<RemoteEnvBindingSEXP>, std::shared_ptr<RemoteEnvBindingSEXP>> & remoteIndirectionMap
+)
 {
   CFGManager res(iridiumBuildContext);
   res.targetContainer = targetContainer;
@@ -16,7 +19,7 @@ CFGManager CFGManager::clone()
 
   for (auto &e : bbIdxToVertex)
   {
-    res.cfg[e.second] = cloneBB(cfg[e.second]);
+    res.cfg[e.second] = cloneBB(cfg[e.second], localIndirectionMap, remoteIndirectionMap);
   }
 
   return res;
@@ -221,6 +224,37 @@ std::vector<IRISEXP> CFGManager::chapati()
       }
     }
   }
+
+  bool decorateBBEntries = false;
+
+  if (decorateBBEntries)
+  {
+    for (auto & b : result)
+    {
+      auto bb = std::dynamic_pointer_cast<BBSEXP>(b);
+      assert(bb);
+      {
+        auto cs = std::make_shared<CallSiteSEXP>(false, false, false, false, false, false, false, false);
+        cs->unsetJSDirectEval();
+
+        cs->args.push_back(
+            std::make_shared<FieldReadSEXP>(
+                std::make_shared<EnvReadSEXP>(
+                    std::make_shared<GlobalBindingSEXP>("console"),
+                    false),
+                std::make_shared<StringSEXP>("log")));
+
+        cs->args.push_back(
+            std::make_shared<StringSEXP>("Entering BB" + std::to_string(bb->getIDX())));
+
+        auto o = std::make_shared<StackRejectSEXP>(1);
+        o->args.push_back(cs);
+        
+        bb->args.insert(bb->args.begin(), o);        
+      }
+    }
+  }
+
 
   return result;
 }

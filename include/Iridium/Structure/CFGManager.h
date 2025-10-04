@@ -41,7 +41,10 @@ public:
   CFG cfg;
   Vertex entry;
 
-  CFGManager clone();
+  CFGManager clone(
+    std::unordered_map<std::shared_ptr<EnvBindingSEXP>, std::shared_ptr<EnvBindingSEXP>> & localIndirectionMap, 
+    std::unordered_map<std::shared_ptr<RemoteEnvBindingSEXP>, std::shared_ptr<RemoteEnvBindingSEXP>> & remoteIndirectionMap
+  );
 
   explicit CFGManager(std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext) : entry(boost::graph_traits<CFG>::null_vertex()), iridiumBuildContext(iridiumBuildContext) {}
 

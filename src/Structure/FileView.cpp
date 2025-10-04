@@ -1,12 +1,12 @@
 #include "Iridium/Structure/FileView.h"
 
-
 void FileView::init()
 {
   while (true)
   {
     auto bbContainer = std::dynamic_pointer_cast<BBContainerSEXP>(targetContainer->args.back());
-    if (!bbContainer) break;
+    if (!bbContainer)
+      break;
     bbContainerViews.push_back(BBContainerView(bbContainer, symbolTable, iridiumBuildContext));
     targetContainer->args.pop_back(); // Remove the container completely while it is owned by the view.
   }
@@ -15,7 +15,7 @@ void FileView::init()
 void FileView::dumpSymbolTable(std::ostringstream &oss)
 {
   oss << "== Symbol Table ==" << std::endl;
-  for (auto & b : symbolTable)
+  for (auto &b : symbolTable)
   {
     b.first->dump(oss, true, 2);
     oss << std::endl;
@@ -42,17 +42,19 @@ void FileView::deleteBinding(std::shared_ptr<EnvBindingSEXP> binding)
 
 std::shared_ptr<BBSEXP> FileView::getBB(SEXPPath path)
 {
-  for (auto & bbView : bbContainerViews)
+  for (auto &bbView : bbContainerViews)
   {
     if (bbView.getScopeIdx() == path.scopeIdx)
     {
-      for (auto & bb : bbView.targetContainer->getBB()->args)
+      for (auto &bb : bbView.targetContainer->getBB()->args)
       {
         if (auto bbSEXP = std::dynamic_pointer_cast<BBSEXP>(bb))
         {
-          if (bbSEXP->getIDX() == path.bbIdx) return bbSEXP;
-        } else throw std::runtime_error("Expected BBSEXP");
-        
+          if (bbSEXP->getIDX() == path.bbIdx)
+            return bbSEXP;
+        }
+        else
+          throw std::runtime_error("Expected BBSEXP");
       }
     }
   }
@@ -63,9 +65,8 @@ std::shared_ptr<BBSEXP> FileView::getBB(SEXPPath path)
 std::shared_ptr<FileSEXP> FileView::checkout()
 {
   refreshSymbolTable();
-  
 
-  for (auto & v : bbContainerViews)
+  for (auto &v : bbContainerViews)
   {
     targetContainer->args.push_back(v.checkout());
   }
@@ -73,32 +74,20 @@ std::shared_ptr<FileSEXP> FileView::checkout()
   return targetContainer;
 }
 
-
 void FileView::updateSafelyCapturedBindingsSet(double bbIDX, TDZA val)
 {
-  for (auto & targetContainer : bbContainerViews)
+  for (auto &targetContainer : bbContainerViews)
   {
     if (targetContainer.getStartBBIDX() == bbIDX)
     {
-      std::shared_ptr<ListSEXP> remoteBindingsList = std::dynamic_pointer_cast<ListSEXP>(targetContainer.bindingsView.remoteBindings);
-      assert(remoteBindingsList);
 
-      for (auto & b : remoteBindingsList->args)
+      for (auto &rBinding : targetContainer.bindingsView.remoteBindings)
       {
-        std::shared_ptr<ListSEXP> remoteBindingsList = std::dynamic_pointer_cast<ListSEXP>(targetContainer.bindingsView.remoteBindings);
-        assert(remoteBindingsList);
+        std::shared_ptr<EnvBindingSEXP> resolvedBinding = resolveRemoteBinding(rBinding);
 
-        for (auto & r : remoteBindingsList->args)
+        if (val.dfv.store.count(resolvedBinding) > 0 && val.dfv.store[resolvedBinding].kind == TDZLattice::SAFE)
         {
-          std::shared_ptr<RemoteEnvBindingSEXP> rBinding = std::dynamic_pointer_cast<RemoteEnvBindingSEXP>(r);
-          assert(rBinding);
-
-          std::shared_ptr<EnvBindingSEXP> resolvedBinding = resolveRemoteBinding(rBinding);
-
-          if (val.dfv.store.count(resolvedBinding) > 0 && val.dfv.store[resolvedBinding].kind == TDZLattice::SAFE)
-          {
-            safelyCapturedBindings.insert(rBinding);
-          }
+          safelyCapturedBindings.insert(rBinding);
         }
       }
     }

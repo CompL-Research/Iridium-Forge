@@ -152,10 +152,8 @@ void BBContainerView::populateSymbolTable()
 
   if (targetContainer->hasTopLevel())
   {
-    for (auto &b : bindingsView.remoteBindings->args)
+    for (auto &currRemoteBinding : bindingsView.remoteBindings)
     {
-      auto currRemoteBinding = std::dynamic_pointer_cast<RemoteEnvBindingSEXP>(b);
-      assert(currRemoteBinding);
       auto currBinding = resolveRemoteBinding(currRemoteBinding);
       assert(currBinding);
       if (symbolTable.find(currBinding) == symbolTable.end())
@@ -210,15 +208,13 @@ void BBContainerView::populateSymbolTable()
     }
   }
 
-  for (auto &b : bindingsView.remoteBindings->args)
+  for (auto &currRemoteBinding : bindingsView.remoteBindings)
   {
-    auto currRemoteBinding = std::dynamic_pointer_cast<RemoteEnvBindingSEXP>(b);
-    assert(currRemoteBinding);
     auto currBinding = resolveRemoteBinding(currRemoteBinding);
     assert(currBinding);
     auto predicate = [&](const IRISEXP &ele)
     {
-      return ele == b;
+      return ele == currRemoteBinding;
     };
 
     auto &readsVector = targetContainer->hasTopLevel() ? symbolTable[currBinding].localReads : symbolTable[currBinding].remoteReads;
@@ -236,14 +232,14 @@ void BBContainerView::populateSymbolTable()
           SEXPPath path = {targetContainer->getScopeIDX(), currBB->getIDX(), stmt};
           if (auto implicitBindingDecl = std::dynamic_pointer_cast<JSImplicitBindingDeclarationSEXP>(stmt))
           {
-            if (implicitBindingDecl->getStore() == b)
+            if (implicitBindingDecl->getStore() == currRemoteBinding)
               writesVector.push_back(path);
             else
               readsVector.push_back(path);
           }
           else if (auto envWrite = std::dynamic_pointer_cast<EnvWriteSEXP>(stmt))
           {
-            if (envWrite->getLValTarget() == b)
+            if (envWrite->getLValTarget() == currRemoteBinding)
               writesVector.push_back(path);
             else
               readsVector.push_back(path);
@@ -607,6 +603,23 @@ std::shared_ptr<BBContainerSEXP> BBContainerView::checkout()
       }
       // std::string NAME, bool ASW, bool JSARG, bool JSRESTARG, bool JSLET, bool JSCONST, bool JSVAR, double IDX, double REFIDX, double Scope, double ParentScope, double NEXT
     }
+
+    std::sort(finalStack.begin(), finalStack.end(),
+          [](const IRISEXP &a, const IRISEXP &b) {
+            auto a1 = std::dynamic_pointer_cast<EnvBindingSEXP>(a);
+            auto b1 = std::dynamic_pointer_cast<EnvBindingSEXP>(b);
+            assert(a1);
+            assert(b1);
+            if (a1->hasJSARG() || b1->hasJSARG())
+            {
+              if (a1->hasJSARG() && b1->hasJSARG()) return a1->getREFIDX() < b1->getREFIDX();
+
+              if (a1->hasJSARG()) return true;
+              else return false;
+            }
+            return a1->getREFIDX() < b1->getREFIDX();
+          });
+
 
     std::cout << "Stack collapse: " << bindingsObj->getLocalBindings()->args.size() << " -> " << finalStack.size() << std::endl;
 
