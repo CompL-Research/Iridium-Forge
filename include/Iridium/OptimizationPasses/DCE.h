@@ -8,7 +8,15 @@ class DCE
   {
     if (
       auto bindingRead = std::dynamic_pointer_cast<EnvReadSEXP>(rVAL)
-    ) return bindingRead->hasSAFE();
+    ) {
+      if (auto b = std::dynamic_pointer_cast<GlobalBindingSEXP>(bindingRead->getObj())) return false;
+      if (auto b = std::dynamic_pointer_cast<EnvBindingSEXP>(bindingRead->getObj()))
+      {
+        if (b->hasJSARG() || b->hasJSRESTARG())
+          return false;
+      }
+      return !bindingRead->hasSAFE();
+    }
     if (
       std::dynamic_pointer_cast<BooleanSEXP>(rVAL) ||
       std::dynamic_pointer_cast<LambdaSEXP>(rVAL) ||
