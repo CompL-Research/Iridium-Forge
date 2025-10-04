@@ -705,6 +705,30 @@ std::set<std::shared_ptr<EnvBindingSEXP>> BBContainerView::getCapturedStackBindi
   return res;
 }
 
+bool BBContainerView::hasImplicitBindings()
+{
+  std::set<std::shared_ptr<EnvBindingSEXP>> res;
+  for (auto &e : bindingsView.bindings)
+  {
+    for (auto &b : e.second)
+    {
+      if (
+        b->getNAME() == "arguments" 
+        || b->getNAME() == "<this_func>" 
+        || b->getNAME() == "<new_target>" 
+        || b->getNAME() == "<home_obj>" 
+        || b->getNAME() == "<var_obj>" 
+        || b->getNAME() == "<module_meta>"
+        || b->getNAME() == "<super_ctr>"
+        || b->getNAME() == "<super_obj>"
+        || b->getNAME() == "this"
+        || b->getNAME() == "ret"
+      ) return true;
+    }
+  }
+  return false;
+}
+
 json BBContainerView::getDebugJSON(const std::string &title)
 {
   json data_object = {

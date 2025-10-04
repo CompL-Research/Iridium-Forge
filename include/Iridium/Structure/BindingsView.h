@@ -24,7 +24,30 @@ public:
     initBindingsTree();
   }
 
+  BindingsView(
+      std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext) : iridiumBuildContext(iridiumBuildContext)
+  {
+  }
+
   void initBindingsTree();
+  
+  void demoteArgumentsToRoot();
+
+  void mergeBindingsTree(double scopeIdx, BindingsView & other);
+
+  BindingsView clone()
+  {
+    BindingsView res(iridiumBuildContext);
+    res.prev = prev;
+    res.next = next;
+    res.root = root;
+    res.args = args;
+    res.bindings = bindings;
+    res.remoteBindings = remoteBindings;
+    res.targetContainer = targetContainer;
+
+    return res;
+  }
 
   void removeBinding(std::shared_ptr<EnvBindingSEXP> binding);
 

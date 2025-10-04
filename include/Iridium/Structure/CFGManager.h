@@ -27,11 +27,10 @@ using CFG = boost::adjacency_list<
     boost::vecS,
     boost::bidirectionalS,
     std::shared_ptr<BBSEXP>,
-    EdgeInfo
->;
+    EdgeInfo>;
 
 using Vertex = boost::graph_traits<CFG>::vertex_descriptor;
-using Edge   = boost::graph_traits<CFG>::edge_descriptor;
+using Edge = boost::graph_traits<CFG>::edge_descriptor;
 
 class CFGManager
 {
@@ -39,6 +38,10 @@ public:
   std::shared_ptr<ListSEXP> targetContainer;
   std::unordered_map<double, Vertex> bbIdxToVertex;
   std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext;
+  CFG cfg;
+  Vertex entry;
+
+  CFGManager clone();
 
   explicit CFGManager(std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext) : entry(boost::graph_traits<CFG>::null_vertex()), iridiumBuildContext(iridiumBuildContext) {}
 
@@ -80,6 +83,28 @@ public:
   void connect(Vertex from, Vertex to, EdgeInfo info)
   {
     boost::add_edge(from, to, info, cfg);
+  }
+
+  void transferSuccessors(Vertex source, Vertex target)
+  {
+    // Collect outgoing edges first (can't modify while iterating directly)
+    std::vector<std::pair<Vertex, EdgeInfo>> succs;
+    for (auto e : boost::make_iterator_range(boost::out_edges(source, cfg)))
+    {
+      Vertex succ = boost::target(e, cfg);
+      EdgeInfo info = cfg[e]; // get the edge property
+      succs.emplace_back(succ, info);
+    }
+
+    // Add edges from target to all successors
+    for (auto &[succ, info] : succs)
+    {
+      if (succ != target) // avoid self-loop unless you want it
+        connect(target, succ, info);
+    }
+
+    // Now remove all outgoing edges from source
+    clear_out_edges(source, cfg);
   }
 
   // Get successors
@@ -237,7 +262,7 @@ public:
     {
       std::stringstream ss;
 
-      for (auto & stmt : cfg[v]->args)
+      for (auto &stmt : cfg[v]->args)
       {
         stmt->vistaPrint(ss, 0);
       }
@@ -251,8 +276,9 @@ public:
 
   std::vector<IRISEXP> chapati();
 
-  CFG cfg;
-
-private:
-  Vertex entry;
+  std::vector<Vertex> getVertices()
+  {
+    auto verts = boost::make_iterator_range(boost::vertices(cfg));
+    return std::vector<Vertex>(verts.begin(), verts.end());
+  }
 };

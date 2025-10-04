@@ -1,6 +1,38 @@
 #include "Iridium/Structure/BindingsView.h"
 #include "generated/IridiumTypes.h"
 
+void BindingsView::demoteArgumentsToRoot()
+{
+  for (auto & a : args)
+  {
+    a->setJSARG();
+    a->unsetJSRESTARG();
+    a->setJSVAR();
+    bindings[root].push_back(a);
+  }
+  args.clear();
+}
+
+void BindingsView::mergeBindingsTree(double scopeIdx, BindingsView & other)
+{
+  next[scopeIdx].insert(other.root);
+  for (auto & e : other.prev)
+  {
+    assert(prev.count(e.first) == 0);
+    prev[e.first] = e.second;
+  }
+
+  for (auto & e : other.next)
+  {
+    assert(next.count(e.first) == 0);
+    
+    for (auto s : e.second)
+    {
+      next[e.first].insert(s);
+    }
+  }
+}
+
 void BindingsView::initBindingsTree()
 {
   bindings[root] = std::vector<std::shared_ptr<EnvBindingSEXP>>();
@@ -72,6 +104,11 @@ std::shared_ptr<BindingsSEXP> BindingsView::checkout()
 
   for (auto & a : args)
   {
+    // // Restore flags, this can get affected if bindings were demoted inside a clone
+    // a->setJSARG();
+    // a->unsetJSLET();
+    // a->unsetJSCONST();
+    // a->unsetJSVAR();
     res.push_back(a);
   }
 
@@ -122,5 +159,8 @@ std::shared_ptr<BindingsSEXP> BindingsView::checkout()
   }
 
   localBindings->args = std::move(res);
+
+
+
   return targetContainer;
 }

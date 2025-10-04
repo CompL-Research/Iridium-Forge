@@ -145,6 +145,8 @@ bool hasBindingReference(std::shared_ptr<BindingsSEXP> bindingsSEXP, double idx,
 BBSEXPFLAGS getBBFlag(std::shared_ptr<BBSEXP> b);
 void setBBFlag(std::shared_ptr<BBSEXP> b, BBSEXPFLAGS flagToSet);
 
+std::shared_ptr<BBSEXP> cloneBB(std::shared_ptr<BBSEXP> bb);
+
 void balanceStackFrame(std::shared_ptr<BBContainerSEXP> container, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext);
 void rebalanceStackFrame(std::shared_ptr<BBContainerSEXP> container, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext, bool isTopLevel);
 int getRegularClosureFlag();

@@ -43,6 +43,22 @@ public:
 
   std::vector<BBContainerView> &getBBContainerViews() { return bbContainerViews; }
 
+  BBContainerView &getContainer(double idx) {
+    for (auto & bbCont : bbContainerViews)
+    {
+      if (bbCont.targetContainer->getStartBBIDX() == idx) return bbCont;
+    }
+    throw std::runtime_error("Failed to fetch the desired container");
+  }
+
+  BBContainerView &getTopLevelContainer() {
+    for (auto & bbCont : bbContainerViews)
+    {
+      if (bbCont.targetContainer->hasTopLevel()) return bbCont;
+    }
+    throw std::runtime_error("Failed to fetch top level container");
+  }
+
   std::shared_ptr<BBSEXP> getBB(SEXPPath path);
 
   std::shared_ptr<FileSEXP> checkout();

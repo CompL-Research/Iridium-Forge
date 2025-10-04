@@ -28,6 +28,19 @@ private:
 public:
   BBContainerView(std::shared_ptr<BBContainerSEXP> target, SymbolTable & symbolTable, std::unordered_map<int, IRIBUILDCONTEXT> & iridiumBuildContext);
 
+  BBContainerView(
+    std::shared_ptr<BBContainerSEXP> targetContainer,
+    CFGManager & cfgManager,
+    BindingsView & bindingsView,
+    SymbolTable & symbolTable,
+    std::unordered_map<int, IRIBUILDCONTEXT> & iridiumBuildContext
+  ) : 
+  targetContainer(targetContainer),
+  cfgManager(cfgManager.clone()),
+  bindingsView(bindingsView.clone()),
+  symbolTable(symbolTable),
+  iridiumBuildContext(iridiumBuildContext) {}
+
   void initCFG();
   void populateSymbolTable();
   
@@ -40,7 +53,15 @@ public:
 
   std::set<std::shared_ptr<EnvBindingSEXP>> getCapturedStackBindings();
 
+  bool hasImplicitBindings();
+
   std::shared_ptr<BBContainerSEXP> checkout();
+
+  BBContainerView clone()
+  {
+    BBContainerView res(targetContainer, cfgManager, bindingsView, symbolTable, iridiumBuildContext);
+    return res;
+  }
 
   json getDebugJSON(const std::string & title);
 };

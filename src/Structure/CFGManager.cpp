@@ -1,8 +1,26 @@
 #include "Iridium/Structure/CFGManager.h"
+#include "Iridium/Globals.h"
 #include "external/graph-boost-1.89.0/adjacency_list.hpp"
 #include "external/graph-boost-1.89.0/graph_traits.hpp"
 #include "external/graph-boost-1.89.0/iteration_macros.hpp"
 #include <filesystem>
+
+CFGManager CFGManager::clone()
+{
+  CFGManager res(iridiumBuildContext);
+  res.targetContainer = targetContainer;
+  res.bbIdxToVertex = bbIdxToVertex;
+  res.cfg = cfg;
+  res.entry = entry;
+  // Clone basic blocks
+
+  for (auto &e : bbIdxToVertex)
+  {
+    res.cfg[e.second] = cloneBB(cfg[e.second]);
+  }
+
+  return res;
+}
 
 // DFS with memoization, handles multiple exits
 int dfsHeight(const CFG &g, Vertex u,
@@ -66,7 +84,7 @@ std::vector<IRISEXP> CFGManager::chapati()
   }
 #endif
   std::unordered_map<Vertex, int> heightMap = computeHeights(cfg, entry);
-  
+
   std::set<Vertex> processed;
 
   auto safeToMerge = [&](Vertex v, std::shared_ptr<BBSEXP> currBB)

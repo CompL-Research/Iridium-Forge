@@ -430,6 +430,19 @@ BBSEXPFLAGS getBBFlag(std::shared_ptr<BBSEXP> b)
   throw std::runtime_error("Failed to get a valid flag from a BBSEXP");
 }
 
+std::shared_ptr<BBSEXP> cloneBB(std::shared_ptr<BBSEXP> bb)
+{
+  // bool TopLevel, bool ClosureBoundary, bool Lexical, double IDX, double ScopeIDX
+  std::shared_ptr<BBSEXP> res = std::make_shared<BBSEXP>(bb->hasTopLevel(), bb->hasClosureBoundary(), bb->hasLexical(), bb->getIDX(), bb->getScopeIDX());
+
+  for (auto & stmt : bb->args)
+  {
+    res->args.push_back(stmt);
+  }
+
+  return res;
+}
+
 void setBBFlag(std::shared_ptr<BBSEXP> b, BBSEXPFLAGS flagToSet)
 {
   b->unsetTopLevel();
