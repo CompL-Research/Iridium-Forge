@@ -7,7 +7,9 @@ class DCE
   static bool maybeSideEffect(IRISEXP rVAL)
   {
     if (
-      std::dynamic_pointer_cast<EnvReadSEXP>(rVAL) ||
+      auto bindingRead = std::dynamic_pointer_cast<EnvReadSEXP>(rVAL)
+    ) return bindingRead->hasSAFE();
+    if (
       std::dynamic_pointer_cast<BooleanSEXP>(rVAL) ||
       std::dynamic_pointer_cast<LambdaSEXP>(rVAL) ||
       std::dynamic_pointer_cast<NullSEXP>(rVAL) ||
