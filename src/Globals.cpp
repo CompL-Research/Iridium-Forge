@@ -290,6 +290,17 @@ double getLexicalScope(double startingScope, std::unordered_map<int, IRIBUILDCON
   return buildContext->parent;
 }
 
+bool isScopeReachable(double currScope, double targetScope, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext)
+{
+  if (currScope == -1) return false;
+  if (currScope == targetScope)
+  {
+    return true;
+  }
+
+  return isScopeReachable(getLexicalScope(currScope, iridiumBuildContext), targetScope, iridiumBuildContext);
+}
+
 void setClosureFlags(double flag, std::shared_ptr<BBContainerSEXP> bbContainer)
 {
   bbContainer->setContainerFlagID(flag);

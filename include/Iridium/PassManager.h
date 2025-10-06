@@ -7,7 +7,7 @@ class PassManager {
 public:
   PassManager(FileView & fs, std::unordered_map<int, IRIBUILDCONTEXT> bc) : fileView(fs), iridiumBuildContext(bc) {}
 
-  void optimize(int level = 0);
+  void optimize(int level, std::set<double> taintedScopes);
 
   std::shared_ptr<FileSEXP> checkout();
 

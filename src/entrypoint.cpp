@@ -32,6 +32,8 @@
 
 #include "Iridium/PassManager.h"
 
+static std::set<double> taintedScopes;
+
 IRISEXP runCorePasses(
     IRISEXP sexp,
     std::unordered_map<int, IRIBUILDCONTEXT> iridiumBuildContext)
@@ -47,6 +49,7 @@ IRISEXP runCorePasses(
 
   groupIntoClosureGroups(sexp, iridiumBuildContext);
   DBG("Completed groupIntoClosureGroups");
+
 
   populateModuleBindings(sexp, iridiumBuildContext);
   DBG("Completed populateModuleBindings");
@@ -66,8 +69,10 @@ IRISEXP runCorePasses(
   initializeStackFrame(sexp, iridiumBuildContext);
   DBG("Completed initializeStackFrame");
 
+
   patchHeritageConstructorSuperCalls(sexp, iridiumBuildContext);
   DBG("Completed patchHeritageConstructorSuperCalls");
+
 
   reduceResolvePrivateEnvBindingSEXP(sexp, iridiumBuildContext);
   DBG("Completed reduceResolvePrivateEnvBindingSEXP");
@@ -96,8 +101,38 @@ IRISEXP runCorePasses(
   loosenWritestoASWs(sexp);
   DBG("Completed loosenWritestoASWs");
 
-  markDirectEvals(sexp, iridiumBuildContext, -1);
+  
+
+  markDirectEvals(sexp, iridiumBuildContext, -1, taintedScopes);
   DBG("Completed markDirectEvals");
+
+  // Iterate over all declared bindings, if they are reachable from any tainted scope then add to the tainted list
+  auto fileSEXP = std::dynamic_pointer_cast<FileSEXP>(sexp);
+  assert(fileSEXP);
+
+  for (auto & b : fileSEXP->args)
+  {
+    if (auto bbCont = std::dynamic_pointer_cast<BBContainerSEXP>(b))
+    {
+      auto bindings = std::dynamic_pointer_cast<BindingsSEXP>(bbCont->getBindings());
+      assert(bindings);
+
+      for (auto & binding : bindings->getLocalBindings()->args)
+      {
+        auto bbb = std::dynamic_pointer_cast<EnvBindingSEXP>(binding);
+        assert(bbb);
+
+        for (auto & ts : taintedScopes)
+        {
+          if (isScopeReachable(ts, bbb->getScope(), iridiumBuildContext))
+          {
+            FileView::dynamicEvaledBindings.insert(bbb);
+            // std::cout << "Tainted Binding: " << bbb->getNAME() << std::endl;
+          }
+        }
+      }
+    }
+  }
 
   return sexp;
 }
@@ -106,8 +141,10 @@ IRISEXP runOptPasses(std::shared_ptr<FileSEXP> fileSEXP, std::unordered_map<int,
 {
   FileView fileView(fileSEXP, iridiumBuildContext);
   PassManager pm(fileView, iridiumBuildContext);
-  pm.optimize(1);
+  pm.optimize(1, taintedScopes);
   auto res = pm.checkout();
   filterNOPs(res);
   return res;
+
+  // return fileSEXP;
 }

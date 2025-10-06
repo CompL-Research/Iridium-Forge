@@ -20,6 +20,7 @@ std::vector<IRISEXP> heritageThisInit(std::string thisValHolder, std::string pro
 
   // bool CCall, bool ConstructorCall, bool PrivateCall, bool Import, bool Super, bool V8Intrinsic, bool TAILCALL, double JSDirectEval
   auto callSEXP = std::make_shared<CallSiteSEXP>(true, false, false, false, false, false, false, 0);
+  callSEXP->unsetJSDirectEval();
 
   callSEXP->args.push_back(
       std::make_shared<EnvReadSEXP>(std::make_shared<ResolveEnvBindingSEXP>("this", false), false));
@@ -66,11 +67,15 @@ void patchHeritageConstructorSuperCalls(IRISEXP currSEXP, std::unordered_map<int
       }
     }
 
+    int i = 0;
+
     // Process each super call
     for (auto &scallHolder : superCalls)
     {
+      i++;
+
       // Walk up context chain
-      IRIBUILDCONTEXT &buildContext = closureScope;
+      IRIBUILDCONTEXT buildContext = closureScope;
 
       while (true)
       {

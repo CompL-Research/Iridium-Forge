@@ -9,8 +9,10 @@ void doDeadBindingRemoval(FileView &fv)
 {
   
   fv.refreshSymbolTable();
+
   for (auto &bbCont : fv.bbContainerViews)
   {
+    if (bbCont.tainted) continue;
     for (auto & b : bbCont.bindingsView.bindings)
     {
       for (auto it = b.second.begin(); it != b.second.end();)

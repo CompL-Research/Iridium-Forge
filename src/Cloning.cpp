@@ -1,6 +1,7 @@
 #include "Iridium/Cloning.h"
 #include "Iridium/Globals.h"
 #include "generated/IridiumTypes.h"
+#include "generated/ParseIridiumTypes.h"
 
 std::shared_ptr<IridiumFlag> cloneFlag(const std::shared_ptr<IridiumFlag> &f)
 {
@@ -39,7 +40,8 @@ IRISEXP cloneIRISEXP(const IRISEXP &node, const SpecialCloneHandler &handler)
     newNode->flags.push_back(cloneFlag(fl));
   }
 
-  return newNode;
+  return ParseIridiumTypes::specialize(newNode);
+  // return newNode;
 }
 
 std::shared_ptr<BBSEXP> cloneBB(
@@ -54,7 +56,10 @@ std::shared_ptr<BBSEXP> cloneBB(
   {
     if (auto envBinding = std::dynamic_pointer_cast<EnvBindingSEXP>(node))
     {
-      assert(localIndirectionMap.count(envBinding) > 0);
+      if (localIndirectionMap.count(envBinding) == 0)
+      {
+        assert(localIndirectionMap.count(envBinding) > 0);
+      }
       return std::static_pointer_cast<IridiumSEXP>(localIndirectionMap[envBinding]);
     }
     else if (auto remoteEnvBinding = std::dynamic_pointer_cast<RemoteEnvBindingSEXP>(node))

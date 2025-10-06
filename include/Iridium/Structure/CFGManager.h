@@ -43,7 +43,8 @@ public:
 
   CFGManager clone(
     std::unordered_map<std::shared_ptr<EnvBindingSEXP>, std::shared_ptr<EnvBindingSEXP>> & localIndirectionMap, 
-    std::unordered_map<std::shared_ptr<RemoteEnvBindingSEXP>, std::shared_ptr<RemoteEnvBindingSEXP>> & remoteIndirectionMap
+    std::unordered_map<std::shared_ptr<RemoteEnvBindingSEXP>, std::shared_ptr<RemoteEnvBindingSEXP>> & remoteIndirectionMap,
+    double & sinIDX
   );
 
   explicit CFGManager(std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext) : entry(boost::graph_traits<CFG>::null_vertex()), iridiumBuildContext(iridiumBuildContext) {}
@@ -57,6 +58,8 @@ public:
     bbIdxToVertex[bb->getIDX()] = v;
     return v;
   }
+
+  void doInlining(CFGManager & other, std::shared_ptr<BBSEXP> argPassingBlock, std::shared_ptr<BBSEXP> continuationBlock, std::shared_ptr<EnvWriteSEXP> = NULL);
 
   // Get node
   std::shared_ptr<BBSEXP> getNode(double bbIdx)

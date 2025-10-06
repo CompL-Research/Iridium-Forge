@@ -4,11 +4,13 @@
 #include "external/graph-boost-1.89.0/graph_traits.hpp"
 #include "external/graph-boost-1.89.0/iteration_macros.hpp"
 #include <filesystem>
+#include <unordered_map>
 
 CFGManager CFGManager::clone(
-  std::unordered_map<std::shared_ptr<EnvBindingSEXP>, std::shared_ptr<EnvBindingSEXP>> & localIndirectionMap, 
-  std::unordered_map<std::shared_ptr<RemoteEnvBindingSEXP>, std::shared_ptr<RemoteEnvBindingSEXP>> & remoteIndirectionMap
-)
+    std::unordered_map<std::shared_ptr<EnvBindingSEXP>, std::shared_ptr<EnvBindingSEXP>> &localIndirectionMap,
+    std::unordered_map<std::shared_ptr<RemoteEnvBindingSEXP>, std::shared_ptr<RemoteEnvBindingSEXP>> &remoteIndirectionMap,
+    double & sinIDX
+  )
 {
   CFGManager res(iridiumBuildContext);
   res.targetContainer = targetContainer;
@@ -17,12 +19,111 @@ CFGManager CFGManager::clone(
   res.entry = entry;
   // Clone basic blocks
 
+  std::unordered_map<double, Vertex> newbbIdxToVertex;
+
+  std::unordered_map<double, double> bbRename;
+  std::vector<std::shared_ptr<BBSEXP>> newBBs;
+
   for (auto &e : bbIdxToVertex)
   {
-    res.cfg[e.second] = cloneBB(cfg[e.second], localIndirectionMap, remoteIndirectionMap);
+    auto clonedBB = cloneBB(cfg[e.second], localIndirectionMap, remoteIndirectionMap);
+    
+    auto oldIDX = clonedBB->getIDX();
+    auto newIDX = sinIDX--;
+    newbbIdxToVertex[newIDX] = e.second;
+    bbRename[oldIDX] = newIDX;
+    clonedBB->setIDX(newIDX);
+
+    newBBs.push_back(clonedBB);
+    res.cfg[e.second] = clonedBB;
+  }
+
+  res.bbIdxToVertex = newbbIdxToVertex;
+
+  // Remap to new BBIDX
+  for (auto &e : newBBs)
+  {
+    for (auto & stmt : e->args)
+    {
+      if (auto gotoStmt = std::dynamic_pointer_cast<GotoSEXP>(stmt))
+      {
+        assert(bbRename.count(gotoStmt->getIDX()) > 0);
+        gotoStmt->setIDX(bbRename[gotoStmt->getIDX()]);
+      }
+      else if (auto ifElseStmt = std::dynamic_pointer_cast<IfElseJumpSEXP>(stmt))
+      {
+        double targetTrueIdx = ifElseStmt->getTRUE();
+        double targetFalseIdx = ifElseStmt->getFALSE();
+
+        assert(bbRename.count(targetTrueIdx) > 0);
+        assert(bbRename.count(targetFalseIdx) > 0);
+
+        ifElseStmt->setTRUE(bbRename[targetTrueIdx]);
+        ifElseStmt->setFALSE(bbRename[targetFalseIdx]);
+      }
+    }
   }
 
   return res;
+}
+
+
+void CFGManager::doInlining(CFGManager & other, std::shared_ptr<BBSEXP> argPassingBlock, std::shared_ptr<BBSEXP> continuationBlock, std::shared_ptr<EnvWriteSEXP> retTarget)
+{
+  // Transfer all vertices
+  for (auto [vi, vi_end] = boost::vertices(other.cfg); vi != vi_end; ++vi)
+  {
+    Vertex v = *vi;
+    auto bbToBeAdded = other.cfg[v];
+    addNode(bbToBeAdded, false); // add node to current CFG
+
+    // Patch all return statements to go back to the continuation block
+    for (size_t i = 0; i < bbToBeAdded->args.size(); i++)
+    {
+      auto stmt = bbToBeAdded->args[i];
+      if (auto returnStmt = std::dynamic_pointer_cast<ReturnSEXP>(stmt))
+      {
+        assert(i == bbToBeAdded->args.size() - 1); // ensure this is the last statement
+        assert(other.successors(other.bbIdxToVertex[bbToBeAdded->getIDX()]).size() == 0); // ensure the outgoing edges from this BB are zero
+
+        connect(bbToBeAdded, continuationBlock, {EdgeKind::Normal, std::make_shared<NullSEXP>(true)});
+
+
+        if (retTarget)
+        {
+          // IRISEXP LValTarget, IRISEXP RVal, bool SLOPPY, bool THROWERR, bool SAFE, bool THISINIT
+          auto assnStmt = std::make_shared<EnvWriteSEXP>(retTarget->getLValTarget(), returnStmt->getObj(), retTarget->hasSLOPPY(), retTarget->hasTHROWERR(), retTarget->getSAFE(), retTarget->getTHISINIT());
+          bbToBeAdded->args[i] = assnStmt;
+        }
+        else
+        {
+          auto stackRej = std::make_shared<StackRejectSEXP>(1);
+          stackRej->args.push_back(returnStmt->getObj());
+          bbToBeAdded->args[i] = stackRej;
+        }
+
+        bbToBeAdded->args.push_back(std::make_shared<GotoSEXP>(continuationBlock->getIDX()));
+        break;
+      }
+    }
+  }
+
+  // Transfer edge info
+  for (auto [ei, ei_end] = boost::edges(other.cfg); ei != ei_end; ++ei)
+  {
+    Edge e = *ei;
+    auto srcBB = other.cfg[boost::source(e, other.cfg)];
+    auto tgtBB = other.cfg[boost::target(e, other.cfg)];
+    EdgeInfo &info = other.cfg[e];
+    connect(srcBB, tgtBB, {info.kind, std::make_shared<NullSEXP>(true)}); // add edges to current CFG
+  }
+
+  // GOTO from arg passing block to the entry of the inlined code
+  assert(bbIdxToVertex.count(argPassingBlock->getIDX()) > 0);
+  argPassingBlock->args.push_back(
+    std::make_shared<GotoSEXP>(other.cfg[other.entry]->getIDX())
+  );
+  connect(argPassingBlock, other.cfg[other.entry], {EdgeKind::Normal, std::make_shared<NullSEXP>(true)});
 }
 
 // DFS with memoization, handles multiple exits
@@ -229,7 +330,7 @@ std::vector<IRISEXP> CFGManager::chapati()
 
   if (decorateBBEntries)
   {
-    for (auto & b : result)
+    for (auto &b : result)
     {
       auto bb = std::dynamic_pointer_cast<BBSEXP>(b);
       assert(bb);
@@ -249,12 +350,11 @@ std::vector<IRISEXP> CFGManager::chapati()
 
         auto o = std::make_shared<StackRejectSEXP>(1);
         o->args.push_back(cs);
-        
-        bb->args.insert(bb->args.begin(), o);        
+
+        bb->args.insert(bb->args.begin(), o);
       }
     }
   }
-
 
   return result;
 }

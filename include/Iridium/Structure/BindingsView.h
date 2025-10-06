@@ -43,56 +43,7 @@ public:
   BindingsView clone(
     std::unordered_map<std::shared_ptr<EnvBindingSEXP>, std::shared_ptr<EnvBindingSEXP>> & localIndirectionMap, 
     std::unordered_map<std::shared_ptr<RemoteEnvBindingSEXP>, std::shared_ptr<RemoteEnvBindingSEXP>> & remoteIndirectionMap
-  )
-  {
-    BindingsView res(iridiumBuildContext);
-    res.prev = prev;
-    res.next = next;
-    res.root = root;
-    
-    // res.args = args;
-    // res.bindings = bindings;
-    // res.remoteBindings = remoteBindings; // this is not used rn, so just copy it as it is...
-
-    for (auto & a : args) 
-    {
-      // std::string NAME, bool ASW, bool JSARG, bool JSRESTARG, bool JSLET, bool JSCONST, bool JSVAR, double IDX, double REFIDX, double Scope, double ParentScope, double NEXT
-      auto replacement = std::make_shared<EnvBindingSEXP>(
-          a->getNAME(), a->hasASW(), a->hasJSARG(), a->hasJSRESTARG(), a->hasJSLET(), a->hasJSCONST(), a->hasJSVAR(), a->getIDX(), a->getREFIDX(), a->getScope(), a->getParentScope(), a->getNEXT()
-        );
-      res.args.push_back(
-        replacement
-      );
-      localIndirectionMap[a] = replacement;
-    }
-
-
-    for (auto & e : bindings) 
-    {
-      for (auto & a : e.second)
-      {
-        // std::string NAME, bool ASW, bool JSARG, bool JSRESTARG, bool JSLET, bool JSCONST, bool JSVAR, double IDX, double REFIDX, double Scope, double ParentScope, double NEXT
-        auto replacement = std::make_shared<EnvBindingSEXP>(
-            a->getNAME(), a->hasASW(), a->hasJSARG(), a->hasJSRESTARG(), a->hasJSLET(), a->hasJSCONST(), a->hasJSVAR(), a->getIDX(), a->getREFIDX(), a->getScope(), a->getParentScope(), a->getNEXT()
-          );
-        res.bindings[e.first].push_back(replacement);
-        localIndirectionMap[a] = replacement;
-      }
-    }
-
-    for (auto & rb : remoteBindings)
-    {
-      // IRISEXP ParentReference, bool NSIMPORT, double REFIDX
-      auto replacement = std::make_shared<RemoteEnvBindingSEXP>(
-        rb->getParentReference(), rb->hasNSIMPORT(), rb->getREFIDX()
-      );
-      remoteIndirectionMap[rb] = replacement;
-    }
-
-    res.targetContainer = targetContainer;
-
-    return res;
-  }
+  );
 
   void removeBinding(std::shared_ptr<EnvBindingSEXP> binding);
 
@@ -140,7 +91,7 @@ public:
           os << ", ";
         if (binding)
         {
-          os << "EnvBindingSEXP@" << binding->getNAME();
+          os << std::to_string((uintptr_t)binding.get()) << "@" << binding->getNAME();
         }
         else
         {
@@ -154,6 +105,13 @@ public:
       os << "  (empty)\n";
     os << "\n";
 
+    os << "[Args]\n";
+    for (auto &b : args)
+    {
+      os << std::to_string((uintptr_t)b.get()) << "@" << b->getNAME() << "\n";
+    }
+    os << "\n";
+
     os << "TargetContainer: "
        << (targetContainer ? "BindingsSEXP@" + std::to_string((uintptr_t)targetContainer.get())
                            : "null")
@@ -162,6 +120,8 @@ public:
   }
 
   std::shared_ptr<BindingsSEXP> checkout();
+
+  void populateTaintedBindings(std::set<EnvBindingSEXP> dynamicEvaledBindings, double scopeIDX);
 
 private:
   std::shared_ptr<BindingsSEXP> targetContainer;

@@ -42,7 +42,7 @@ class DCE
     {
       if (auto LVAL = std::dynamic_pointer_cast<EnvBindingSEXP>(implicitBindingDecl->getStore()))
       {
-        if (val.dfv.count(LVAL) == 0)
+        if (val.dfv.count(LVAL) == 0 && implicitBindingDecl->getOPID() != 10)
         {
           return std::make_shared<NOPSEXP>();
         }

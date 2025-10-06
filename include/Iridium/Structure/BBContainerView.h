@@ -18,8 +18,9 @@ class BBContainerView
 {
 public:
   std::shared_ptr<BBContainerSEXP> targetContainer;
-  CFGManager cfgManager;
   BindingsView bindingsView;
+  CFGManager cfgManager;
+  bool tainted = false;
   
 private:
   SymbolTable & symbolTable;
@@ -35,15 +36,17 @@ public:
     SymbolTable & symbolTable,
     std::unordered_map<int, IRIBUILDCONTEXT> & iridiumBuildContext,
     std::unordered_map<std::shared_ptr<EnvBindingSEXP>, std::shared_ptr<EnvBindingSEXP>> & localIndirectionMap,
-    std::unordered_map<std::shared_ptr<RemoteEnvBindingSEXP>, std::shared_ptr<RemoteEnvBindingSEXP>> & remoteIndirectionMap
+    std::unordered_map<std::shared_ptr<RemoteEnvBindingSEXP>, std::shared_ptr<RemoteEnvBindingSEXP>> & remoteIndirectionMap,
+    double & sinIDX
   ) : 
   targetContainer(targetContainer),
   bindingsView(bindingsView.clone(localIndirectionMap, remoteIndirectionMap)),
-  cfgManager(cfgManager.clone(localIndirectionMap, remoteIndirectionMap)),
+  cfgManager(cfgManager.clone(localIndirectionMap, remoteIndirectionMap, sinIDX)),
   symbolTable(symbolTable),
   iridiumBuildContext(iridiumBuildContext) {}
 
   void initCFG();
+  void refreshSymbolTable();
   void populateSymbolTable();
   
   double getScopeIdx() { return targetContainer->getScopeIDX(); }
@@ -59,11 +62,11 @@ public:
 
   std::shared_ptr<BBContainerSEXP> checkout();
 
-  BBContainerView clone()
+  BBContainerView clone(double & sinIDX)
   {
     std::unordered_map<std::shared_ptr<EnvBindingSEXP>, std::shared_ptr<EnvBindingSEXP>> localIndirectionMap;
     std::unordered_map<std::shared_ptr<RemoteEnvBindingSEXP>, std::shared_ptr<RemoteEnvBindingSEXP>> remoteIndirectionMap;
-    BBContainerView res(targetContainer, cfgManager, bindingsView, symbolTable, iridiumBuildContext, localIndirectionMap, remoteIndirectionMap);
+    BBContainerView res(targetContainer, cfgManager, bindingsView, symbolTable, iridiumBuildContext, localIndirectionMap, remoteIndirectionMap, sinIDX);
     return res;
   }
 

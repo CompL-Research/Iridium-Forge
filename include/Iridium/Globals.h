@@ -13,9 +13,9 @@
 
 #define IRIDIUM_DEBUG_STATEMENTS 1
 #define IRIDIUM_DUMP_INITIAL_SEXP 0
-#define IRIDIUM_DUMP_FINAL_SEXP 1
-#define IRIDIUM_DUMP_BEFORE_STACK_COLLAPSE 1
-#define IRIDIUM_DUMP_AFTER_STACK_COLLAPSE 1
+#define IRIDIUM_DUMP_FINAL_SEXP 0
+#define IRIDIUM_DUMP_BEFORE_STACK_COLLAPSE 0
+#define IRIDIUM_DUMP_AFTER_STACK_COLLAPSE 0
 #define IRIDIUM_DUMP_AFTER_CORE_PASSES 1 // <- Right before Opt
 
 #define PASSMGR_DEBUG 0
@@ -136,6 +136,7 @@ bool isGlobalBinding(IRISEXP fileSEXP, std::unordered_map<int, IRIBUILDCONTEXT> 
 std::shared_ptr<BBContainerSEXP> getBBContainerSEXPByScopeId(IRISEXP file, double scopeIDX);
 double findParentClosureScope(double startingScope, std::unordered_map<int, IRIBUILDCONTEXT> &buildContext);
 double getLexicalScope(double startingScope, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext);
+bool isScopeReachable(double startingScope, double targetScope, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext);
 IRIBUILDCONTEXT maybeGetEnclosingTryCatchContext(int currScope, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext);
 void setClosureFlags(double flag, std::shared_ptr<BBContainerSEXP> bbContainer);
 void addToListSEXP(IRISEXP list, IRISEXP elementToAdd);

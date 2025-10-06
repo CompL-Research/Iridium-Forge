@@ -24,6 +24,33 @@
 #include <string>
 #include <random>
 
+#include <chrono>
+#include <iostream>
+
+#define INLINING_DEPTH 1
+
+class ScopeTimer
+{
+public:
+  explicit ScopeTimer(const std::string &name = "")
+      : name_(name),
+        start_(std::chrono::high_resolution_clock::now()) {}
+
+  ~ScopeTimer()
+  {
+    using namespace std::chrono;
+    auto end = high_resolution_clock::now();
+    auto duration = duration_cast<microseconds>(end - start_).count();
+
+    std::cerr << "[TIMER] " << (name_.empty() ? "Scope" : name_)
+              << " took " << duration / 1000.0 << " ms\n";
+  }
+
+private:
+  std::string name_;
+  std::chrono::time_point<std::chrono::high_resolution_clock> start_;
+};
+
 std::string randomString(size_t length)
 {
   static const std::string chars =
@@ -45,7 +72,7 @@ std::string randomString(size_t length)
 
 using json = nlohmann::json;
 
-void PassManager::optimize(int level)
+void PassManager::optimize(int level, std::set<double> taintedScopes)
 {
 #if PASSMGR_DEBUG == 1
   std::filesystem::path out_path = "outputs/passmanager.json";
@@ -92,7 +119,7 @@ void PassManager::optimize(int level)
             it = bb->args.insert(std::next(it), guardStoreLoc); // returns iterator to new element
             ++it;                                               // advance past inserted element
 
-            std::cout << "adding to sinlining table: " << store->getNAME() << std::endl;
+            // std::cout << "adding to sinlining table: " << store->getNAME() << std::endl;
 
             sinlining[store->getNAME()] = {
                 &fileView.getContainer(lambda->getStartBBIDX()),
@@ -103,15 +130,41 @@ void PassManager::optimize(int level)
           ++it; // move to next original element
         }
       });
-  
+
   std::set<IRISEXP> alreadyInlined;
+
+  std::unordered_map<BBContainerView *, std::unordered_map<std::string, int>> inliningMetadata;
 
   for (int i = 0; i < 5; i++)
   {
-    DBG("Iter: " + std::to_string(i));
+    // DBG("Iter: " + std::to_string(i));
+
+    ScopeTimer timer("Iter: " + std::to_string(i));
+
+    // std::cout << "::Inlining metadata::" << std::endl;
+    // for (auto &e : inliningMetadata)
+    // {
+    //   std::cout << "  BB" << e.first->getStartBBIDX() << std::endl;
+    //   for (auto &j : e.second)
+    //   {
+    //     std::cout << "    " << j.first << " : " << j.second << std::endl;
+    //   }
+    // }
+
     for (auto &bbContView : fileView.bbContainerViews)
     {
-      fileView.refreshSymbolTable();
+
+      // Skip the container if it is reachable from a tainted scope...
+      for (auto & ts : taintedScopes)
+      {
+        if (isScopeReachable(ts, bbContView.getScopeIdx(), iridiumBuildContext)) {
+          std::cout << "Skipping opt passes on tainted scope" << std::endl;
+          bbContView.tainted = true;
+          continue;
+        }
+      }
+
+      // fileView.refreshSymbolTable();
       auto allStackBindings = bbContView.getAllStackBindings();
       auto capturedStackBindings = bbContView.getCapturedStackBindings();
       auto uncapturedStackBindings = bbContView.getUncapturedStackBindings();
@@ -124,170 +177,264 @@ void PassManager::optimize(int level)
 
       std::string passBasename = "Iter" + std::to_string((int)i) + "_BB" + std::to_string((int)bbContView.getStartBBIDX());
 
-      // SinLining
-      {
-        auto &currCFGManager = bbContView.cfgManager;
-        auto &currCFG = currCFGManager.cfg;
-        auto worklist = currCFGManager.getVertices();
+      // // SinLining
+      // {
+      //   // ScopeTimer timer("SINLINING");
+      //   auto &currCFGManager = bbContView.cfgManager;
+      //   auto &currCFG = currCFGManager.cfg;
 
-        while (worklist.size() > 0)
-        {
-          Vertex v = worklist.back();
-          worklist.pop_back();
+      //   std::vector<std::shared_ptr<BBSEXP>> noRetInliningList;
 
-          auto bb = currCFG[v];
-          bool split = false;
+      //   std::vector<std::shared_ptr<BBSEXP>> retInliningList;
 
-          for (int i = 0; i < bb->args.size(); i++)
-          {
-            if (auto stackReject = std::dynamic_pointer_cast<StackRejectSEXP>(bb->args[i]))
-            {
-              if (auto callSite = std::dynamic_pointer_cast<CallSiteSEXP>(stackReject->args[0]))
-              {
-                if (alreadyInlined.count(callSite) > 0) continue;
-                if (
-                    callSite->hasCCall() || callSite->hasConstructorCall() || callSite->hasPrivateCall() || callSite->hasImport() || callSite->hasSuper() || callSite->hasV8Intrinsic())
-                {
-                }
-                else
-                {
-                  // do inlining
-                  // CALLSITE()
-                  auto callee = callSite->args[0];
-                  if (auto gg = std::dynamic_pointer_cast<EnvReadSEXP>(callee))
-                  {
-                    if (auto globalCallee = std::dynamic_pointer_cast<GlobalBindingSEXP>(gg->getObj()))
-                    {
-                      auto targetName = globalCallee->getNAME();
-                      std::cout << "Found possible sinlining target: " << targetName << std::endl;
-                      if (sinlining.count(targetName))
-                      {
-                        // do inlining
-                        // set LVAL = NULL
-                        std::cout << "Found SinLining target" << std::endl;
-                        auto sinfo = sinlining[targetName];
-                        if (sinfo.targetContainer->getCapturedStackBindings().size() == 0)
-                        {
-                          if (!sinfo.targetContainer->hasImplicitBindings())
-                          {
-                            std::cout << "Ready for sinlining" << std::endl;
-                            alreadyInlined.insert(callSite);
-                            // Split BB and add a new one to the vertices list
+      //   // Isolate inlining blocks
+      //   auto worklist = currCFGManager.getVertices();
+      //   while (worklist.size() > 0)
+      //   {
+      //     Vertex v = worklist.back();
+      //     worklist.pop_back();
 
-                            // bool TopLevel, bool ClosureBoundary, bool Lexical, double IDX, double ScopeIDX
-                            auto continuationIDX = sinIDX--;
-                            auto continuationBB = std::make_shared<BBSEXP>(bb->hasTopLevel(), bb->hasClosureBoundary(), bb->hasLexical(), continuationIDX, bb->getScopeIDX());
-                            continuationBB->args.assign(bb->args.begin() + i + 1, bb->args.end());
+      //     auto bb = currCFG[v];
+      //     bool split = false;
 
-                            bb->args.erase(bb->args.begin() + i, bb->args.end()); // Erase the current call instruction aswell
+      //     for (int i = 0; i < bb->args.size(); i++)
+      //     {
+      //       auto xx = bb->args[i];
+      //       if (auto stackReject = std::dynamic_pointer_cast<StackRejectSEXP>(xx))
+      //       {
+      //         if (auto callSite = std::dynamic_pointer_cast<CallSiteSEXP>(stackReject->args[0]))
+      //         {
+      //           if (alreadyInlined.count(callSite) > 0)
+      //             continue;
+      //           if (
+      //               callSite->hasCCall() || callSite->hasConstructorCall() || callSite->hasPrivateCall() || callSite->hasImport() || callSite->hasSuper() || callSite->hasV8Intrinsic())
 
-                            auto continuationVertex = currCFGManager.addNode(continuationBB);
+      //           {
+      //           }
+      //           else
+      //           {
+      //             // CALLSITE()
+      //             auto callee = callSite->args[0];
+      //             if (auto gg = std::dynamic_pointer_cast<EnvReadSEXP>(callee))
+      //             {
+      //               if (auto globalCallee = std::dynamic_pointer_cast<GlobalBindingSEXP>(gg->getObj()))
+      //               {
+      //                 auto targetName = globalCallee->getNAME();
+      //                 if (sinlining.count(targetName))
+      //                 {
+      //                   // do inlining
+      //                   // set LVAL = NULL
+      //                   auto sinfo = sinlining[targetName];
+      //                   if (sinfo.targetContainer == &bbContView)
+      //                     continue;
+      //                   if (sinfo.targetContainer->getCapturedStackBindings().size() == 0)
+      //                   {
+      //                     if (!sinfo.targetContainer->hasImplicitBindings())
+      //                     {
 
-                            currCFGManager.transferSuccessors(v, continuationVertex);
+      //                       if (inliningMetadata[&bbContView][targetName] < INLINING_DEPTH)
+      //                       {
+      //                         inliningMetadata[&bbContView][targetName]++;
+      //                         // Dont try to inline things inside the fallthrough block later
+      //                         alreadyInlined.insert(callSite);
 
-                            // SIN TRUE BLOCK
-                            auto sinTrueIDX = sinIDX--;
-                            auto sinTrueBlock = std::make_shared<BBSEXP>(bb->hasTopLevel(), bb->hasClosureBoundary(), bb->hasLexical(), sinTrueIDX, bb->getScopeIDX());
-                            {
+      //                         // Split Isolate BB where inlining must be performed
+      //                         // this ensures that function being inlined is the last statement in the basic block.
+      //                         auto continuationIDX = sinIDX--;
+      //                         auto continuationBB = std::make_shared<BBSEXP>(bb->hasTopLevel(), bb->hasClosureBoundary(), bb->hasLexical(), continuationIDX, bb->getScopeIDX());
+      //                         continuationBB->args.assign(bb->args.begin() + i + 1, bb->args.end());
+      //                         bb->args.erase(bb->args.begin() + i + 1, bb->args.end());
 
-                              // // bool CCall, bool ConstructorCall, bool PrivateCall, bool Import, bool Super, bool V8Intrinsic, bool TAILCALL, double JSDirectEval
-                              // auto cs = std::make_shared<CallSiteSEXP>(false, false, false, false, false, false, false, false);
-                              // cs->unsetJSDirectEval();
+      //                         bb->args.push_back(std::make_shared<GotoSEXP>(continuationIDX));
 
-                              // cs->args.push_back(
-                              //     std::make_shared<FieldReadSEXP>(
-                              //         std::make_shared<EnvReadSEXP>(
-                              //             std::make_shared<GlobalBindingSEXP>("console"),
-                              //             false),
-                              //         std::make_shared<StringSEXP>("log")));
+      //                         auto continuationVertex = currCFGManager.addNode(continuationBB);
+      //                         currCFGManager.transferSuccessors(v, continuationVertex);
+      //                         currCFGManager.connect(v, continuationVertex, {EdgeKind::Normal, stackReject});
 
-                              // cs->args.push_back(
-                              //     std::make_shared<StringSEXP>("SIN TRUE"));
+      //                         // Add the current BB to the inlining list
+      //                         noRetInliningList.push_back(bb);
 
-                              // auto o = std::make_shared<StackRejectSEXP>(1);
-                              // o->args.push_back(cs);
-                              // sinTrueBlock->args.push_back(o);
+      //                         // Add the newly created BB to the worklist
+      //                         worklist.push_back(continuationVertex);
+      //                       }
+      //                       else
+      //                       {
+      //                         // std::cout << "Stopping inling at 5" << std::endl;
+      //                       }
+      //                     }
+      //                     else
+      //                     {
+      //                       // std::cout << "SinLining target has implicit bindings" << std::endl;
+      //                     }
+      //                   }
+      //                   else
+      //                   {
+      //                     // std::cout << "SinLining target has captured bindings" << std::endl;
+      //                   }
+      //                 }
+      //               }
+      //             }
+      //           }
+      //         }
+      //       }
+      //     }
+      //   }
 
-                              // Add console.log, SIN TRUE
-                              sinTrueBlock->args.push_back(stackReject);
-                              sinTrueBlock->args.push_back(std::make_shared<GotoSEXP>(continuationIDX)); // TODO, goto to inlined code here
-                            }
-                            auto sinTrueVertex = currCFGManager.addNode(sinTrueBlock);
+      //   for (auto &bb : noRetInliningList)
+      //   {
+      //     // std::cout << "Bindings Before Inlining" << std::endl;
+      //     // bbContView.bindingsView.dump(std::cout);
 
-                            // SIN FALSE BLOCK
-                            auto sinFalseIDX = sinIDX--;
-                            auto sinFalseBlock = std::make_shared<BBSEXP>(bb->hasTopLevel(), bb->hasClosureBoundary(), bb->hasLexical(), sinFalseIDX, bb->getScopeIDX());
-                            {
+      //     // bbContView.cfgManager.dumpCFGDOT("outputs/BEFORE_INLINING_" + std::to_string(sinIDX));
 
-                              // bool CCall, bool ConstructorCall, bool PrivateCall, bool Import, bool Super, bool V8Intrinsic, bool TAILCALL, double JSDirectEval
-                              auto cs = std::make_shared<CallSiteSEXP>(false, false, false, false, false, false, false, false);
-                              cs->unsetJSDirectEval();
+      //     auto stackRejectStmt = std::dynamic_pointer_cast<StackRejectSEXP>(bb->args.at(bb->args.size() - 2));
+      //     assert(stackRejectStmt);
+      //     auto callSite = std::dynamic_pointer_cast<CallSiteSEXP>(stackRejectStmt->args[0]);
+      //     assert(callSite);
+      //     auto calleeEnvRead = std::dynamic_pointer_cast<EnvReadSEXP>(callSite->args[0]);
+      //     assert(calleeEnvRead);
+      //     auto callee = std::dynamic_pointer_cast<GlobalBindingSEXP>(calleeEnvRead->args[0]);
+      //     assert(callee);
+      //     assert(currCFGManager.bbIdxToVertex.count(bb->getIDX()) > 0);
+      //     assert(sinlining.count(callee->getNAME()) > 0);
 
-                              cs->args.push_back(
-                                  std::make_shared<FieldReadSEXP>(
-                                      std::make_shared<EnvReadSEXP>(
-                                          std::make_shared<GlobalBindingSEXP>("console"),
-                                          false),
-                                      std::make_shared<StringSEXP>("log")));
+      //     auto sinfo = sinlining[callee->getNAME()];
 
-                              cs->args.push_back(
-                                  std::make_shared<StringSEXP>("SIN FALSE"));
+      //     // Clone the container at this stage, it cannot be a broken CFG at this stage
+      //     auto clonedContainer = sinfo.targetContainer->clone(sinIDX);
 
-                              auto o = std::make_shared<StackRejectSEXP>(1);
-                              o->args.push_back(cs);
-                              sinFalseBlock->args.push_back(o);
+      //     // bb --> continuation
+      //     auto currVertex = currCFGManager.bbIdxToVertex[bb->getIDX()];
+      //     auto continuations = currCFGManager.successors(currVertex);
+      //     assert(continuations.size() == 1);
+      //     auto continuationVertex = continuations[0];
+      //     auto continuationBB = currCFGManager.cfg[continuationVertex];
+      //     auto continuationIDX = continuationBB->getIDX();
 
-                              // Add console.log, SIN FALSE
-                              // Fallback
-                              sinFalseBlock->args.push_back(stackReject);
-                              sinFalseBlock->args.push_back(std::make_shared<GotoSEXP>(continuationIDX));
-                            }
-                            auto sinFlaseVertex = currCFGManager.addNode(sinFalseBlock);
+      //     // Remove the last two statements from the BB
+      //     bb->args.resize(bb->args.size() - 2);
 
-                            // IRISEXP LBinop, IRISEXP RBinop, std::string OP
-                            auto test = std::make_shared<BinopSEXP>(
-                                std::make_shared<EnvReadSEXP>(
-                                    std::make_shared<GlobalBindingSEXP>(targetName),
-                                    false),
-                                std::make_shared<EnvReadSEXP>(
-                                    std::make_shared<GlobalBindingSEXP>(sinfo.guard),
-                                    false),
-                                "===");
-                            // IRISEXP Test, bool NOT, double TRUE, double FALSE
-                            bb->args.push_back(std::make_shared<IfElseJumpSEXP>(test, false, sinTrueIDX, sinFalseIDX));
+      //     // Clear outgoing edges from the bb --> continuation => bb -->
+      //     clear_out_edges(currVertex, currCFGManager.cfg);
 
-                            currCFGManager.connect(bb, sinTrueBlock, {EdgeKind::Normal, stackReject});
-                            currCFGManager.connect(bb, sinFalseBlock, {EdgeKind::Normal, stackReject});
+      //     // CurrBB is broken now, add SIN TRUE and SIN FALSE Blocks
+      //     // SIN TRUE BLOCK
+      //     auto sinTrueIDX = sinIDX--;
+      //     auto sinTrueBlock = std::make_shared<BBSEXP>(bb->hasTopLevel(), bb->hasClosureBoundary(), bb->hasLexical(), sinTrueIDX, bb->getScopeIDX());
+      //     {
+      //       // Do argument passing...
+      //       auto argBindingsInInlinedCode = clonedContainer.bindingsView.args;
+      //       std::vector<IRISEXP> callSiteArgs(callSite->args.begin() + 1, callSite->args.end());
 
-                            currCFGManager.connect(sinTrueBlock, continuationBB, {EdgeKind::Normal, stackReject}); // TODO, goto to inlined code here
-                            currCFGManager.connect(sinFalseBlock, continuationBB, {EdgeKind::Normal, stackReject});
+      //       std::sort(argBindingsInInlinedCode.begin(), argBindingsInInlinedCode.end(),
+      //                 [](const IRISEXP &a, const IRISEXP &b)
+      //                 {
+      //                   auto a1 = std::dynamic_pointer_cast<EnvBindingSEXP>(a);
+      //                   auto b1 = std::dynamic_pointer_cast<EnvBindingSEXP>(b);
+      //                   assert(a1);
+      //                   assert(b1);
+      //                   assert(a1->hasJSARG() || a1->hasJSRESTARG());
+      //                   assert(b1->hasJSARG() || b1->hasJSRESTARG());
+      //                   return a1->getREFIDX() < b1->getREFIDX();
+      //                 });
+      //       for (size_t formalIdx = 0; formalIdx < argBindingsInInlinedCode.size(); formalIdx++)
+      //       {
+      //         IRISEXP LVAL = argBindingsInInlinedCode[formalIdx];
+      //         IRISEXP RVAL;
+      //         if (formalIdx >= callSiteArgs.size())
+      //         {
+      //           RVAL = std::make_shared<EnvReadSEXP>(
+      //               std::make_shared<GlobalBindingSEXP>("undefined"),
+      //               false);
+      //         }
+      //         else
+      //         {
+      //           RVAL = callSiteArgs[formalIdx];
+      //         }
+      //         // IRISEXP LValTarget, IRISEXP RVal, bool SLOPPY, bool THROWERR, bool SAFE, bool THISINIT
+      //         sinTrueBlock->args.push_back(
+      //             std::make_shared<EnvWriteSEXP>(LVAL, RVAL, false, false, true, false));
+      //       }
+      //     }
+      //     auto sinTrueVertex = currCFGManager.addNode(sinTrueBlock);
 
-                            break;
-                          }
-                          else
-                          {
-                            std::cout << "SinLining target has implicit bindings" << std::endl;
-                          }
-                        }
-                        else
-                        {
-                          std::cout << "SinLining target has captured bindings" << std::endl;
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
+      //     // SIN FALSE BLOCK
+      //     auto sinFalseIDX = sinIDX--;
+      //     auto sinFalseBlock = std::make_shared<BBSEXP>(bb->hasTopLevel(), bb->hasClosureBoundary(), bb->hasLexical(), sinFalseIDX, bb->getScopeIDX());
+      //     {
+      //       // bool CCall, bool ConstructorCall, bool PrivateCall, bool Import, bool Super, bool V8Intrinsic, bool TAILCALL, double JSDirectEval
+      //       auto cs = std::make_shared<CallSiteSEXP>(false, false, false, false, false, false, false, false);
+      //       cs->unsetJSDirectEval();
+
+      //       cs->args.push_back(
+      //           std::make_shared<FieldReadSEXP>(
+      //               std::make_shared<EnvReadSEXP>(
+      //                   std::make_shared<GlobalBindingSEXP>("console"),
+      //                   false),
+      //               std::make_shared<StringSEXP>("log")));
+
+      //       cs->args.push_back(
+      //           std::make_shared<StringSEXP>("SIN FALSE"));
+
+      //       auto o = std::make_shared<StackRejectSEXP>(1);
+      //       o->args.push_back(cs);
+      //       sinFalseBlock->args.push_back(o);
+
+      //       // Add console.log, SIN FALSE
+      //       // Fallback
+      //       sinFalseBlock->args.push_back(stackRejectStmt);
+      //       sinFalseBlock->args.push_back(std::make_shared<GotoSEXP>(continuationIDX));
+      //     }
+      //     auto sinFlaseVertex = currCFGManager.addNode(sinFalseBlock);
+
+      //     // IRISEXP LBinop, IRISEXP RBinop, std::string OP
+      //     auto test = std::make_shared<BinopSEXP>(
+      //         std::make_shared<EnvReadSEXP>(
+      //             std::make_shared<GlobalBindingSEXP>(callee->getNAME()),
+      //             false),
+      //         std::make_shared<EnvReadSEXP>(
+      //             std::make_shared<GlobalBindingSEXP>(sinfo.guard),
+      //             false),
+      //         "===");
+      //     // IRISEXP Test, bool NOT, double TRUE, double FALSE
+      //     bb->args.push_back(std::make_shared<IfElseJumpSEXP>(test, false, sinTrueIDX, sinFalseIDX));
+
+      //     currCFGManager.connect(bb, sinTrueBlock, {EdgeKind::Normal, stackRejectStmt});
+      //     currCFGManager.connect(bb, sinFalseBlock, {EdgeKind::Normal, stackRejectStmt});
+      //     currCFGManager.connect(sinFalseBlock, continuationBB, {EdgeKind::Normal, stackRejectStmt});
+
+      //     // Demote arg bindings to the stack frame
+      //     clonedContainer.bindingsView.demoteArgumentsToRoot();
+
+      //     // Merge Stack Frames... remember to copy over remote bindings as-well
+      //     bbContView.bindingsView.mergeBindingsTree(bb->getScopeIDX(), clonedContainer.bindingsView);
+
+      //     //                                ------------------------
+      //     // Inline, SINTRUEBB       ----> |  Inlined Code Entry BB |
+      //     //         CONTINUATIONBB  <---- |  [sinks i.e. return]   |
+      //     //                                ------------------------
+      //     //
+      //     currCFGManager.doInlining(clonedContainer.cfgManager, sinTrueBlock, continuationBB);
+
+      //     fileView.refreshSymbolTable();
+      //     allStackBindings = bbContView.getAllStackBindings();
+      //     capturedStackBindings = bbContView.getCapturedStackBindings();
+      //     uncapturedStackBindings = bbContView.getUncapturedStackBindings();
+
+      //     CopyPropInfo::blacklist = capturedStackBindings;
+      //     Liveness::blacklist = capturedStackBindings;
+      //     ConstantsAtStmt::blacklist = capturedStackBindings;
+      //     EffectAtStmt::blacklist = capturedStackBindings;
+      //     SetSafePropKeyAccesses::blacklist = capturedStackBindings;
+      //   }
+      // }
 
 #if PASSMGR_DEBUG == 1
       PASSMGR_DEBUGVector.push_back(bbContView.getDebugJSON(passBasename + "_START"));
 #endif
 
       {
+        // ScopeTimer timer("ConstantProp");
         DataflowSolver<ConstantsAtStmt> constantsAtStmtSolver(bbContView.cfgManager, true, [&]()
                                                               { return ConstantsAtStmt::bottom(); });
         for (auto &e : constantsAtStmtSolver.run(ConstantsAtStmt::boundary()))
@@ -301,6 +448,7 @@ void PassManager::optimize(int level)
       PASSMGR_DEBUGVector.push_back(bbContView.getDebugJSON(passBasename + "_1_CONSTANT_PROP"));
 #endif
       {
+        // ScopeTimer timer("CopyProp");
         DataflowSolver<CopyPropInfo> copyPropInfoSolver(bbContView.cfgManager, true, [&]()
                                                         { return CopyPropInfo(); });
         for (auto &e : copyPropInfoSolver.run(CopyPropInfo()))
@@ -316,6 +464,7 @@ void PassManager::optimize(int level)
 #endif
 
       {
+        // ScopeTimer timer("WriteBarrierReduction");
         WriteBarrierReduction::currFileView = &fileView;
         DataflowSolver<TDZA> tdzaSolver(bbContView.cfgManager, true, [&]()
                                         { return TDZA::bottom(allStackBindings); });
@@ -331,6 +480,7 @@ void PassManager::optimize(int level)
 #endif
 
       {
+        // ScopeTimer timer("DCE");
         DataflowSolver<Liveness> livenessSolver(bbContView.cfgManager, false, [&]()
                                                 { return Liveness::bottom(); });
         for (auto &e : livenessSolver.run(Liveness::boundary(capturedStackBindings)))
@@ -347,6 +497,7 @@ void PassManager::optimize(int level)
 #endif
 
       {
+        // ScopeTimer timer("EffectProp");
         DataflowSolver<Liveness> livenessSolver(bbContView.cfgManager, false, [&]()
                                                 { return Liveness::bottom(); });
         DataflowSolver<EffectAtStmt> effectSolver(bbContView.cfgManager, true, [&]()
@@ -356,12 +507,10 @@ void PassManager::optimize(int level)
 
         std::set<IRISEXP> killset;
 
-
         for (auto &e : livenessSolver.run(Liveness::boundary(capturedStackBindings)))
         {
           livenessInfo[e.first] = e.second;
         }
-
 
         // TODO: Assert livenessInfo.size == effectInfo.size...
         for (auto &e : effectSolver.run(EffectAtStmt()))
@@ -399,6 +548,7 @@ void PassManager::optimize(int level)
 #endif
 
       {
+        // ScopeTimer timer("RemoveRedundantPropKeyCast");
         // std::cout << "Starting SetSafePropKeyAccesses" << std::endl;
         DataflowSolver<SetSafePropKeyAccesses> setSafePropKeyAccesses(bbContView.cfgManager, true, [&]()
                                                                       { return SetSafePropKeyAccesses::bottom(uncapturedStackBindings); });
@@ -413,13 +563,18 @@ void PassManager::optimize(int level)
       // DBG("End SetSafePropKeyAccesses");
       PASSMGR_DEBUGVector.push_back(bbContView.getDebugJSON(passBasename + "_5_SAFE_PROP_KEY_ACCESS"));
 #endif
+      {
+        // ScopeTimer timer("reduceComputedFieldOps");
+        reduceComputedFieldOps(bbContView);
+      }
 
-      reduceComputedFieldOps(bbContView);
-
-      doDeadBindingRemoval(fileView);
     }
   }
-
+  {
+    // ScopeTimer timer("doDeadBindingRemoval");
+    doDeadBindingRemoval(fileView);
+  }
+  
   // Mark Tail Calls
   for (auto &bbContView : fileView.bbContainerViews)
   {
@@ -451,12 +606,233 @@ void PassManager::optimize(int level)
   o << PASSMGR_DEBUGInfo.dump(2) << std::endl;
   o.close();
 #endif
-
-
-
 }
 
 std::shared_ptr<FileSEXP> PassManager::checkout()
 {
   return fileView.checkout();
 }
+
+// for (auto &bb : retInliningList)
+// {
+//   // std::cout << "Bindings Before Inlining" << std::endl;
+//   // bbContView.bindingsView.dump(std::cout);
+
+//   // bbContView.cfgManager.dumpCFGDOT("outputs/BEFORE_INLINING_" + std::to_string(sinIDX));
+
+//   auto envWriteStmt = std::dynamic_pointer_cast<EnvWriteSEXP>(bb->args.at(bb->args.size() - 2));
+//   assert(envWriteStmt);
+//   auto callSite = std::dynamic_pointer_cast<CallSiteSEXP>(envWriteStmt->getRVal());
+//   assert(callSite);
+//   auto calleeEnvRead = std::dynamic_pointer_cast<EnvReadSEXP>(callSite->args[0]);
+//   assert(calleeEnvRead);
+//   auto callee = std::dynamic_pointer_cast<GlobalBindingSEXP>(calleeEnvRead->args[0]);
+//   assert(callee);
+//   assert(currCFGManager.bbIdxToVertex.count(bb->getIDX()) > 0);
+//   assert(sinlining.count(callee->getNAME()) > 0);
+
+//   auto sinfo = sinlining[callee->getNAME()];
+
+//   // Clone the container at this stage, it cannot be a broken CFG at this stage
+//   auto clonedContainer = sinfo.targetContainer->clone(sinIDX);
+
+//   // bb --> continuation
+//   auto currVertex = currCFGManager.bbIdxToVertex[bb->getIDX()];
+//   auto continuations = currCFGManager.successors(currVertex);
+//   assert(continuations.size() == 1);
+//   auto continuationVertex = continuations[0];
+//   auto continuationBB = currCFGManager.cfg[continuationVertex];
+//   auto continuationIDX = continuationBB->getIDX();
+
+//   // Remove the last two statements from the BB
+//   bb->args.resize(bb->args.size() - 2);
+
+//   // Clear outgoing edges from the bb --> continuation => bb -->
+//   clear_out_edges(currVertex, currCFGManager.cfg);
+
+//   // CurrBB is broken now, add SIN TRUE and SIN FALSE Blocks
+//   // SIN TRUE BLOCK
+//   auto sinTrueIDX = sinIDX--;
+//   auto sinTrueBlock = std::make_shared<BBSEXP>(bb->hasTopLevel(), bb->hasClosureBoundary(), bb->hasLexical(), sinTrueIDX, bb->getScopeIDX());
+//   {
+//     // Do argument passing...
+//     auto argBindingsInInlinedCode = clonedContainer.bindingsView.args;
+//     std::vector<IRISEXP> callSiteArgs(callSite->args.begin() + 1, callSite->args.end());
+
+//     std::sort(argBindingsInInlinedCode.begin(), argBindingsInInlinedCode.end(),
+//               [](const IRISEXP &a, const IRISEXP &b)
+//               {
+//                 auto a1 = std::dynamic_pointer_cast<EnvBindingSEXP>(a);
+//                 auto b1 = std::dynamic_pointer_cast<EnvBindingSEXP>(b);
+//                 assert(a1);
+//                 assert(b1);
+//                 assert(a1->hasJSARG() || a1->hasJSRESTARG());
+//                 assert(b1->hasJSARG() || b1->hasJSRESTARG());
+//                 return a1->getREFIDX() < b1->getREFIDX();
+//               });
+//     for (size_t formalIdx = 0; formalIdx < argBindingsInInlinedCode.size(); formalIdx++)
+//     {
+//       IRISEXP LVAL = argBindingsInInlinedCode[formalIdx];
+//       IRISEXP RVAL;
+//       if (formalIdx >= callSiteArgs.size())
+//       {
+//         RVAL = std::make_shared<EnvReadSEXP>(
+//             std::make_shared<GlobalBindingSEXP>("undefined"),
+//             false);
+//       }
+//       else
+//       {
+//         RVAL = callSiteArgs[formalIdx];
+//       }
+//       // IRISEXP LValTarget, IRISEXP RVal, bool SLOPPY, bool THROWERR, bool SAFE, bool THISINIT
+//       sinTrueBlock->args.push_back(
+//           std::make_shared<EnvWriteSEXP>(LVAL, RVAL, false, false, true, false));
+//     }
+//   }
+//   auto sinTrueVertex = currCFGManager.addNode(sinTrueBlock);
+
+//   // SIN FALSE BLOCK
+//   auto sinFalseIDX = sinIDX--;
+//   auto sinFalseBlock = std::make_shared<BBSEXP>(bb->hasTopLevel(), bb->hasClosureBoundary(), bb->hasLexical(), sinFalseIDX, bb->getScopeIDX());
+//   {
+//     // bool CCall, bool ConstructorCall, bool PrivateCall, bool Import, bool Super, bool V8Intrinsic, bool TAILCALL, double JSDirectEval
+//     auto cs = std::make_shared<CallSiteSEXP>(false, false, false, false, false, false, false, false);
+//     cs->unsetJSDirectEval();
+
+//     cs->args.push_back(
+//         std::make_shared<FieldReadSEXP>(
+//             std::make_shared<EnvReadSEXP>(
+//                 std::make_shared<GlobalBindingSEXP>("console"),
+//                 false),
+//             std::make_shared<StringSEXP>("log")));
+
+//     cs->args.push_back(
+//         std::make_shared<StringSEXP>("SIN FALSE"));
+
+//     auto o = std::make_shared<StackRejectSEXP>(1);
+//     o->args.push_back(cs);
+//     sinFalseBlock->args.push_back(o);
+
+//     // Add console.log, SIN FALSE
+//     // Fallback
+//     sinFalseBlock->args.push_back(envWriteStmt);
+//     sinFalseBlock->args.push_back(std::make_shared<GotoSEXP>(continuationIDX));
+//   }
+//   auto sinFlaseVertex = currCFGManager.addNode(sinFalseBlock);
+
+//   // IRISEXP LBinop, IRISEXP RBinop, std::string OP
+//   auto test = std::make_shared<BinopSEXP>(
+//       std::make_shared<EnvReadSEXP>(
+//           std::make_shared<GlobalBindingSEXP>(callee->getNAME()),
+//           false),
+//       std::make_shared<EnvReadSEXP>(
+//           std::make_shared<GlobalBindingSEXP>(sinfo.guard),
+//           false),
+//       "===");
+//   // IRISEXP Test, bool NOT, double TRUE, double FALSE
+//   bb->args.push_back(std::make_shared<IfElseJumpSEXP>(test, false, sinTrueIDX, sinFalseIDX));
+
+//   currCFGManager.connect(bb, sinTrueBlock, {EdgeKind::Normal, envWriteStmt});
+//   currCFGManager.connect(bb, sinFalseBlock, {EdgeKind::Normal, envWriteStmt});
+//   currCFGManager.connect(sinFalseBlock, continuationBB, {EdgeKind::Normal, envWriteStmt});
+
+//   // Demote arg bindings to the stack frame
+//   clonedContainer.bindingsView.demoteArgumentsToRoot();
+
+//   // Merge Stack Frames... remember to copy over remote bindings as-well
+//   bbContView.bindingsView.mergeBindingsTree(bb->getScopeIDX(), clonedContainer.bindingsView);
+
+//   //                                ------------------------
+//   // Inline, SINTRUEBB       ----> |  Inlined Code Entry BB |
+//   //         CONTINUATIONBB  <---- |  [sinks i.e. return]   |
+//   //                                ------------------------
+//   //
+//   currCFGManager.doInlining(clonedContainer.cfgManager, sinTrueBlock, continuationBB, envWriteStmt);
+
+//   fileView.refreshSymbolTable();
+//   allStackBindings = bbContView.getAllStackBindings();
+//   capturedStackBindings = bbContView.getCapturedStackBindings();
+//   uncapturedStackBindings = bbContView.getUncapturedStackBindings();
+
+//   CopyPropInfo::blacklist = capturedStackBindings;
+//   Liveness::blacklist = capturedStackBindings;
+//   ConstantsAtStmt::blacklist = capturedStackBindings;
+//   EffectAtStmt::blacklist = capturedStackBindings;
+//   SetSafePropKeyAccesses::blacklist = capturedStackBindings;
+// }
+
+// if (auto envWrite = std::dynamic_pointer_cast<EnvWriteSEXP>(xx))
+// {
+//   if (auto callSite = std::dynamic_pointer_cast<CallSiteSEXP>(envWrite->getRVal()))
+//   {
+//     if (alreadyInlined.count(callSite) > 0)
+//       continue;
+//     if (
+//         callSite->hasCCall() || callSite->hasConstructorCall() || callSite->hasPrivateCall() || callSite->hasImport() || callSite->hasSuper() || callSite->hasV8Intrinsic())
+//     {
+//     }
+//     else
+//     {
+//       // CALLSITE()
+//       auto callee = callSite->args[0];
+//       if (auto gg = std::dynamic_pointer_cast<EnvReadSEXP>(callee))
+//       {
+//         if (auto globalCallee = std::dynamic_pointer_cast<GlobalBindingSEXP>(gg->getObj()))
+//         {
+//           auto targetName = globalCallee->getNAME();
+//           if (sinlining.count(targetName))
+//           {
+//             // do inlining
+//             // set LVAL = NULL
+//             auto sinfo = sinlining[targetName];
+//             if (sinfo.targetContainer == &bbContView) continue;
+//             if (sinfo.targetContainer->getCapturedStackBindings().size() == 0)
+//             {
+//               if (!sinfo.targetContainer->hasImplicitBindings())
+//               {
+
+//                 if (inliningMetadata[&bbContView][targetName] < INLINING_DEPTH)
+//                 {
+//                   inliningMetadata[&bbContView][targetName]++;
+//                   // Dont try to inline things inside the fallthrough block later
+//                   alreadyInlined.insert(callSite);
+
+//                   // Split Isolate BB where inlining must be performed
+//                   // this ensures that function being inlined is the last statement in the basic block.
+//                   auto continuationIDX = sinIDX--;
+//                   auto continuationBB = std::make_shared<BBSEXP>(bb->hasTopLevel(), bb->hasClosureBoundary(), bb->hasLexical(), continuationIDX, bb->getScopeIDX());
+//                   continuationBB->args.assign(bb->args.begin() + i + 1, bb->args.end());
+//                   bb->args.erase(bb->args.begin() + i + 1, bb->args.end());
+
+//                   bb->args.push_back(std::make_shared<GotoSEXP>(continuationIDX));
+
+//                   auto continuationVertex = currCFGManager.addNode(continuationBB);
+//                   currCFGManager.transferSuccessors(v, continuationVertex);
+//                   currCFGManager.connect(v, continuationVertex, {EdgeKind::Normal, envWrite});
+
+//                   // Add the current BB to the inlining list
+//                   retInliningList.push_back(bb);
+
+//                   // Add the newly created BB to the worklist
+//                   worklist.push_back(continuationVertex);
+//                 }
+//                 else
+//                 {
+//                   // std::cout << "Stopping inling at 5" << std::endl;
+//                 }
+//               }
+//               else
+//               {
+//                 // std::cout << "SinLining target has implicit bindings" << std::endl;
+//               }
+//             }
+//             else
+//             {
+//               // std::cout << "SinLining target has captured bindings" << std::endl;
+//             }
+//           }
+//         }
+//       }
+//     }
+//   }
+// }

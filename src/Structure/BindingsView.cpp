@@ -1,35 +1,116 @@
 #include "Iridium/Structure/BindingsView.h"
 #include "generated/IridiumTypes.h"
+#include "Iridium/Structure/FileView.h"
+
+BindingsView BindingsView::clone(
+    std::unordered_map<std::shared_ptr<EnvBindingSEXP>, std::shared_ptr<EnvBindingSEXP>> &localIndirectionMap,
+    std::unordered_map<std::shared_ptr<RemoteEnvBindingSEXP>, std::shared_ptr<RemoteEnvBindingSEXP>> &remoteIndirectionMap)
+{
+  BindingsView res(iridiumBuildContext);
+  res.prev = prev;
+  res.next = next;
+  res.root = root;
+
+  // res.args = args;
+  // res.bindings = bindings;
+  // res.remoteBindings = remoteBindings; // this is not used rn, so just copy it as it is...
+
+  for (auto &a : args)
+  {
+    
+    // std::string NAME, bool ASW, bool JSARG, bool JSRESTARG, bool JSLET, bool JSCONST, bool JSVAR, double IDX, double REFIDX, double Scope, double ParentScope, double NEXT
+    auto replacement = std::make_shared<EnvBindingSEXP>(
+        a->getNAME(), a->hasASW(), a->hasJSARG(), a->hasJSRESTARG(), a->hasJSLET(), a->hasJSCONST(), a->hasJSVAR(), a->getIDX(), a->getREFIDX(), a->getScope(), a->getParentScope(), a->getNEXT());
+    res.args.push_back(replacement);
+
+    if (FileView::dynamicEvaledBindings.count(a) > 0)
+    {
+      FileView::dynamicEvaledBindings.insert(replacement);
+    }
+
+    localIndirectionMap[a] = replacement;
+  }
+
+  for (auto &e : bindings)
+  {
+    for (auto &a : e.second)
+    {
+      // std::string NAME, bool ASW, bool JSARG, bool JSRESTARG, bool JSLET, bool JSCONST, bool JSVAR, double IDX, double REFIDX, double Scope, double ParentScope, double NEXT
+      auto replacement = std::make_shared<EnvBindingSEXP>(
+          a->getNAME(), a->hasASW(), a->hasJSARG(), a->hasJSRESTARG(), a->hasJSLET(), a->hasJSCONST(), a->hasJSVAR(), a->getIDX(), a->getREFIDX(), a->getScope(), a->getParentScope(), a->getNEXT());
+      res.bindings[e.first].push_back(replacement);
+      localIndirectionMap[a] = replacement;
+      if (FileView::dynamicEvaledBindings.count(a) > 0)
+      {
+        FileView::dynamicEvaledBindings.insert(replacement);
+      }
+    }
+  }
+
+  for (auto &rb : remoteBindings)
+  {
+    // IRISEXP ParentReference, bool NSIMPORT, double REFIDX
+    auto replacement = std::make_shared<RemoteEnvBindingSEXP>(
+        rb->getParentReference(), rb->hasNSIMPORT(), rb->getREFIDX());
+    res.remoteBindings.push_back(replacement);
+    remoteIndirectionMap[rb] = replacement;
+  }
+
+  res.targetContainer = targetContainer;
+
+  return res;
+}
 
 void BindingsView::demoteArgumentsToRoot()
 {
-  for (auto & a : args)
+  for (auto &a : args)
   {
-    a->setJSARG();
-    a->unsetJSRESTARG();
+    a->unsetJSARG();
+    a->unsetJSRESTARG(); // remove flags which indicate that these are argument bindings
     a->setJSVAR();
     bindings[root].push_back(a);
   }
   args.clear();
 }
 
-void BindingsView::mergeBindingsTree(double scopeIdx, BindingsView & other)
+void BindingsView::mergeBindingsTree(double scopeIdx, BindingsView &other)
 {
-  next[scopeIdx].insert(other.root);
-  for (auto & e : other.prev)
+  // SCOPEIDX ---> other.root
+  if (other.root != scopeIdx)
   {
-    assert(prev.count(e.first) == 0);
-    prev[e.first] = e.second;
+    prev[other.root] = scopeIdx;
+    next[scopeIdx].insert(other.root);
+    for (auto &e : other.prev)
+    {
+      // assert(prev.count(e.first) == 0);
+      prev[e.first] = e.second;
+    }
+
+    for (auto &e : other.next)
+    {
+      // assert(next.count(e.first) == 0);
+
+      for (auto s : e.second)
+      {
+        next[e.first].insert(s);
+      }
+    }
   }
 
-  for (auto & e : other.next)
+  // Copy over stack bindings
+  for (auto &e : other.bindings)
   {
-    assert(next.count(e.first) == 0);
-    
-    for (auto s : e.second)
+    for (auto &b : e.second)
     {
-      next[e.first].insert(s);
+      bindings[e.first].push_back(b);
     }
+  }
+
+  // Copy over remote bindings
+  for (auto &e : other.remoteBindings)
+  {
+    e->setREFIDX(remoteBindings.size());
+    remoteBindings.push_back(e);
   }
 }
 
@@ -102,7 +183,7 @@ std::shared_ptr<BindingsSEXP> BindingsView::checkout()
   std::vector<IRISEXP> res;
   auto localBindings = targetContainer->getLocalBindings();
 
-  for (auto & a : args)
+  for (auto &a : args)
   {
     // // Restore flags, this can get affected if bindings were demoted inside a clone
     // a->setJSARG();
@@ -159,8 +240,6 @@ std::shared_ptr<BindingsSEXP> BindingsView::checkout()
   }
 
   localBindings->args = std::move(res);
-
-
 
   return targetContainer;
 }

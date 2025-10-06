@@ -6,6 +6,7 @@
 
 #include "Iridium/Analysis/Domains/Liveness.h"
 #include "Iridium/Analysis/DataflowSolver.h"
+#include "Iridium/Structure/FileView.h"
 
 struct RAGC
 {
@@ -137,6 +138,123 @@ BBContainerView::BBContainerView(
   initCFG();
 }
 
+void BBContainerView::refreshSymbolTable()
+{
+  for (auto &b : bindingsView.bindings)
+  {
+    for (auto &currBinding : b.second)
+    {
+      if (symbolTable.find(currBinding) == symbolTable.end())
+        symbolTable[currBinding] = SymbolMetadata();
+      symbolTable[currBinding].binding = currBinding;
+    }
+  }
+
+  if (targetContainer->hasTopLevel())
+  {
+    for (auto &currRemoteBinding : bindingsView.remoteBindings)
+    {
+      auto currBinding = resolveRemoteBinding(currRemoteBinding);
+      assert(currBinding);
+      if (symbolTable.find(currBinding) == symbolTable.end())
+        symbolTable[currBinding] = SymbolMetadata();
+      symbolTable[currBinding].binding = currBinding;
+      symbolTable[currBinding].isTopLevelModuleBinding = true;
+    }
+  }
+
+  // For each binding, create an entry in the symbol table
+  for (auto &b : bindingsView.bindings)
+  {
+    for (auto &currBinding : b.second)
+    {
+      if (FileView::dynamicEvaledBindings.count(currBinding) > 0)
+      {
+        SEXPPath path = {-1, -1, std::make_shared<NullSEXP>(true)};
+        symbolTable[currBinding].remoteReads.push_back(path);
+        symbolTable[currBinding].remoteWrites.push_back(path);
+      }
+      auto predicate = [&](const IRISEXP &ele)
+      {
+        return ele == currBinding;
+      };
+
+      cfgManager.traverseCFG(
+          [&](Vertex v, std::shared_ptr<BBSEXP> currBB)
+          {
+            for (auto &stmt : currBB->args)
+            {
+              if (hasNode(stmt, predicate))
+              {
+                SEXPPath path = {targetContainer->getScopeIDX(), currBB->getIDX(), stmt};
+                if (auto implicitBindingDecl = std::dynamic_pointer_cast<JSImplicitBindingDeclarationSEXP>(stmt))
+                {
+                  if (implicitBindingDecl->getStore() == currBinding)
+                    symbolTable[currBinding].localWrites.push_back(path);
+                  else
+                    symbolTable[currBinding].localReads.push_back(path);
+                }
+                else if (auto envWrite = std::dynamic_pointer_cast<EnvWriteSEXP>(stmt))
+                {
+                  if (envWrite->getLValTarget() == currBinding)
+                    symbolTable[currBinding].localWrites.push_back(path);
+                  else
+                    symbolTable[currBinding].localReads.push_back(path);
+                }
+                else
+                {
+                  symbolTable[currBinding].localReads.push_back(path);
+                }
+              }
+            }
+          });
+    }
+  }
+
+  for (auto &currRemoteBinding : bindingsView.remoteBindings)
+  {
+    auto currBinding = resolveRemoteBinding(currRemoteBinding);
+    assert(currBinding);
+    auto predicate = [&](const IRISEXP &ele)
+    {
+      return ele == currRemoteBinding;
+    };
+
+    auto &readsVector = targetContainer->hasTopLevel() ? symbolTable[currBinding].localReads : symbolTable[currBinding].remoteReads;
+    auto &writesVector = targetContainer->hasTopLevel() ? symbolTable[currBinding].localWrites : symbolTable[currBinding].remoteWrites;
+
+    cfgManager.traverseCFG(
+        [&](Vertex v, std::shared_ptr<BBSEXP> currBB)
+        {
+          for (auto &stmt : currBB->args)
+          {
+            if (hasNode(stmt, predicate))
+            {
+              SEXPPath path = {targetContainer->getScopeIDX(), currBB->getIDX(), stmt};
+              if (auto implicitBindingDecl = std::dynamic_pointer_cast<JSImplicitBindingDeclarationSEXP>(stmt))
+              {
+                if (implicitBindingDecl->getStore() == currRemoteBinding)
+                  writesVector.push_back(path);
+                else
+                  readsVector.push_back(path);
+              }
+              else if (auto envWrite = std::dynamic_pointer_cast<EnvWriteSEXP>(stmt))
+              {
+                if (envWrite->getLValTarget() == currRemoteBinding)
+                  writesVector.push_back(path);
+                else
+                  readsVector.push_back(path);
+              }
+              else
+              {
+                readsVector.push_back(path);
+              }
+            }
+          }
+        });
+  }
+}
+
 void BBContainerView::populateSymbolTable()
 {
 
@@ -170,6 +288,14 @@ void BBContainerView::populateSymbolTable()
   {
     for (auto &currBinding : b.second)
     {
+
+      if (FileView::dynamicEvaledBindings.count(currBinding) > 0)
+      {
+        SEXPPath path = {-1, -1, std::make_shared<NullSEXP>(true)};
+        symbolTable[currBinding].remoteReads.push_back(path);
+        symbolTable[currBinding].remoteWrites.push_back(path);
+      }
+      
       auto predicate = [&](const IRISEXP &ele)
       {
         return ele == currBinding;
@@ -523,7 +649,7 @@ std::shared_ptr<BBContainerSEXP> BBContainerView::checkout()
   }
 #endif
 
-  { // Stack collapse
+  if (!tainted) { // Stack collapse
     RAGC regAlloc;
     for (auto &e : livenessResult)
     { // e.second.dfv is a set std::set<std::shared_ptr<EnvBindingSEXP>>
@@ -605,23 +731,26 @@ std::shared_ptr<BBContainerSEXP> BBContainerView::checkout()
     }
 
     std::sort(finalStack.begin(), finalStack.end(),
-          [](const IRISEXP &a, const IRISEXP &b) {
-            auto a1 = std::dynamic_pointer_cast<EnvBindingSEXP>(a);
-            auto b1 = std::dynamic_pointer_cast<EnvBindingSEXP>(b);
-            assert(a1);
-            assert(b1);
-            if (a1->hasJSARG() || b1->hasJSARG())
-            {
-              if (a1->hasJSARG() && b1->hasJSARG()) return a1->getREFIDX() < b1->getREFIDX();
+              [](const IRISEXP &a, const IRISEXP &b)
+              {
+                auto a1 = std::dynamic_pointer_cast<EnvBindingSEXP>(a);
+                auto b1 = std::dynamic_pointer_cast<EnvBindingSEXP>(b);
+                assert(a1);
+                assert(b1);
+                if (a1->hasJSARG() || b1->hasJSARG())
+                {
+                  if (a1->hasJSARG() && b1->hasJSARG())
+                    return a1->getREFIDX() < b1->getREFIDX();
 
-              if (a1->hasJSARG()) return true;
-              else return false;
-            }
-            return a1->getREFIDX() < b1->getREFIDX();
-          });
+                  if (a1->hasJSARG())
+                    return true;
+                  else
+                    return false;
+                }
+                return a1->getREFIDX() < b1->getREFIDX();
+              });
 
-
-    std::cout << "Stack collapse: " << bindingsObj->getLocalBindings()->args.size() << " -> " << finalStack.size() << std::endl;
+    // std::cout << "Stack collapse: " << bindingsObj->getLocalBindings()->args.size() << " -> " << finalStack.size() << std::endl;
 
     bindingsObj->getLocalBindings()->args = std::move(finalStack);
   }
@@ -726,17 +855,18 @@ bool BBContainerView::hasImplicitBindings()
     for (auto &b : e.second)
     {
       if (
-        b->getNAME() == "arguments" 
-        || b->getNAME() == "<this_func>" 
-        || b->getNAME() == "<new_target>" 
-        || b->getNAME() == "<home_obj>" 
-        || b->getNAME() == "<var_obj>" 
-        || b->getNAME() == "<module_meta>"
-        || b->getNAME() == "<super_ctr>"
-        || b->getNAME() == "<super_obj>"
-        || b->getNAME() == "this"
-        || b->getNAME() == "ret"
-      ) return true;
+          b->getNAME() == "arguments" 
+          || b->getNAME() == "<this_func>" 
+          || b->getNAME() == "<new_target>" 
+          || b->getNAME() == "<home_obj>" 
+          || b->getNAME() == "<var_obj>" 
+          || b->getNAME() == "<module_meta>" 
+          || b->getNAME() == "<super_ctr>" 
+          || b->getNAME() == "<super_obj>" 
+          || b->getNAME() == "this" 
+          || b->getNAME() == "ret"
+        )
+        return true;
     }
   }
   return false;

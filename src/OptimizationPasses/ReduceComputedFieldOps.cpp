@@ -35,26 +35,26 @@ void patchExpr(IRISEXP currSEXP)
           std::make_shared<StringSEXP>("null")
         );
       }
-      else if (auto numberObj = std::dynamic_pointer_cast<NumberSEXP>(currField))
-      {
-        double numberStored = numberObj->getIridiumPrimitive();
-        if (!hasFractionalPart(numberStored))
-        {
-          // std::cout << "Reduced Computed Field Read -> Number (non fractional)" << std::endl;
-          currSEXP->args.at(i) = std::make_shared<FieldReadSEXP>(
-            computedFieldRead->getObj(), 
-            std::make_shared<StringSEXP>(std::to_string(static_cast<int>(std::trunc(numberStored))))
-          );
-        }
-        else
-        {
-          // std::cout << "Reduced Computed Field Read -> Number (fractional)" << std::endl;
-          currSEXP->args.at(i) = std::make_shared<FieldReadSEXP>(
-            computedFieldRead->getObj(), 
-            std::make_shared<StringSEXP>(std::to_string(numberStored))
-          );
-        }
-      }
+      // else if (auto numberObj = std::dynamic_pointer_cast<NumberSEXP>(currField))
+      // {
+      //   double numberStored = numberObj->getIridiumPrimitive();
+      //   if (!hasFractionalPart(numberStored))
+      //   {
+      //     // std::cout << "Reduced Computed Field Read -> Number (non fractional)" << std::endl;
+      //     currSEXP->args.at(i) = std::make_shared<FieldReadSEXP>(
+      //       computedFieldRead->getObj(), 
+      //       std::make_shared<StringSEXP>(std::to_string(static_cast<int>(std::trunc(numberStored))))
+      //     );
+      //   }
+      //   else
+      //   {
+      //     // std::cout << "Reduced Computed Field Read -> Number (fractional)" << std::endl;
+      //     currSEXP->args.at(i) = std::make_shared<FieldReadSEXP>(
+      //       computedFieldRead->getObj(), 
+      //       std::make_shared<StringSEXP>(std::to_string(numberStored))
+      //     );
+      //   }
+      // }
       else if (auto stringObj = std::dynamic_pointer_cast<StringSEXP>(currField))
       {
         // std::cout << "Reduced Computed Field Read -> String" << std::endl;
@@ -92,25 +92,25 @@ void patchExpr(IRISEXP currSEXP)
       }
       else if (auto numberObj = std::dynamic_pointer_cast<NumberSEXP>(currField))
       {
-        double numberStored = numberObj->getIridiumPrimitive();
-        if (!hasFractionalPart(numberStored))
-        {
-          // std::cout << "Reduced Computed Field Write -> Number (non fractional)" << std::endl;
-          currSEXP->args.at(i) = std::make_shared<FieldWriteSEXP>(
-            computedFieldWrite->getObj(), 
-            std::make_shared<StringSEXP>(std::to_string(static_cast<int>(std::trunc(numberStored)))),
-          computedFieldWrite->getValue()
-          );
-        }
-        else
-        {
-          // std::cout << "Reduced Computed Field Write -> Number (fractional)" << std::endl;
-          currSEXP->args.at(i) = std::make_shared<FieldWriteSEXP>(
-            computedFieldWrite->getObj(), 
-            std::make_shared<StringSEXP>(std::to_string(numberStored)),
-          computedFieldWrite->getValue()
-          );
-        }
+        // double numberStored = numberObj->getIridiumPrimitive();
+        // if (!hasFractionalPart(numberStored))
+        // {
+        //   // std::cout << "Reduced Computed Field Write -> Number (non fractional)" << std::endl;
+        //   currSEXP->args.at(i) = std::make_shared<FieldWriteSEXP>(
+        //     computedFieldWrite->getObj(), 
+        //     std::make_shared<StringSEXP>(std::to_string(static_cast<int>(std::trunc(numberStored)))),
+        //   computedFieldWrite->getValue()
+        //   );
+        // }
+        // else
+        // {
+        //   // std::cout << "Reduced Computed Field Write -> Number (fractional)" << std::endl;
+        //   currSEXP->args.at(i) = std::make_shared<FieldWriteSEXP>(
+        //     computedFieldWrite->getObj(), 
+        //     std::make_shared<StringSEXP>(std::to_string(numberStored)),
+        //   computedFieldWrite->getValue()
+        //   );
+        // }
       }
       else if (auto stringObj = std::dynamic_pointer_cast<StringSEXP>(currField))
       {

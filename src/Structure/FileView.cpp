@@ -1,5 +1,7 @@
 #include "Iridium/Structure/FileView.h"
 
+std::set<std::shared_ptr<EnvBindingSEXP>> FileView::dynamicEvaledBindings;
+
 void FileView::init()
 {
   while (true)
@@ -28,7 +30,7 @@ void FileView::refreshSymbolTable()
   symbolTable.clear();
   for (auto &bbCont : bbContainerViews)
   {
-    bbCont.populateSymbolTable();
+    bbCont.refreshSymbolTable();
   }
 }
 

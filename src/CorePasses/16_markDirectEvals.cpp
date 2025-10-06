@@ -37,7 +37,7 @@ std::vector<std::shared_ptr<EnvBindingSEXP>> filterLocalBindingsByScope(std::vec
 }
 
 
-void markDirectEvals(IRISEXP currSEXP, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext, double currBBScope)
+void markDirectEvals(IRISEXP currSEXP, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext, double currBBScope, std::set<double> & taintedScopes)
 {
   if (auto bObj = std::dynamic_pointer_cast<BindingsSEXP>(currSEXP))
   {
@@ -50,44 +50,49 @@ void markDirectEvals(IRISEXP currSEXP, std::unordered_map<int, IRIBUILDCONTEXT> 
     {
       auto callee = callSiteSEXP->args[0];
 
-      if (auto globalBindingCallee = std::dynamic_pointer_cast<GlobalBindingSEXP>(callee))
+      if (auto calll = std::dynamic_pointer_cast<EnvReadSEXP>(callee))
       {
-        if (globalBindingCallee->getNAME() == "eval")
+        if (auto globalBindingCallee = std::dynamic_pointer_cast<GlobalBindingSEXP>(calll->getObj()))
         {
-          auto currLookup = currBBScope;
-          if (!lastBindingsObject) throw std::runtime_error("bindingsObj missing...");
-          if (currLookup < 0) throw std::runtime_error("how is this less than zero?");
-          
-          auto bindingsObjLocalBindings = lastBindingsObject->getLocalBindings()->args;
-
-          do {
-            auto bs = filterLocalBindingsByScope(bindingsObjLocalBindings, currLookup);
-
-            if (bs.size() > 0)
-            {
-              callSiteSEXP->setJSDirectEval(bs.back()->getREFIDX());
-              break;
-            }
-            else
-            {
-              currLookup = getLexicalScope(currLookup, iridiumBuildContext);
-              if (currLookup == -1) {
-                callSiteSEXP->setJSDirectEval(0);
+          if (globalBindingCallee->getNAME() == "eval")
+          {
+            taintedScopes.insert(currBBScope);
+            auto currLookup = currBBScope;
+            if (!lastBindingsObject) throw std::runtime_error("bindingsObj missing...");
+            if (currLookup < 0) throw std::runtime_error("how is this less than zero?");
+            
+            auto bindingsObjLocalBindings = lastBindingsObject->getLocalBindings()->args;
+  
+            do {
+              auto bs = filterLocalBindingsByScope(bindingsObjLocalBindings, currLookup);
+  
+              if (bs.size() > 0)
+              {
+                callSiteSEXP->setJSDirectEval(bs.back()->getREFIDX());
                 break;
               }
-            }
-          } while (true);
+              else
+              {
+                currLookup = getLexicalScope(currLookup, iridiumBuildContext);
+                if (currLookup == -1) {
+                  callSiteSEXP->setJSDirectEval(0);
+                  break;
+                }
+              }
+            } while (true);
+          }
         }
       }
+
     }
   }
   if (auto bb = std::dynamic_pointer_cast<BBSEXP>(currSEXP))
   {
-    for (auto & e : bb->args) markDirectEvals(e, iridiumBuildContext, bb->getScopeIDX());
+    for (auto & e : bb->args) markDirectEvals(e, iridiumBuildContext, bb->getScopeIDX(), taintedScopes);
   }
   else
   {
-    for (auto & e : currSEXP->args) markDirectEvals(e, iridiumBuildContext, currBBScope);
+    for (auto & e : currSEXP->args) markDirectEvals(e, iridiumBuildContext, currBBScope, taintedScopes);
   }
 
 }
