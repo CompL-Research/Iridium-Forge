@@ -83,57 +83,57 @@ void PassManager::optimize(int level, std::set<double> taintedScopes)
 
   // Generate global inlining targets
 
-  auto &topLevelContainer = fileView.getTopLevelContainer();
+  // auto &topLevelContainer = fileView.getTopLevelContainer();
 
-  struct SinLining
-  {
-    BBContainerView *targetContainer;
-    std::string guard;
-    IRISEXP guardStoreLoc; // We will remove this if the sinlining never uses it later
-    bool used;
-  };
+  // struct SinLining
+  // {
+  //   BBContainerView *targetContainer;
+  //   std::string guard;
+  //   IRISEXP guardStoreLoc; // We will remove this if the sinlining never uses it later
+  //   bool used;
+  // };
 
-  std::unordered_map<std::string, SinLining> sinlining;
+  // std::unordered_map<std::string, SinLining> sinlining;
 
-  double sinIDX = -1;
+  // double sinIDX = -1;
 
-  topLevelContainer.cfgManager.traverseCFG(
-      [&](Vertex v, std::shared_ptr<BBSEXP> bb)
-      {
-        for (auto it = bb->args.begin(); it != bb->args.end(); /* no ++ here */)
-        {
-          if (auto funcDecl = std::dynamic_pointer_cast<JSFuncDeclSEXP>(*it))
-          {
-            auto store = std::dynamic_pointer_cast<GlobalBindingSEXP>(funcDecl->getLValTarget());
-            auto poolBinding = std::dynamic_pointer_cast<PoolBindingSEXP>(funcDecl->getRVal());
-            assert(store && poolBinding);
-            auto lambda = std::dynamic_pointer_cast<LambdaSEXP>(poolBinding->getLambda());
-            assert(lambda);
+  // topLevelContainer.cfgManager.traverseCFG(
+  //     [&](Vertex v, std::shared_ptr<BBSEXP> bb)
+  //     {
+  //       for (auto it = bb->args.begin(); it != bb->args.end(); /* no ++ here */)
+  //       {
+  //         if (auto funcDecl = std::dynamic_pointer_cast<JSFuncDeclSEXP>(*it))
+  //         {
+  //           auto store = std::dynamic_pointer_cast<GlobalBindingSEXP>(funcDecl->getLValTarget());
+  //           auto poolBinding = std::dynamic_pointer_cast<PoolBindingSEXP>(funcDecl->getRVal());
+  //           assert(store && poolBinding);
+  //           auto lambda = std::dynamic_pointer_cast<LambdaSEXP>(poolBinding->getLambda());
+  //           assert(lambda);
 
-            std::string guardName = randomString(5);
-            IRISEXP guardStoreLoc = std::make_shared<EnvWriteSEXP>(
-                std::make_shared<GlobalBindingSEXP>(guardName),
-                std::make_shared<GlobalBindingSEXP>(store->getNAME()),
-                true, false, true, false);
+  //           std::string guardName = randomString(5);
+  //           IRISEXP guardStoreLoc = std::make_shared<EnvWriteSEXP>(
+  //               std::make_shared<GlobalBindingSEXP>(guardName),
+  //               std::make_shared<GlobalBindingSEXP>(store->getNAME()),
+  //               true, false, true, false);
 
-            it = bb->args.insert(std::next(it), guardStoreLoc); // returns iterator to new element
-            ++it;                                               // advance past inserted element
+  //           it = bb->args.insert(std::next(it), guardStoreLoc); // returns iterator to new element
+  //           ++it;                                               // advance past inserted element
 
-            // std::cout << "adding to sinlining table: " << store->getNAME() << std::endl;
+  //           // std::cout << "adding to sinlining table: " << store->getNAME() << std::endl;
 
-            sinlining[store->getNAME()] = {
-                &fileView.getContainer(lambda->getStartBBIDX()),
-                guardName,
-                guardStoreLoc,
-                false};
-          }
-          ++it; // move to next original element
-        }
-      });
+  //           sinlining[store->getNAME()] = {
+  //               &fileView.getContainer(lambda->getStartBBIDX()),
+  //               guardName,
+  //               guardStoreLoc,
+  //               false};
+  //         }
+  //         ++it; // move to next original element
+  //       }
+  //     });
 
-  std::set<IRISEXP> alreadyInlined;
+  // std::set<IRISEXP> alreadyInlined;
 
-  std::unordered_map<BBContainerView *, std::unordered_map<std::string, int>> inliningMetadata;
+  // std::unordered_map<BBContainerView *, std::unordered_map<std::string, int>> inliningMetadata;
 
   for (int i = 0; i < 5; i++)
   {
@@ -158,7 +158,6 @@ void PassManager::optimize(int level, std::set<double> taintedScopes)
       for (auto & ts : taintedScopes)
       {
         if (isScopeReachable(ts, bbContView.getScopeIdx(), iridiumBuildContext)) {
-          std::cout << "Skipping opt passes on tainted scope" << std::endl;
           bbContView.tainted = true;
           continue;
         }

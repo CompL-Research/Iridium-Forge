@@ -77,6 +77,7 @@ static bool maybeEffect(IRISEXP rVAL)
       std::dynamic_pointer_cast<JSForOfNextSEXP>(rVAL) ||
       std::dynamic_pointer_cast<JSForOfStartSEXP>(rVAL) ||
       std::dynamic_pointer_cast<JSAppendSEXP>(rVAL) ||
+      std::dynamic_pointer_cast<InvokeFinalizerSEXP>(rVAL) ||
       std::dynamic_pointer_cast<JSCopyDataPropertiesSEXP>(rVAL) ||
       std::dynamic_pointer_cast<JSDefineObjMethodSEXP>(rVAL) ||
 

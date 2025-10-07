@@ -3,6 +3,8 @@
 #include "generated/IridiumTypes.h"
 #include "Iridium/IridiumReductions.h"
 
+static bool USE_TOP_LEVEL_LOCALS = true;
+
 void populateExplicitBindings(IRISEXP fileSexp, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext)
 {
   bool isModule = false;
@@ -73,9 +75,15 @@ void populateExplicitBindings(IRISEXP fileSexp, std::unordered_map<int, IRIBUILD
 
           if (scopeToHoistTo == topLevelScopeIdx && !isModule)
           {
-            // Top Level Global Declaration for script mode
-            sloppyDeclarations.push_back(std::make_pair(binding->getNAME(), flag));
-            // explicitBindings[scopeToHoistTo].push_back(std::make_pair(binding->getNAME(), flag));
+            if (USE_TOP_LEVEL_LOCALS)
+            {
+              explicitBindings[scopeToHoistTo].push_back(std::make_pair(binding->getNAME(), flag));
+            }
+            else
+            {
+              // Top Level Global Declaration for script mode
+              sloppyDeclarations.push_back(std::make_pair(binding->getNAME(), flag));
+            }
           }
           else
           {
@@ -167,7 +175,17 @@ void populateExplicitBindings(IRISEXP fileSexp, std::unordered_map<int, IRIBUILD
 
           if (!hasBindingReference(bindingsSEXP, containerBC->scopeIdx, bindingName, b.second, localScope, parentScope))
           {
-            if (startBB->hasTopLevel())
+            if (USE_TOP_LEVEL_LOCALS)
+            {
+              auto localBinding = std::make_shared<EnvBindingSEXP>(bindingName, false, false, false, b.second == EnvBindingSEXPKindFlag::JSLET, b.second == EnvBindingSEXPKindFlag::JSCONST, b.second == EnvBindingSEXPKindFlag::JSVAR, containerBC->scopeIdx, -1, localScope, parentScope, -1);
+              addToListSEXP(bindingsSEXP->getLocalBindings(), localBinding);
+
+              envWrites.push_back(
+                // IRISEXP LValTarget, IRISEXP RVal, bool SLOPPY, bool THROWERR, bool SAFE, bool THISINIT
+                std::make_shared<EnvWriteSEXP>(lval, rval, false, false, true, false)
+              );
+            }
+            else if (startBB->hasTopLevel())
             { // the place where it will be hoisted to, is it the top level container?
               // std::string NAME, bool ASW, bool JSARG, bool JSRESTARG, bool JSLET, bool JSCONST, bool JSVAR, double IDX, double REFIDX, double Scope, double ParentScope, double NEXT
               auto localBinding = std::make_shared<EnvBindingSEXP>(bindingName, false, false, false, b.second == EnvBindingSEXPKindFlag::JSLET, b.second == EnvBindingSEXPKindFlag::JSCONST, b.second == EnvBindingSEXPKindFlag::JSVAR, containerBC->scopeIdx, -1, localScope, parentScope, -1);

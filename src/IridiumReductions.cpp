@@ -111,7 +111,18 @@ std::shared_ptr<EnvWriteSEXP> reduceJSDecl(std::shared_ptr<JSExplicitBindingDecl
 std::shared_ptr<JSExplicitBindingDeclarationSEXP> reduceJSFunDecl(std::shared_ptr<JSFuncDeclSEXP> funcDecl)
 {
   funcDecl->tag = "JSExplicitBindingDeclaration";
-  return JSExplicitBindingDeclarationSEXP::generateFrom(funcDecl);
+  // IRISEXP LValTarget, IRISEXP RVal, bool JSLET, bool JSCONST, bool JSVAR, bool SLOPPY, bool SAFE, bool THISINIT
+  return std::make_shared<JSExplicitBindingDeclarationSEXP>(
+    funcDecl->getLValTarget(),
+    funcDecl->getRVal(),
+    false,
+    false,
+    true,
+    false,
+    true,
+    false
+  );
+  // return JSExplicitBindingDeclarationSEXP::generateFrom(funcDecl);
 }
 
 // std::shared_ptr<EnvWriteSEXP> makeEnvWrite(IRISEXP lval, IRISEXP rval, bool safe, bool thisInit)

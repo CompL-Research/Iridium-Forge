@@ -8,6 +8,139 @@
 #include <cassert>
 #include "Iridium/IridiumBuildContext.h"
 
+// Paste this helper inside the same translation unit (or make it static inline).
+static void append_escaped_json_string(std::ostringstream &oss, const std::string &s)
+{
+  oss << '"';
+  for (size_t i = 0; i < s.size();)
+  {
+    size_t start = i;
+    uint8_t b1 = static_cast<uint8_t>(s[i]);
+    uint32_t cp = 0;
+    size_t len = 0;
+
+    // Decode UTF-8 (simple validation of continuation bytes)
+    if (b1 < 0x80)
+    {
+      cp = b1;
+      len = 1;
+    }
+    else if ((b1 >> 5) == 0x6)
+    { // 2-byte
+      if (i + 1 < s.size())
+      {
+        uint8_t b2 = static_cast<uint8_t>(s[i + 1]);
+        if ((b2 & 0xC0) == 0x80)
+        {
+          cp = ((b1 & 0x1F) << 6) | (b2 & 0x3F);
+          len = 2;
+        }
+      }
+    }
+    else if ((b1 >> 4) == 0xE)
+    { // 3-byte
+      if (i + 2 < s.size())
+      {
+        uint8_t b2 = static_cast<uint8_t>(s[i + 1]);
+        uint8_t b3 = static_cast<uint8_t>(s[i + 2]);
+        if ((b2 & 0xC0) == 0x80 && (b3 & 0xC0) == 0x80)
+        {
+          cp = ((b1 & 0x0F) << 12) | ((b2 & 0x3F) << 6) | (b3 & 0x3F);
+          len = 3;
+        }
+      }
+    }
+    else if ((b1 >> 3) == 0x1E)
+    { // 4-byte
+      if (i + 3 < s.size())
+      {
+        uint8_t b2 = static_cast<uint8_t>(s[i + 1]);
+        uint8_t b3 = static_cast<uint8_t>(s[i + 2]);
+        uint8_t b4 = static_cast<uint8_t>(s[i + 3]);
+        if ((b2 & 0xC0) == 0x80 && (b3 & 0xC0) == 0x80 && (b4 & 0xC0) == 0x80)
+        {
+          cp = ((b1 & 0x07) << 18) | ((b2 & 0x3F) << 12) | ((b3 & 0x3F) << 6) | (b4 & 0x3F);
+          len = 4;
+        }
+      }
+    }
+
+    if (len == 0)
+    {
+      // Invalid/partial sequence -> replacement character
+      oss << "\\uFFFD";
+      ++i;
+      continue;
+    }
+
+    i += len;
+
+    // Escape logic
+    if (cp == 0x22)
+    { // "
+      oss << "\\\"";
+    }
+    else if (cp == 0x5C)
+    { // backslash
+      oss << "\\\\";
+    }
+    else if (cp == 0x0A)
+    {
+      oss << "\\n";
+    }
+    else if (cp == 0x0D)
+    {
+      oss << "\\r";
+    }
+    else if (cp == 0x09)
+    {
+      oss << "\\t";
+    }
+    else if (cp == 0x08)
+    {
+      oss << "\\b";
+    }
+    else if (cp == 0x0C)
+    {
+      oss << "\\f";
+    }
+    else if (cp < 0x20 || cp == 0x2028 || cp == 0x2029)
+    {
+      // Control or LS/PS — emit \uXXXX
+      char buf[8];
+      snprintf(buf, sizeof(buf), "%04x", static_cast<unsigned>(cp));
+      oss << "\\u" << buf;
+    }
+    else if (cp <= 0x7F)
+    {
+      // ASCII printable
+      oss << static_cast<char>(cp);
+    }
+    else if (cp <= 0xFFFF)
+    {
+      // Non-ASCII BMP: preserve original UTF-8 bytes
+      oss.write(s.data() + start, static_cast<std::streamsize>(len));
+    }
+    else if (cp <= 0x10FFFF)
+    {
+      // Above BMP — emit surrogate pair as \uXXXX\uXXXX
+      uint32_t U = cp - 0x10000;
+      uint16_t hi = static_cast<uint16_t>(0xD800 + (U >> 10));
+      uint16_t lo = static_cast<uint16_t>(0xDC00 + (U & 0x3FF));
+      char buf[8];
+      snprintf(buf, sizeof(buf), "%04x", static_cast<unsigned>(hi));
+      oss << "\\u" << buf;
+      snprintf(buf, sizeof(buf), "%04x", static_cast<unsigned>(lo));
+      oss << "\\u" << buf;
+    }
+    else
+    {
+      // Shouldn't happen, but safe fallback
+      oss << "\\uFFFD";
+    }
+  }
+  oss << '"';
+}
 class IridiumFlag
 {
 public:
@@ -74,45 +207,51 @@ public:
     case IridiumPrimitives::string:
     {
       const std::string &str = std::get<std::string>(value);
-      oss << "\"";
-      for (unsigned char c : str)
-      {
-        switch (c)
-        {
-        case '\"':
-          oss << "\\\"";
-          break;
-        case '\\':
-          oss << "\\\\";
-          break;
-        case '\n':
-          oss << "\\n";
-          break;
-        case '\r':
-          oss << "\\r";
-          break;
-        case '\t':
-          oss << "\\t";
-          break;
-        default:
-          if (c < 0x20 || c > 0x7E)
-          {
-            // Encode as \uXXXX
-            oss << "\\u"
-                << std::hex << std::setw(4) << std::setfill('0')
-                << static_cast<int>(c)
-                << std::dec; // restore decimal
-          }
-          else
-          {
-            oss << c;
-          }
-          break;
-        }
-      }
-      oss << "\"";
+      append_escaped_json_string(oss, str);
       break;
     }
+    // case IridiumPrimitives::string:
+    // {
+    //   const std::string &str = std::get<std::string>(value);
+    //   oss << "\"";
+    //   for (unsigned char c : str)
+    //   {
+    //     switch (c)
+    //     {
+    //     case '\"':
+    //       oss << "\\\"";
+    //       break;
+    //     case '\\':
+    //       oss << "\\\\";
+    //       break;
+    //     case '\n':
+    //       oss << "\\n";
+    //       break;
+    //     case '\r':
+    //       oss << "\\r";
+    //       break;
+    //     case '\t':
+    //       oss << "\\t";
+    //       break;
+    //     default:
+    //       if (c < 0x20 || c > 0x7E)
+    //       {
+    //         // Encode as \uXXXX
+    //         oss << "\\u"
+    //             << std::hex << std::setw(4) << std::setfill('0')
+    //             << static_cast<int>(c)
+    //             << std::dec; // restore decimal
+    //       }
+    //       else
+    //       {
+    //         oss << c;
+    //       }
+    //       break;
+    //     }
+    //   }
+    //   oss << "\"";
+    //   break;
+    // }
     // case IridiumPrimitives::string:
     // {
     //   const std::string &str = std::get<std::string>(value);
@@ -269,8 +408,7 @@ public:
         out << "]";
       }
       // Normal case: all flags
-      else 
-      if (!flags.empty())
+      else if (!flags.empty())
       {
         out << "[";
         for (size_t i = 0; i < flags.size(); i++)
@@ -626,7 +764,7 @@ public:
     flags.push_back(std::make_shared<IridiumFlag>(flagToSet, str));
   }
 
-  bool hasFlag(const std::string &flagToCheck) const 
+  bool hasFlag(const std::string &flagToCheck) const
   {
     for (auto &flag : flags)
     {

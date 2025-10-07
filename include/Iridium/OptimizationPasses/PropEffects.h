@@ -398,6 +398,8 @@ class PropEffects
     if (auto o = std::dynamic_pointer_cast<JSAppendSEXP>(expr)) return false;
     if (auto o = std::dynamic_pointer_cast<JSCopyDataPropertiesSEXP>(expr)) return false;
     if (auto o = std::dynamic_pointer_cast<JSDefineObjMethodSEXP>(expr)) return false;
+    if (auto o = std::dynamic_pointer_cast<PoolBindingSEXP>(expr)) return false;
+
 
     if (auto o = std::dynamic_pointer_cast<JSDefineObjPropSEXP>(expr)) {
       if (auto node = std::dynamic_pointer_cast<EnvReadSEXP>(o->getTargetObj()))
