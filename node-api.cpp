@@ -61,6 +61,14 @@ Napi::Value execute(const Napi::CallbackInfo &info)
   msgpack::object iridium = parsedObj.via.map.ptr[2].val;
   msgpack::object buildContext = parsedObj.via.map.ptr[3].val;
 
+  // TODO, add a dynamic check to discover large top level bindings and trigger this
+  if (
+    std::string(path.via.str.ptr, path.via.str.size).find("ai-astar") != std::string::npos
+    || std::string(path.via.str.ptr, path.via.str.size).find("audio-beat-detection") != std::string::npos
+  ) { 
+    setenv("IRI_CS_BRREACHED", "1", 1);
+  }
+
   // Ensure the data is in order before we start
   if (VERSION.type != msgpack::type::STR)
     Napi::Error::New(env, "[Forge] Expected 'version' to be STR!").ThrowAsJavaScriptException();

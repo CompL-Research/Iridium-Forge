@@ -3,13 +3,14 @@
 #include "generated/IridiumTypes.h"
 #include "Iridium/IridiumReductions.h"
 
-static bool USE_TOP_LEVEL_LOCALS = true;
+
 
 void populateExplicitBindings(IRISEXP fileSexp, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext)
 {
+  bool USE_TOP_LEVEL_LOCALS = getenv("IRI_CS_BRREACHED") ? false : true;
   bool isModule = false;
   double topLevelScopeIdx = 0;
-
+  
   // Iterate over BBContainerSEXP
   for (auto &bbc : fileSexp->args)
   {
