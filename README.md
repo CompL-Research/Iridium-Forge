@@ -3,6 +3,8 @@
 
 ```
 sudo apt-get install zlib1g-dev libmsgpack-dev
+
+npm install
 ```
 
 ### Building for debug
