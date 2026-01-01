@@ -391,7 +391,7 @@ public:
       // Special case: EnvBinding → only print NAME
       if (tag == "EnvBinding")
       {
-        out << "[(" << std::to_string((uintptr_t)this) << ")";
+        out << "[";
         for (auto &flag : flags)
         {
           if (flag->getKey() == "NAME")
