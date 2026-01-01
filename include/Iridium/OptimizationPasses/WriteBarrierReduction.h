@@ -36,6 +36,7 @@ class WriteBarrierReduction
         if (!envWriteSEXP->getSAFE() && currFileView->safelyCapturedBindings.count(remEnvBindingWrite) > 0)
         {
           if (resolveRemoteBinding(remEnvBindingWrite)->hasFlag("JSCONST") && !envWriteSEXP->hasTHISINIT()) envWriteSEXP->setTHROWERR();
+          currFileView->safelyCaptured++;
           envWriteSEXP->setSAFE(true);
         }
       }
@@ -54,8 +55,9 @@ class WriteBarrierReduction
       // Set safety for reads to remote bindings which are known to be trivially true i.e. bindings captured outside the temporal dead zone
       if (auto o = std::dynamic_pointer_cast<RemoteEnvBindingSEXP>(envReadSEXP->getObj()))
       {
-        if (currFileView->safelyCapturedBindings.count(o) > 0)
+        if (!envReadSEXP->hasSAFE() && currFileView->safelyCapturedBindings.count(o) > 0)
         {
+          currFileView->safelyCaptured++;
           envReadSEXP->setSAFE();
         }
       }

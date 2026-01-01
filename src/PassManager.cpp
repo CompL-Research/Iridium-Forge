@@ -27,6 +27,33 @@
 #include <chrono>
 #include <iostream>
 
+#include <iostream>
+#include <cstdlib>
+#include <string>
+
+void printOptimizationStatus() {
+    struct Flag {
+        const char* env;    // NO_ flag
+        const char* name;   // positive feature name
+    };
+
+    Flag flags[] = {
+        {"NO_CONSTPROP",   "CONSTPROP"},
+        {"NO_COPYPROP",    "COPYPROP"},
+        {"NO_WBR",         "WBR"},
+        {"NO_DCE",         "DCE"},
+        {"NO_EPROP",       "EPROP"},
+        {"NO_RKEYCAST",    "RKEYCAST"},
+        {"NO_REDKEYCAST",  "REDKEYCAST"},
+        {"NO_DEADBR",      "DEADBR"}
+    };
+
+    for (const auto& f : flags) {
+        bool disabled = (std::getenv(f.env) != nullptr);
+        std::cerr << f.name << ": " << (disabled ? "OFF" : "ON") << "\n";
+    }
+}
+
 #define INLINING_DEPTH 1
 
 class ScopeTimer
@@ -72,8 +99,117 @@ std::string randomString(size_t length)
 
 using json = nlohmann::json;
 
+void PassManager::justAnalysis(std::stringstream &ss, std::set<double> taintedScopes)
+{
+  size_t envReadRemoteTotal = 0, envReadRemoteSafe = 0;
+  size_t envWriteRemoteTotal = 0, envWriteRemoteSafe = 0;
+
+  std::function<void(IRISEXP currSEXP)> collectInfo = [&](IRISEXP currSEXP)
+  {
+    if (auto read = std::dynamic_pointer_cast<EnvReadSEXP>(currSEXP)) {
+      if (read->hasSAFE() && read->hasFlag("MAP_INF"))
+      {
+        // std::cout << "SAFEREAD: ";
+        // read->prettyPrint(std::cout);
+        // std::cout << std::endl;
+        auto mapInf = read->getFlagString("MAP_INF");
+        if (mapInf.find("js3$") == std::string::npos && mapInf != "NA")
+        {
+          ss << mapInf;
+        }
+      }
+
+      if (auto o = std::dynamic_pointer_cast<RemoteEnvBindingSEXP>(read->getObj()))
+      {
+        envReadRemoteTotal++;
+        if (read->hasSAFE())
+        {
+          envReadRemoteSafe++;
+        }
+      }
+
+      return;
+    } else if (auto write = std::dynamic_pointer_cast<EnvWriteSEXP>(currSEXP)) {
+      if (write->hasSAFE() && write->hasFlag("MAP_INF"))
+      {
+        // std::cout << "SAFEWRITE: ";
+        // write->prettyPrint(std::cout);
+        // std::cout << std::endl;
+        auto mapInf = write->getFlagString("MAP_INF");
+        if (mapInf.find("js3$") == std::string::npos && mapInf != "NA")
+        {
+          ss << mapInf;
+        }
+      }
+
+      if (auto o = std::dynamic_pointer_cast<RemoteEnvBindingSEXP>(write->getLValTarget()))
+      {
+        envWriteRemoteTotal++;
+        if (write->hasSAFE())
+        {
+          envWriteRemoteSafe++;
+        }
+      }
+    }
+    for (auto & e : currSEXP->args) collectInfo(e);
+  };
+
+  for (int i = 0; i < 5; i++) {
+    for (auto &bbContView : fileView.bbContainerViews)
+    {
+
+      // Skip the container if it is reachable from a tainted scope...
+      for (auto &ts : taintedScopes)
+      {
+        if (isScopeReachable(ts, bbContView.getScopeIdx(), iridiumBuildContext))
+        {
+          bbContView.tainted = true;
+          continue;
+        }
+      }
+
+      // fileView.refreshSymbolTable();
+      auto allStackBindings = bbContView.getAllStackBindings();
+      auto capturedStackBindings = bbContView.getCapturedStackBindings();
+      auto uncapturedStackBindings = bbContView.getUncapturedStackBindings();
+
+      CopyPropInfo::blacklist = capturedStackBindings;
+      Liveness::blacklist = capturedStackBindings;
+      ConstantsAtStmt::blacklist = capturedStackBindings;
+      EffectAtStmt::blacklist = capturedStackBindings;
+      SetSafePropKeyAccesses::blacklist = capturedStackBindings;
+
+      {
+        WriteBarrierReduction::currFileView = &fileView;
+        DataflowSolver<TDZA> tdzaSolver(bbContView.cfgManager, true, [&]()
+                                        { return TDZA::bottom(allStackBindings); });
+        for (auto &e : tdzaSolver.run(TDZA::boundary(allStackBindings)))
+        {
+          WriteBarrierReduction::Transform(bbContView.cfgManager.cfg[e.first], e.second);
+        }
+      }
+    }
+  }
+
+  for (auto &bbContView : fileView.bbContainerViews)
+  {
+    bbContView.cfgManager.traverseCFG(
+    [&](Vertex v, std::shared_ptr<BBSEXP> bb)
+    {
+      for (auto & stmt : bb->args)
+      {
+        collectInfo(stmt);
+      }
+    });
+  }
+
+    // std::cout << ss.str() << std::endl;
+    std::cout << "SAFE: " << (envReadRemoteSafe + envWriteRemoteSafe) << " TOTAL: " << (envReadRemoteTotal + envWriteRemoteTotal) << std::endl;
+}
+
 void PassManager::optimize(int level, std::set<double> taintedScopes)
 {
+  if (!getenv("PRINT_OPT_STAT")) printOptimizationStatus();
 #if PASSMGR_DEBUG == 1
   std::filesystem::path out_path = "outputs/passmanager.json";
   json PASSMGR_DEBUGInfo = {
@@ -155,9 +291,10 @@ void PassManager::optimize(int level, std::set<double> taintedScopes)
     {
 
       // Skip the container if it is reachable from a tainted scope...
-      for (auto & ts : taintedScopes)
+      for (auto &ts : taintedScopes)
       {
-        if (isScopeReachable(ts, bbContView.getScopeIdx(), iridiumBuildContext)) {
+        if (isScopeReachable(ts, bbContView.getScopeIdx(), iridiumBuildContext))
+        {
           bbContView.tainted = true;
           continue;
         }
@@ -432,6 +569,7 @@ void PassManager::optimize(int level, std::set<double> taintedScopes)
       PASSMGR_DEBUGVector.push_back(bbContView.getDebugJSON(passBasename + "_START"));
 #endif
 
+      if (!getenv("NO_CONSTPROP"))
       {
         // ScopeTimer timer("ConstantProp");
         DataflowSolver<ConstantsAtStmt> constantsAtStmtSolver(bbContView.cfgManager, true, [&]()
@@ -446,6 +584,7 @@ void PassManager::optimize(int level, std::set<double> taintedScopes)
       // DBG("End ConstantProp");
       PASSMGR_DEBUGVector.push_back(bbContView.getDebugJSON(passBasename + "_1_CONSTANT_PROP"));
 #endif
+      if (!getenv("NO_COPYPROP"))
       {
         // ScopeTimer timer("CopyProp");
         DataflowSolver<CopyPropInfo> copyPropInfoSolver(bbContView.cfgManager, true, [&]()
@@ -462,6 +601,7 @@ void PassManager::optimize(int level, std::set<double> taintedScopes)
       PASSMGR_DEBUGVector.push_back(bbContView.getDebugJSON(passBasename + "_2_COPY_PROP"));
 #endif
 
+      if (!getenv("NO_WBR"))
       {
         // ScopeTimer timer("WriteBarrierReduction");
         WriteBarrierReduction::currFileView = &fileView;
@@ -478,6 +618,7 @@ void PassManager::optimize(int level, std::set<double> taintedScopes)
       PASSMGR_DEBUGVector.push_back(bbContView.getDebugJSON(passBasename + "_3_WBR"));
 #endif
 
+      if (!getenv("NO_DCE"))
       {
         // ScopeTimer timer("DCE");
         DataflowSolver<Liveness> livenessSolver(bbContView.cfgManager, false, [&]()
@@ -494,7 +635,7 @@ void PassManager::optimize(int level, std::set<double> taintedScopes)
       // DBG("End DCE");
       PASSMGR_DEBUGVector.push_back(bbContView.getDebugJSON(passBasename + "_4_DCE"));
 #endif
-
+      if (!getenv("NO_EPROP"))
       {
         // ScopeTimer timer("EffectProp");
         DataflowSolver<Liveness> livenessSolver(bbContView.cfgManager, false, [&]()
@@ -545,7 +686,7 @@ void PassManager::optimize(int level, std::set<double> taintedScopes)
       // DBG("End Effect Prop");
       PASSMGR_DEBUGVector.push_back(bbContView.getDebugJSON(passBasename + "_5_EFFECT_PROP"));
 #endif
-
+      if (!getenv("NO_RKEYCAST"))
       {
         // ScopeTimer timer("RemoveRedundantPropKeyCast");
         // std::cout << "Starting SetSafePropKeyAccesses" << std::endl;
@@ -562,13 +703,14 @@ void PassManager::optimize(int level, std::set<double> taintedScopes)
       // DBG("End SetSafePropKeyAccesses");
       PASSMGR_DEBUGVector.push_back(bbContView.getDebugJSON(passBasename + "_5_SAFE_PROP_KEY_ACCESS"));
 #endif
+      if (!getenv("NO_REDKEYCAST"))
       {
         // ScopeTimer timer("reduceComputedFieldOps");
         reduceComputedFieldOps(bbContView);
       }
-
     }
   }
+  if (!getenv("NO_DEADBR"))
   {
     // ScopeTimer timer("doDeadBindingRemoval");
     doDeadBindingRemoval(fileView);

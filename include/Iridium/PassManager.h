@@ -2,11 +2,13 @@
 #include "Iridium/Globals.h"
 #include "Iridium/Structure/FileView.h"
 #include "generated/IridiumTypes.h"
+#include <sstream>
 
 class PassManager {
 public:
   PassManager(FileView & fs, std::unordered_map<int, IRIBUILDCONTEXT> bc) : fileView(fs), iridiumBuildContext(bc) {}
 
+  void justAnalysis(std::stringstream &, std::set<double>);
   void optimize(int level, std::set<double> taintedScopes);
 
   std::shared_ptr<FileSEXP> checkout();

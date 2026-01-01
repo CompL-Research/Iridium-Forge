@@ -139,9 +139,18 @@ IRISEXP runCorePasses(
 
 IRISEXP runOptPasses(std::shared_ptr<FileSEXP> fileSEXP, std::unordered_map<int, IRIBUILDCONTEXT> iridiumBuildContext)
 {
+  if (getenv("NO_OPT")) return fileSEXP;
   FileView fileView(fileSEXP, iridiumBuildContext);
   PassManager pm(fileView, iridiumBuildContext);
-  pm.optimize(1, taintedScopes);
+  if (getenv("JUST_ANALYZE"))
+  {
+    std::stringstream ss;
+    pm.justAnalysis(ss, taintedScopes);
+  }
+  else
+  {
+    pm.optimize(1, taintedScopes);
+  }
   auto res = pm.checkout();
   filterNOPs(res);
   return res;

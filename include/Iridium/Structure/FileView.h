@@ -23,6 +23,7 @@ private:
 public:
   std::vector<BBContainerView> bbContainerViews;
   std::set<IRISEXP> safelyCapturedBindings;
+  size_t safelyCaptured = 0;
   static std::set<std::shared_ptr<EnvBindingSEXP>> dynamicEvaledBindings;
 
   SymbolTable symbolTable;
