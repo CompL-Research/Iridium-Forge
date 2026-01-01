@@ -5,13 +5,13 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "(gdb) Run ...outputs/test1.iri",
+      "name": "(gdb) Run ...outputs/temp.iri",
       "type": "cppdbg",
       "request": "launch",
       "program": "${workspaceFolder}/build/forge",
       "args": [
         "-i",
-        "/home/meetesh/wd/Iridium/outputs/test1.iri"
+        "/root/Iridium/outputs/temp.iri"
       ],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
