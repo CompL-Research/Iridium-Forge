@@ -104,7 +104,7 @@ export default [
     "args": [],
     "flags": {
       "string": [],
-      "void": ["TopLevel", "ClosureBoundary", "Lexical"],
+      "void": ["TopLevel", "ClosureBoundary", "Lexical", "VARBoundary"],
       "bool": [],
       "double": ["IDX", "ScopeIDX"],
     }

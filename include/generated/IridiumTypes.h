@@ -1,4 +1,4 @@
-// Generated: 2025-10-02 23:46:41
+// Generated: 2026-01-02 03:52:44
 #pragma once
 #include "Iridium/Globals.h"
 #include "Iridium/IridiumSEXP.h"
@@ -487,11 +487,12 @@ public:
   }
 
 
-  BBSEXP(bool TopLevel, bool ClosureBoundary, bool Lexical, double IDX, double ScopeIDX) {
+  BBSEXP(bool TopLevel, bool ClosureBoundary, bool Lexical, bool VARBoundary, double IDX, double ScopeIDX) {
     this->tag = "BB";
     if (TopLevel) this->setTopLevel();
     if (ClosureBoundary) this->setClosureBoundary();
     if (Lexical) this->setLexical();
+    if (VARBoundary) this->setVARBoundary();
     this->setIDX(IDX);
     this->setScopeIDX(ScopeIDX);
   }
@@ -510,6 +511,11 @@ public:
   void setLexical() { setFlag("Lexical"); }
   void unsetLexical() { removeFlag("Lexical"); }
   bool hasLexical() { return hasFlag("Lexical"); }
+
+
+  void setVARBoundary() { setFlag("VARBoundary"); }
+  void unsetVARBoundary() { removeFlag("VARBoundary"); }
+  bool hasVARBoundary() { return hasFlag("VARBoundary"); }
 
 
   void setIDX(double value) { setFlag("IDX", value); }

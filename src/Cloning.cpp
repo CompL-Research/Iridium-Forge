@@ -49,8 +49,8 @@ std::shared_ptr<BBSEXP> cloneBB(
     std::unordered_map<std::shared_ptr<EnvBindingSEXP>, std::shared_ptr<EnvBindingSEXP>> &localIndirectionMap,
     std::unordered_map<std::shared_ptr<RemoteEnvBindingSEXP>, std::shared_ptr<RemoteEnvBindingSEXP>> &remoteIndirectionMap)
 {
-  // bool TopLevel, bool ClosureBoundary, bool Lexical, double IDX, double ScopeIDX
-  std::shared_ptr<BBSEXP> res = std::make_shared<BBSEXP>(bb->hasTopLevel(), bb->hasClosureBoundary(), bb->hasLexical(), bb->getIDX(), bb->getScopeIDX());
+  // BBSEXP(bool TopLevel, bool ClosureBoundary, bool Lexical, bool VARBoundary, double IDX, double ScopeIDX)
+  std::shared_ptr<BBSEXP> res = std::make_shared<BBSEXP>(bb->hasTopLevel(), bb->hasClosureBoundary(), bb->hasLexical(), bb->hasVARBoundary(), bb->getIDX(), bb->getScopeIDX());
 
   SpecialCloneHandler handler = [&](const IRISEXP &node)
   {
