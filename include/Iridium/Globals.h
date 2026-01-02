@@ -12,11 +12,11 @@
 #define IRIDIUM_OUTPUTS_FOLDER "outputs/"
 
 #define IRIDIUM_DEBUG_STATEMENTS 0
-#define IRIDIUM_DUMP_INITIAL_SEXP 0
-#define IRIDIUM_DUMP_FINAL_SEXP 0
+#define IRIDIUM_DUMP_INITIAL_SEXP 1
+#define IRIDIUM_DUMP_FINAL_SEXP 1
 #define IRIDIUM_DUMP_BEFORE_STACK_COLLAPSE 0
 #define IRIDIUM_DUMP_AFTER_STACK_COLLAPSE 0
-#define IRIDIUM_DUMP_AFTER_CORE_PASSES 0 // <- Right before Opt
+#define IRIDIUM_DUMP_AFTER_CORE_PASSES 1 // <- Right before Opt
 
 #define PASSMGR_DEBUG 0
 
@@ -51,7 +51,8 @@ enum BBSEXPFLAGS
 {
   TopLevel,
   ClosureBoundary,
-  Lexical
+  Lexical,
+  VARBoundary
 };
 
 class IridiumSEXP;
@@ -134,6 +135,7 @@ int getBBScopeIDX(int bbIDX, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBu
 IRISEXP resolveScopedLookup(IRISEXP fileSEXP, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext, std::string name, double startScope, std::shared_ptr<BindingsSEXP> bindingsSEXP);
 bool isGlobalBinding(IRISEXP fileSEXP, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext, std::string name, double startScope, std::shared_ptr<BindingsSEXP> bindingsSEXP);
 std::shared_ptr<BBContainerSEXP> getBBContainerSEXPByScopeId(IRISEXP file, double scopeIDX);
+double findVARHoistingScope(double startingScope, std::unordered_map<int, IRIBUILDCONTEXT> &buildContext);
 double findParentClosureScope(double startingScope, std::unordered_map<int, IRIBUILDCONTEXT> &buildContext);
 double getLexicalScope(double startingScope, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext);
 bool isScopeReachable(double startingScope, double targetScope, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext);

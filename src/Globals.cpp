@@ -265,6 +265,20 @@ std::shared_ptr<BBContainerSEXP> getBBContainerSEXPByScopeId(IRISEXP file, doubl
   throw std::runtime_error("BBContainerSEXP not found for idx " + std::to_string(scopeIDX));
 }
 
+double findVARHoistingScope(double startingScope, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext)
+{
+  if (startingScope == -1)
+    return -1;
+  if (iridiumBuildContext.find(startingScope) == iridiumBuildContext.end())
+    throw std::runtime_error("build context not found for scope: " + std::to_string(startingScope));
+
+  auto &buildContext = iridiumBuildContext[startingScope];
+  auto &startBB = buildContext->BB.at(0);
+  if (startBB->hasClosureBoundary() || startBB->hasTopLevel() || startBB->hasVARBoundary())
+    return startingScope;
+  return findVARHoistingScope(buildContext->parent, iridiumBuildContext);
+}
+
 double findParentClosureScope(double startingScope, std::unordered_map<int, IRIBUILDCONTEXT> &iridiumBuildContext)
 {
   if (startingScope == -1)
@@ -438,6 +452,8 @@ BBSEXPFLAGS getBBFlag(std::shared_ptr<BBSEXP> b)
     return BBSEXPFLAGS::ClosureBoundary;
   if (b->hasLexical())
     return BBSEXPFLAGS::Lexical;
+  if (b->hasVARBoundary())
+    return BBSEXPFLAGS::VARBoundary;
   throw std::runtime_error("Failed to get a valid flag from a BBSEXP");
 }
 
@@ -446,12 +462,15 @@ void setBBFlag(std::shared_ptr<BBSEXP> b, BBSEXPFLAGS flagToSet)
   b->unsetTopLevel();
   b->unsetClosureBoundary();
   b->unsetLexical();
+  b->unsetVARBoundary();
   if (flagToSet == BBSEXPFLAGS::TopLevel)
     return b->setTopLevel();
   if (flagToSet == BBSEXPFLAGS::ClosureBoundary)
     return b->setClosureBoundary();
   if (flagToSet == BBSEXPFLAGS::Lexical)
     return b->setLexical();
+  if (flagToSet == BBSEXPFLAGS::VARBoundary)
+    return b->setVARBoundary();
   throw std::runtime_error("Impossible case reached setBBFlag");
 }
 
