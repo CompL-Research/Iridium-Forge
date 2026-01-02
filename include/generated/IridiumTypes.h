@@ -1,4 +1,4 @@
-// Generated: 2026-01-02 03:52:44
+// Generated: 2026-01-03 00:46:19
 #pragma once
 #include "Iridium/Globals.h"
 #include "Iridium/IridiumSEXP.h"
@@ -315,6 +315,79 @@ public:
 
   JSExplicitBindingDeclarationSEXP(IRISEXP LValTarget, IRISEXP RVal, bool JSLET, bool JSCONST, bool JSVAR, bool SLOPPY, bool SAFE, bool THISINIT) {
     this->tag = "JSExplicitBindingDeclaration";
+    this->args.push_back(LValTarget);
+    this->args.push_back(RVal);
+    if (JSLET) this->setJSLET();
+    if (JSCONST) this->setJSCONST();
+    if (JSVAR) this->setJSVAR();
+    if (SLOPPY) this->setSLOPPY();
+    this->setSAFE(SAFE);
+    this->setTHISINIT(THISINIT);
+  }
+
+
+  void setLValTarget(const IRISEXP &obj) { this->args.at(0) = obj; }
+  bool hasLValTarget() { return 0 < this->args.size(); }
+  IRISEXP getLValTarget() const { return this->args.at(0); }
+
+
+  void setRVal(const IRISEXP &obj) { this->args.at(1) = obj; }
+  bool hasRVal() { return 1 < this->args.size(); }
+  IRISEXP getRVal() const { return this->args.at(1); }
+
+
+  void setJSLET() { setFlag("JSLET"); }
+  void unsetJSLET() { removeFlag("JSLET"); }
+  bool hasJSLET() { return hasFlag("JSLET"); }
+
+
+  void setJSCONST() { setFlag("JSCONST"); }
+  void unsetJSCONST() { removeFlag("JSCONST"); }
+  bool hasJSCONST() { return hasFlag("JSCONST"); }
+
+
+  void setJSVAR() { setFlag("JSVAR"); }
+  void unsetJSVAR() { removeFlag("JSVAR"); }
+  bool hasJSVAR() { return hasFlag("JSVAR"); }
+
+
+  void setSLOPPY() { setFlag("SLOPPY"); }
+  void unsetSLOPPY() { removeFlag("SLOPPY"); }
+  bool hasSLOPPY() { return hasFlag("SLOPPY"); }
+
+
+  void setSAFE(bool value) { setFlag("SAFE", value); }
+  void unsetSAFE() { removeFlag("SAFE"); }
+  bool hasSAFE() { return hasFlag("SAFE"); }
+  bool getSAFE() { return getFlagBoolean("SAFE"); }
+
+
+  void setTHISINIT(bool value) { setFlag("THISINIT", value); }
+  void unsetTHISINIT() { removeFlag("THISINIT"); }
+  bool hasTHISINIT() { return hasFlag("THISINIT"); }
+  bool getTHISINIT() { return getFlagBoolean("THISINIT"); }
+
+};
+
+class JSExplicitBindingDeclarationNSEXP : public IridiumSEXP {
+private:
+
+  JSExplicitBindingDeclarationNSEXP() { this->tag = "JSExplicitBindingDeclarationN"; }
+  
+public:
+  static std::shared_ptr<JSExplicitBindingDeclarationNSEXP> generateFrom(IRISEXP obj) {
+    assert(obj->tag == "JSExplicitBindingDeclarationN");
+    auto res = std::shared_ptr<JSExplicitBindingDeclarationNSEXP>(new JSExplicitBindingDeclarationNSEXP());
+
+    res->tag   = obj->tag;
+    res->args  = std::move(obj->args);
+    res->flags = std::move(obj->flags);
+    return res;
+  }
+
+
+  JSExplicitBindingDeclarationNSEXP(IRISEXP LValTarget, IRISEXP RVal, bool JSLET, bool JSCONST, bool JSVAR, bool SLOPPY, bool SAFE, bool THISINIT) {
+    this->tag = "JSExplicitBindingDeclarationN";
     this->args.push_back(LValTarget);
     this->args.push_back(RVal);
     if (JSLET) this->setJSLET();
@@ -1409,6 +1482,74 @@ public:
   void unsetTHISINIT() { removeFlag("THISINIT"); }
   bool hasTHISINIT() { return hasFlag("THISINIT"); }
   bool getTHISINIT() { return getFlagBoolean("THISINIT"); }
+
+};
+
+class SiblingSpecialWriteSEXP : public IridiumSEXP {
+private:
+
+  SiblingSpecialWriteSEXP() { this->tag = "SiblingSpecialWrite"; }
+  
+public:
+  static std::shared_ptr<SiblingSpecialWriteSEXP> generateFrom(IRISEXP obj) {
+    assert(obj->tag == "SiblingSpecialWrite");
+    auto res = std::shared_ptr<SiblingSpecialWriteSEXP>(new SiblingSpecialWriteSEXP());
+
+    res->tag   = obj->tag;
+    res->args  = std::move(obj->args);
+    res->flags = std::move(obj->flags);
+    return res;
+  }
+
+
+  SiblingSpecialWriteSEXP(IRISEXP LValTarget, IRISEXP RVal, bool SLOPPY, bool THROWERR, bool SAFE, bool THISINIT, double ScopeIDX) {
+    this->tag = "SiblingSpecialWrite";
+    this->args.push_back(LValTarget);
+    this->args.push_back(RVal);
+    if (SLOPPY) this->setSLOPPY();
+    if (THROWERR) this->setTHROWERR();
+    this->setSAFE(SAFE);
+    this->setTHISINIT(THISINIT);
+    this->setScopeIDX(ScopeIDX);
+  }
+
+
+  void setLValTarget(const IRISEXP &obj) { this->args.at(0) = obj; }
+  bool hasLValTarget() { return 0 < this->args.size(); }
+  IRISEXP getLValTarget() const { return this->args.at(0); }
+
+
+  void setRVal(const IRISEXP &obj) { this->args.at(1) = obj; }
+  bool hasRVal() { return 1 < this->args.size(); }
+  IRISEXP getRVal() const { return this->args.at(1); }
+
+
+  void setSLOPPY() { setFlag("SLOPPY"); }
+  void unsetSLOPPY() { removeFlag("SLOPPY"); }
+  bool hasSLOPPY() { return hasFlag("SLOPPY"); }
+
+
+  void setTHROWERR() { setFlag("THROWERR"); }
+  void unsetTHROWERR() { removeFlag("THROWERR"); }
+  bool hasTHROWERR() { return hasFlag("THROWERR"); }
+
+
+  void setSAFE(bool value) { setFlag("SAFE", value); }
+  void unsetSAFE() { removeFlag("SAFE"); }
+  bool hasSAFE() { return hasFlag("SAFE"); }
+  bool getSAFE() { return getFlagBoolean("SAFE"); }
+
+
+  void setTHISINIT(bool value) { setFlag("THISINIT", value); }
+  void unsetTHISINIT() { removeFlag("THISINIT"); }
+  bool hasTHISINIT() { return hasFlag("THISINIT"); }
+  bool getTHISINIT() { return getFlagBoolean("THISINIT"); }
+
+
+  void setScopeIDX(double value) { setFlag("ScopeIDX", value); }
+  void unsetScopeIDX() { removeFlag("ScopeIDX"); }
+  bool hasScopeIDX() { return hasFlag("ScopeIDX"); }
+  double getScopeIDX() { return getFlagDouble("ScopeIDX"); }
 
 };
 

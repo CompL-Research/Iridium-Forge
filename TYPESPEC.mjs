@@ -80,6 +80,16 @@ export default [
     }
   },
   {
+    "tag": "JSExplicitBindingDeclarationN",
+    "args": ["LValTarget", "RVal"],
+    "flags": {
+      "string": [],
+      "void": ["JSLET", "JSCONST", "JSVAR", "SLOPPY"],
+      "bool": ["SAFE", "THISINIT"],
+      "double": [],
+    }
+  },
+  {
     "tag": "CallSite",
     "args": [],
     "flags": {
@@ -287,6 +297,16 @@ export default [
       "void": ["SLOPPY", "THROWERR"],
       "bool": ["SAFE", "THISINIT"],
       "double": [],
+    }
+  },
+  {
+    "tag": "SiblingSpecialWrite",
+    "args": ["LValTarget", "RVal"],
+    "flags": {
+      "string": [],
+      "void": ["SLOPPY", "THROWERR"],
+      "bool": ["SAFE", "THISINIT"],
+      "double": ["ScopeIDX"],
     }
   },
   {

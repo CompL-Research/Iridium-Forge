@@ -1,4 +1,4 @@
-// Generated: 2026-01-02 03:52:44
+// Generated: 2026-01-03 00:46:19
 #pragma once
 #include "Iridium/Globals.h"
 #include "Iridium/IridiumSEXP.h"
@@ -15,6 +15,7 @@ public:
     if (tag == "String") return StringSEXP::generateFrom(obj);
     if (tag == "FieldRead") return FieldReadSEXP::generateFrom(obj);
     if (tag == "JSExplicitBindingDeclaration") return JSExplicitBindingDeclarationSEXP::generateFrom(obj);
+    if (tag == "JSExplicitBindingDeclarationN") return JSExplicitBindingDeclarationNSEXP::generateFrom(obj);
     if (tag == "CallSite") return CallSiteSEXP::generateFrom(obj);
     if (tag == "ReturnAsync") return ReturnAsyncSEXP::generateFrom(obj);
     if (tag == "BB") return BBSEXP::generateFrom(obj);
@@ -36,6 +37,7 @@ public:
     if (tag == "RemoteEnvBinding") return RemoteEnvBindingSEXP::generateFrom(obj);
     if (tag == "GlobalBinding") return GlobalBindingSEXP::generateFrom(obj);
     if (tag == "EnvWrite") return EnvWriteSEXP::generateFrom(obj);
+    if (tag == "SiblingSpecialWrite") return SiblingSpecialWriteSEXP::generateFrom(obj);
     if (tag == "JSNUBD") return JSNUBDSEXP::generateFrom(obj);
     if (tag == "JSSloppyDecl") return JSSloppyDeclSEXP::generateFrom(obj);
     if (tag == "Number") return NumberSEXP::generateFrom(obj);
