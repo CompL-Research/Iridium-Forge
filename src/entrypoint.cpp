@@ -124,8 +124,15 @@ IRISEXP runCorePasses(
 
         for (auto & ts : taintedScopes)
         {
+          // std::cout << "tainted scope reachability check: TS" << ts << "->" << bbb->getScope() << ": " << isScopeReachable(ts, bbb->getScope(), iridiumBuildContext) << std::endl;
           if (isScopeReachable(ts, bbb->getScope(), iridiumBuildContext))
           {
+            // Add all remote bindings to tainted scope
+            auto bbContainer = getBBContainerSEXPByScopeId(fileSEXP, findParentClosureScope(ts, iridiumBuildContext));
+            std::shared_ptr<BindingsSEXP> bindingsSEXP = std::dynamic_pointer_cast<BindingsSEXP>(bbContainer->getBindings());
+            if (!bindingsSEXP)
+              throw std::runtime_error("[adding remote bindings to evaled scope] Bindings not found for tainted scope");
+            resolveScopedLookup(fileSEXP, iridiumBuildContext, bbb->getNAME(), ts, bindingsSEXP);
             FileView::dynamicEvaledBindings.insert(bbb);
             // std::cout << "Tainted Binding: " << bbb->getNAME() << std::endl;
           }
