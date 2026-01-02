@@ -21,6 +21,7 @@ void populateImplicitBindings(IRISEXP fileSexp, std::unordered_map<int, IRIBUILD
       assert(bb && "Expected bb to be a BBSEXP");
 
       auto localScope = bb->getScopeIDX();
+      auto parentScope = iridiumBuildContext[localScope]->parent;
 
       // Iterate over STMT
       for (int i = 0; i < bb->args.size(); i++)
@@ -44,10 +45,11 @@ void populateImplicitBindings(IRISEXP fileSexp, std::unordered_map<int, IRIBUILD
           else
             throw std::runtime_error("Invalid kind for an implicit binding");
 
-          assert(localScope == containerBC->scopeIdx);
+          // Due to VARBoundary, this is not longer the case
+          // assert(localScope == containerBC->scopeIdx);
 
           // std::string NAME, bool ASW, bool JSARG, bool JSRESTARG, bool JSLET, bool JSCONST, bool JSVAR, double IDX, double REFIDX, double Scope, double ParentScope, double NEXT
-          auto bindingSEXP = std::make_shared<EnvBindingSEXP>(bindingName, false, false, false, jsImplicitBindingDeclarationStmt->hasJSLET(), jsImplicitBindingDeclarationStmt->hasJSCONST(), jsImplicitBindingDeclarationStmt->hasJSVAR(), containerBC->scopeIdx, -1, containerBC->scopeIdx, containerBC->parent, -1);
+          auto bindingSEXP = std::make_shared<EnvBindingSEXP>(bindingName, false, false, false, jsImplicitBindingDeclarationStmt->hasJSLET(), jsImplicitBindingDeclarationStmt->hasJSCONST(), jsImplicitBindingDeclarationStmt->hasJSVAR(), containerBC->scopeIdx, -1, localScope, parentScope, -1);
 
           auto bindingsSEXP = std::dynamic_pointer_cast<BindingsSEXP>(container->getBindings());
           assert(bindingsSEXP && "Expected bindingsSEXP");
