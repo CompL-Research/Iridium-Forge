@@ -209,7 +209,7 @@ void PassManager::justAnalysis(std::stringstream &ss, std::set<double> taintedSc
 
 void PassManager::optimize(int level, std::set<double> taintedScopes)
 {
-  if (!getenv("PRINT_OPT_STAT")) printOptimizationStatus();
+  if (getenv("PRINT_OPT_STAT")) printOptimizationStatus();
 #if PASSMGR_DEBUG == 1
   std::filesystem::path out_path = "outputs/passmanager.json";
   json PASSMGR_DEBUGInfo = {
