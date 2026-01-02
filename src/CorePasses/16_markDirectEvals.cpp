@@ -67,7 +67,8 @@ void markDirectEvals(IRISEXP currSEXP, std::unordered_map<int, IRIBUILDCONTEXT> 
               auto bs = filterLocalBindingsByScope(bindingsObjLocalBindings, currLookup);
   
               if (bs.size() > 0)
-              {
+              {                
+                // callSiteSEXP->setJSDirectEval(iridiumBuildContext[currBBScope]->isStrict ? 1 : bs.back()->getREFIDX());
                 callSiteSEXP->setJSDirectEval(bs.back()->getREFIDX());
                 break;
               }
