@@ -1,4 +1,4 @@
-// Generated: 2026-01-03 00:46:19
+// Generated: 2026-01-03 21:47:19
 #pragma once
 #include "Iridium/Globals.h"
 #include "Iridium/IridiumSEXP.h"
@@ -850,10 +850,31 @@ public:
   }
 
 
-  LambdaSEXP(double StartBBIDX) {
+  LambdaSEXP(std::string NAME, bool CNAME, bool SETNAME, double StartBBIDX) {
     this->tag = "Lambda";
+    this->setNAME(NAME);
+    this->setCNAME(CNAME);
+    this->setSETNAME(SETNAME);
     this->setStartBBIDX(StartBBIDX);
   }
+
+
+  void setNAME(const std::string &value) { setFlag("NAME", value); }
+  void unsetNAME() { removeFlag("NAME"); }
+  bool hasNAME() { return hasFlag("NAME"); }
+  std::string getNAME() { return getFlagString("NAME"); }
+
+
+  void setCNAME(bool value) { setFlag("CNAME", value); }
+  void unsetCNAME() { removeFlag("CNAME"); }
+  bool hasCNAME() { return hasFlag("CNAME"); }
+  bool getCNAME() { return getFlagBoolean("CNAME"); }
+
+
+  void setSETNAME(bool value) { setFlag("SETNAME", value); }
+  void unsetSETNAME() { removeFlag("SETNAME"); }
+  bool hasSETNAME() { return hasFlag("SETNAME"); }
+  bool getSETNAME() { return getFlagBoolean("SETNAME"); }
 
 
   void setStartBBIDX(double value) { setFlag("StartBBIDX", value); }
@@ -901,10 +922,11 @@ public:
   }
 
 
-  BBContainerSEXP(IRISEXP Bindings, IRISEXP BB, bool ARGUMENTS, bool ASYNC, bool STRICT, bool GENERATOR, bool PROTO, bool NEW, bool SCALL, bool SOBJ, bool HOME, bool DERIVED, bool TopLevel, double ECMAArgs, double StartBBIDX, double ScopeIDX, double ContainerFlagID) {
+  BBContainerSEXP(IRISEXP Bindings, IRISEXP BB, std::string NAME, bool ARGUMENTS, bool ASYNC, bool STRICT, bool GENERATOR, bool PROTO, bool NEW, bool SCALL, bool SOBJ, bool HOME, bool DERIVED, bool TopLevel, double ECMAArgs, double StartBBIDX, double ScopeIDX, double ContainerFlagID) {
     this->tag = "BBContainer";
     this->args.push_back(Bindings);
     this->args.push_back(BB);
+    this->setNAME(NAME);
     if (ARGUMENTS) this->setARGUMENTS();
     if (ASYNC) this->setASYNC();
     if (STRICT) this->setSTRICT();
@@ -931,6 +953,12 @@ public:
   void setBB(const IRISEXP &obj) { this->args.at(1) = obj; }
   bool hasBB() { return 1 < this->args.size(); }
   IRISEXP getBB() const { return this->args.at(1); }
+
+
+  void setNAME(const std::string &value) { setFlag("NAME", value); }
+  void unsetNAME() { removeFlag("NAME"); }
+  bool hasNAME() { return hasFlag("NAME"); }
+  std::string getNAME() { return getFlagString("NAME"); }
 
 
   void setARGUMENTS() { setFlag("ARGUMENTS"); }

@@ -30,6 +30,7 @@ void parseBuildContexts(const msgpack::object &obj, std::unordered_map<int, std:
     bool isStrict = false;
     bool isModule = false;
     int ecmaArgs = 0;
+    std::string name = "";
     std::optional<std::unordered_map<std::string, std::pair<std::string, std::string>>> privateMapping = std::nullopt;
     std::optional<std::unordered_map<std::string, IRISEXP>> moduleRequestMap = std::nullopt;
     std::vector<std::shared_ptr<BBSEXP>> bbs;
@@ -45,6 +46,8 @@ void parseBuildContexts(const msgpack::object &obj, std::unordered_map<int, std:
         parent = valObj.as<int>();
       else if (key == "scopeIdx")
         scopeIdx = valObj.as<int>();
+      else if (key == "name")
+        name = valObj.as<std::string>();
       else if (key == "args" && valObj.type == msgpack::type::ARRAY)
       {
         for (uint32_t k = 0; k < valObj.via.array.size; k++)
@@ -221,7 +224,7 @@ void parseBuildContexts(const msgpack::object &obj, std::unordered_map<int, std:
             parent, scopeIdx, args, isArgInitContext, bypassParent,
             argInitContextWhitelist, hasRestArgs, loopConfig, tryContext,
             kind, propInitClos, argumentsKind, isAsync, isGenerator,
-            isStrict, isModule, ecmaArgs, privateMapping, moduleRequestMap, bbs);
+            isStrict, isModule, ecmaArgs, name, privateMapping, moduleRequestMap, bbs);
   }
 }
 

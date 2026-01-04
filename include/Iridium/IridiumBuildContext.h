@@ -61,6 +61,7 @@ public:
   bool isModule;
 
   int ecmaArgs;
+  std::string name;
 
   std::optional<std::unordered_map<std::string, std::pair<std::string, std::string>>> privateMapping;
   std::optional<std::unordered_map<std::string, IRISEXP>> moduleRequestMap;
@@ -85,6 +86,7 @@ public:
       bool isStrict,
       bool isModule,
       int ecmaArgs,
+      std::string name,
       std::optional<std::unordered_map<std::string, std::pair<std::string, std::string>>> privateMapping,
       std::optional<std::unordered_map<std::string, IRISEXP>> moduleRequestMap,
       std::vector<std::shared_ptr<BBSEXP>> BB)
@@ -105,6 +107,7 @@ public:
         isStrict(isStrict),
         isModule(isModule),
         ecmaArgs(ecmaArgs),
+        name(name),
         privateMapping(std::move(privateMapping)),
         moduleRequestMap(std::move(moduleRequestMap)),
         BB(std::move(BB)) {}

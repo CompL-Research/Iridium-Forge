@@ -29,7 +29,7 @@ void groupIntoClosureGroups(IRISEXP fileSexp, std::unordered_map<int, IRIBUILDCO
 
       bool isTopLevel = parent == -1;
 
-      auto bbContainer = std::make_shared<BBContainerSEXP>(bindingsSEXP, BBListSEXP, false, currContext->isAsync, currContext->isStrict, currContext->isGenerator, false, false, false, false, false, false, isTopLevel, currContext->ecmaArgs, currContext->BB[0]->getIDX(), targetScopeIDX, -1);
+      auto bbContainer = std::make_shared<BBContainerSEXP>(bindingsSEXP, BBListSEXP, currContext->name, false, currContext->isAsync, currContext->isStrict, currContext->isGenerator, false, false, false, false, false, false, isTopLevel, currContext->ecmaArgs, currContext->BB[0]->getIDX(), targetScopeIDX, -1);
 
       setClosureFlags(currContext->kind, bbContainer);
       bbGroups[targetScopeIDX] = bbContainer;

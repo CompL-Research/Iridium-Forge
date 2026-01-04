@@ -173,9 +173,9 @@ export default [
     "tag": "Lambda",
     "args": [],
     "flags": {
-      "string": [],
+      "string": ["NAME"],
       "void": [],
-      "bool": [],
+      "bool": ["CNAME", "SETNAME"],
       "double": ["StartBBIDX"],
     }
   },
@@ -193,7 +193,7 @@ export default [
     "tag": "BBContainer",
     "args": ["Bindings", "BB"],
     "flags": {
-      "string": [],
+      "string": ["NAME"],
       "void": ["ARGUMENTS", "ASYNC", "STRICT", "GENERATOR", "PROTO", "NEW", "SCALL", "SOBJ", "HOME", "DERIVED", "TopLevel"],
       "bool": [],
       "double": ["ECMAArgs", "StartBBIDX", "ScopeIDX", "ContainerFlagID"],
