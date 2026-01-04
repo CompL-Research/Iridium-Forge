@@ -1,4 +1,4 @@
-// Generated: 2026-01-03 21:47:19
+// Generated: 2026-01-04 22:31:37
 #pragma once
 #include "Iridium/Globals.h"
 #include "Iridium/IridiumSEXP.h"
@@ -215,6 +215,41 @@ public:
 
   EnvReadSEXP(IRISEXP Obj, bool SAFE) {
     this->tag = "EnvRead";
+    this->args.push_back(Obj);
+    if (SAFE) this->setSAFE();
+  }
+
+
+  void setObj(const IRISEXP &obj) { this->args.at(0) = obj; }
+  bool hasObj() { return 0 < this->args.size(); }
+  IRISEXP getObj() const { return this->args.at(0); }
+
+
+  void setSAFE() { setFlag("SAFE"); }
+  void unsetSAFE() { removeFlag("SAFE"); }
+  bool hasSAFE() { return hasFlag("SAFE"); }
+
+};
+
+class TDZReadSEXP : public IridiumSEXP {
+private:
+
+  TDZReadSEXP() { this->tag = "TDZRead"; }
+  
+public:
+  static std::shared_ptr<TDZReadSEXP> generateFrom(IRISEXP obj) {
+    assert(obj->tag == "TDZRead");
+    auto res = std::shared_ptr<TDZReadSEXP>(new TDZReadSEXP());
+
+    res->tag   = obj->tag;
+    res->args  = std::move(obj->args);
+    res->flags = std::move(obj->flags);
+    return res;
+  }
+
+
+  TDZReadSEXP(IRISEXP Obj, bool SAFE) {
+    this->tag = "TDZRead";
     this->args.push_back(Obj);
     if (SAFE) this->setSAFE();
   }

@@ -50,6 +50,16 @@ export default [
     }
   },
   {
+    "tag": "TDZRead",
+    "args": ["Obj"],
+    "flags": {
+      "string": [],
+      "void": ["SAFE"],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
     "tag": "String",
     "args": [],
     "flags": {
