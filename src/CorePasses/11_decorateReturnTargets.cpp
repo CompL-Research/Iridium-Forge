@@ -24,6 +24,13 @@ void decorateReturnTargets(IRISEXP fileSEXP, IRISEXP currSEXP, std::unordered_ma
         findReturnTarget(bbSEXP->getScopeIDX(), iridiumBuildContext, intermediateContextHolder);
         decoratorMap[bbSEXP->args.at(i)] = intermediateContextHolder;
       }
+
+      if (auto rTarget = std::dynamic_pointer_cast<ReturnAsyncSEXP>(bbSEXP->args.at(i)))
+      {
+        std::vector<std::variant<LoopConfig, TryContext>> intermediateContextHolder;
+        findReturnTarget(bbSEXP->getScopeIDX(), iridiumBuildContext, intermediateContextHolder);
+        decoratorMap[bbSEXP->args.at(i)] = intermediateContextHolder;
+      }
     }
 
     // Decorate emitted targets by handling requirements of the enclosing contexts
