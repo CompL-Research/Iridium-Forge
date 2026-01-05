@@ -1,4 +1,4 @@
-// Generated: 2026-01-04 22:31:37
+// Generated: 2026-01-05 02:59:12
 #pragma once
 #include "Iridium/Globals.h"
 #include "Iridium/IridiumSEXP.h"
@@ -2408,9 +2408,10 @@ public:
   }
 
 
-  JSForOfStartSEXP(IRISEXP Obj) {
+  JSForOfStartSEXP(IRISEXP Obj, bool AWAIT) {
     this->tag = "JSForOfStart";
     this->args.push_back(Obj);
+    this->setAWAIT(AWAIT);
   }
 
 
@@ -2418,11 +2419,19 @@ public:
   bool hasObj() { return 0 < this->args.size(); }
   IRISEXP getObj() const { return this->args.at(0); }
 
+
+  void setAWAIT(bool value) { setFlag("AWAIT", value); }
+  void unsetAWAIT() { removeFlag("AWAIT"); }
+  bool hasAWAIT() { return hasFlag("AWAIT"); }
+  bool getAWAIT() { return getFlagBoolean("AWAIT"); }
+
 };
 
 class JSForOfNextSEXP : public IridiumSEXP {
 private:
-// default constructor and explicit one are the same, skipping...
+
+  JSForOfNextSEXP() { this->tag = "JSForOfNext"; }
+  
 public:
   static std::shared_ptr<JSForOfNextSEXP> generateFrom(IRISEXP obj) {
     assert(obj->tag == "JSForOfNext");
@@ -2435,9 +2444,16 @@ public:
   }
 
 
-  JSForOfNextSEXP() {
+  JSForOfNextSEXP(bool AWAIT) {
     this->tag = "JSForOfNext";
+    this->setAWAIT(AWAIT);
   }
+
+
+  void setAWAIT(bool value) { setFlag("AWAIT", value); }
+  void unsetAWAIT() { removeFlag("AWAIT"); }
+  bool hasAWAIT() { return hasFlag("AWAIT"); }
+  bool getAWAIT() { return getFlagBoolean("AWAIT"); }
 
 };
 

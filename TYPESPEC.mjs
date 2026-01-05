@@ -555,7 +555,7 @@ export default [
     "flags": {
       "string": [],
       "void": [],
-      "bool": [],
+      "bool": ["AWAIT"],
       "double": [],
     }
   },
@@ -565,7 +565,7 @@ export default [
     "flags": {
       "string": [],
       "void": [],
-      "bool": [],
+      "bool": ["AWAIT"],
       "double": [],
     }
   },
