@@ -29,6 +29,7 @@
 #include "Iridium/CorePasses/16_markDirectEvals.h"
 #include "Iridium/CorePasses/17_removeTDZChecksForSloppyGlobalWrites.h"
 #include "Iridium/CorePasses/18_reduceDeleteNonGlobalBindingsToTrue.h"
+#include "Iridium/CorePasses/19_canonicalBBs.h"
 
 #include "Iridium/Structure/FileView.h"
 
@@ -102,9 +103,7 @@ IRISEXP runCorePasses(
 
   loosenWritestoASWs(sexp);
   DBG("Completed loosenWritestoASWs");
-
   
-
   markDirectEvals(sexp, iridiumBuildContext, -1, taintedScopes);
   DBG("Completed markDirectEvals");
 
@@ -113,6 +112,9 @@ IRISEXP runCorePasses(
 
   reduceDeleteNonGlobalBindingsToTrue(sexp, iridiumBuildContext);
   DBG("Completed reduceDeleteNonGlobalBindingsToTrue");
+
+  canonicalBBs(sexp, iridiumBuildContext);
+  DBG("Completed canonicalBBs");
 
   // Iterate over all declared bindings, if they are reachable from any tainted scope then add to the tainted list
   auto fileSEXP = std::dynamic_pointer_cast<FileSEXP>(sexp);
@@ -148,6 +150,9 @@ IRISEXP runCorePasses(
       }
     }
   }
+  DBG("Completed eval tainting");
+
+  
 
   return sexp;
 }
