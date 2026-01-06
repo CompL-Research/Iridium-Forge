@@ -87,6 +87,7 @@ void resolveBreakAndContinueTargets(IRISEXP fileSEXP, IRISEXP currSEXP, std::uno
         std::vector<std::variant<LoopConfig, TryContext>> intermediateContextHolder;
         auto target = findLoopControlTarget(bbSEXP->getScopeIDX(), cTarget, iridiumBuildContext, intermediateContextHolder);
         auto gotoSEXP = std::make_shared<GotoSEXP>(target.continueTarget);
+        gotoSEXP->setFlag("CONTINUE_TARGET", (double) target.breakTarget);
         bbSEXP->args.at(i) = gotoSEXP;
         decoratorMap[gotoSEXP] = intermediateContextHolder;
       }

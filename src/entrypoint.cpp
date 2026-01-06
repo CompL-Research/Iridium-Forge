@@ -30,6 +30,7 @@
 #include "Iridium/CorePasses/17_removeTDZChecksForSloppyGlobalWrites.h"
 #include "Iridium/CorePasses/18_reduceDeleteNonGlobalBindingsToTrue.h"
 #include "Iridium/CorePasses/19_canonicalBBs.h"
+#include "Iridium/CorePasses/20_releaseEscapingBindingsFromScope.h"
 
 #include "Iridium/Structure/FileView.h"
 
@@ -152,7 +153,10 @@ IRISEXP runCorePasses(
   }
   DBG("Completed eval tainting");
 
-  
+  releaseEscapingBindingsFromScope(sexp, iridiumBuildContext);
+  DBG("Completed releaseEscapingBindingsFromScope");
+
+  // TODO: ensure no gotoSEXP has the "CONTINUE_TARGET" flag, this ensures we handled everything
 
   return sexp;
 }
