@@ -1,4 +1,4 @@
-// Generated: 2026-01-06 01:44:17
+// Generated: 2026-01-07 00:58:21
 #pragma once
 #include "Iridium/Globals.h"
 #include "Iridium/IridiumSEXP.h"
@@ -3590,5 +3590,47 @@ public:
   void unsetINCREMENT() { removeFlag("INCREMENT"); }
   bool hasINCREMENT() { return hasFlag("INCREMENT"); }
   bool getINCREMENT() { return getFlagBoolean("INCREMENT"); }
+
+};
+
+class StackToHeapSEXP : public IridiumSEXP {
+private:
+// default constructor and explicit one are the same, skipping...
+public:
+  static std::shared_ptr<StackToHeapSEXP> generateFrom(IRISEXP obj) {
+    assert(obj->tag == "StackToHeap");
+    auto res = std::shared_ptr<StackToHeapSEXP>(new StackToHeapSEXP());
+
+    res->tag   = obj->tag;
+    res->args  = std::move(obj->args);
+    res->flags = std::move(obj->flags);
+    return res;
+  }
+
+
+  StackToHeapSEXP() {
+    this->tag = "StackToHeap";
+  }
+
+};
+
+class LoopInitPreludeEndSEXP : public IridiumSEXP {
+private:
+// default constructor and explicit one are the same, skipping...
+public:
+  static std::shared_ptr<LoopInitPreludeEndSEXP> generateFrom(IRISEXP obj) {
+    assert(obj->tag == "LoopInitPreludeEnd");
+    auto res = std::shared_ptr<LoopInitPreludeEndSEXP>(new LoopInitPreludeEndSEXP());
+
+    res->tag   = obj->tag;
+    res->args  = std::move(obj->args);
+    res->flags = std::move(obj->flags);
+    return res;
+  }
+
+
+  LoopInitPreludeEndSEXP() {
+    this->tag = "LoopInitPreludeEnd";
+  }
 
 };

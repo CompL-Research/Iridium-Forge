@@ -899,4 +899,24 @@ export default [
       "double": [],
     }
   },
+  {
+    "tag": "StackToHeap",
+    "args": [],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "LoopInitPreludeEnd",
+    "args": [],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
+  },
 ];
