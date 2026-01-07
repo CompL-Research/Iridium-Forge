@@ -1,4 +1,4 @@
-// Generated: 2026-01-07 00:58:21
+// Generated: 2026-01-07 19:33:07
 #pragma once
 #include "Iridium/Globals.h"
 #include "Iridium/IridiumSEXP.h"
@@ -540,6 +540,60 @@ public:
   void setTAILCALL() { setFlag("TAILCALL"); }
   void unsetTAILCALL() { removeFlag("TAILCALL"); }
   bool hasTAILCALL() { return hasFlag("TAILCALL"); }
+
+
+  void setJSDirectEval(double value) { setFlag("JSDirectEval", value); }
+  void unsetJSDirectEval() { removeFlag("JSDirectEval"); }
+  bool hasJSDirectEval() { return hasFlag("JSDirectEval"); }
+  double getJSDirectEval() { return getFlagDouble("JSDirectEval"); }
+
+};
+
+class ApplySEXP : public IridiumSEXP {
+private:
+
+  ApplySEXP() { this->tag = "Apply"; }
+  
+public:
+  static std::shared_ptr<ApplySEXP> generateFrom(IRISEXP obj) {
+    assert(obj->tag == "Apply");
+    auto res = std::shared_ptr<ApplySEXP>(new ApplySEXP());
+
+    res->tag   = obj->tag;
+    res->args  = std::move(obj->args);
+    res->flags = std::move(obj->flags);
+    return res;
+  }
+
+
+  ApplySEXP(IRISEXP Callee, IRISEXP Context, IRISEXP ArgList, bool ConstructorCall, double JSDirectEval) {
+    this->tag = "Apply";
+    this->args.push_back(Callee);
+    this->args.push_back(Context);
+    this->args.push_back(ArgList);
+    if (ConstructorCall) this->setConstructorCall();
+    this->setJSDirectEval(JSDirectEval);
+  }
+
+
+  void setCallee(const IRISEXP &obj) { this->args.at(0) = obj; }
+  bool hasCallee() { return 0 < this->args.size(); }
+  IRISEXP getCallee() const { return this->args.at(0); }
+
+
+  void setContext(const IRISEXP &obj) { this->args.at(1) = obj; }
+  bool hasContext() { return 1 < this->args.size(); }
+  IRISEXP getContext() const { return this->args.at(1); }
+
+
+  void setArgList(const IRISEXP &obj) { this->args.at(2) = obj; }
+  bool hasArgList() { return 2 < this->args.size(); }
+  IRISEXP getArgList() const { return this->args.at(2); }
+
+
+  void setConstructorCall() { setFlag("ConstructorCall"); }
+  void unsetConstructorCall() { removeFlag("ConstructorCall"); }
+  bool hasConstructorCall() { return hasFlag("ConstructorCall"); }
 
 
   void setJSDirectEval(double value) { setFlag("JSDirectEval", value); }

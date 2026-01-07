@@ -110,6 +110,16 @@ export default [
     }
   },
   {
+    "tag": "Apply",
+    "args": ["Callee", "Context", "ArgList"],
+    "flags": {
+      "string": [],
+      "void": ["ConstructorCall"],
+      "bool": [],
+      "double": ["JSDirectEval"],
+    }
+  },
+  {
     "tag": "ReturnAsync",
     "args": ["RetVal"],
     "flags": {
