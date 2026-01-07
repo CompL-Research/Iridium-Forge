@@ -15,6 +15,12 @@ bool isGenericCall(std::shared_ptr<CallSiteSEXP> o) {
   else return true; 
 }
 
+bool isGenericCall(std::shared_ptr<ApplySEXP> o) {
+  if (o->hasConstructorCall()) return false;
+  return true; 
+}
+
+
 std::vector<std::shared_ptr<EnvBindingSEXP>> filterLocalBindingsByScope(std::vector<IRISEXP> bindingsObjLocalBindings, double currLookup)
 {
   std::vector<std::shared_ptr<EnvBindingSEXP>> result;
@@ -77,6 +83,50 @@ void markDirectEvals(IRISEXP currSEXP, std::unordered_map<int, IRIBUILDCONTEXT> 
                 currLookup = getLexicalScope(currLookup, iridiumBuildContext);
                 if (currLookup == -1) {
                   callSiteSEXP->setJSDirectEval(0);
+                  break;
+                }
+              }
+            } while (true);
+          }
+        }
+      }
+
+    }
+  }
+
+    if (auto applyCall = std::dynamic_pointer_cast<ApplySEXP>(currSEXP))
+  {
+    if (isGenericCall(applyCall))
+    {
+      auto callee = applyCall->getCallee();
+
+      if (auto calll = std::dynamic_pointer_cast<EnvReadSEXP>(callee))
+      {
+        if (auto globalBindingCallee = std::dynamic_pointer_cast<GlobalBindingSEXP>(calll->getObj()))
+        {
+          if (globalBindingCallee->getNAME() == "eval")
+          {
+            taintedScopes.insert(currBBScope);
+            auto currLookup = currBBScope;
+            if (!lastBindingsObject) throw std::runtime_error("bindingsObj missing...");
+            if (currLookup < 0) throw std::runtime_error("how is this less than zero?");
+            
+            auto bindingsObjLocalBindings = lastBindingsObject->getLocalBindings()->args;
+  
+            do {
+              auto bs = filterLocalBindingsByScope(bindingsObjLocalBindings, currLookup);
+  
+              if (bs.size() > 0)
+              {
+                // callSiteSEXP->setJSDirectEval(iridiumBuildContext[currBBScope]->isStrict ? 1 : bs.back()->getREFIDX());
+                applyCall->setJSDirectEval(bs.back()->getREFIDX());
+                break;
+              }
+              else
+              {
+                currLookup = getLexicalScope(currLookup, iridiumBuildContext);
+                if (currLookup == -1) {
+                  applyCall->setJSDirectEval(0);
                   break;
                 }
               }
