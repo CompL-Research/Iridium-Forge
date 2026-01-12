@@ -366,6 +366,9 @@ void setClosureFlags(double flag, std::shared_ptr<BBContainerSEXP> bbContainer)
     bbContainer->setSOBJ();
     bbContainer->setHOME();
     break; // flags.push("SOBJ", "HOME");
+  case 13:
+    bbContainer->setARGUMENTS();
+    break;
   default:
     throw std::runtime_error("expected a valid closure flag");
   }

@@ -31,6 +31,7 @@
 #include "Iridium/CorePasses/18_reduceDeleteNonGlobalBindingsToTrue.h"
 #include "Iridium/CorePasses/19_canonicalBBs.h"
 #include "Iridium/CorePasses/20_releaseEscapingBindingsFromScope.h"
+#include "Iridium/CorePasses/21_markTLA.h"
 
 #include "Iridium/Structure/FileView.h"
 
@@ -155,6 +156,9 @@ IRISEXP runCorePasses(
 
   releaseEscapingBindingsFromScope(sexp, iridiumBuildContext);
   DBG("Completed releaseEscapingBindingsFromScope");
+
+  markTLA(sexp, iridiumBuildContext);
+  DBG("Completed markTLA");
 
   // TODO: ensure no gotoSEXP has the "CONTINUE_TARGET" flag, this ensures we handled everything
 
