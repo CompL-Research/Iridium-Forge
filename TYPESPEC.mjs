@@ -4,7 +4,7 @@ export default [
     "args": [],
     "flags": {
       "string": [],
-      "void": ["JSScript", "JSModule"],
+      "void": ["JSScript", "JSModule", "TLA"],
       "bool": [],
       "double": [],
     }
@@ -114,7 +114,7 @@ export default [
     "args": ["Callee", "Context", "ArgList"],
     "flags": {
       "string": [],
-      "void": ["ConstructorCall"],
+      "void": ["ConstructorCall", "Super"],
       "bool": [],
       "double": ["JSDirectEval"],
     }

@@ -1,4 +1,4 @@
-// Generated: 2026-01-07 19:33:07
+// Generated: 2026-01-12 11:22:57
 #pragma once
 #include "Iridium/Globals.h"
 #include "Iridium/IridiumSEXP.h"
@@ -19,10 +19,11 @@ public:
   }
 
 
-  FileSEXP(bool JSScript, bool JSModule) {
+  FileSEXP(bool JSScript, bool JSModule, bool TLA) {
     this->tag = "File";
     if (JSScript) this->setJSScript();
     if (JSModule) this->setJSModule();
+    if (TLA) this->setTLA();
   }
 
 
@@ -34,6 +35,11 @@ public:
   void setJSModule() { setFlag("JSModule"); }
   void unsetJSModule() { removeFlag("JSModule"); }
   bool hasJSModule() { return hasFlag("JSModule"); }
+
+
+  void setTLA() { setFlag("TLA"); }
+  void unsetTLA() { removeFlag("TLA"); }
+  bool hasTLA() { return hasFlag("TLA"); }
 
 };
 
@@ -566,12 +572,13 @@ public:
   }
 
 
-  ApplySEXP(IRISEXP Callee, IRISEXP Context, IRISEXP ArgList, bool ConstructorCall, double JSDirectEval) {
+  ApplySEXP(IRISEXP Callee, IRISEXP Context, IRISEXP ArgList, bool ConstructorCall, bool Super, double JSDirectEval) {
     this->tag = "Apply";
     this->args.push_back(Callee);
     this->args.push_back(Context);
     this->args.push_back(ArgList);
     if (ConstructorCall) this->setConstructorCall();
+    if (Super) this->setSuper();
     this->setJSDirectEval(JSDirectEval);
   }
 
@@ -594,6 +601,11 @@ public:
   void setConstructorCall() { setFlag("ConstructorCall"); }
   void unsetConstructorCall() { removeFlag("ConstructorCall"); }
   bool hasConstructorCall() { return hasFlag("ConstructorCall"); }
+
+
+  void setSuper() { setFlag("Super"); }
+  void unsetSuper() { removeFlag("Super"); }
+  bool hasSuper() { return hasFlag("Super"); }
 
 
   void setJSDirectEval(double value) { setFlag("JSDirectEval", value); }
