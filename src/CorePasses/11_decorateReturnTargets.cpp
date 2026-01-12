@@ -27,6 +27,8 @@ void decorateReturnTargets(IRISEXP fileSEXP, IRISEXP currSEXP, std::unordered_ma
 
       if (auto rTarget = std::dynamic_pointer_cast<ReturnAsyncSEXP>(bbSEXP->args.at(i)))
       {
+        if (bbSEXP->hasTopLevel())
+          continue;
         std::vector<std::variant<LoopConfig, TryContext>> intermediateContextHolder;
         findReturnTarget(bbSEXP->getScopeIDX(), iridiumBuildContext, intermediateContextHolder);
         decoratorMap[bbSEXP->args.at(i)] = intermediateContextHolder;
