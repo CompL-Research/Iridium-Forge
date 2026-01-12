@@ -42,6 +42,10 @@ bool predicateSuperCallCheck(const IRISEXP &ele)
   {
     return callEle->hasSuper();
   }
+  if (auto callEle = std::dynamic_pointer_cast<ApplySEXP>(ele))
+  {
+    return callEle->hasSuper();
+  }
   return false;
 }
 
