@@ -11,7 +11,7 @@ static void doPatch(IRISEXP fileSEXP, std::unordered_map<int, IRIBUILDCONTEXT> &
         // delete VAR_NAME iff VAR_NAME is not a global binding and replace the entire construct with "false"
         auto targetScopeIDX = findParentClosureScope(currScope, iridiumBuildContext);
         if (targetScopeIDX < 0)
-          throw std::runtime_error("A binding must resolve in a valid scope, none found");
+          throw std::runtime_error("[18] A binding must resolve in a valid scope, none found for: " + std::to_string(targetScopeIDX));
         auto bbContainer = getBBContainerSEXPByScopeId(fileSEXP, targetScopeIDX);
         std::shared_ptr<BindingsSEXP> bindingsSEXP = std::dynamic_pointer_cast<BindingsSEXP>(bbContainer->getBindings());
         if (!bindingsSEXP)
