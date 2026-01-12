@@ -17,7 +17,7 @@ void resolveLambdaTargets(IRISEXP fileSEXP, IRISEXP currSEXP, std::unordered_map
     if (auto lSexp = std::dynamic_pointer_cast<LambdaSEXP>(currSEXP->args.at(i)))
     {
       auto targetScopeIDX = findParentClosureScope(currBBscope, iridiumBuildContext);
-      if (targetScopeIDX < 0) throw std::runtime_error("A binding must resolve in a valid scope, none found");
+      if (targetScopeIDX < 0) throw std::runtime_error("[9] A binding must resolve in a valid scope, none found: " + std::to_string(targetScopeIDX));
       auto bbContainer = getBBContainerSEXPByScopeId(fileSEXP, targetScopeIDX);
       auto bindingsSEXP = std::dynamic_pointer_cast<BindingsSEXP>(bbContainer->getBindings());
       if (!bindingsSEXP) throw std::runtime_error("Couldnt find the expected BindingsSEXP");

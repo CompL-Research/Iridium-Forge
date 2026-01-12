@@ -14,7 +14,7 @@ static void reduceResolveEnvBindingSEXPHelper(IRISEXP fileSEXP, IRISEXP currSEXP
     {
       auto targetScopeIDX = findParentClosureScope(lookupStartScope, iridiumBuildContext);
       if (targetScopeIDX < 0)
-        throw std::runtime_error("A binding must resolve in a valid scope, none found");
+        throw std::runtime_error("[8] A binding must resolve in a valid scope, none found: " + std::to_string(targetScopeIDX));
       auto bbContainer = getBBContainerSEXPByScopeId(fileSEXP, targetScopeIDX);
       std::shared_ptr<BindingsSEXP> bindingsSEXP = std::dynamic_pointer_cast<BindingsSEXP>(bbContainer->getBindings());
       if (!bindingsSEXP)
