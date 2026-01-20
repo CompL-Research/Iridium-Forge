@@ -361,10 +361,10 @@ export default [
   },
   {
     "tag": "JSClass",
-    "args": ["NAME", "Parent", "Constructor", "PropInit", "MethodList", "StaticMethodList", "StaticPropInit"],
+    "args": ["Parent", "Constructor"],
     "flags": {
-      "string": [],
-      "void": ["Derived", "BrandPrototype", "BrandConstructor"],
+      "string": ["NAME"],
+      "void": ["DERIVED"],
       "bool": [],
       "double": [],
     }
@@ -784,7 +784,7 @@ export default [
     "args": ["TargetObj", "Key", "Value"],
     "flags": {
       "string": [],
-      "void": [],
+      "void": ["NOENUM"],
       "bool": [],
       "double": [],
     }
@@ -929,4 +929,24 @@ export default [
       "double": [],
     }
   },
+  {
+    "tag": "JSSetHome",
+    "args": ["HomeObj", "FuncObj"],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "JSSetName",
+    "args": ["obj", "name"],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
+  }
 ];

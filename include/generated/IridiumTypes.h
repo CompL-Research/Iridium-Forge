@@ -1,4 +1,4 @@
-// Generated: 2026-01-12 11:22:57
+// Generated: 2026-01-20 01:37:29
 #pragma once
 #include "Iridium/Globals.h"
 #include "Iridium/IridiumSEXP.h"
@@ -1798,69 +1798,34 @@ public:
   }
 
 
-  JSClassSEXP(IRISEXP NAME, IRISEXP Parent, IRISEXP Constructor, IRISEXP PropInit, IRISEXP MethodList, IRISEXP StaticMethodList, IRISEXP StaticPropInit, bool Derived, bool BrandPrototype, bool BrandConstructor) {
+  JSClassSEXP(IRISEXP Parent, IRISEXP Constructor, std::string NAME, bool DERIVED) {
     this->tag = "JSClass";
-    this->args.push_back(NAME);
     this->args.push_back(Parent);
     this->args.push_back(Constructor);
-    this->args.push_back(PropInit);
-    this->args.push_back(MethodList);
-    this->args.push_back(StaticMethodList);
-    this->args.push_back(StaticPropInit);
-    if (Derived) this->setDerived();
-    if (BrandPrototype) this->setBrandPrototype();
-    if (BrandConstructor) this->setBrandConstructor();
+    this->setNAME(NAME);
+    if (DERIVED) this->setDERIVED();
   }
 
 
-  void setNAME(const IRISEXP &obj) { this->args.at(0) = obj; }
-  bool hasNAME() { return 0 < this->args.size(); }
-  IRISEXP getNAME() const { return this->args.at(0); }
+  void setParent(const IRISEXP &obj) { this->args.at(0) = obj; }
+  bool hasParent() { return 0 < this->args.size(); }
+  IRISEXP getParent() const { return this->args.at(0); }
 
 
-  void setParent(const IRISEXP &obj) { this->args.at(1) = obj; }
-  bool hasParent() { return 1 < this->args.size(); }
-  IRISEXP getParent() const { return this->args.at(1); }
+  void setConstructor(const IRISEXP &obj) { this->args.at(1) = obj; }
+  bool hasConstructor() { return 1 < this->args.size(); }
+  IRISEXP getConstructor() const { return this->args.at(1); }
 
 
-  void setConstructor(const IRISEXP &obj) { this->args.at(2) = obj; }
-  bool hasConstructor() { return 2 < this->args.size(); }
-  IRISEXP getConstructor() const { return this->args.at(2); }
+  void setNAME(const std::string &value) { setFlag("NAME", value); }
+  void unsetNAME() { removeFlag("NAME"); }
+  bool hasNAME() { return hasFlag("NAME"); }
+  std::string getNAME() { return getFlagString("NAME"); }
 
 
-  void setPropInit(const IRISEXP &obj) { this->args.at(3) = obj; }
-  bool hasPropInit() { return 3 < this->args.size(); }
-  IRISEXP getPropInit() const { return this->args.at(3); }
-
-
-  void setMethodList(const IRISEXP &obj) { this->args.at(4) = obj; }
-  bool hasMethodList() { return 4 < this->args.size(); }
-  IRISEXP getMethodList() const { return this->args.at(4); }
-
-
-  void setStaticMethodList(const IRISEXP &obj) { this->args.at(5) = obj; }
-  bool hasStaticMethodList() { return 5 < this->args.size(); }
-  IRISEXP getStaticMethodList() const { return this->args.at(5); }
-
-
-  void setStaticPropInit(const IRISEXP &obj) { this->args.at(6) = obj; }
-  bool hasStaticPropInit() { return 6 < this->args.size(); }
-  IRISEXP getStaticPropInit() const { return this->args.at(6); }
-
-
-  void setDerived() { setFlag("Derived"); }
-  void unsetDerived() { removeFlag("Derived"); }
-  bool hasDerived() { return hasFlag("Derived"); }
-
-
-  void setBrandPrototype() { setFlag("BrandPrototype"); }
-  void unsetBrandPrototype() { removeFlag("BrandPrototype"); }
-  bool hasBrandPrototype() { return hasFlag("BrandPrototype"); }
-
-
-  void setBrandConstructor() { setFlag("BrandConstructor"); }
-  void unsetBrandConstructor() { removeFlag("BrandConstructor"); }
-  bool hasBrandConstructor() { return hasFlag("BrandConstructor"); }
+  void setDERIVED() { setFlag("DERIVED"); }
+  void unsetDERIVED() { removeFlag("DERIVED"); }
+  bool hasDERIVED() { return hasFlag("DERIVED"); }
 
 };
 
@@ -3235,11 +3200,12 @@ public:
   }
 
 
-  JSDefineObjMethodSEXP(IRISEXP TargetObj, IRISEXP Key, IRISEXP Value) {
+  JSDefineObjMethodSEXP(IRISEXP TargetObj, IRISEXP Key, IRISEXP Value, bool NOENUM) {
     this->tag = "JSDefineObjMethod";
     this->args.push_back(TargetObj);
     this->args.push_back(Key);
     this->args.push_back(Value);
+    if (NOENUM) this->setNOENUM();
   }
 
 
@@ -3256,6 +3222,11 @@ public:
   void setValue(const IRISEXP &obj) { this->args.at(2) = obj; }
   bool hasValue() { return 2 < this->args.size(); }
   IRISEXP getValue() const { return this->args.at(2); }
+
+
+  void setNOENUM() { setFlag("NOENUM"); }
+  void unsetNOENUM() { removeFlag("NOENUM"); }
+  bool hasNOENUM() { return hasFlag("NOENUM"); }
 
 };
 
@@ -3698,5 +3669,75 @@ public:
   LoopInitPreludeEndSEXP() {
     this->tag = "LoopInitPreludeEnd";
   }
+
+};
+
+class JSSetHomeSEXP : public IridiumSEXP {
+private:
+
+  JSSetHomeSEXP() { this->tag = "JSSetHome"; }
+  
+public:
+  static std::shared_ptr<JSSetHomeSEXP> generateFrom(IRISEXP obj) {
+    assert(obj->tag == "JSSetHome");
+    auto res = std::shared_ptr<JSSetHomeSEXP>(new JSSetHomeSEXP());
+
+    res->tag   = obj->tag;
+    res->args  = std::move(obj->args);
+    res->flags = std::move(obj->flags);
+    return res;
+  }
+
+
+  JSSetHomeSEXP(IRISEXP HomeObj, IRISEXP FuncObj) {
+    this->tag = "JSSetHome";
+    this->args.push_back(HomeObj);
+    this->args.push_back(FuncObj);
+  }
+
+
+  void setHomeObj(const IRISEXP &obj) { this->args.at(0) = obj; }
+  bool hasHomeObj() { return 0 < this->args.size(); }
+  IRISEXP getHomeObj() const { return this->args.at(0); }
+
+
+  void setFuncObj(const IRISEXP &obj) { this->args.at(1) = obj; }
+  bool hasFuncObj() { return 1 < this->args.size(); }
+  IRISEXP getFuncObj() const { return this->args.at(1); }
+
+};
+
+class JSSetNameSEXP : public IridiumSEXP {
+private:
+
+  JSSetNameSEXP() { this->tag = "JSSetName"; }
+  
+public:
+  static std::shared_ptr<JSSetNameSEXP> generateFrom(IRISEXP obj) {
+    assert(obj->tag == "JSSetName");
+    auto res = std::shared_ptr<JSSetNameSEXP>(new JSSetNameSEXP());
+
+    res->tag   = obj->tag;
+    res->args  = std::move(obj->args);
+    res->flags = std::move(obj->flags);
+    return res;
+  }
+
+
+  JSSetNameSEXP(IRISEXP obj, IRISEXP name) {
+    this->tag = "JSSetName";
+    this->args.push_back(obj);
+    this->args.push_back(name);
+  }
+
+
+  void setobj(const IRISEXP &obj) { this->args.at(0) = obj; }
+  bool hasobj() { return 0 < this->args.size(); }
+  IRISEXP getobj() const { return this->args.at(0); }
+
+
+  void setname(const IRISEXP &obj) { this->args.at(1) = obj; }
+  bool hasname() { return 1 < this->args.size(); }
+  IRISEXP getname() const { return this->args.at(1); }
 
 };
