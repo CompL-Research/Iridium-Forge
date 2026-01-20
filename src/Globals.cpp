@@ -344,15 +344,19 @@ void setClosureFlags(double flag, std::shared_ptr<BBContainerSEXP> bbContainer)
     bbContainer->setHOME();
     break; // flags.push("HOME");
   case 6:
+    bbContainer->setNEW();
     break;
   case 7:
+    bbContainer->setNEW();
     bbContainer->setSOBJ();
     bbContainer->setHOME();
     break; // flags.push("SOBJ", "HOME");
   case 8:
+    bbContainer->setNEW();
     bbContainer->setHOME();
     break; // flags.push("HOME");
   case 9:
+    bbContainer->setNEW();
     bbContainer->setSOBJ();
     bbContainer->setHOME();
     break; // flags.push("SOBJ", "HOME");
@@ -361,6 +365,9 @@ void setClosureFlags(double flag, std::shared_ptr<BBContainerSEXP> bbContainer)
     bbContainer->setHOME();
     break; // flags.push("SOBJ", "HOME")
   case 11:
+    bbContainer->setNEW();
+    bbContainer->setSOBJ();
+    bbContainer->setHOME();
     break;
   case 12:
     bbContainer->setSOBJ();
