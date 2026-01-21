@@ -386,6 +386,26 @@ class PropEffects
       return false;
     }
 
+    if (auto o = std::dynamic_pointer_cast<ApplySEXP>(expr)) 
+    {
+      for (size_t i = 0; i < expr->args.size(); i++)
+      {
+        auto o = expr->args.at(i);
+        if (auto node = std::dynamic_pointer_cast<EnvReadSEXP>(o))
+        {
+          if (node->getObj() == val.store)
+          {
+            expr->args.at(i) = val.effect;
+            killset.insert(val.stmt);
+            return false;
+          }
+        }
+        else if (!patchExprNew(o, killset, val)) return false;
+      }
+
+      return false;
+    }
+
     if (auto o = std::dynamic_pointer_cast<JSToObjectSEXP>(expr)) return false;
     if (auto o = std::dynamic_pointer_cast<JSCatchContextSEXP>(expr)) return false;
     if (auto o = std::dynamic_pointer_cast<JSADDBRANDSEXP>(expr)) return false;
@@ -629,6 +649,7 @@ public:
       if (effectInfo[currIdx].validEffect && livenessInfoAfterStmt.dfv.count(currEffect.store) == 0)
       {
         patchExprOuter(stmt, killset, currEffect);
+        // return;
       }
       // std::cout << std::endl;
       // stmt->prettyPrint(std::cout, 0);
