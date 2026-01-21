@@ -13,7 +13,10 @@ static void populateUsesAndDefs(IRISEXP currSEXP, std::set<std::shared_ptr<EnvBi
   { // Unsafe writes to EnvBindingSEXPs create a read.
     if (auto envBinding = std::dynamic_pointer_cast<EnvBindingSEXP>(envWriteStmt->getLValTarget()))
     {
-      if (envWriteStmt->getSAFE())
+      if (envWriteStmt->getTHISINIT()) {
+        uses.insert(envBinding);
+      } 
+      else if (envWriteStmt->getSAFE())
       {
         defs.insert(envBinding);
       }
@@ -27,6 +30,27 @@ static void populateUsesAndDefs(IRISEXP currSEXP, std::set<std::shared_ptr<EnvBi
     return;
   }
 
+  if (auto stackReject = std::dynamic_pointer_cast<StackRejectSEXP>(currSEXP))
+  { // Reads to effect less safe bindings are trivially true TDZ checks, we early return...
+    if (auto envRead = std::dynamic_pointer_cast<EnvReadSEXP>(stackReject->args.at(0)))
+    {
+      if (envRead->hasSAFE())
+      {
+        return;
+      }
+    }
+  }
+
+  // if (auto stackToHeap = std::dynamic_pointer_cast<StackToHeapSEXP>(currSEXP))
+  // {
+  //   for (auto & bindingSEXP : stackToHeap->args) {
+  //     if (auto binding = std::dynamic_pointer_cast<EnvBindingSEXP>(bindingSEXP))
+  //     {
+  //       uses.insert(binding);
+  //     } else throw std::runtime_error("expected EnvBinding inside StackToHeap Node");
+  //   }
+  // }
+
   if (auto implicitDecl = std::dynamic_pointer_cast<JSImplicitBindingDeclarationSEXP>(currSEXP))
   {
     if (auto envBinding = std::dynamic_pointer_cast<EnvBindingSEXP>(implicitDecl->getStore()))
@@ -37,7 +61,13 @@ static void populateUsesAndDefs(IRISEXP currSEXP, std::set<std::shared_ptr<EnvBi
         uses.insert(envBinding);
     }
 
-    populateUsesAndDefs(implicitDecl->getArgs(), uses, defs);
+    for (auto b : implicitDecl->getArgs()->args) {
+      if (auto pArg = std::dynamic_pointer_cast<EnvBindingSEXP>(b))
+      {
+        uses.insert(pArg);
+      }
+    }
+
     return;
   }
 
