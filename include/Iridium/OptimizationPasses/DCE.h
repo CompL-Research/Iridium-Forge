@@ -42,7 +42,9 @@ class DCE
     {
       if (auto LVAL = std::dynamic_pointer_cast<EnvBindingSEXP>(implicitBindingDecl->getStore()))
       {
-        if (val.dfv.count(LVAL) == 0 && implicitBindingDecl->getOPID() != 10)
+        if (val.dfv.count(LVAL) == 0 
+          // && implicitBindingDecl->getOPID() != 10
+        )
         {
           return std::make_shared<NOPSEXP>();
         }
@@ -110,6 +112,17 @@ class DCE
           // std::cout << std::endl;
 
           return res;
+        }
+      }
+    }
+
+    if (auto stackReject = std::dynamic_pointer_cast<StackRejectSEXP>(curr))
+    {
+      if (auto envRead = std::dynamic_pointer_cast<EnvReadSEXP>(stackReject->args.at(0)))
+      {
+        if (envRead->hasSAFE())
+        {
+          return std::make_shared<NOPSEXP>();
         }
       }
     }
