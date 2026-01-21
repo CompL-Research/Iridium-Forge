@@ -578,12 +578,12 @@ void PassManager::optimize(int level, std::set<double> taintedScopes)
         {
           ConstantProp::Transform(bbContView.cfgManager.cfg[e.first], e.second);
         }
+        #if PASSMGR_DEBUG == 1
+              // DBG("End ConstantProp");
+              PASSMGR_DEBUGVector.push_back(bbContView.getDebugJSON(passBasename + "_1_CONSTANT_PROP"));
+        #endif
       }
 
-#if PASSMGR_DEBUG == 1
-      // DBG("End ConstantProp");
-      PASSMGR_DEBUGVector.push_back(bbContView.getDebugJSON(passBasename + "_1_CONSTANT_PROP"));
-#endif
       if (!getenv("NO_COPYPROP"))
       {
         // ScopeTimer timer("CopyProp");
@@ -594,12 +594,12 @@ void PassManager::optimize(int level, std::set<double> taintedScopes)
           auto currBB = bbContView.cfgManager.cfg[e.first];
           CopyProp::Transform(currBB, e.second);
         }
+        #if PASSMGR_DEBUG == 1
+              // DBG("End CopyProp");
+              PASSMGR_DEBUGVector.push_back(bbContView.getDebugJSON(passBasename + "_2_COPY_PROP"));
+        #endif
       }
 
-#if PASSMGR_DEBUG == 1
-      // DBG("End CopyProp");
-      PASSMGR_DEBUGVector.push_back(bbContView.getDebugJSON(passBasename + "_2_COPY_PROP"));
-#endif
 
       if (!getenv("NO_WBR"))
       {
@@ -611,12 +611,12 @@ void PassManager::optimize(int level, std::set<double> taintedScopes)
         {
           WriteBarrierReduction::Transform(bbContView.cfgManager.cfg[e.first], e.second);
         }
+        #if PASSMGR_DEBUG == 1
+              // DBG("End WriteBarrierReduction");
+              PASSMGR_DEBUGVector.push_back(bbContView.getDebugJSON(passBasename + "_3_WBR"));
+        #endif
       }
 
-#if PASSMGR_DEBUG == 1
-      // DBG("End WriteBarrierReduction");
-      PASSMGR_DEBUGVector.push_back(bbContView.getDebugJSON(passBasename + "_3_WBR"));
-#endif
 
       if (!getenv("NO_DCE"))
       {
@@ -629,12 +629,12 @@ void PassManager::optimize(int level, std::set<double> taintedScopes)
           DCE::Transform(currBB, e.second);
           filterNOPs(currBB);
         }
+        #if PASSMGR_DEBUG == 1
+              // DBG("End DCE");
+              PASSMGR_DEBUGVector.push_back(bbContView.getDebugJSON(passBasename + "_4_DCE"));
+        #endif
       }
 
-#if PASSMGR_DEBUG == 1
-      // DBG("End DCE");
-      PASSMGR_DEBUGVector.push_back(bbContView.getDebugJSON(passBasename + "_4_DCE"));
-#endif
       if (!getenv("NO_EPROP"))
       {
         // ScopeTimer timer("EffectProp");
@@ -680,12 +680,12 @@ void PassManager::optimize(int level, std::set<double> taintedScopes)
           auto currBB = bbContView.cfgManager.cfg[v];
           killer(currBB);
         }
+        #if PASSMGR_DEBUG == 1
+              // DBG("End Effect Prop");
+              PASSMGR_DEBUGVector.push_back(bbContView.getDebugJSON(passBasename + "_5_EFFECT_PROP"));
+        #endif
       }
 
-#if PASSMGR_DEBUG == 1
-      // DBG("End Effect Prop");
-      PASSMGR_DEBUGVector.push_back(bbContView.getDebugJSON(passBasename + "_5_EFFECT_PROP"));
-#endif
       if (!getenv("NO_RKEYCAST"))
       {
         // ScopeTimer timer("RemoveRedundantPropKeyCast");
@@ -697,12 +697,12 @@ void PassManager::optimize(int level, std::set<double> taintedScopes)
         {
           RemoveRedundantPropKeyCast::Transform(bbContView.cfgManager.cfg[e.first], e.second);
         }
+        #if PASSMGR_DEBUG == 1
+              // DBG("End SetSafePropKeyAccesses");
+              PASSMGR_DEBUGVector.push_back(bbContView.getDebugJSON(passBasename + "_5_SAFE_PROP_KEY_ACCESS"));
+        #endif
       }
 
-#if PASSMGR_DEBUG == 1
-      // DBG("End SetSafePropKeyAccesses");
-      PASSMGR_DEBUGVector.push_back(bbContView.getDebugJSON(passBasename + "_5_SAFE_PROP_KEY_ACCESS"));
-#endif
       if (!getenv("NO_REDKEYCAST"))
       {
         // ScopeTimer timer("reduceComputedFieldOps");

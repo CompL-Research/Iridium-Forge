@@ -649,7 +649,9 @@ std::shared_ptr<BBContainerSEXP> BBContainerView::checkout()
   }
 #endif
 
-  if (!tainted) { // Stack collapse
+  // if (!tainted) { // Stack collapse
+  // bool isClassRelated = targetContainer->getContainerFlagID();
+  if (!tainted) {
     RAGC regAlloc;
     for (auto &e : livenessResult)
     { // e.second.dfv is a set std::set<std::shared_ptr<EnvBindingSEXP>>
@@ -819,11 +821,26 @@ std::set<IRISEXP> BBContainerView::getAllStackBindings()
 
 std::set<IRISEXP> BBContainerView::getUncapturedStackBindings()
 {
+  static const std::unordered_set<std::string> implicitBindings = {
+    // "arguments", 
+    // "this.active_func", 
+    // "new.target", 
+    // "<home_object>",
+    // "<var_obj>",
+    // "<module_meta>",
+    // "<super_ctr>",
+    // "<super_obj>",
+    // "this"
+  };
+
   std::set<IRISEXP> res;
   for (auto &e : bindingsView.bindings)
   {
     for (auto &b : e.second)
     {
+      // if (implicitBindings.find(b->getNAME()) != implicitBindings.end()) {
+      //   continue;
+      // }
       auto &curr = symbolTable[b];
       if (curr.remoteReads.size() == 0 && curr.remoteWrites.size() == 0)
         res.insert(b);
@@ -834,11 +851,27 @@ std::set<IRISEXP> BBContainerView::getUncapturedStackBindings()
 
 std::set<std::shared_ptr<EnvBindingSEXP>> BBContainerView::getCapturedStackBindings()
 {
+  static const std::unordered_set<std::string> implicitBindings = {
+    // "arguments", 
+    // "this.active_func", 
+    // "new.target", 
+    // "<home_object>",
+    // "<var_obj>",
+    // "<module_meta>",
+    // "<super_ctr>",
+    // "<super_obj>",
+    // "this"
+  };
+
   std::set<std::shared_ptr<EnvBindingSEXP>> res;
   for (auto &e : bindingsView.bindings)
   {
     for (auto &b : e.second)
     {
+      // if (implicitBindings.find(b->getNAME()) != implicitBindings.end()) {
+      //   res.insert(b);
+      //   continue;
+      // }
       auto &curr = symbolTable[b];
       if (curr.remoteReads.size() > 0 || curr.remoteWrites.size() > 0)
         res.insert(b);
