@@ -25,7 +25,7 @@ static bool noSideEffect(IRISEXP rVAL)
 }
 static bool supportedTransferEffect(IRISEXP rVAL)
 {
-  return true;
+  return !(std::dynamic_pointer_cast<StackPopSEXP>(rVAL));
   return (
       // // Calls
       // std::dynamic_pointer_cast<CallSiteSEXP>(rVAL) ||
@@ -68,6 +68,10 @@ static bool maybeEffect(IRISEXP rVAL)
 {
   return (
       // Calls
+      std::dynamic_pointer_cast<ApplySEXP>(rVAL) ||
+      std::dynamic_pointer_cast<JSSetHomeSEXP>(rVAL) ||
+      std::dynamic_pointer_cast<JSSetNameSEXP>(rVAL) ||
+      std::dynamic_pointer_cast<StackToHeapSEXP>(rVAL) ||
       std::dynamic_pointer_cast<CallSiteSEXP>(rVAL) ||
       std::dynamic_pointer_cast<JSADDBRANDSEXP>(rVAL) ||
       std::dynamic_pointer_cast<JSCheckConstructorSEXP>(rVAL) ||
