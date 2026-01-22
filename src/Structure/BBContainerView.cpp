@@ -651,7 +651,11 @@ std::shared_ptr<BBContainerSEXP> BBContainerView::checkout()
 
   // if (!tainted) { // Stack collapse
   // bool isClassRelated = targetContainer->getContainerFlagID();
-  if (!tainted) {
+  bool doRegalloc = !tainted;
+  // Graph coloring based Reg Alloc fails in presence of dead code...
+  if (getenv("NO_OPT") || getenv("NO_WBR") || getenv("NO_EPROP")) doRegalloc = false;
+
+  if (doRegalloc) {
     RAGC regAlloc;
     for (auto &e : livenessResult)
     { // e.second.dfv is a set std::set<std::shared_ptr<EnvBindingSEXP>>
