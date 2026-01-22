@@ -1,1 +1,1 @@
-module.exports = require('./build/Debug/iridiumForge.node');
+module.exports = require('./build/Release/iridiumForge.node');
