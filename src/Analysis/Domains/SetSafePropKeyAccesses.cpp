@@ -21,7 +21,12 @@ SetSafePropKeyAccesses SetSafePropKeyAccesses::iter(const std::shared_ptr<BBSEXP
       if (auto lVal = std::dynamic_pointer_cast<EnvBindingSEXP>(envWrite->getLValTarget()))
       {
         if (blacklist.count(lVal) > 0) continue;
+        // WIP, this needs some on the merge... currently under specific circumstances
+        // when EPROP and WBR passes are disabled, this wont terminate
+        //  should be an easy fix leaving this for someone else to handle...
         next.dfv.store[lVal] = PropKeyLatticeValue::generate(envWrite->getRVal(), next.dfv);
+        // auto newVal = PropKeyLatticeValue::generate(envWrite->getRVal(), next.dfv);
+        // next.dfv.store[lVal] = next.dfv.store[lVal].merge(newVal);
       }
     }
     callback(idx++, next);
