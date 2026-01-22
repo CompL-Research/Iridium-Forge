@@ -14,10 +14,13 @@ void markNamespaceImports(IRISEXP currSEXP, std::unordered_map<int, IRIBUILDCONT
         auto binding = staticImportSEXP->getStorageLocation();
         if (literal == "*")
         {
-          auto remoteBinding = std::dynamic_pointer_cast<RemoteEnvBindingSEXP>(binding);
-          if (!remoteBinding)
-            throw std::runtime_error("Expected a remote env binding SEXP here....");
-          remoteBinding->setNSIMPORT();
+          std::cerr << "[IRIDIUM::WARN] -- * imports are not fully supported yet..." << std::endl;
+          
+          // WIP FIX THIS... 
+          // auto remoteBinding = std::dynamic_pointer_cast<RemoteEnvBindingSEXP>(binding);
+          // if (!remoteBinding)
+          //   throw std::runtime_error("Expected a remote env binding SEXP here....: " + binding->tag);
+          // remoteBinding->setNSIMPORT();
         }
       }
     }
