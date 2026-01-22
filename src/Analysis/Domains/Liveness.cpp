@@ -24,10 +24,9 @@ static void populateUsesAndDefs(IRISEXP currSEXP, std::set<std::shared_ptr<EnvBi
       {
         uses.insert(envBinding);
       }
+      populateUsesAndDefs(envWriteStmt->getRVal(), uses, defs);
+      return;
     }
-
-    populateUsesAndDefs(envWriteStmt->getRVal(), uses, defs);
-    return;
   }
 
   if (auto stackReject = std::dynamic_pointer_cast<StackRejectSEXP>(currSEXP))
