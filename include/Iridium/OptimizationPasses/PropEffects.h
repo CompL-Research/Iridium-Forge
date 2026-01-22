@@ -483,6 +483,25 @@ class PropEffects
     return false;
   }
 
+  static void patchSafeEnvReads(IRISEXP expr, std::set<IRISEXP> &killset, EffectAtStmt &val)
+  {
+
+    for (size_t i = 0; i < expr->args.size(); i++)
+    {
+      auto o = expr->args.at(i);
+      if (auto node = std::dynamic_pointer_cast<EnvReadSEXP>(o))
+      {
+        if (node->getObj() == val.store)
+        {
+          expr->args.at(i) = val.effect;
+          killset.insert(val.stmt);
+        }
+      }
+    }
+
+    for (auto e : expr->args) patchSafeEnvReads(e, killset, val);
+  }
+
   static void patchExprOuter(IRISEXP expr, std::set<IRISEXP> &killset, EffectAtStmt &val)
   {
     // StackRejectSEXP
@@ -511,6 +530,26 @@ class PropEffects
       }
       return false;
     });
+
+    // Special case for propagating safe reads, they are free of side effects so its okay to duplicate them...
+    if (auto vv = std::dynamic_pointer_cast<EnvReadSEXP>(val.effect)) {
+      bool safe = false;
+
+      if (vv->hasSAFE()) safe = true;
+      else if (std::dynamic_pointer_cast<GlobalBindingSEXP>(vv->getObj())) safe = true;
+
+      if (safe) {
+        patchSafeEnvReads(expr, killset, val);
+        return;
+      }
+    }
+
+    if (auto vv = std::dynamic_pointer_cast<EnvReadSEXP>(val.effect)) {
+      if (vv->hasSAFE()) {
+        patchSafeEnvReads(expr, killset, val);
+        return;
+      }
+    }
 
     if (numOccurences != 1) return;
 
