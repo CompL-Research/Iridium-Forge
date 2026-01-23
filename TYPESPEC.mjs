@@ -850,16 +850,6 @@ export default [
     }
   },
   {
-    "tag": "JSSpread",
-    "args": ["Val"],
-    "flags": {
-      "string": [],
-      "void": [],
-      "bool": [],
-      "double": [],
-    }
-  },
-  {
     "tag": "Await",
     "args": ["Obj"],
     "flags": {

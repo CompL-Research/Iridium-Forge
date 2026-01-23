@@ -169,7 +169,6 @@ class PropEffects
     }
 
     if (auto o = std::dynamic_pointer_cast<JSClassSEXP>(expr)) return false;
-    if (auto o = std::dynamic_pointer_cast<JSSpreadSEXP>(expr)) return false;
     if (auto o = std::dynamic_pointer_cast<JSTemplateSEXP>(expr)) return false;
 
     if (auto o = std::dynamic_pointer_cast<JSUnopSEXP>(expr)) {

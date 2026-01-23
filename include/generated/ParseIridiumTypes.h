@@ -1,4 +1,4 @@
-// Generated: 2026-01-20 01:37:29
+// Generated: 2026-01-24 02:08:10
 #pragma once
 #include "Iridium/Globals.h"
 #include "Iridium/IridiumSEXP.h"
@@ -92,7 +92,6 @@ public:
     if (tag == "UNOPDelVar") return UNOPDelVarSEXP::generateFrom(obj);
     if (tag == "JSTemplate") return JSTemplateSEXP::generateFrom(obj);
     if (tag == "BitInt") return BitIntSEXP::generateFrom(obj);
-    if (tag == "JSSpread") return JSSpreadSEXP::generateFrom(obj);
     if (tag == "Await") return AwaitSEXP::generateFrom(obj);
     if (tag == "Yield") return YieldSEXP::generateFrom(obj);
     if (tag == "JSInitialYield") return JSInitialYieldSEXP::generateFrom(obj);

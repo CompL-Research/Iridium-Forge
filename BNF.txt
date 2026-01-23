@@ -28,7 +28,6 @@ BindingsSEXP :=
     | JSArraySEXP
     | JSBinopSEXP
     | JSClassSEXP
-    | JSSpreadSEXP
     | JSTemplateSEXP
     | JSUnopSEXP
     | UNOPDelMemberExprSEXP

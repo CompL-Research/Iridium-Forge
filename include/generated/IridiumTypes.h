@@ -1,4 +1,4 @@
-// Generated: 2026-01-20 01:37:29
+// Generated: 2026-01-24 02:08:10
 #pragma once
 #include "Iridium/Globals.h"
 #include "Iridium/IridiumSEXP.h"
@@ -3421,35 +3421,6 @@ public:
   void unsetIridiumPrimitive() { removeFlag("IridiumPrimitive"); }
   bool hasIridiumPrimitive() { return hasFlag("IridiumPrimitive"); }
   std::string getIridiumPrimitive() { return getFlagString("IridiumPrimitive"); }
-
-};
-
-class JSSpreadSEXP : public IridiumSEXP {
-private:
-
-  JSSpreadSEXP() { this->tag = "JSSpread"; }
-  
-public:
-  static std::shared_ptr<JSSpreadSEXP> generateFrom(IRISEXP obj) {
-    assert(obj->tag == "JSSpread");
-    auto res = std::shared_ptr<JSSpreadSEXP>(new JSSpreadSEXP());
-
-    res->tag   = obj->tag;
-    res->args  = std::move(obj->args);
-    res->flags = std::move(obj->flags);
-    return res;
-  }
-
-
-  JSSpreadSEXP(IRISEXP Val) {
-    this->tag = "JSSpread";
-    this->args.push_back(Val);
-  }
-
-
-  void setVal(const IRISEXP &obj) { this->args.at(0) = obj; }
-  bool hasVal() { return 0 < this->args.size(); }
-  IRISEXP getVal() const { return this->args.at(0); }
 
 };
 
