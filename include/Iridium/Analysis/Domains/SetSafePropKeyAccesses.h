@@ -34,7 +34,7 @@ struct PropKeyLatticeValue
 
   using DFVT = UnionedDataMap<IRISEXP, PropKeyLatticeValue>;
 
-  static bool isSafe(IRISEXP curr, DFVT & flowVal)
+  static bool isSafe(IRISEXP curr, const DFVT &flowVal)
   {
     if (auto o = std::dynamic_pointer_cast<NumberSEXP>(curr))
     {
@@ -54,7 +54,14 @@ struct PropKeyLatticeValue
     }
     else if (auto o = std::dynamic_pointer_cast<EnvReadSEXP>(curr))
     {
-      return flowVal.store.count(o->getObj()) > 0 && flowVal.store[o->getObj()].kind == SAFE || flowVal.store[o->getObj()].kind == BOTTOM;
+      auto it = flowVal.store.find(o->getObj());
+      if (it == flowVal.store.end())
+      {
+        return false;
+      }
+
+      return it->second.kind == SAFE || it->second.kind == BOTTOM;
+      // BOTTOM = unknown but treated as safe for key cast purposes
     }
     return false;
   }
