@@ -14,7 +14,6 @@ public:
   std::shared_ptr<FileSEXP> checkout();
 
 private:
-  std::vector<std::unique_ptr<OptimizationPass>> optimizationPasses;
   std::vector<std::function<void(FileView &, std::unordered_map<int, IRIBUILDCONTEXT>)>> passes;
   FileView & fileView;
   std::unordered_map<int, IRIBUILDCONTEXT> iridiumBuildContext;
