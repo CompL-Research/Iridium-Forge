@@ -13,6 +13,6 @@ class WriteBarrierReductionPass : public BBPass
   static FileView *currFileView;
 
 public:
-  virtual std::string 
+  virtual std::string name() const override final;
   virtual bool run(BBContainerView &bb, FileView &fileView, AnalysisManager &AM) override final;
 };

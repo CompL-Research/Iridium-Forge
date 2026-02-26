@@ -12,6 +12,6 @@ class DCEPass : public BBPass
 
   static bool Transform(std::shared_ptr<BBSEXP> &bb, const Liveness &inData);
 public:
-  virtual std::string name() con
+  virtual std::string name() const override final;
   virtual bool run(BBContainerView &bb, FileView & /*fileView*/, AnalysisManager &AM) override final;
 };
