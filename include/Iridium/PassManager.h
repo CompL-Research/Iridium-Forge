@@ -7,13 +7,14 @@
 #include "Iridium/Analysis/Domains/AnalysisManager.h"
 #include "Iridium/OptimizationPasses/BBPass.h"
 
-std::vector<std::unique_ptr<BBPass>> pipeline;
-AnalysisManager AM;
-
-class PassManager {
-  std::vector<std::function<void(FileView &, std::unordered_map<int, IRIBUILDCONTEXT>)>> passes;
+class PassManager
+{
+  // std::vector<std::function<void(FileView &, std::unordered_map<int, IRIBUILDCONTEXT>)>> passes;
   FileView &fileView;
   std::unordered_map<int, IRIBUILDCONTEXT> iridiumBuildContext;
+
+  std::vector<std::unique_ptr<BBPass>> pipeline;
+  AnalysisManager AM;
 
   void buildPipeline(int level);
   bool isTainted(BBContainerView &bb, const std::set<double> &taintedScopes);

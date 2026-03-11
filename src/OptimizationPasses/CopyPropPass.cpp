@@ -45,6 +45,8 @@ bool CopyPropPass::patchExpr(IRISEXP curr, const CopyPropInfo &val)
                 }
             }
         }
+
+        return changed;
     }
 
     for (auto &e : curr->args)

@@ -19,18 +19,6 @@
 #include "external/json.hpp"
 #include <fstream>
 
-#include <filesystem>
-
-#include <string>
-#include <random>
-
-#include <chrono>
-#include <iostream>
-
-#include <iostream>
-#include <cstdlib>
-#include <string>
-
 void PassManager::buildPipeline(int level)
 {
   pipeline.clear();
@@ -55,6 +43,8 @@ void PassManager::buildPipeline(int level)
 
   if (!getenv("NO_REDKEYCAST"))
     pipeline.push_back(std::make_unique<ReduceComputedFieldOpsPass>());
+
+  std::cerr << "[PassManager] Pipeline built with " << pipeline.size() << " passes at level " << level << "\n";
 }
 
 bool PassManager::isTainted(BBContainerView &bb, const std::set<double> &taintedScopes)
@@ -97,7 +87,7 @@ void printOptimizationStatus()
   }
 }
 
-#define INLINING_DEPTH 1
+// #define INLINING_DEPTH 1
 
 class ScopeTimer
 {
@@ -121,26 +111,26 @@ private:
   std::chrono::time_point<std::chrono::high_resolution_clock> start_;
 };
 
-std::string randomString(size_t length)
-{
-  static const std::string chars =
-      "abcdefghijklmnopqrstuvwxyz"
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-      "0123456789";
+// std::string randomString(size_t length)
+// {
+//   static const std::string chars =
+//       "abcdefghijklmnopqrstuvwxyz"
+//       "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+//       "0123456789";
 
-  thread_local static std::mt19937 rng{std::random_device{}()};
-  std::uniform_int_distribution<size_t> dist(0, chars.size() - 1);
+//   thread_local static std::mt19937 rng{std::random_device{}()};
+//   std::uniform_int_distribution<size_t> dist(0, chars.size() - 1);
 
-  std::string result;
-  result.reserve(length);
-  for (size_t i = 0; i < length; i++)
-  {
-    result.push_back(chars[dist(rng)]);
-  }
-  return result;
-}
+//   std::string result;
+//   result.reserve(length);
+//   for (size_t i = 0; i < length; i++)
+//   {
+//     result.push_back(chars[dist(rng)]);
+//   }
+//   return result;
+// }
 
-using json = nlohmann::json;
+// using json = nlohmann::json;
 
 void PassManager::justAnalysis(std::stringstream &ss, std::set<double> taintedScopes)
 {
@@ -289,7 +279,11 @@ void PassManager::optimize(int level, std::set<double> taintedScopes)
 
       for (auto &pass : pipeline)
       {
-        bool passChanged = pass->run(bb, fileView, AM);
+        bool passChanged;
+        {
+          ScopeTimer passTimer("  Pass " + pass->name() + " [iter " + std::to_string(iteration) + "]");
+          passChanged = pass->run(bb, fileView, AM);
+        }
 
         if (passChanged)
         {
@@ -302,6 +296,12 @@ void PassManager::optimize(int level, std::set<double> taintedScopes)
     }
 
     iteration++;
+  }
+
+  std::cerr << "[PassManager] Fixed-point reached after " << iteration << " iteration(s)\n";
+  if (iteration == MAX_ITERS)
+  {
+    std::cerr << "[PassManager] WARNING: hit MAX_ITERS cap (" << MAX_ITERS << "), may not have converged\n";
   }
 
   if (!getenv("NO_DEADBR"))

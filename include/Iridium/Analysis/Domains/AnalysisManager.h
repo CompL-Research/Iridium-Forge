@@ -13,7 +13,8 @@ private:
 
     ContainerAnalysisCache &getCache(BBContainerView &bb)
     {
-        return cacheMap[&bb];
+        auto [it, _] = cacheMap.try_emplace(&bb);
+        return it->second;
     }
 
 public:

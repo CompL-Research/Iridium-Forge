@@ -24,7 +24,7 @@ bool WriteBarrierReductionPass::markCapturedBindings(IRISEXP curr, const TDZA &i
         changed |= WriteBarrierReductionPass::currFileView->updateSafelyCapturedBindingsSet(lambdaSEXP->getStartBBIDX(), inData);
     }
 
-    for (auto e : curr->args)
+    for (auto &e : curr->args)
         changed |= markCapturedBindings(e, inData);
 
     return changed;
@@ -96,7 +96,7 @@ bool WriteBarrierReductionPass::patchExpr(IRISEXP curr, IRISEXP binding, const T
         }
     }
 
-    for (auto e : curr->args)
+    for (auto &e : curr->args)
         changed |= WriteBarrierReductionPass::patchExpr(e, binding, latticeVal);
 
     return changed;

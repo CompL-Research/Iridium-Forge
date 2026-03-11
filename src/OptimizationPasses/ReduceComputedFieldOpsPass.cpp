@@ -35,6 +35,8 @@ bool ReduceComputedFieldOpsPass::patchExpr(IRISEXP curr)
       else if (auto s = std::dynamic_pointer_cast<StringSEXP>(field))
         key = std::make_shared<StringSEXP>(s->getIridiumPrimitive());
 
+      // TODO: Review why not number???
+
       if (key)
       {
         child = std::make_shared<FieldReadSEXP>(
@@ -44,7 +46,7 @@ bool ReduceComputedFieldOpsPass::patchExpr(IRISEXP curr)
     }
 
     // -------- WRITE --------
-    if (auto write = std::dynamic_pointer_cast<JSComputedFieldWriteSEXP>(child))
+    else if (auto write = std::dynamic_pointer_cast<JSComputedFieldWriteSEXP>(child))
     {
       auto field = write->getField();
 

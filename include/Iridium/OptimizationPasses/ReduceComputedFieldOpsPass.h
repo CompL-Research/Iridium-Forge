@@ -11,5 +11,5 @@ public:
 
     bool run(BBContainerView &bb,
              FileView &fileView,
-             AnalysisManager &AM) override;
+             AnalysisManager &AM) override final;
 };

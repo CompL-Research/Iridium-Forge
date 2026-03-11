@@ -3,6 +3,12 @@
 // --------------------------------------------
 // Recursively update SAFE flags
 // --------------------------------------------
+
+std::string RemoveRedundantPropKeyCastPass::name() const
+{
+    return "RemoveRedundantPropKeyCastPass";
+}
+
 bool RemoveRedundantPropKeyCastPass::patchExpr(
     IRISEXP curr,
     const SetSafePropKeyAccesses &flowVal)
@@ -29,8 +35,8 @@ bool RemoveRedundantPropKeyCastPass::patchExpr(
         }
     }
 
-    if (auto computedFieldWrite =
-            std::dynamic_pointer_cast<JSComputedFieldWriteSEXP>(curr))
+    else if (auto computedFieldWrite =
+                 std::dynamic_pointer_cast<JSComputedFieldWriteSEXP>(curr))
     {
         bool shouldBeSafe =
             PropKeyLatticeValue::isSafe(

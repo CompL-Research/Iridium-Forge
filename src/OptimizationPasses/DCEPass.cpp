@@ -5,30 +5,6 @@ std::string DCEPass::name() const
     return "DCE";
 }
 
-bool DCEPass::Transform(std::shared_ptr<BBSEXP> &bb, const Liveness &inData)
-{
-    bool changed = false;
-
-    inData.iter(bb, [&](size_t idx, const Liveness &val)
-                {
-        auto &stmt = bb->args.at(idx);
-
-        auto newStmt = patchExpr(stmt, val);
-
-        if (newStmt != stmt)
-        {
-            stmt = newStmt;
-            changed = true;
-        } });
-
-    if (changed)
-    {
-        filterNOPs(bb);
-    }
-
-    return changed;
-}
-
 bool DCEPass::maybeSideEffect(IRISEXP rVAL)
 {
     if (
@@ -63,6 +39,16 @@ IRISEXP DCEPass::patchExpr(IRISEXP curr, const Liveness &val)
     // TODO
     // If noSideEffect(RVAL): StackReject[1](RVAL) => NOP
     //
+
+    // First, recursively patch children
+    for (auto &child : curr->args)
+    {
+        auto newChild = patchExpr(child, val);
+        if (newChild != child)
+        {
+            child = newChild;
+        }
+    }
 
     if (auto implicitBindingDecl = std::dynamic_pointer_cast<JSImplicitBindingDeclarationSEXP>(curr))
     {
@@ -192,8 +178,9 @@ bool DCEPass::run(BBContainerView &bb, FileView & /*fileView*/, AnalysisManager 
 
     for (const auto &[vertex, state] : liveness)
     {
-        if (state.dfv.empty())
-            continue;
+        // Most agressive optimization possible if nothing is live
+        // if (state.dfv.empty())
+        //     continue;
 
         auto currBB = bb.cfgManager.cfg[vertex];
         changed |= DCEPass::Transform(currBB, state);
