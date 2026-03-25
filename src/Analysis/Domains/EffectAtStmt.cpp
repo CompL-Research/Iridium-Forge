@@ -102,7 +102,10 @@ static bool maybeEffect(IRISEXP rVAL)
       std::dynamic_pointer_cast<StackPopSEXP>(rVAL) ||
 
       // Branch
-      std::dynamic_pointer_cast<IfElseJumpSEXP>(rVAL));
+      std::dynamic_pointer_cast<IfElseJumpSEXP>(rVAL) ||
+
+      // Set [[Prototype]] field
+      std::dynamic_pointer_cast<JSSetPrototypeOfSEXP>(rVAL));
 }
 
 EffectAtStmt EffectAtStmt::iter(const std::shared_ptr<BBSEXP> &bb, std::function<void(size_t, EffectAtStmt &)> callback) const

@@ -478,6 +478,12 @@ class PropEffects
       return false;
     }
 
+    // TODO: Review if JSSetPrototypeOfSEXP needs to do anything else
+    if (auto o = std::dynamic_pointer_cast<JSSetPrototypeOfSEXP>(expr))
+    {
+      return false;
+    }
+
     throw std::runtime_error("Unhandled case... prop effects TAG: " + expr->tag);
     return false;
   }

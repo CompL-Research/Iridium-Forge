@@ -938,5 +938,15 @@ export default [
       "bool": [],
       "double": [],
     }
+  },
+  {  
+    "tag": "JSSetPrototypeOf",  
+    "args": ["TargetObj", "ProtoValue"],  
+    "flags": {  
+      "string": [],  
+      "void": [],  
+      "bool": [],  
+      "double": [],  
+    }  
   }
 ];

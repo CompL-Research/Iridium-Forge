@@ -1,4 +1,4 @@
-// Generated: 2026-01-24 02:08:10
+// Generated: 2026-03-25 15:05:22
 #pragma once
 #include "Iridium/Globals.h"
 #include "Iridium/IridiumSEXP.h"
@@ -3710,5 +3710,40 @@ public:
   void setname(const IRISEXP &obj) { this->args.at(1) = obj; }
   bool hasname() { return 1 < this->args.size(); }
   IRISEXP getname() const { return this->args.at(1); }
+
+};
+
+class JSSetPrototypeOfSEXP : public IridiumSEXP {
+private:
+
+  JSSetPrototypeOfSEXP() { this->tag = "JSSetPrototypeOf"; }
+  
+public:
+  static std::shared_ptr<JSSetPrototypeOfSEXP> generateFrom(IRISEXP obj) {
+    assert(obj->tag == "JSSetPrototypeOf");
+    auto res = std::shared_ptr<JSSetPrototypeOfSEXP>(new JSSetPrototypeOfSEXP());
+
+    res->tag   = obj->tag;
+    res->args  = std::move(obj->args);
+    res->flags = std::move(obj->flags);
+    return res;
+  }
+
+
+  JSSetPrototypeOfSEXP(IRISEXP TargetObj, IRISEXP ProtoValue) {
+    this->tag = "JSSetPrototypeOf";
+    this->args.push_back(TargetObj);
+    this->args.push_back(ProtoValue);
+  }
+
+
+  void setTargetObj(const IRISEXP &obj) { this->args.at(0) = obj; }
+  bool hasTargetObj() { return 0 < this->args.size(); }
+  IRISEXP getTargetObj() const { return this->args.at(0); }
+
+
+  void setProtoValue(const IRISEXP &obj) { this->args.at(1) = obj; }
+  bool hasProtoValue() { return 1 < this->args.size(); }
+  IRISEXP getProtoValue() const { return this->args.at(1); }
 
 };

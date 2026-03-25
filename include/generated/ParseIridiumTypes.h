@@ -1,4 +1,4 @@
-// Generated: 2026-01-24 02:08:10
+// Generated: 2026-03-25 15:05:22
 #pragma once
 #include "Iridium/Globals.h"
 #include "Iridium/IridiumSEXP.h"
@@ -101,6 +101,7 @@ public:
     if (tag == "LoopInitPreludeEnd") return LoopInitPreludeEndSEXP::generateFrom(obj);
     if (tag == "JSSetHome") return JSSetHomeSEXP::generateFrom(obj);
     if (tag == "JSSetName") return JSSetNameSEXP::generateFrom(obj);
+    if (tag == "JSSetPrototypeOf") return JSSetPrototypeOfSEXP::generateFrom(obj);
     throw std::runtime_error("ParseIridiumTypes::specialize unhandled Tag: " + tag);
   }
 };
