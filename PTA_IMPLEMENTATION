@@ -1,0 +1,23 @@
+
+1. Case bifurcation
+
+  - Checkout boost open method for multiple dispatch implementation.
+
+2. 
+
+
+::Case Bifurcation::
+
+1. EnvWrite
+
+LVAL -> 
+  EnvBinding
+    -- Some operation
+
+
+js3$newObj$2 is a stack variable in the graph
+RVAL -> OBJ | JSNUBD | undefined
+
+
+::WIP::
+1. JSImplicitBindingDeclaration -> Skip

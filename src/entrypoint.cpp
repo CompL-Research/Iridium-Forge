@@ -170,6 +170,12 @@ IRISEXP runOptPasses(std::shared_ptr<FileSEXP> fileSEXP, std::unordered_map<int,
   if (getenv("NO_OPT")) return fileSEXP;
   FileView fileView(fileSEXP, iridiumBuildContext);
   PassManager pm(fileView, iridiumBuildContext);
+  
+  if (getenv("DO_PTA"))
+  {
+    pm.pta(1, taintedScopes);
+  }
+  else
   if (getenv("JUST_ANALYZE"))
   {
     std::stringstream ss;

@@ -19,6 +19,8 @@
 #include "external/json.hpp"
 #include <fstream>
 
+#include "external/Prakriti.hpp"
+
 #include <filesystem>
 
 #include <string>
@@ -31,27 +33,29 @@
 #include <cstdlib>
 #include <string>
 
-void printOptimizationStatus() {
-    struct Flag {
-        const char* env;    // NO_ flag
-        const char* name;   // positive feature name
-    };
+void printOptimizationStatus()
+{
+  struct Flag
+  {
+    const char *env;  // NO_ flag
+    const char *name; // positive feature name
+  };
 
-    Flag flags[] = {
-        {"NO_CONSTPROP",   "CONSTPROP"},
-        {"NO_COPYPROP",    "COPYPROP"},
-        {"NO_WBR",         "WBR"},
-        {"NO_DCE",         "DCE"},
-        {"NO_EPROP",       "EPROP"},
-        {"NO_RKEYCAST",    "RKEYCAST"},
-        {"NO_REDKEYCAST",  "REDKEYCAST"},
-        {"NO_DEADBR",      "DEADBR"}
-    };
+  Flag flags[] = {
+      {"NO_CONSTPROP", "CONSTPROP"},
+      {"NO_COPYPROP", "COPYPROP"},
+      {"NO_WBR", "WBR"},
+      {"NO_DCE", "DCE"},
+      {"NO_EPROP", "EPROP"},
+      {"NO_RKEYCAST", "RKEYCAST"},
+      {"NO_REDKEYCAST", "REDKEYCAST"},
+      {"NO_DEADBR", "DEADBR"}};
 
-    for (const auto& f : flags) {
-        bool disabled = (std::getenv(f.env) != nullptr);
-        std::cerr << f.name << ": " << (disabled ? "OFF" : "ON") << "\n";
-    }
+  for (const auto &f : flags)
+  {
+    bool disabled = (std::getenv(f.env) != nullptr);
+    std::cerr << f.name << ": " << (disabled ? "OFF" : "ON") << "\n";
+  }
 }
 
 #define INLINING_DEPTH 1
@@ -106,7 +110,8 @@ void PassManager::justAnalysis(std::stringstream &ss, std::set<double> taintedSc
 
   std::function<void(IRISEXP currSEXP)> collectInfo = [&](IRISEXP currSEXP)
   {
-    if (auto read = std::dynamic_pointer_cast<EnvReadSEXP>(currSEXP)) {
+    if (auto read = std::dynamic_pointer_cast<EnvReadSEXP>(currSEXP))
+    {
       if (read->hasSAFE() && read->hasFlag("MAP_INF"))
       {
         // std::cout << "SAFEREAD: ";
@@ -129,7 +134,9 @@ void PassManager::justAnalysis(std::stringstream &ss, std::set<double> taintedSc
       }
 
       return;
-    } else if (auto write = std::dynamic_pointer_cast<EnvWriteSEXP>(currSEXP)) {
+    }
+    else if (auto write = std::dynamic_pointer_cast<EnvWriteSEXP>(currSEXP))
+    {
       if (write->hasSAFE() && write->hasFlag("MAP_INF"))
       {
         // std::cout << "SAFEWRITE: ";
@@ -151,10 +158,12 @@ void PassManager::justAnalysis(std::stringstream &ss, std::set<double> taintedSc
         }
       }
     }
-    for (auto & e : currSEXP->args) collectInfo(e);
+    for (auto &e : currSEXP->args)
+      collectInfo(e);
   };
 
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < 5; i++)
+  {
     for (auto &bbContView : fileView.bbContainerViews)
     {
 
@@ -194,22 +203,127 @@ void PassManager::justAnalysis(std::stringstream &ss, std::set<double> taintedSc
   for (auto &bbContView : fileView.bbContainerViews)
   {
     bbContView.cfgManager.traverseCFG(
-    [&](Vertex v, std::shared_ptr<BBSEXP> bb)
-    {
-      for (auto & stmt : bb->args)
-      {
-        collectInfo(stmt);
-      }
-    });
+        [&](Vertex v, std::shared_ptr<BBSEXP> bb)
+        {
+          for (auto &stmt : bb->args)
+          {
+            collectInfo(stmt);
+          }
+        });
   }
 
-    // std::cout << ss.str() << std::endl;
-    std::cout << "SAFE: " << (envReadRemoteSafe + envWriteRemoteSafe) << " TOTAL: " << (envReadRemoteTotal + envWriteRemoteTotal) << std::endl;
+  // std::cout << ss.str() << std::endl;
+  std::cout << "SAFE: " << (envReadRemoteSafe + envWriteRemoteSafe) << " TOTAL: " << (envReadRemoteTotal + envWriteRemoteTotal) << std::endl;
+}
+
+std::unordered_map<IRISEXP, size_t> globalMap;
+std::unordered_map<size_t, IRISEXP> inverseMap;
+static size_t inc = 0;
+
+size_t getNodeID(IRISEXP sexp) {
+  if (globalMap.count(sexp)) return globalMap[sexp];
+  inverseMap[inc] = sexp;
+  globalMap[sexp] = inc++; 
+}
+
+void PassManager::pta(int level, std::set<double> taintedScopes)
+{
+  // When performing PTA. There are two important levels of granularity.
+  // 1. Modelling file level behaviour.
+  // 2. Modelling function level behaviour.
+  // 
+  // - For our analysis we can model them similarly, but keep separate nodes (to prevent duplicate analysis for a pre analyzed module/script).
+  // 
+
+
+  JSGraph::ECMAGraph mainGraph;
+  std::cout << "Starting PTA Analysis" << std::endl;
+  auto &topLevelContainer = fileView.getTopLevelContainer();
+
+  for (auto sBinding : topLevelContainer.getAllStackBindings()) {
+    size_t id = getNodeID(sBinding);
+    JSGraph::Bindu<JSGraph::BinduId> b(id, JSGraph::TAG::STACK);
+
+    b.RegisterAction(JSGraph::ActionTag::STACK_set_strong, JSGraph::AC_STACK_set_strong);
+    b.RegisterAction(JSGraph::ActionTag::STACK_set_weak, JSGraph::AC_STACK_set_weak);
+
+    if (!mainGraph.hasNode(id)) mainGraph.addNode(b);
+  }
+
+  topLevelContainer.cfgManager.traverseCFG(
+      [&](Vertex v, std::shared_ptr<BBSEXP> bb)
+      {
+        for (auto &stmt : bb->args)
+        {
+
+          auto currGraph = mainGraph.clone();
+
+          auto iBindingDecl = std::dynamic_pointer_cast<JSImplicitBindingDeclarationSEXP>(stmt);
+          if (iBindingDecl)
+          {
+            std::cout << stmt->tag << " (TODO)" << std::endl;
+            continue;
+          }
+
+          auto eWrite = std::dynamic_pointer_cast<EnvWriteSEXP>(stmt);
+
+          if (eWrite)
+          {
+            // 
+            // Gen New Object (IRISEXP curr)
+            // JSObjectSEXP :=> Ordinary Object
+            // 
+            // 1.  -> Gen Ordinary Object
+            // 2. Stack Object -> 
+            // 
+            // 
+            // LVAL = RVAL 
+            // For all LVALS, call the [[set]] method...
+            //       LVAL
+            //          - EnvBinding             -> Stack Object
+            //          - RemoteEnvBinding       -> Resolve until Stack Object (some assertion that this node exists at context entry should be implicitly guaranteed)
+            //          - GlobalBinding          -> This binding looking from the global this object
+            // 
+            //       RVAL
+            //          - Ordinary Object
+            //          - Stack Object
+            //          - JSNUBD                 // (TODO)
+            //          - ...Constants as a WIP...
+            //
+            // a = {}
+            {
+              auto LVAL = eWrite->getLValTarget();
+              
+              auto RVAL = eWrite->getRVal();
+              if (
+                std::dynamic_pointer_cast<EnvBindingSEXP>(LVAL) &&
+                std::dynamic_pointer_cast<JSObjectSEXP>(RVAL)
+              ) {
+                auto lid = getNodeID(LVAL);
+                auto rid = getNodeID(RVAL);
+
+                std::cout << "ENV WRITE: LVAL ->" << lid << ", " << " RVAL: " << rid << std::endl;
+                auto bin = mainGraph.GetNodeDescriptor(lid);
+
+                assert(bin.HasAction(JSGraph::ActionTag::STACK_set_strong));
+                auto actions = bin.GetActions(JSGraph::ActionTag::STACK_set_strong);
+
+                for (auto & a : actions) {
+                  currGraph = a(currGraph, []); // ... add args for action closure...
+                }
+              }
+            } 
+
+            
+          }
+        }
+      });
 }
 
 void PassManager::optimize(int level, std::set<double> taintedScopes)
 {
-  if (getenv("PRINT_OPT_STAT")) printOptimizationStatus();
+  if (getenv("PRINT_OPT_STAT"))
+    printOptimizationStatus();
 #if PASSMGR_DEBUG == 1
   std::filesystem::path out_path = "outputs/passmanager.json";
   json PASSMGR_DEBUGInfo = {
@@ -578,10 +692,10 @@ void PassManager::optimize(int level, std::set<double> taintedScopes)
         {
           ConstantProp::Transform(bbContView.cfgManager.cfg[e.first], e.second);
         }
-        #if PASSMGR_DEBUG == 1
-              // DBG("End ConstantProp");
-              PASSMGR_DEBUGVector.push_back(bbContView.getDebugJSON(passBasename + "_1_CONSTANT_PROP"));
-        #endif
+#if PASSMGR_DEBUG == 1
+        // DBG("End ConstantProp");
+        PASSMGR_DEBUGVector.push_back(bbContView.getDebugJSON(passBasename + "_1_CONSTANT_PROP"));
+#endif
       }
 
       if (!getenv("NO_COPYPROP"))
@@ -594,12 +708,11 @@ void PassManager::optimize(int level, std::set<double> taintedScopes)
           auto currBB = bbContView.cfgManager.cfg[e.first];
           CopyProp::Transform(currBB, e.second);
         }
-        #if PASSMGR_DEBUG == 1
-              // DBG("End CopyProp");
-              PASSMGR_DEBUGVector.push_back(bbContView.getDebugJSON(passBasename + "_2_COPY_PROP"));
-        #endif
+#if PASSMGR_DEBUG == 1
+        // DBG("End CopyProp");
+        PASSMGR_DEBUGVector.push_back(bbContView.getDebugJSON(passBasename + "_2_COPY_PROP"));
+#endif
       }
-
 
       if (!getenv("NO_WBR"))
       {
@@ -611,12 +724,11 @@ void PassManager::optimize(int level, std::set<double> taintedScopes)
         {
           WriteBarrierReduction::Transform(bbContView.cfgManager.cfg[e.first], e.second);
         }
-        #if PASSMGR_DEBUG == 1
-              // DBG("End WriteBarrierReduction");
-              PASSMGR_DEBUGVector.push_back(bbContView.getDebugJSON(passBasename + "_3_WBR"));
-        #endif
+#if PASSMGR_DEBUG == 1
+        // DBG("End WriteBarrierReduction");
+        PASSMGR_DEBUGVector.push_back(bbContView.getDebugJSON(passBasename + "_3_WBR"));
+#endif
       }
-
 
       if (!getenv("NO_DCE"))
       {
@@ -629,10 +741,10 @@ void PassManager::optimize(int level, std::set<double> taintedScopes)
           DCE::Transform(currBB, e.second);
           filterNOPs(currBB);
         }
-        #if PASSMGR_DEBUG == 1
-              // DBG("End DCE");
-              PASSMGR_DEBUGVector.push_back(bbContView.getDebugJSON(passBasename + "_4_DCE"));
-        #endif
+#if PASSMGR_DEBUG == 1
+        // DBG("End DCE");
+        PASSMGR_DEBUGVector.push_back(bbContView.getDebugJSON(passBasename + "_4_DCE"));
+#endif
       }
 
       if (!getenv("NO_EPROP"))
@@ -680,10 +792,10 @@ void PassManager::optimize(int level, std::set<double> taintedScopes)
           auto currBB = bbContView.cfgManager.cfg[v];
           killer(currBB);
         }
-        #if PASSMGR_DEBUG == 1
-              // DBG("End Effect Prop");
-              PASSMGR_DEBUGVector.push_back(bbContView.getDebugJSON(passBasename + "_5_EFFECT_PROP"));
-        #endif
+#if PASSMGR_DEBUG == 1
+        // DBG("End Effect Prop");
+        PASSMGR_DEBUGVector.push_back(bbContView.getDebugJSON(passBasename + "_5_EFFECT_PROP"));
+#endif
       }
 
       if (!getenv("NO_RKEYCAST"))
@@ -697,10 +809,10 @@ void PassManager::optimize(int level, std::set<double> taintedScopes)
         {
           RemoveRedundantPropKeyCast::Transform(bbContView.cfgManager.cfg[e.first], e.second);
         }
-        #if PASSMGR_DEBUG == 1
-              // DBG("End SetSafePropKeyAccesses");
-              PASSMGR_DEBUGVector.push_back(bbContView.getDebugJSON(passBasename + "_5_SAFE_PROP_KEY_ACCESS"));
-        #endif
+#if PASSMGR_DEBUG == 1
+        // DBG("End SetSafePropKeyAccesses");
+        PASSMGR_DEBUGVector.push_back(bbContView.getDebugJSON(passBasename + "_5_SAFE_PROP_KEY_ACCESS"));
+#endif
       }
 
       if (!getenv("NO_REDKEYCAST"))
@@ -715,7 +827,7 @@ void PassManager::optimize(int level, std::set<double> taintedScopes)
     // ScopeTimer timer("doDeadBindingRemoval");
     doDeadBindingRemoval(fileView);
   }
-  
+
   // Mark Tail Calls
   for (auto &bbContView : fileView.bbContainerViews)
   {

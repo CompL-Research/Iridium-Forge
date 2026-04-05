@@ -11,6 +11,8 @@ public:
   void justAnalysis(std::stringstream &, std::set<double>);
   void optimize(int level, std::set<double> taintedScopes);
 
+  void pta(int level, std::set<double> taintedScopes);
+
   std::shared_ptr<FileSEXP> checkout();
 
 private:
