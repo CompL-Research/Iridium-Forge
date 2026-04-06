@@ -173,10 +173,12 @@ IRISEXP runOptPasses(std::shared_ptr<FileSEXP> fileSEXP, std::unordered_map<int,
   if (getenv("JUST_ANALYZE"))
   {
     std::stringstream ss;
+    std::cerr << "Just analyzing..." << std::endl;
     pm.justAnalysis(ss, taintedScopes);
   }
   else
   {
+    std::cerr << "Optimizing..." << std::endl;
     pm.optimize(1, taintedScopes);
   }
   auto res = pm.checkout();
