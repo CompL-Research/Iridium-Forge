@@ -41,7 +41,7 @@ public:
 
   void refreshSymbolTable();
 
-  void updateSafelyCapturedBindingsSet(double bbIDX, TDZA val);
+  bool updateSafelyCapturedBindingsSet(double bbIDX, const TDZA &val);
 
   std::vector<BBContainerView> &getBBContainerViews() { return bbContainerViews; }
 
