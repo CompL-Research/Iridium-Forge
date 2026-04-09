@@ -76,22 +76,22 @@ std::shared_ptr<FileSEXP> FileView::checkout()
   return targetContainer;
 }
 
-bool FileView::updateSafelyCapturedBindingsSet(double bbIDX, const TDZA &val)
+void FileView::updateSafelyCapturedBindingsSet(double bbIDX, TDZA val)
 {
-  bool changed = false;
-
-  auto &targetContainer = getContainer(bbIDX);
-
-  for (auto &rBinding : targetContainer.bindingsView.remoteBindings)
+  for (auto &targetContainer : bbContainerViews)
   {
-    auto resolvedBinding = resolveRemoteBinding(rBinding);
-
-    auto it = val.dfv.store.find(resolvedBinding);
-    if (it != val.dfv.store.end() && it->second.kind == TDZLattice::SAFE)
+    if (targetContainer.getStartBBIDX() == bbIDX)
     {
-      changed |= safelyCapturedBindings.insert(rBinding).second;
+
+      for (auto &rBinding : targetContainer.bindingsView.remoteBindings)
+      {
+        std::shared_ptr<EnvBindingSEXP> resolvedBinding = resolveRemoteBinding(rBinding);
+
+        if (val.dfv.store.count(resolvedBinding) > 0 && val.dfv.store[resolvedBinding].kind == TDZLattice::SAFE)
+        {
+          safelyCapturedBindings.insert(rBinding);
+        }
+      }
     }
   }
-
-  return changed;
 }
