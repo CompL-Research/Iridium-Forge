@@ -47,3 +47,5 @@ gen.sh
 
 # debug information files
 *.dwo
+
+forge.cjs
