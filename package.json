@@ -2,7 +2,10 @@
   "name": "cpp-addon-cmake",
   "version": "1.0.0",
   "main": "index.js",
-  "scripts": {},
+  "scripts": {
+    "build": "cmake-js clean && cmake-js build && echo 'module.exports = require(\"./build/Release/iridiumForge.node\");' > forge.cjs",
+    "dev": "cmake-js clean && cmake-js build --debug  && echo 'module.exports = require(\"./build/Debug/iridiumForge.node\");' > forge.cjs"
+  },
   "dependencies": {
     "cmake-js": "^7.2.1",
     "node-addon-api": "^8.5.0"
