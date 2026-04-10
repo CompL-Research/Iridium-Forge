@@ -1,5 +1,4 @@
 #include <napi.h>
-#include <iostream>
 #include <sstream>
 
 #include <zlib.h>
@@ -7,9 +6,6 @@
 
 #include "Iridium/entrypoint.h"
 #include "Iridium/Globals.h"
-#include "Iridium/IridiumSEXP.h"
-#include "Iridium/Structure/BBContainerView.h"
-#include "Iridium/Structure/FileView.h"
 
 #include "shared.h"
 

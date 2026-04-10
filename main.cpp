@@ -6,7 +6,6 @@
 #include <string>
 #include <cstdint>
 #include <optional>
-#include <filesystem>
 
 #include "Iridium/IridiumBuildContext.h"
 #include "Iridium/IridiumSEXP.h"
@@ -35,7 +34,7 @@ static void print_usage(const char *argv0)
 ██║██████╔╝██║██║  ██║██║██║   ██║██╔████╔██║
 ██║██╔══██╗██║██║  ██║██║██║   ██║██║╚██╔╝██║
 ██║██║  ██║██║██████╔╝██║╚██████╔╝██║ ╚═╝ ██║
-╚═╝╚═╝  ╚═╝╚═╝╚═════╝ ╚═╝ ╚═════╝ ╚═╝     ╚═╝                                
+╚═╝╚═╝  ╚═╝╚═╝╚═════╝ ╚═╝ ╚═════╝ ╚═╝     ╚═╝
 
 )";
 
@@ -59,7 +58,7 @@ int main(int argc, char **argv)
     std::vector<uint8_t> raw = gunzip(gz);
     msgpack::object_handle oh = msgpack::unpack(reinterpret_cast<const char *>(raw.data()), raw.size());
     msgpack::object obj = oh.get();
-    
+
     msgpack::object VERSION = obj.via.map.ptr[0].val;
     msgpack::object path = obj.via.map.ptr[1].val;
     msgpack::object iridium = obj.via.map.ptr[2].val;

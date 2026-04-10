@@ -1,8 +1,5 @@
 #include "Iridium/entrypoint.h"
 #include "generated/IridiumTypes.h"
-#include "Iridium/Structure/FileView.h"
-#include <filesystem>
-#include <fstream>
 
 IRISEXP sharedEntrypoint(IRISEXP sexp, std::unordered_map<int, IRIBUILDCONTEXT> iridiumBuildContext)
 {
