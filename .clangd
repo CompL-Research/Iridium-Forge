@@ -1,0 +1,8 @@
+CompileFlags:
+  CompilationDatabase: "build" # Points clangd to your build folder
+  Add: [-std=c++17]
+
+Index:
+  External:
+    File: .
+    MountPoint: "**/node_modules/**" # Excludes node_modules from indexing

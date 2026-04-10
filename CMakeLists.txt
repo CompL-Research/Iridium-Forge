@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.15)
 project(iridium_forge LANGUAGES CXX)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -60,7 +62,7 @@ target_include_directories(iridiumForge PUBLIC ${CMAKE_SOURCE_DIR}/include)
 # ----------------------
 add_executable(forge
     ${IRIDIUM_SRC}
-    main.cpp 
+    main.cpp
     shared.cpp
 )
 

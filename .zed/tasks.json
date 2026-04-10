@@ -1,0 +1,8 @@
+[
+  {
+    "label": "Project Build",
+    "command": "npx cmake-js clean && npx cmake-js build",
+    "use_new_terminal": true,
+    "allow_concurrent_runs": false
+  }
+]
