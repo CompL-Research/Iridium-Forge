@@ -26,7 +26,7 @@ function genSchema(spec) {
   const flagMethods = allFlags.map(f => {
     if (f.isVoid) {
       return `    bool has${f.name}() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_${f.name})); }\n` +
-             `    void set${f.name}() { mutate_flag(FLAG_IDX_${f.name}) = true; }\n` +
+             `    void set${f.name}() { mutate_flag(FLAG_IDX_${f.name}) = std::nullptr_t{}; }\n` +
              `    void clear${f.name}() { mutate_flag(FLAG_IDX_${f.name}) = std::monostate{}; }`;
     } else {
       return `    ${f.type} get${f.name}() const { return std::get<${f.type}>(get_flag(FLAG_IDX_${f.name})); }\n` +
