@@ -25,9 +25,15 @@ void _3_FNOPS(
     IRI_STORAGE::IridiumPool &pool, IRI_STORAGE::IRID fileSEXP,
     std::unordered_map<int, std::shared_ptr<IRI_PARSE::IridiumBuildContext>>
         &iridiumBuildContext);
-void _4_GICG(
+void _4_1_GICG(
     IRI_STORAGE::IridiumPool &pool, IRI_STORAGE::IRID fileSEXP,
     std::unordered_map<int, std::shared_ptr<IRI_PARSE::IridiumBuildContext>>
         &iridiumBuildContext);
+
+void _4_2_PMB(
+    IRI_STORAGE::IridiumPool &pool, IRI_STORAGE::IRID fileSEXP,
+    std::unordered_map<int, std::shared_ptr<IRI_PARSE::IridiumBuildContext>>
+        &iridiumBuildContext);
+
 
 }; // namespace IRI_CORE_PASSES
