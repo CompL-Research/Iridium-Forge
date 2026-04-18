@@ -117,7 +117,7 @@ void IridiumSEXP::dump(std::ostream &oss, const IridiumPool *pool,
     oss << pad1 << "[]," << nl;
   } else {
     oss << pad1 << "[" << nl;
-    auto args_span = pool->get_args(this);
+    auto args_span = pool->get_args_view(this);
 
     for (uint32_t i = 0; i < num_args; ++i) {
       IRID child_id = args_span[i];
@@ -218,7 +218,7 @@ void IridiumSEXP::dumpFlat(std::ostream &oss, const IridiumPool *pool,
   oss << "\n";
 
   // 4. Handle Args (Children)
-  auto args_span = pool->get_args(this);
+  auto args_span = pool->get_args_view(this);
   for (uint32_t i = 0; i < num_args; ++i) {
     IRID child_id = args_span[i];
     pool->operator[](child_id).dumpFlat(oss, pool, depth + 2);
