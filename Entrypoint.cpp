@@ -42,6 +42,7 @@ inline void normalizeIRIDIUM(
   runPass("_4_1_GICG", IRI_CORE_PASSES::_4_1_GICG);
   runPass("_4_2_PMB", IRI_CORE_PASSES::_4_2_PMB);
   runPass("_4_3_PIB", IRI_CORE_PASSES::_4_3_PIB);
+  runPass("_4_4_RFD", IRI_CORE_PASSES::_4_4_RFD);
 }
 
 IRI_STORAGE::IRID sharedEntrypoint(
