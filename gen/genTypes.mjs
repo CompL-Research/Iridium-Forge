@@ -40,7 +40,8 @@ function genSchema(spec) {
   // CHANGED: Now returns and accepts IRID instead of IridiumSEXP*
   const argMethods = (args || []).map((a, idx) => {
     return `    IRID getArg_${a}() const { return pool->get_args(id)[${idx}]; }\n` +
-           `    void setArg_${a}(IRID val) { pool->update_arg_inplace(id,${idx},val); }`;
+           `    bool hasArg_${a}() const { return ${idx} < pool->get_args(id).size(); }\n` +
+           `    void setArg_${a}(IRID val) { assert(hasArg_${a}() && "Tried to set missing ARG"); pool->update_arg_inplace(id,${idx},val); }`;
   }).join("\n\n");
 
   const createArgs = [];
@@ -147,6 +148,7 @@ const typesFile = [
   `#include "IridiumEnums.h"`,
   `#include <variant>`,
   `#include <span>`,
+  `#include <cassert>`,
   `#include <stdexcept>`,
   ``,
   `namespace IRI_GEN {`,
