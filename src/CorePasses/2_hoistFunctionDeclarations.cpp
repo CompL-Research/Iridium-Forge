@@ -1,56 +1,47 @@
-#include "Iridium/CorePasses/2_hoistFunctionDeclarations.h"
-#include "Iridium/Globals.h"
-#include "generated/IridiumTypes.h"
+#include "CorePasses.h"
+#include "Generated/IridiumEnums.h"
+#include "Generated/IridiumTypes.h"
+#include "Parser/IridiumBuildContext.h"
+#include "Storage/IridiumPool.h"
 
-void funcDeclHandler(IRISEXP currSEXP, double currScope, std::unordered_map<double, std::set<std::shared_ptr<JSFuncDeclSEXP>>> & res)
-{
-  if (auto bb = std::dynamic_pointer_cast<BBSEXP>(currSEXP)) {
-    currScope = bb->getScopeIDX();
-  }
+namespace IRI_CORE_PASSES {
+using namespace IRI_PARSE;
+using namespace IRI_GEN;
+using namespace IRI_STORAGE;
+using BUILD_CTX = std::unordered_map<int, std::shared_ptr<IridiumBuildContext>>;
 
-  for (int i = 0; i < currSEXP->args.size(); i++)
-  {
-    IRISEXP s = currSEXP->args[i];
-    if (auto funcDeclSEXP = std::dynamic_pointer_cast<JSFuncDeclSEXP>(s)) {
-      res[currScope].insert(funcDeclSEXP);
-      currSEXP->args[i] = std::make_shared<NOPSEXP>();
+void _2_HFD(IridiumPool &pool, IRID sexp, BUILD_CTX &iridiumBuildContext) {
+  std::unordered_map<double, std::set<IRID>> toHoist;
+
+  FileSEXP fSEXP(sexp, pool);
+
+  const auto bbs = pool.get_args(sexp);
+
+  for (auto &currBBID : bbs) {
+    BBSEXP currBB(currBBID, pool);
+    const auto args = pool.get_args(currBBID);
+    auto scopeIDX = currBB.getScopeIDX();
+
+    for (size_t idx = 0; const auto &stmtID : args) {
+      auto &stmt = pool[stmtID];
+
+      if (stmt.tag == IRI_TAG::JSFuncDecl) {
+        toHoist[scopeIDX].insert(stmtID);
+        pool.update_arg_inplace(currBBID, idx, pool.NULL_SEXP);
+      }
+
+      idx++;
     }
   }
 
-  for (auto & e : currSEXP->args) funcDeclHandler(e, currScope, res);
-}
+  for (auto &e : toHoist) {
+    auto &scope = e.first;
+    auto &funDeclarations = e.second;
+    auto &buildContext = iridiumBuildContext.at(scope);
+    auto &targetBB = buildContext->BB[0];
 
-
-
-void hoistFunctionDeclarations(IRISEXP container, std::unordered_map<int, IRIBUILDCONTEXT> & iridiumBuildContext)
-{
-  std::unordered_map<double, std::set<std::shared_ptr<JSFuncDeclSEXP>>> toHoist;
-
-  funcDeclHandler(container, -1, toHoist);
-
-
-  for (auto & e : toHoist) {
-    auto & scope = e.first;
-    auto & funDeclarations = e.second;
-
-    auto & buildContext = iridiumBuildContext.at(scope);
-    auto & targetBB = buildContext->BB[0];
-
-    auto & args = targetBB->args;
-
-    // Apparently allocating a new vector is faster??!! 
-    // appending to a vector in cpp can be O (N + k), move all elements to right, also dynamic
-    // memory allocation, a mess... 
-    std::vector<IRISEXP> newArgs;
-    newArgs.reserve(funDeclarations.size() + args.size());
-
-    for (auto & f : funDeclarations) {
-        newArgs.push_back(f);
-    }
-
-    newArgs.insert(newArgs.end(), args.begin(), args.end());
-
-    targetBB->args = std::move(newArgs);
+    pool.add_args_to_beginning(
+        targetBB, {funDeclarations.begin(), funDeclarations.end()});
   }
-  
 }
+} // namespace IRI_CORE_PASSES
