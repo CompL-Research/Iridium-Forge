@@ -4,6 +4,7 @@
 #include "Generated/IridiumEnums.h"
 #include "IridiumSEXP.h"
 #include "StringPool.h"
+#include <optional>
 #include <set>
 #include <span>
 #include <unordered_map>
@@ -15,6 +16,11 @@ class IridiumPool {
 public:
   IRID NULL_SEXP;
   IRID NOP_SEXP;
+  IRID UNDEF_SEXP;
+  IRID NUBD_SEXP;
+
+  std::optional<IRID> topLevelBBContainer;
+  std::optional<double> topLevelScope;
 
   // IridiumPool() : NULL_SEXP() {}
 
@@ -37,10 +43,16 @@ public:
 
   // Given an IRID, retrieve a node
   const IridiumSEXP &operator[](IRID id) const;
+  void update_tag(IRID id, IRI_GEN::IRI_TAG);
 
   // Given an IRID/IridiumSEXP return its args (immutable)
-  std::span<const IRID> get_args(const IridiumSEXP *n) const;
-  std::span<const IRID> get_args(IRID id) const;
+  std::span<const IRID> get_args_view(const IridiumSEXP *n) const;
+  std::span<const IRID> get_args_view(IRID id) const;
+
+  // Safe when new args may be added/removed
+  std::vector<IRID> get_args(const IridiumSEXP *n);
+  std::vector<IRID> get_args(IRID id);
+
 
   // Given an IRID/IridiumSEXP return its flags (immutable)
   std::span<const FlagValue> get_flags(const IridiumSEXP *n) const;
@@ -69,8 +81,10 @@ public:
 
   void remove_args_matching_tag(IRID id, IRI_GEN::IRI_TAG tag);
 
-  // Destructor (for printing telemetry, etc)
   ~IridiumPool();
+  IridiumPool() = default;
+  IridiumPool(const IridiumPool &) = delete;
+  IridiumPool &operator=(const IridiumPool &) = delete;
 
 private:
   std::vector<IridiumSEXP> nodes;
