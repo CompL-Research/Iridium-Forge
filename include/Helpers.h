@@ -1,4 +1,5 @@
 #pragma once
+#include "Storage/Config.h"
 #include <memory>
 #include <unordered_map>
 
@@ -21,5 +22,7 @@ double getLexicalScope(
     IRI_STORAGE::IridiumPool &pool, double startingScope,
     std::unordered_map<int, std::shared_ptr<IRI_PARSE::IridiumBuildContext>>
         &iridiumBuildContext);
+
+IRI_STORAGE::IRID getTopLevelContainer(IRI_STORAGE::IridiumPool &pool, IRI_STORAGE::IRID fileSEXP);
 
 } // namespace IRI_HELPERS

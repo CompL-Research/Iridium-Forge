@@ -1,4 +1,5 @@
 #include "Helpers.h"
+#include "Generated/IridiumEnums.h"
 #include "Generated/IridiumTypes.h"
 #include "Parser/IridiumBuildContext.h"
 #include <stdexcept>
@@ -36,6 +37,18 @@ auto getLexicalScope(
 
   auto &buildContext = iridiumBuildContext[startingScope];
   return buildContext->parent;
+}
+
+IRI_STORAGE::IRID getTopLevelContainer(IRI_STORAGE::IridiumPool &pool,
+                                       IRI_STORAGE::IRID fileSEXP) {
+  for (auto &bbcIDX : pool.get_args(fileSEXP)) {
+    if (pool[bbcIDX].tag != IRI_GEN::BBContainer) continue;
+
+    auto container = IRI_GEN::BBContainerSEXP(bbcIDX, pool);
+    if (container.hasTopLevel())
+      return bbcIDX;
+  }
+  throw std::runtime_error("[Forge] Failed to find top level container SEXP");
 }
 
 } // namespace IRI_HELPERS
