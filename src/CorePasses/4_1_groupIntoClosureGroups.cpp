@@ -8,6 +8,7 @@ namespace IRI_CORE_PASSES {
 using namespace IRI_PARSE;
 using namespace IRI_GEN;
 using namespace IRI_STORAGE;
+using BUILD_CTX = std::unordered_map<int, std::shared_ptr<IridiumBuildContext>>;
 
 inline void setClosureFlags(double flag, BBContainerSEXP bbContainer) {
   bbContainer.setContainerFlagID(flag);
@@ -73,10 +74,8 @@ inline void setClosureFlags(double flag, BBContainerSEXP bbContainer) {
   }
 }
 
-inline IRID createBBContainerSEXP(
-    IridiumPool &pool, double targetScopeIDX,
-    std::unordered_map<int, std::shared_ptr<IridiumBuildContext>>
-        &iridiumBuildContext) {
+inline IRID createBBContainerSEXP(IridiumPool &pool, double targetScopeIDX,
+                                  BUILD_CTX &iridiumBuildContext) {
   auto parent =
       IRI_HELPERS::getLexicalScope(pool, targetScopeIDX, iridiumBuildContext);
   bool isTopLevel = parent == -1;
@@ -96,7 +95,7 @@ inline IRID createBBContainerSEXP(
   auto &currContext = iridiumBuildContext[targetScopeIDX];
 
   IRID bbContainer = BBContainerSEXP::create(
-      pool, bindingsID, bindingsID, pool.strings.intern(currContext->name),
+      pool, bindingsID, BBListID, pool.strings.intern(currContext->name),
       false, currContext->isAsync, currContext->isStrict,
       currContext->isGenerator, false, false, false, false, false, false,
       isTopLevel, currContext->ecmaArgs,
@@ -106,9 +105,7 @@ inline IRID createBBContainerSEXP(
   return bbContainer;
 }
 
-void _4_GICG(IridiumPool &pool, IRID fileSEXP,
-             std::unordered_map<int, std::shared_ptr<IridiumBuildContext>>
-                 &iridiumBuildContext) {
+void _4_1_GICG(IridiumPool &pool, IRID fileSEXP, BUILD_CTX &iridiumBuildContext) {
 
   std::unordered_map<double, IRID> bbGroups;
   std::unordered_map<IRID, std::vector<IRID>> hhGroupArgs;
