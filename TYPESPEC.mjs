@@ -134,7 +134,7 @@ export default [
     "args": [],
     "flags": {
       "string": [],
-      "void": ["TopLevel", "ClosureBoundary", "Lexical", "VARBoundary"],
+      "void": ["TopLevel", "ClosureBoundary", "Lexical", "VARBoundary", "TryBB"],
       "bool": [],
       "double": ["IDX", "ScopeIDX"],
     }
@@ -784,7 +784,7 @@ export default [
     "args": ["TargetObj", "Key", "Value"],
     "flags": {
       "string": [],
-      "void": ["NOENUM"],
+      "void": ["NOENUM", "METHOD", "GET", "SET"],
       "bool": [],
       "double": [],
     }
@@ -939,14 +939,14 @@ export default [
       "double": [],
     }
   },
-  {  
-    "tag": "JSSetPrototypeOf",  
-    "args": ["TargetObj", "ProtoValue"],  
-    "flags": {  
-      "string": [],  
-      "void": [],  
-      "bool": [],  
-      "double": [],  
-    }  
+  {
+    "tag": "JSSetPrototypeOf",
+    "args": ["TargetObj", "ProtoValue"],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
   }
 ];
