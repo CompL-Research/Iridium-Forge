@@ -1,4 +1,4 @@
-// Generated: 2026-04-18 23:54:32
+// Generated: 2026-04-19 02:20:08
 #pragma once
 #include "Storage/Config.h"
 #include "Storage/IridiumSEXP.h"
@@ -6,6 +6,7 @@
 #include "IridiumEnums.h"
 #include <variant>
 #include <span>
+#include <cassert>
 #include <stdexcept>
 
 namespace IRI_GEN {
@@ -174,10 +175,12 @@ using IRI_STORAGE::FlagValue;
 
     // --- Arguments ---
     IRID getArg_Store() const { return pool->get_args(id)[0]; }
-    void setArg_Store(IRID val) { pool->update_arg_inplace(id,0,val); }
+    bool hasArg_Store() const { return 0 < pool->get_args(id).size(); }
+    void setArg_Store(IRID val) { assert(hasArg_Store() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
 
     IRID getArg_Args() const { return pool->get_args(id)[1]; }
-    void setArg_Args(IRID val) { pool->update_arg_inplace(id,1,val); }
+    bool hasArg_Args() const { return 1 < pool->get_args(id).size(); }
+    void setArg_Args(IRID val) { assert(hasArg_Args() && "Tried to set missing ARG"); pool->update_arg_inplace(id,1,val); }
 
     // --- Flags ---
     StringID getNAME() const { return std::get<StringID>(get_flag(FLAG_IDX_NAME)); }
@@ -250,7 +253,8 @@ using IRI_STORAGE::FlagValue;
 
     // --- Arguments ---
     IRID getArg_Obj() const { return pool->get_args(id)[0]; }
-    void setArg_Obj(IRID val) { pool->update_arg_inplace(id,0,val); }
+    bool hasArg_Obj() const { return 0 < pool->get_args(id).size(); }
+    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
 
     // --- Flags ---
     bool hasSAFE() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_SAFE)); }
@@ -287,7 +291,8 @@ using IRI_STORAGE::FlagValue;
 
     // --- Arguments ---
     IRID getArg_Obj() const { return pool->get_args(id)[0]; }
-    void setArg_Obj(IRID val) { pool->update_arg_inplace(id,0,val); }
+    bool hasArg_Obj() const { return 0 < pool->get_args(id).size(); }
+    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
 
     // --- Flags ---
     bool hasSAFE() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_SAFE)); }
@@ -361,10 +366,12 @@ using IRI_STORAGE::FlagValue;
 
     // --- Arguments ---
     IRID getArg_Obj() const { return pool->get_args(id)[0]; }
-    void setArg_Obj(IRID val) { pool->update_arg_inplace(id,0,val); }
+    bool hasArg_Obj() const { return 0 < pool->get_args(id).size(); }
+    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
 
     IRID getArg_Field() const { return pool->get_args(id)[1]; }
-    void setArg_Field(IRID val) { pool->update_arg_inplace(id,1,val); }
+    bool hasArg_Field() const { return 1 < pool->get_args(id).size(); }
+    void setArg_Field(IRID val) { assert(hasArg_Field() && "Tried to set missing ARG"); pool->update_arg_inplace(id,1,val); }
 
     // --- Flags ---
 
@@ -404,10 +411,12 @@ using IRI_STORAGE::FlagValue;
 
     // --- Arguments ---
     IRID getArg_LValTarget() const { return pool->get_args(id)[0]; }
-    void setArg_LValTarget(IRID val) { pool->update_arg_inplace(id,0,val); }
+    bool hasArg_LValTarget() const { return 0 < pool->get_args(id).size(); }
+    void setArg_LValTarget(IRID val) { assert(hasArg_LValTarget() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
 
     IRID getArg_RVal() const { return pool->get_args(id)[1]; }
-    void setArg_RVal(IRID val) { pool->update_arg_inplace(id,1,val); }
+    bool hasArg_RVal() const { return 1 < pool->get_args(id).size(); }
+    void setArg_RVal(IRID val) { assert(hasArg_RVal() && "Tried to set missing ARG"); pool->update_arg_inplace(id,1,val); }
 
     // --- Flags ---
     bool hasJSLET() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_JSLET)); }
@@ -471,10 +480,12 @@ using IRI_STORAGE::FlagValue;
 
     // --- Arguments ---
     IRID getArg_LValTarget() const { return pool->get_args(id)[0]; }
-    void setArg_LValTarget(IRID val) { pool->update_arg_inplace(id,0,val); }
+    bool hasArg_LValTarget() const { return 0 < pool->get_args(id).size(); }
+    void setArg_LValTarget(IRID val) { assert(hasArg_LValTarget() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
 
     IRID getArg_RVal() const { return pool->get_args(id)[1]; }
-    void setArg_RVal(IRID val) { pool->update_arg_inplace(id,1,val); }
+    bool hasArg_RVal() const { return 1 < pool->get_args(id).size(); }
+    void setArg_RVal(IRID val) { assert(hasArg_RVal() && "Tried to set missing ARG"); pool->update_arg_inplace(id,1,val); }
 
     // --- Flags ---
     bool hasJSLET() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_JSLET)); }
@@ -607,13 +618,16 @@ using IRI_STORAGE::FlagValue;
 
     // --- Arguments ---
     IRID getArg_Callee() const { return pool->get_args(id)[0]; }
-    void setArg_Callee(IRID val) { pool->update_arg_inplace(id,0,val); }
+    bool hasArg_Callee() const { return 0 < pool->get_args(id).size(); }
+    void setArg_Callee(IRID val) { assert(hasArg_Callee() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
 
     IRID getArg_Context() const { return pool->get_args(id)[1]; }
-    void setArg_Context(IRID val) { pool->update_arg_inplace(id,1,val); }
+    bool hasArg_Context() const { return 1 < pool->get_args(id).size(); }
+    void setArg_Context(IRID val) { assert(hasArg_Context() && "Tried to set missing ARG"); pool->update_arg_inplace(id,1,val); }
 
     IRID getArg_ArgList() const { return pool->get_args(id)[2]; }
-    void setArg_ArgList(IRID val) { pool->update_arg_inplace(id,2,val); }
+    bool hasArg_ArgList() const { return 2 < pool->get_args(id).size(); }
+    void setArg_ArgList(IRID val) { assert(hasArg_ArgList() && "Tried to set missing ARG"); pool->update_arg_inplace(id,2,val); }
 
     // --- Flags ---
     bool hasConstructorCall() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_ConstructorCall)); }
@@ -659,7 +673,8 @@ using IRI_STORAGE::FlagValue;
 
     // --- Arguments ---
     IRID getArg_RetVal() const { return pool->get_args(id)[0]; }
-    void setArg_RetVal(IRID val) { pool->update_arg_inplace(id,0,val); }
+    bool hasArg_RetVal() const { return 0 < pool->get_args(id).size(); }
+    void setArg_RetVal(IRID val) { assert(hasArg_RetVal() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
 
     // --- Flags ---
 
@@ -762,7 +777,8 @@ using IRI_STORAGE::FlagValue;
 
     // --- Arguments ---
     IRID getArg_Obj() const { return pool->get_args(id)[0]; }
-    void setArg_Obj(IRID val) { pool->update_arg_inplace(id,0,val); }
+    bool hasArg_Obj() const { return 0 < pool->get_args(id).size(); }
+    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
 
     // --- Flags ---
     bool hasModuleEarlyReturn() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_ModuleEarlyReturn)); }
@@ -800,7 +816,8 @@ using IRI_STORAGE::FlagValue;
 
     // --- Arguments ---
     IRID getArg_Test() const { return pool->get_args(id)[0]; }
-    void setArg_Test(IRID val) { pool->update_arg_inplace(id,0,val); }
+    bool hasArg_Test() const { return 0 < pool->get_args(id).size(); }
+    void setArg_Test(IRID val) { assert(hasArg_Test() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
 
     // --- Flags ---
     bool hasNOT() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_NOT)); }
@@ -844,7 +861,8 @@ using IRI_STORAGE::FlagValue;
 
     // --- Arguments ---
     IRID getArg_Test() const { return pool->get_args(id)[0]; }
-    void setArg_Test(IRID val) { pool->update_arg_inplace(id,0,val); }
+    bool hasArg_Test() const { return 0 < pool->get_args(id).size(); }
+    void setArg_Test(IRID val) { assert(hasArg_Test() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
 
     // --- Flags ---
     bool hasNOT() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_NOT)); }
@@ -933,10 +951,12 @@ using IRI_STORAGE::FlagValue;
 
     // --- Arguments ---
     IRID getArg_LValTarget() const { return pool->get_args(id)[0]; }
-    void setArg_LValTarget(IRID val) { pool->update_arg_inplace(id,0,val); }
+    bool hasArg_LValTarget() const { return 0 < pool->get_args(id).size(); }
+    void setArg_LValTarget(IRID val) { assert(hasArg_LValTarget() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
 
     IRID getArg_RVal() const { return pool->get_args(id)[1]; }
-    void setArg_RVal(IRID val) { pool->update_arg_inplace(id,1,val); }
+    bool hasArg_RVal() const { return 1 < pool->get_args(id).size(); }
+    void setArg_RVal(IRID val) { assert(hasArg_RVal() && "Tried to set missing ARG"); pool->update_arg_inplace(id,1,val); }
 
     // --- Flags ---
     bool hasJSLET() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_JSLET)); }
@@ -1099,10 +1119,12 @@ using IRI_STORAGE::FlagValue;
 
     // --- Arguments ---
     IRID getArg_Bindings() const { return pool->get_args(id)[0]; }
-    void setArg_Bindings(IRID val) { pool->update_arg_inplace(id,0,val); }
+    bool hasArg_Bindings() const { return 0 < pool->get_args(id).size(); }
+    void setArg_Bindings(IRID val) { assert(hasArg_Bindings() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
 
     IRID getArg_BB() const { return pool->get_args(id)[1]; }
-    void setArg_BB(IRID val) { pool->update_arg_inplace(id,1,val); }
+    bool hasArg_BB() const { return 1 < pool->get_args(id).size(); }
+    void setArg_BB(IRID val) { assert(hasArg_BB() && "Tried to set missing ARG"); pool->update_arg_inplace(id,1,val); }
 
     // --- Flags ---
     StringID getNAME() const { return std::get<StringID>(get_flag(FLAG_IDX_NAME)); }
@@ -1204,13 +1226,16 @@ using IRI_STORAGE::FlagValue;
 
     // --- Arguments ---
     IRID getArg_LocalBindings() const { return pool->get_args(id)[0]; }
-    void setArg_LocalBindings(IRID val) { pool->update_arg_inplace(id,0,val); }
+    bool hasArg_LocalBindings() const { return 0 < pool->get_args(id).size(); }
+    void setArg_LocalBindings(IRID val) { assert(hasArg_LocalBindings() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
 
     IRID getArg_RemoteBindings() const { return pool->get_args(id)[1]; }
-    void setArg_RemoteBindings(IRID val) { pool->update_arg_inplace(id,1,val); }
+    bool hasArg_RemoteBindings() const { return 1 < pool->get_args(id).size(); }
+    void setArg_RemoteBindings(IRID val) { assert(hasArg_RemoteBindings() && "Tried to set missing ARG"); pool->update_arg_inplace(id,1,val); }
 
     IRID getArg_Lambdas() const { return pool->get_args(id)[2]; }
-    void setArg_Lambdas(IRID val) { pool->update_arg_inplace(id,2,val); }
+    bool hasArg_Lambdas() const { return 2 < pool->get_args(id).size(); }
+    void setArg_Lambdas(IRID val) { assert(hasArg_Lambdas() && "Tried to set missing ARG"); pool->update_arg_inplace(id,2,val); }
 
     // --- Flags ---
     double getParentScope() const { return std::get<double>(get_flag(FLAG_IDX_ParentScope)); }
@@ -1286,7 +1311,8 @@ using IRI_STORAGE::FlagValue;
 
     // --- Arguments ---
     IRID getArg_StorageLocation() const { return pool->get_args(id)[0]; }
-    void setArg_StorageLocation(IRID val) { pool->update_arg_inplace(id,0,val); }
+    bool hasArg_StorageLocation() const { return 0 < pool->get_args(id).size(); }
+    void setArg_StorageLocation(IRID val) { assert(hasArg_StorageLocation() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
 
     // --- Flags ---
     StringID getFIELD() const { return std::get<StringID>(get_flag(FLAG_IDX_FIELD)); }
@@ -1330,7 +1356,8 @@ using IRI_STORAGE::FlagValue;
 
     // --- Arguments ---
     IRID getArg_StorageLocation() const { return pool->get_args(id)[0]; }
-    void setArg_StorageLocation(IRID val) { pool->update_arg_inplace(id,0,val); }
+    bool hasArg_StorageLocation() const { return 0 < pool->get_args(id).size(); }
+    void setArg_StorageLocation(IRID val) { assert(hasArg_StorageLocation() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
 
     // --- Flags ---
     StringID getLOCALNAME() const { return std::get<StringID>(get_flag(FLAG_IDX_LOCALNAME)); }
@@ -1557,7 +1584,8 @@ using IRI_STORAGE::FlagValue;
 
     // --- Arguments ---
     IRID getArg_ParentReference() const { return pool->get_args(id)[0]; }
-    void setArg_ParentReference(IRID val) { pool->update_arg_inplace(id,0,val); }
+    bool hasArg_ParentReference() const { return 0 < pool->get_args(id).size(); }
+    void setArg_ParentReference(IRID val) { assert(hasArg_ParentReference() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
 
     // --- Flags ---
     bool hasNSIMPORT() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_NSIMPORT)); }
@@ -1639,10 +1667,12 @@ using IRI_STORAGE::FlagValue;
 
     // --- Arguments ---
     IRID getArg_LValTarget() const { return pool->get_args(id)[0]; }
-    void setArg_LValTarget(IRID val) { pool->update_arg_inplace(id,0,val); }
+    bool hasArg_LValTarget() const { return 0 < pool->get_args(id).size(); }
+    void setArg_LValTarget(IRID val) { assert(hasArg_LValTarget() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
 
     IRID getArg_RVal() const { return pool->get_args(id)[1]; }
-    void setArg_RVal(IRID val) { pool->update_arg_inplace(id,1,val); }
+    bool hasArg_RVal() const { return 1 < pool->get_args(id).size(); }
+    void setArg_RVal(IRID val) { assert(hasArg_RVal() && "Tried to set missing ARG"); pool->update_arg_inplace(id,1,val); }
 
     // --- Flags ---
     bool hasSLOPPY() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_SLOPPY)); }
@@ -1697,10 +1727,12 @@ using IRI_STORAGE::FlagValue;
 
     // --- Arguments ---
     IRID getArg_LValTarget() const { return pool->get_args(id)[0]; }
-    void setArg_LValTarget(IRID val) { pool->update_arg_inplace(id,0,val); }
+    bool hasArg_LValTarget() const { return 0 < pool->get_args(id).size(); }
+    void setArg_LValTarget(IRID val) { assert(hasArg_LValTarget() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
 
     IRID getArg_RVal() const { return pool->get_args(id)[1]; }
-    void setArg_RVal(IRID val) { pool->update_arg_inplace(id,1,val); }
+    bool hasArg_RVal() const { return 1 < pool->get_args(id).size(); }
+    void setArg_RVal(IRID val) { assert(hasArg_RVal() && "Tried to set missing ARG"); pool->update_arg_inplace(id,1,val); }
 
     // --- Flags ---
     bool hasSLOPPY() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_SLOPPY)); }
@@ -1880,10 +1912,12 @@ using IRI_STORAGE::FlagValue;
 
     // --- Arguments ---
     IRID getArg_Parent() const { return pool->get_args(id)[0]; }
-    void setArg_Parent(IRID val) { pool->update_arg_inplace(id,0,val); }
+    bool hasArg_Parent() const { return 0 < pool->get_args(id).size(); }
+    void setArg_Parent(IRID val) { assert(hasArg_Parent() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
 
     IRID getArg_Constructor() const { return pool->get_args(id)[1]; }
-    void setArg_Constructor(IRID val) { pool->update_arg_inplace(id,1,val); }
+    bool hasArg_Constructor() const { return 1 < pool->get_args(id).size(); }
+    void setArg_Constructor(IRID val) { assert(hasArg_Constructor() && "Tried to set missing ARG"); pool->update_arg_inplace(id,1,val); }
 
     // --- Flags ---
     StringID getNAME() const { return std::get<StringID>(get_flag(FLAG_IDX_NAME)); }
@@ -2040,7 +2074,8 @@ using IRI_STORAGE::FlagValue;
 
     // --- Arguments ---
     IRID getArg_Obj() const { return pool->get_args(id)[0]; }
-    void setArg_Obj(IRID val) { pool->update_arg_inplace(id,0,val); }
+    bool hasArg_Obj() const { return 0 < pool->get_args(id).size(); }
+    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
 
     // --- Flags ---
     bool hasSYMBOL() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_SYMBOL)); }
@@ -2122,13 +2157,16 @@ using IRI_STORAGE::FlagValue;
 
     // --- Arguments ---
     IRID getArg_Obj() const { return pool->get_args(id)[0]; }
-    void setArg_Obj(IRID val) { pool->update_arg_inplace(id,0,val); }
+    bool hasArg_Obj() const { return 0 < pool->get_args(id).size(); }
+    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
 
     IRID getArg_Field() const { return pool->get_args(id)[1]; }
-    void setArg_Field(IRID val) { pool->update_arg_inplace(id,1,val); }
+    bool hasArg_Field() const { return 1 < pool->get_args(id).size(); }
+    void setArg_Field(IRID val) { assert(hasArg_Field() && "Tried to set missing ARG"); pool->update_arg_inplace(id,1,val); }
 
     IRID getArg_Value() const { return pool->get_args(id)[2]; }
-    void setArg_Value(IRID val) { pool->update_arg_inplace(id,2,val); }
+    bool hasArg_Value() const { return 2 < pool->get_args(id).size(); }
+    void setArg_Value(IRID val) { assert(hasArg_Value() && "Tried to set missing ARG"); pool->update_arg_inplace(id,2,val); }
 
     // --- Flags ---
     bool hasDECL() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_DECL)); }
@@ -2165,10 +2203,12 @@ using IRI_STORAGE::FlagValue;
 
     // --- Arguments ---
     IRID getArg_Obj() const { return pool->get_args(id)[0]; }
-    void setArg_Obj(IRID val) { pool->update_arg_inplace(id,0,val); }
+    bool hasArg_Obj() const { return 0 < pool->get_args(id).size(); }
+    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
 
     IRID getArg_HomeObj() const { return pool->get_args(id)[1]; }
-    void setArg_HomeObj(IRID val) { pool->update_arg_inplace(id,1,val); }
+    bool hasArg_HomeObj() const { return 1 < pool->get_args(id).size(); }
+    void setArg_HomeObj(IRID val) { assert(hasArg_HomeObj() && "Tried to set missing ARG"); pool->update_arg_inplace(id,1,val); }
 
     // --- Flags ---
 
@@ -2203,10 +2243,12 @@ using IRI_STORAGE::FlagValue;
 
     // --- Arguments ---
     IRID getArg_Obj() const { return pool->get_args(id)[0]; }
-    void setArg_Obj(IRID val) { pool->update_arg_inplace(id,0,val); }
+    bool hasArg_Obj() const { return 0 < pool->get_args(id).size(); }
+    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
 
     IRID getArg_Field() const { return pool->get_args(id)[1]; }
-    void setArg_Field(IRID val) { pool->update_arg_inplace(id,1,val); }
+    bool hasArg_Field() const { return 1 < pool->get_args(id).size(); }
+    void setArg_Field(IRID val) { assert(hasArg_Field() && "Tried to set missing ARG"); pool->update_arg_inplace(id,1,val); }
 
     // --- Flags ---
 
@@ -2242,7 +2284,8 @@ using IRI_STORAGE::FlagValue;
 
     // --- Arguments ---
     IRID getArg_Lambda() const { return pool->get_args(id)[0]; }
-    void setArg_Lambda(IRID val) { pool->update_arg_inplace(id,0,val); }
+    bool hasArg_Lambda() const { return 0 < pool->get_args(id).size(); }
+    void setArg_Lambda(IRID val) { assert(hasArg_Lambda() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
 
     // --- Flags ---
     double getStartBBIDX() const { return std::get<double>(get_flag(FLAG_IDX_StartBBIDX)); }
@@ -2498,7 +2541,8 @@ using IRI_STORAGE::FlagValue;
 
     // --- Arguments ---
     IRID getArg_Obj() const { return pool->get_args(id)[0]; }
-    void setArg_Obj(IRID val) { pool->update_arg_inplace(id,0,val); }
+    bool hasArg_Obj() const { return 0 < pool->get_args(id).size(); }
+    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
 
     // --- Flags ---
 
@@ -2533,7 +2577,8 @@ using IRI_STORAGE::FlagValue;
 
     // --- Arguments ---
     IRID getArg_IteratorObj() const { return pool->get_args(id)[0]; }
-    void setArg_IteratorObj(IRID val) { pool->update_arg_inplace(id,0,val); }
+    bool hasArg_IteratorObj() const { return 0 < pool->get_args(id).size(); }
+    void setArg_IteratorObj(IRID val) { assert(hasArg_IteratorObj() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
 
     // --- Flags ---
 
@@ -2645,7 +2690,8 @@ using IRI_STORAGE::FlagValue;
 
     // --- Arguments ---
     IRID getArg_Obj() const { return pool->get_args(id)[0]; }
-    void setArg_Obj(IRID val) { pool->update_arg_inplace(id,0,val); }
+    bool hasArg_Obj() const { return 0 < pool->get_args(id).size(); }
+    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
 
     // --- Flags ---
     bool getAWAIT() const { return std::get<bool>(get_flag(FLAG_IDX_AWAIT)); }
@@ -2794,7 +2840,8 @@ using IRI_STORAGE::FlagValue;
 
     // --- Arguments ---
     IRID getArg_ThrowVal() const { return pool->get_args(id)[0]; }
-    void setArg_ThrowVal(IRID val) { pool->update_arg_inplace(id,0,val); }
+    bool hasArg_ThrowVal() const { return 0 < pool->get_args(id).size(); }
+    void setArg_ThrowVal(IRID val) { assert(hasArg_ThrowVal() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
 
     // --- Flags ---
 
@@ -2863,10 +2910,12 @@ using IRI_STORAGE::FlagValue;
 
     // --- Arguments ---
     IRID getArg_LBinop() const { return pool->get_args(id)[0]; }
-    void setArg_LBinop(IRID val) { pool->update_arg_inplace(id,0,val); }
+    bool hasArg_LBinop() const { return 0 < pool->get_args(id).size(); }
+    void setArg_LBinop(IRID val) { assert(hasArg_LBinop() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
 
     IRID getArg_RBinop() const { return pool->get_args(id)[1]; }
-    void setArg_RBinop(IRID val) { pool->update_arg_inplace(id,1,val); }
+    bool hasArg_RBinop() const { return 1 < pool->get_args(id).size(); }
+    void setArg_RBinop(IRID val) { assert(hasArg_RBinop() && "Tried to set missing ARG"); pool->update_arg_inplace(id,1,val); }
 
     // --- Flags ---
     StringID getOP() const { return std::get<StringID>(get_flag(FLAG_IDX_OP)); }
@@ -2904,13 +2953,16 @@ using IRI_STORAGE::FlagValue;
 
     // --- Arguments ---
     IRID getArg_Obj() const { return pool->get_args(id)[0]; }
-    void setArg_Obj(IRID val) { pool->update_arg_inplace(id,0,val); }
+    bool hasArg_Obj() const { return 0 < pool->get_args(id).size(); }
+    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
 
     IRID getArg_Field() const { return pool->get_args(id)[1]; }
-    void setArg_Field(IRID val) { pool->update_arg_inplace(id,1,val); }
+    bool hasArg_Field() const { return 1 < pool->get_args(id).size(); }
+    void setArg_Field(IRID val) { assert(hasArg_Field() && "Tried to set missing ARG"); pool->update_arg_inplace(id,1,val); }
 
     IRID getArg_Value() const { return pool->get_args(id)[2]; }
-    void setArg_Value(IRID val) { pool->update_arg_inplace(id,2,val); }
+    bool hasArg_Value() const { return 2 < pool->get_args(id).size(); }
+    void setArg_Value(IRID val) { assert(hasArg_Value() && "Tried to set missing ARG"); pool->update_arg_inplace(id,2,val); }
 
     // --- Flags ---
 
@@ -2945,7 +2997,8 @@ using IRI_STORAGE::FlagValue;
 
     // --- Arguments ---
     IRID getArg_Val() const { return pool->get_args(id)[0]; }
-    void setArg_Val(IRID val) { pool->update_arg_inplace(id,0,val); }
+    bool hasArg_Val() const { return 0 < pool->get_args(id).size(); }
+    void setArg_Val(IRID val) { assert(hasArg_Val() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
 
     // --- Flags ---
     StringID getOP() const { return std::get<StringID>(get_flag(FLAG_IDX_OP)); }
@@ -2983,7 +3036,8 @@ using IRI_STORAGE::FlagValue;
 
     // --- Arguments ---
     IRID getArg_Val() const { return pool->get_args(id)[0]; }
-    void setArg_Val(IRID val) { pool->update_arg_inplace(id,0,val); }
+    bool hasArg_Val() const { return 0 < pool->get_args(id).size(); }
+    void setArg_Val(IRID val) { assert(hasArg_Val() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
 
     // --- Flags ---
     StringID getOP() const { return std::get<StringID>(get_flag(FLAG_IDX_OP)); }
@@ -3092,13 +3146,16 @@ using IRI_STORAGE::FlagValue;
 
     // --- Arguments ---
     IRID getArg_TargetObj() const { return pool->get_args(id)[0]; }
-    void setArg_TargetObj(IRID val) { pool->update_arg_inplace(id,0,val); }
+    bool hasArg_TargetObj() const { return 0 < pool->get_args(id).size(); }
+    void setArg_TargetObj(IRID val) { assert(hasArg_TargetObj() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
 
     IRID getArg_Key() const { return pool->get_args(id)[1]; }
-    void setArg_Key(IRID val) { pool->update_arg_inplace(id,1,val); }
+    bool hasArg_Key() const { return 1 < pool->get_args(id).size(); }
+    void setArg_Key(IRID val) { assert(hasArg_Key() && "Tried to set missing ARG"); pool->update_arg_inplace(id,1,val); }
 
     IRID getArg_Value() const { return pool->get_args(id)[2]; }
-    void setArg_Value(IRID val) { pool->update_arg_inplace(id,2,val); }
+    bool hasArg_Value() const { return 2 < pool->get_args(id).size(); }
+    void setArg_Value(IRID val) { assert(hasArg_Value() && "Tried to set missing ARG"); pool->update_arg_inplace(id,2,val); }
 
     // --- Flags ---
 
@@ -3167,10 +3224,12 @@ using IRI_STORAGE::FlagValue;
 
     // --- Arguments ---
     IRID getArg_LBinop() const { return pool->get_args(id)[0]; }
-    void setArg_LBinop(IRID val) { pool->update_arg_inplace(id,0,val); }
+    bool hasArg_LBinop() const { return 0 < pool->get_args(id).size(); }
+    void setArg_LBinop(IRID val) { assert(hasArg_LBinop() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
 
     IRID getArg_RBinop() const { return pool->get_args(id)[1]; }
-    void setArg_RBinop(IRID val) { pool->update_arg_inplace(id,1,val); }
+    bool hasArg_RBinop() const { return 1 < pool->get_args(id).size(); }
+    void setArg_RBinop(IRID val) { assert(hasArg_RBinop() && "Tried to set missing ARG"); pool->update_arg_inplace(id,1,val); }
 
     // --- Flags ---
     StringID getOP() const { return std::get<StringID>(get_flag(FLAG_IDX_OP)); }
@@ -3244,10 +3303,12 @@ using IRI_STORAGE::FlagValue;
 
     // --- Arguments ---
     IRID getArg_Obj() const { return pool->get_args(id)[0]; }
-    void setArg_Obj(IRID val) { pool->update_arg_inplace(id,0,val); }
+    bool hasArg_Obj() const { return 0 < pool->get_args(id).size(); }
+    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
 
     IRID getArg_Field() const { return pool->get_args(id)[1]; }
-    void setArg_Field(IRID val) { pool->update_arg_inplace(id,1,val); }
+    bool hasArg_Field() const { return 1 < pool->get_args(id).size(); }
+    void setArg_Field(IRID val) { assert(hasArg_Field() && "Tried to set missing ARG"); pool->update_arg_inplace(id,1,val); }
 
     // --- Flags ---
     bool hasSAFE() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_SAFE)); }
@@ -3284,13 +3345,16 @@ using IRI_STORAGE::FlagValue;
 
     // --- Arguments ---
     IRID getArg_Obj() const { return pool->get_args(id)[0]; }
-    void setArg_Obj(IRID val) { pool->update_arg_inplace(id,0,val); }
+    bool hasArg_Obj() const { return 0 < pool->get_args(id).size(); }
+    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
 
     IRID getArg_Field() const { return pool->get_args(id)[1]; }
-    void setArg_Field(IRID val) { pool->update_arg_inplace(id,1,val); }
+    bool hasArg_Field() const { return 1 < pool->get_args(id).size(); }
+    void setArg_Field(IRID val) { assert(hasArg_Field() && "Tried to set missing ARG"); pool->update_arg_inplace(id,1,val); }
 
     IRID getArg_Value() const { return pool->get_args(id)[2]; }
-    void setArg_Value(IRID val) { pool->update_arg_inplace(id,2,val); }
+    bool hasArg_Value() const { return 2 < pool->get_args(id).size(); }
+    void setArg_Value(IRID val) { assert(hasArg_Value() && "Tried to set missing ARG"); pool->update_arg_inplace(id,2,val); }
 
     // --- Flags ---
     bool hasSAFE() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_SAFE)); }
@@ -3327,13 +3391,16 @@ using IRI_STORAGE::FlagValue;
 
     // --- Arguments ---
     IRID getArg_This() const { return pool->get_args(id)[0]; }
-    void setArg_This(IRID val) { pool->update_arg_inplace(id,0,val); }
+    bool hasArg_This() const { return 0 < pool->get_args(id).size(); }
+    void setArg_This(IRID val) { assert(hasArg_This() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
 
     IRID getArg_Super() const { return pool->get_args(id)[1]; }
-    void setArg_Super(IRID val) { pool->update_arg_inplace(id,1,val); }
+    bool hasArg_Super() const { return 1 < pool->get_args(id).size(); }
+    void setArg_Super(IRID val) { assert(hasArg_Super() && "Tried to set missing ARG"); pool->update_arg_inplace(id,1,val); }
 
     IRID getArg_Field() const { return pool->get_args(id)[2]; }
-    void setArg_Field(IRID val) { pool->update_arg_inplace(id,2,val); }
+    bool hasArg_Field() const { return 2 < pool->get_args(id).size(); }
+    void setArg_Field(IRID val) { assert(hasArg_Field() && "Tried to set missing ARG"); pool->update_arg_inplace(id,2,val); }
 
     // --- Flags ---
 
@@ -3368,16 +3435,20 @@ using IRI_STORAGE::FlagValue;
 
     // --- Arguments ---
     IRID getArg_This() const { return pool->get_args(id)[0]; }
-    void setArg_This(IRID val) { pool->update_arg_inplace(id,0,val); }
+    bool hasArg_This() const { return 0 < pool->get_args(id).size(); }
+    void setArg_This(IRID val) { assert(hasArg_This() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
 
     IRID getArg_Super() const { return pool->get_args(id)[1]; }
-    void setArg_Super(IRID val) { pool->update_arg_inplace(id,1,val); }
+    bool hasArg_Super() const { return 1 < pool->get_args(id).size(); }
+    void setArg_Super(IRID val) { assert(hasArg_Super() && "Tried to set missing ARG"); pool->update_arg_inplace(id,1,val); }
 
     IRID getArg_Field() const { return pool->get_args(id)[2]; }
-    void setArg_Field(IRID val) { pool->update_arg_inplace(id,2,val); }
+    bool hasArg_Field() const { return 2 < pool->get_args(id).size(); }
+    void setArg_Field(IRID val) { assert(hasArg_Field() && "Tried to set missing ARG"); pool->update_arg_inplace(id,2,val); }
 
     IRID getArg_Value() const { return pool->get_args(id)[3]; }
-    void setArg_Value(IRID val) { pool->update_arg_inplace(id,3,val); }
+    bool hasArg_Value() const { return 3 < pool->get_args(id).size(); }
+    void setArg_Value(IRID val) { assert(hasArg_Value() && "Tried to set missing ARG"); pool->update_arg_inplace(id,3,val); }
 
     // --- Flags ---
 
@@ -3412,7 +3483,8 @@ using IRI_STORAGE::FlagValue;
 
     // --- Arguments ---
     IRID getArg_TargetObj() const { return pool->get_args(id)[0]; }
-    void setArg_TargetObj(IRID val) { pool->update_arg_inplace(id,0,val); }
+    bool hasArg_TargetObj() const { return 0 < pool->get_args(id).size(); }
+    void setArg_TargetObj(IRID val) { assert(hasArg_TargetObj() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
 
     // --- Flags ---
 
@@ -3447,13 +3519,16 @@ using IRI_STORAGE::FlagValue;
 
     // --- Arguments ---
     IRID getArg_TargetObj() const { return pool->get_args(id)[0]; }
-    void setArg_TargetObj(IRID val) { pool->update_arg_inplace(id,0,val); }
+    bool hasArg_TargetObj() const { return 0 < pool->get_args(id).size(); }
+    void setArg_TargetObj(IRID val) { assert(hasArg_TargetObj() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
 
     IRID getArg_InsertionIdx() const { return pool->get_args(id)[1]; }
-    void setArg_InsertionIdx(IRID val) { pool->update_arg_inplace(id,1,val); }
+    bool hasArg_InsertionIdx() const { return 1 < pool->get_args(id).size(); }
+    void setArg_InsertionIdx(IRID val) { assert(hasArg_InsertionIdx() && "Tried to set missing ARG"); pool->update_arg_inplace(id,1,val); }
 
     IRID getArg_SpreadObj() const { return pool->get_args(id)[2]; }
-    void setArg_SpreadObj(IRID val) { pool->update_arg_inplace(id,2,val); }
+    bool hasArg_SpreadObj() const { return 2 < pool->get_args(id).size(); }
+    void setArg_SpreadObj(IRID val) { assert(hasArg_SpreadObj() && "Tried to set missing ARG"); pool->update_arg_inplace(id,2,val); }
 
     // --- Flags ---
 
@@ -3491,13 +3566,16 @@ using IRI_STORAGE::FlagValue;
 
     // --- Arguments ---
     IRID getArg_TargetObj() const { return pool->get_args(id)[0]; }
-    void setArg_TargetObj(IRID val) { pool->update_arg_inplace(id,0,val); }
+    bool hasArg_TargetObj() const { return 0 < pool->get_args(id).size(); }
+    void setArg_TargetObj(IRID val) { assert(hasArg_TargetObj() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
 
     IRID getArg_Key() const { return pool->get_args(id)[1]; }
-    void setArg_Key(IRID val) { pool->update_arg_inplace(id,1,val); }
+    bool hasArg_Key() const { return 1 < pool->get_args(id).size(); }
+    void setArg_Key(IRID val) { assert(hasArg_Key() && "Tried to set missing ARG"); pool->update_arg_inplace(id,1,val); }
 
     IRID getArg_Value() const { return pool->get_args(id)[2]; }
-    void setArg_Value(IRID val) { pool->update_arg_inplace(id,2,val); }
+    bool hasArg_Value() const { return 2 < pool->get_args(id).size(); }
+    void setArg_Value(IRID val) { assert(hasArg_Value() && "Tried to set missing ARG"); pool->update_arg_inplace(id,2,val); }
 
     // --- Flags ---
     bool hasNOENUM() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_NOENUM)); }
@@ -3546,13 +3624,16 @@ using IRI_STORAGE::FlagValue;
 
     // --- Arguments ---
     IRID getArg_ExclusionObj() const { return pool->get_args(id)[0]; }
-    void setArg_ExclusionObj(IRID val) { pool->update_arg_inplace(id,0,val); }
+    bool hasArg_ExclusionObj() const { return 0 < pool->get_args(id).size(); }
+    void setArg_ExclusionObj(IRID val) { assert(hasArg_ExclusionObj() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
 
     IRID getArg_SourceObj() const { return pool->get_args(id)[1]; }
-    void setArg_SourceObj(IRID val) { pool->update_arg_inplace(id,1,val); }
+    bool hasArg_SourceObj() const { return 1 < pool->get_args(id).size(); }
+    void setArg_SourceObj(IRID val) { assert(hasArg_SourceObj() && "Tried to set missing ARG"); pool->update_arg_inplace(id,1,val); }
 
     IRID getArg_TargetObj() const { return pool->get_args(id)[2]; }
-    void setArg_TargetObj(IRID val) { pool->update_arg_inplace(id,2,val); }
+    bool hasArg_TargetObj() const { return 2 < pool->get_args(id).size(); }
+    void setArg_TargetObj(IRID val) { assert(hasArg_TargetObj() && "Tried to set missing ARG"); pool->update_arg_inplace(id,2,val); }
 
     // --- Flags ---
 
@@ -3630,10 +3711,12 @@ using IRI_STORAGE::FlagValue;
 
     // --- Arguments ---
     IRID getArg_Receiver() const { return pool->get_args(id)[0]; }
-    void setArg_Receiver(IRID val) { pool->update_arg_inplace(id,0,val); }
+    bool hasArg_Receiver() const { return 0 < pool->get_args(id).size(); }
+    void setArg_Receiver(IRID val) { assert(hasArg_Receiver() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
 
     IRID getArg_Field() const { return pool->get_args(id)[1]; }
-    void setArg_Field(IRID val) { pool->update_arg_inplace(id,1,val); }
+    bool hasArg_Field() const { return 1 < pool->get_args(id).size(); }
+    void setArg_Field(IRID val) { assert(hasArg_Field() && "Tried to set missing ARG"); pool->update_arg_inplace(id,1,val); }
 
     // --- Flags ---
 
@@ -3776,7 +3859,8 @@ using IRI_STORAGE::FlagValue;
 
     // --- Arguments ---
     IRID getArg_Obj() const { return pool->get_args(id)[0]; }
-    void setArg_Obj(IRID val) { pool->update_arg_inplace(id,0,val); }
+    bool hasArg_Obj() const { return 0 < pool->get_args(id).size(); }
+    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
 
     // --- Flags ---
 
@@ -3811,13 +3895,16 @@ using IRI_STORAGE::FlagValue;
 
     // --- Arguments ---
     IRID getArg_Obj() const { return pool->get_args(id)[0]; }
-    void setArg_Obj(IRID val) { pool->update_arg_inplace(id,0,val); }
+    bool hasArg_Obj() const { return 0 < pool->get_args(id).size(); }
+    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
 
     IRID getArg_DoneTarget() const { return pool->get_args(id)[1]; }
-    void setArg_DoneTarget(IRID val) { pool->update_arg_inplace(id,1,val); }
+    bool hasArg_DoneTarget() const { return 1 < pool->get_args(id).size(); }
+    void setArg_DoneTarget(IRID val) { assert(hasArg_DoneTarget() && "Tried to set missing ARG"); pool->update_arg_inplace(id,1,val); }
 
     IRID getArg_NextValue() const { return pool->get_args(id)[2]; }
-    void setArg_NextValue(IRID val) { pool->update_arg_inplace(id,2,val); }
+    bool hasArg_NextValue() const { return 2 < pool->get_args(id).size(); }
+    void setArg_NextValue(IRID val) { assert(hasArg_NextValue() && "Tried to set missing ARG"); pool->update_arg_inplace(id,2,val); }
 
     // --- Flags ---
 
@@ -3887,7 +3974,8 @@ using IRI_STORAGE::FlagValue;
 
     // --- Arguments ---
     IRID getArg_Obj() const { return pool->get_args(id)[0]; }
-    void setArg_Obj(IRID val) { pool->update_arg_inplace(id,0,val); }
+    bool hasArg_Obj() const { return 0 < pool->get_args(id).size(); }
+    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
 
     // --- Flags ---
     bool getPREFIX() const { return std::get<bool>(get_flag(FLAG_IDX_PREFIX)); }
@@ -3931,7 +4019,8 @@ using IRI_STORAGE::FlagValue;
 
     // --- Arguments ---
     IRID getArg_Obj() const { return pool->get_args(id)[0]; }
-    void setArg_Obj(IRID val) { pool->update_arg_inplace(id,0,val); }
+    bool hasArg_Obj() const { return 0 < pool->get_args(id).size(); }
+    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
 
     // --- Flags ---
     bool getPREFIX() const { return std::get<bool>(get_flag(FLAG_IDX_PREFIX)); }
@@ -4042,10 +4131,12 @@ using IRI_STORAGE::FlagValue;
 
     // --- Arguments ---
     IRID getArg_HomeObj() const { return pool->get_args(id)[0]; }
-    void setArg_HomeObj(IRID val) { pool->update_arg_inplace(id,0,val); }
+    bool hasArg_HomeObj() const { return 0 < pool->get_args(id).size(); }
+    void setArg_HomeObj(IRID val) { assert(hasArg_HomeObj() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
 
     IRID getArg_FuncObj() const { return pool->get_args(id)[1]; }
-    void setArg_FuncObj(IRID val) { pool->update_arg_inplace(id,1,val); }
+    bool hasArg_FuncObj() const { return 1 < pool->get_args(id).size(); }
+    void setArg_FuncObj(IRID val) { assert(hasArg_FuncObj() && "Tried to set missing ARG"); pool->update_arg_inplace(id,1,val); }
 
     // --- Flags ---
 
@@ -4080,10 +4171,12 @@ using IRI_STORAGE::FlagValue;
 
     // --- Arguments ---
     IRID getArg_obj() const { return pool->get_args(id)[0]; }
-    void setArg_obj(IRID val) { pool->update_arg_inplace(id,0,val); }
+    bool hasArg_obj() const { return 0 < pool->get_args(id).size(); }
+    void setArg_obj(IRID val) { assert(hasArg_obj() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
 
     IRID getArg_name() const { return pool->get_args(id)[1]; }
-    void setArg_name(IRID val) { pool->update_arg_inplace(id,1,val); }
+    bool hasArg_name() const { return 1 < pool->get_args(id).size(); }
+    void setArg_name(IRID val) { assert(hasArg_name() && "Tried to set missing ARG"); pool->update_arg_inplace(id,1,val); }
 
     // --- Flags ---
 
@@ -4118,10 +4211,12 @@ using IRI_STORAGE::FlagValue;
 
     // --- Arguments ---
     IRID getArg_TargetObj() const { return pool->get_args(id)[0]; }
-    void setArg_TargetObj(IRID val) { pool->update_arg_inplace(id,0,val); }
+    bool hasArg_TargetObj() const { return 0 < pool->get_args(id).size(); }
+    void setArg_TargetObj(IRID val) { assert(hasArg_TargetObj() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
 
     IRID getArg_ProtoValue() const { return pool->get_args(id)[1]; }
-    void setArg_ProtoValue(IRID val) { pool->update_arg_inplace(id,1,val); }
+    bool hasArg_ProtoValue() const { return 1 < pool->get_args(id).size(); }
+    void setArg_ProtoValue(IRID val) { assert(hasArg_ProtoValue() && "Tried to set missing ARG"); pool->update_arg_inplace(id,1,val); }
 
     // --- Flags ---
 
