@@ -21,7 +21,8 @@ inline IRID reduceJSFuncDecl(IridiumPool &pool, IRID funcDeclID) {
 void _4_4_RFD(IridiumPool &pool, IRID fileID, BUILD_CTX &iridiumBuildContext) {
   FileSEXP fileSEXP(fileID, pool);
 
-  bool isModule = iridiumBuildContext[0]->isModule;
+  double topLevelScope = IRI_HELPERS::getTopLevelScope(pool, fileID);
+  bool isModule = iridiumBuildContext[topLevelScope]->isModule;
 
   auto args = pool.get_args(fileID);
 
@@ -41,7 +42,7 @@ void _4_4_RFD(IridiumPool &pool, IRID fileID, BUILD_CTX &iridiumBuildContext) {
         IRI_TAG currTag = pool[stmtID].tag;
 
         if (currTag == IRI_GEN::JSFuncDecl) {
-          if (!isModule && containerScope == 0) {
+          if (!isModule && containerScope == topLevelScope) {
             // NADA
           } else {
             pool.update_arg_inplace(bbID, i, reduceJSFuncDecl(pool, stmtID));
