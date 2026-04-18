@@ -1,3 +1,4 @@
+#include "IRIFlags.hpp"
 #include "Storage/IridiumPool.h"
 #include "Generated/IridiumEnums.h"
 #include "Generated/IridiumMeta.h"
