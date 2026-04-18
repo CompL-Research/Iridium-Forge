@@ -4,7 +4,6 @@
 #include "Parser/IridiumParser.h"
 #include "Storage/Config.h"
 #include "Storage/IridiumPool.h"
-#include <cstddef>
 #include <functional>
 #include <msgpack.hpp>
 #include <napi.h>
@@ -62,11 +61,11 @@ Napi::Value execute(const Napi::CallbackInfo &info) {
 
   IRIPerf perf;
   perf.tick = [&](std::string msg) {
-    NAPI_tick.Call(env.Global(), { Napi::String::New(env, msg) });
+    NAPI_tick.Call(env.Global(), {Napi::String::New(env, msg)});
   };
 
   perf.tock = [&](std::string msg) {
-    NAPI_tock.Call(env.Global(), { Napi::String::New(env, msg) });
+    NAPI_tock.Call(env.Global(), {Napi::String::New(env, msg)});
   };
 
   std::string VERSION = info[0].As<Napi::String>().Utf8Value();
@@ -75,7 +74,9 @@ Napi::Value execute(const Napi::CallbackInfo &info) {
   Napi::Array BUILDCTX = info[3].As<Napi::Array>();
 
   IRI_STORAGE::IridiumPool pool;
-  pool.NULL_SEXP = pool.add_node(IRI_GEN::Null, {}, {std::nullptr_t()});
+  pool.NULL_SEXP = pool.add_node(IRI_GEN::Null, {}, {true});
+  pool.NOP_SEXP = pool.add_node(IRI_GEN::NOP, {}, {});
+
 
   perf.tick("iri-forge-main");
 
@@ -94,10 +95,9 @@ Napi::Value execute(const Napi::CallbackInfo &info) {
 
     perf.tock("iri-forge-parse");
 
-
     perf.tick("iri-forge-entrypoint");
-    auto res =
-        IRI_ENTRY::sharedEntrypoint(pool, root, parser.iridiumBuildContext, perf);
+    auto res = IRI_ENTRY::sharedEntrypoint(pool, root,
+                                           parser.iridiumBuildContext, perf);
     perf.tock("iri-forge-entrypoint");
 
   } catch (const std::exception &e) {
