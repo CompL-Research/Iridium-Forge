@@ -14,6 +14,7 @@ class IridiumPool {
 
 public:
   IRID NULL_SEXP;
+  IRID NOP_SEXP;
 
   // IridiumPool() : NULL_SEXP() {}
 
