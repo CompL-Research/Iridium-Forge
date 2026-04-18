@@ -103,7 +103,7 @@ void _4_5_PEB(IridiumPool &pool, IRID fileID, BUILD_CTX &iridiumBuildContext) {
         bool doInit = true;
         if (currTag == IRI_GEN::JSExplicitBindingDeclarationN) {
           doInit = false;
-          pool.update_tag(stmtID, JSExplicitBindingDeclarationN);
+          pool.update_tag(stmtID, JSExplicitBindingDeclaration);
           currTag = JSExplicitBindingDeclaration;
         }
 
