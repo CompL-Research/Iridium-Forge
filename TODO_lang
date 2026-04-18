@@ -1,0 +1,4 @@
+
+::Integrity Assertions::
+JSImplicitBindingsSEXP
+  -- Exclusive Flags JSLET/JSCONST/JSVAR
