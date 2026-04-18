@@ -80,13 +80,26 @@ IRID IridiumPool::add_node(IRI_GEN::IRI_TAG tag, const std::vector<IRID> &args,
 //
 const IridiumSEXP &IridiumPool::operator[](IRID id) const { return nodes[id]; }
 
-std::span<const IRID> IridiumPool::get_args(const IridiumSEXP *n) const {
+void IridiumPool::update_tag(IRID id, IRI_GEN::IRI_TAG tag) { nodes[id].tag = tag; }
+
+std::span<const IRID> IridiumPool::get_args_view(const IridiumSEXP *n) const {
   return {args_pool.data() + n->args_start_index, n->num_args};
 }
 
-std::span<const IRID> IridiumPool::get_args(IRID id) const {
+std::span<const IRID> IridiumPool::get_args_view(IRID id) const {
   const auto &node = nodes[id];
   return {args_pool.data() + node.args_start_index, node.num_args};
+}
+
+std::vector<IRID> IridiumPool::get_args(const IridiumSEXP *n) {
+  auto start_iter = args_pool.begin() + n->args_start_index;
+  return std::vector<IRID>(start_iter, start_iter + n->num_args);
+}
+
+std::vector<IRID> IridiumPool::get_args(IRID id) {
+  const auto &node = nodes[id];
+  auto start_iter = args_pool.begin() + node.args_start_index;
+  return std::vector<IRID>(start_iter, start_iter + node.num_args);
 }
 
 std::span<const FlagValue> IridiumPool::get_flags(const IridiumSEXP *n) const {
