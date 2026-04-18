@@ -1,4 +1,4 @@
-// Generated: 2026-04-18 19:42:16
+// Generated: 2026-04-18 23:54:32
 #pragma once
 #include "Storage/Config.h"
 #include "Storage/IridiumSEXP.h"
@@ -46,15 +46,15 @@ using IRI_STORAGE::FlagValue;
 
     // --- Flags ---
     bool hasJSScript() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_JSScript)); }
-    void setJSScript() { mutate_flag(FLAG_IDX_JSScript) = true; }
+    void setJSScript() { mutate_flag(FLAG_IDX_JSScript) = std::nullptr_t{}; }
     void clearJSScript() { mutate_flag(FLAG_IDX_JSScript) = std::monostate{}; }
 
     bool hasJSModule() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_JSModule)); }
-    void setJSModule() { mutate_flag(FLAG_IDX_JSModule) = true; }
+    void setJSModule() { mutate_flag(FLAG_IDX_JSModule) = std::nullptr_t{}; }
     void clearJSModule() { mutate_flag(FLAG_IDX_JSModule) = std::monostate{}; }
 
     bool hasTLA() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_TLA)); }
-    void setTLA() { mutate_flag(FLAG_IDX_TLA) = true; }
+    void setTLA() { mutate_flag(FLAG_IDX_TLA) = std::nullptr_t{}; }
     void clearTLA() { mutate_flag(FLAG_IDX_TLA) = std::monostate{}; }
   };
 
@@ -96,7 +96,7 @@ using IRI_STORAGE::FlagValue;
     void clearNAME() { mutate_flag(FLAG_IDX_NAME) = std::monostate{}; }
 
     bool hasASW() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_ASW)); }
-    void setASW() { mutate_flag(FLAG_IDX_ASW) = true; }
+    void setASW() { mutate_flag(FLAG_IDX_ASW) = std::nullptr_t{}; }
     void clearASW() { mutate_flag(FLAG_IDX_ASW) = std::monostate{}; }
   };
 
@@ -186,23 +186,23 @@ using IRI_STORAGE::FlagValue;
     void clearNAME() { mutate_flag(FLAG_IDX_NAME) = std::monostate{}; }
 
     bool hasJSLET() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_JSLET)); }
-    void setJSLET() { mutate_flag(FLAG_IDX_JSLET) = true; }
+    void setJSLET() { mutate_flag(FLAG_IDX_JSLET) = std::nullptr_t{}; }
     void clearJSLET() { mutate_flag(FLAG_IDX_JSLET) = std::monostate{}; }
 
     bool hasJSCONST() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_JSCONST)); }
-    void setJSCONST() { mutate_flag(FLAG_IDX_JSCONST) = true; }
+    void setJSCONST() { mutate_flag(FLAG_IDX_JSCONST) = std::nullptr_t{}; }
     void clearJSCONST() { mutate_flag(FLAG_IDX_JSCONST) = std::monostate{}; }
 
     bool hasJSVAR() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_JSVAR)); }
-    void setJSVAR() { mutate_flag(FLAG_IDX_JSVAR) = true; }
+    void setJSVAR() { mutate_flag(FLAG_IDX_JSVAR) = std::nullptr_t{}; }
     void clearJSVAR() { mutate_flag(FLAG_IDX_JSVAR) = std::monostate{}; }
 
     bool hasSLOPPY() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_SLOPPY)); }
-    void setSLOPPY() { mutate_flag(FLAG_IDX_SLOPPY) = true; }
+    void setSLOPPY() { mutate_flag(FLAG_IDX_SLOPPY) = std::nullptr_t{}; }
     void clearSLOPPY() { mutate_flag(FLAG_IDX_SLOPPY) = std::monostate{}; }
 
     bool hasSKIPINIT() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_SKIPINIT)); }
-    void setSKIPINIT() { mutate_flag(FLAG_IDX_SKIPINIT) = true; }
+    void setSKIPINIT() { mutate_flag(FLAG_IDX_SKIPINIT) = std::nullptr_t{}; }
     void clearSKIPINIT() { mutate_flag(FLAG_IDX_SKIPINIT) = std::monostate{}; }
 
     bool getSAFE() const { return std::get<bool>(get_flag(FLAG_IDX_SAFE)); }
@@ -254,7 +254,7 @@ using IRI_STORAGE::FlagValue;
 
     // --- Flags ---
     bool hasSAFE() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_SAFE)); }
-    void setSAFE() { mutate_flag(FLAG_IDX_SAFE) = true; }
+    void setSAFE() { mutate_flag(FLAG_IDX_SAFE) = std::nullptr_t{}; }
     void clearSAFE() { mutate_flag(FLAG_IDX_SAFE) = std::monostate{}; }
   };
 
@@ -291,7 +291,7 @@ using IRI_STORAGE::FlagValue;
 
     // --- Flags ---
     bool hasSAFE() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_SAFE)); }
-    void setSAFE() { mutate_flag(FLAG_IDX_SAFE) = true; }
+    void setSAFE() { mutate_flag(FLAG_IDX_SAFE) = std::nullptr_t{}; }
     void clearSAFE() { mutate_flag(FLAG_IDX_SAFE) = std::monostate{}; }
   };
 
@@ -411,19 +411,19 @@ using IRI_STORAGE::FlagValue;
 
     // --- Flags ---
     bool hasJSLET() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_JSLET)); }
-    void setJSLET() { mutate_flag(FLAG_IDX_JSLET) = true; }
+    void setJSLET() { mutate_flag(FLAG_IDX_JSLET) = std::nullptr_t{}; }
     void clearJSLET() { mutate_flag(FLAG_IDX_JSLET) = std::monostate{}; }
 
     bool hasJSCONST() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_JSCONST)); }
-    void setJSCONST() { mutate_flag(FLAG_IDX_JSCONST) = true; }
+    void setJSCONST() { mutate_flag(FLAG_IDX_JSCONST) = std::nullptr_t{}; }
     void clearJSCONST() { mutate_flag(FLAG_IDX_JSCONST) = std::monostate{}; }
 
     bool hasJSVAR() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_JSVAR)); }
-    void setJSVAR() { mutate_flag(FLAG_IDX_JSVAR) = true; }
+    void setJSVAR() { mutate_flag(FLAG_IDX_JSVAR) = std::nullptr_t{}; }
     void clearJSVAR() { mutate_flag(FLAG_IDX_JSVAR) = std::monostate{}; }
 
     bool hasSLOPPY() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_SLOPPY)); }
-    void setSLOPPY() { mutate_flag(FLAG_IDX_SLOPPY) = true; }
+    void setSLOPPY() { mutate_flag(FLAG_IDX_SLOPPY) = std::nullptr_t{}; }
     void clearSLOPPY() { mutate_flag(FLAG_IDX_SLOPPY) = std::monostate{}; }
 
     bool getSAFE() const { return std::get<bool>(get_flag(FLAG_IDX_SAFE)); }
@@ -478,19 +478,19 @@ using IRI_STORAGE::FlagValue;
 
     // --- Flags ---
     bool hasJSLET() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_JSLET)); }
-    void setJSLET() { mutate_flag(FLAG_IDX_JSLET) = true; }
+    void setJSLET() { mutate_flag(FLAG_IDX_JSLET) = std::nullptr_t{}; }
     void clearJSLET() { mutate_flag(FLAG_IDX_JSLET) = std::monostate{}; }
 
     bool hasJSCONST() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_JSCONST)); }
-    void setJSCONST() { mutate_flag(FLAG_IDX_JSCONST) = true; }
+    void setJSCONST() { mutate_flag(FLAG_IDX_JSCONST) = std::nullptr_t{}; }
     void clearJSCONST() { mutate_flag(FLAG_IDX_JSCONST) = std::monostate{}; }
 
     bool hasJSVAR() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_JSVAR)); }
-    void setJSVAR() { mutate_flag(FLAG_IDX_JSVAR) = true; }
+    void setJSVAR() { mutate_flag(FLAG_IDX_JSVAR) = std::nullptr_t{}; }
     void clearJSVAR() { mutate_flag(FLAG_IDX_JSVAR) = std::monostate{}; }
 
     bool hasSLOPPY() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_SLOPPY)); }
-    void setSLOPPY() { mutate_flag(FLAG_IDX_SLOPPY) = true; }
+    void setSLOPPY() { mutate_flag(FLAG_IDX_SLOPPY) = std::nullptr_t{}; }
     void clearSLOPPY() { mutate_flag(FLAG_IDX_SLOPPY) = std::monostate{}; }
 
     bool getSAFE() const { return std::get<bool>(get_flag(FLAG_IDX_SAFE)); }
@@ -543,31 +543,31 @@ using IRI_STORAGE::FlagValue;
 
     // --- Flags ---
     bool hasCCall() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_CCall)); }
-    void setCCall() { mutate_flag(FLAG_IDX_CCall) = true; }
+    void setCCall() { mutate_flag(FLAG_IDX_CCall) = std::nullptr_t{}; }
     void clearCCall() { mutate_flag(FLAG_IDX_CCall) = std::monostate{}; }
 
     bool hasConstructorCall() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_ConstructorCall)); }
-    void setConstructorCall() { mutate_flag(FLAG_IDX_ConstructorCall) = true; }
+    void setConstructorCall() { mutate_flag(FLAG_IDX_ConstructorCall) = std::nullptr_t{}; }
     void clearConstructorCall() { mutate_flag(FLAG_IDX_ConstructorCall) = std::monostate{}; }
 
     bool hasPrivateCall() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_PrivateCall)); }
-    void setPrivateCall() { mutate_flag(FLAG_IDX_PrivateCall) = true; }
+    void setPrivateCall() { mutate_flag(FLAG_IDX_PrivateCall) = std::nullptr_t{}; }
     void clearPrivateCall() { mutate_flag(FLAG_IDX_PrivateCall) = std::monostate{}; }
 
     bool hasImport() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_Import)); }
-    void setImport() { mutate_flag(FLAG_IDX_Import) = true; }
+    void setImport() { mutate_flag(FLAG_IDX_Import) = std::nullptr_t{}; }
     void clearImport() { mutate_flag(FLAG_IDX_Import) = std::monostate{}; }
 
     bool hasSuper() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_Super)); }
-    void setSuper() { mutate_flag(FLAG_IDX_Super) = true; }
+    void setSuper() { mutate_flag(FLAG_IDX_Super) = std::nullptr_t{}; }
     void clearSuper() { mutate_flag(FLAG_IDX_Super) = std::monostate{}; }
 
     bool hasV8Intrinsic() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_V8Intrinsic)); }
-    void setV8Intrinsic() { mutate_flag(FLAG_IDX_V8Intrinsic) = true; }
+    void setV8Intrinsic() { mutate_flag(FLAG_IDX_V8Intrinsic) = std::nullptr_t{}; }
     void clearV8Intrinsic() { mutate_flag(FLAG_IDX_V8Intrinsic) = std::monostate{}; }
 
     bool hasTAILCALL() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_TAILCALL)); }
-    void setTAILCALL() { mutate_flag(FLAG_IDX_TAILCALL) = true; }
+    void setTAILCALL() { mutate_flag(FLAG_IDX_TAILCALL) = std::nullptr_t{}; }
     void clearTAILCALL() { mutate_flag(FLAG_IDX_TAILCALL) = std::monostate{}; }
 
     double getJSDirectEval() const { return std::get<double>(get_flag(FLAG_IDX_JSDirectEval)); }
@@ -617,11 +617,11 @@ using IRI_STORAGE::FlagValue;
 
     // --- Flags ---
     bool hasConstructorCall() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_ConstructorCall)); }
-    void setConstructorCall() { mutate_flag(FLAG_IDX_ConstructorCall) = true; }
+    void setConstructorCall() { mutate_flag(FLAG_IDX_ConstructorCall) = std::nullptr_t{}; }
     void clearConstructorCall() { mutate_flag(FLAG_IDX_ConstructorCall) = std::monostate{}; }
 
     bool hasSuper() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_Super)); }
-    void setSuper() { mutate_flag(FLAG_IDX_Super) = true; }
+    void setSuper() { mutate_flag(FLAG_IDX_Super) = std::nullptr_t{}; }
     void clearSuper() { mutate_flag(FLAG_IDX_Super) = std::monostate{}; }
 
     double getJSDirectEval() const { return std::get<double>(get_flag(FLAG_IDX_JSDirectEval)); }
@@ -703,23 +703,23 @@ using IRI_STORAGE::FlagValue;
 
     // --- Flags ---
     bool hasTopLevel() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_TopLevel)); }
-    void setTopLevel() { mutate_flag(FLAG_IDX_TopLevel) = true; }
+    void setTopLevel() { mutate_flag(FLAG_IDX_TopLevel) = std::nullptr_t{}; }
     void clearTopLevel() { mutate_flag(FLAG_IDX_TopLevel) = std::monostate{}; }
 
     bool hasClosureBoundary() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_ClosureBoundary)); }
-    void setClosureBoundary() { mutate_flag(FLAG_IDX_ClosureBoundary) = true; }
+    void setClosureBoundary() { mutate_flag(FLAG_IDX_ClosureBoundary) = std::nullptr_t{}; }
     void clearClosureBoundary() { mutate_flag(FLAG_IDX_ClosureBoundary) = std::monostate{}; }
 
     bool hasLexical() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_Lexical)); }
-    void setLexical() { mutate_flag(FLAG_IDX_Lexical) = true; }
+    void setLexical() { mutate_flag(FLAG_IDX_Lexical) = std::nullptr_t{}; }
     void clearLexical() { mutate_flag(FLAG_IDX_Lexical) = std::monostate{}; }
 
     bool hasVARBoundary() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_VARBoundary)); }
-    void setVARBoundary() { mutate_flag(FLAG_IDX_VARBoundary) = true; }
+    void setVARBoundary() { mutate_flag(FLAG_IDX_VARBoundary) = std::nullptr_t{}; }
     void clearVARBoundary() { mutate_flag(FLAG_IDX_VARBoundary) = std::monostate{}; }
 
     bool hasTryBB() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_TryBB)); }
-    void setTryBB() { mutate_flag(FLAG_IDX_TryBB) = true; }
+    void setTryBB() { mutate_flag(FLAG_IDX_TryBB) = std::nullptr_t{}; }
     void clearTryBB() { mutate_flag(FLAG_IDX_TryBB) = std::monostate{}; }
 
     double getIDX() const { return std::get<double>(get_flag(FLAG_IDX_IDX)); }
@@ -766,7 +766,7 @@ using IRI_STORAGE::FlagValue;
 
     // --- Flags ---
     bool hasModuleEarlyReturn() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_ModuleEarlyReturn)); }
-    void setModuleEarlyReturn() { mutate_flag(FLAG_IDX_ModuleEarlyReturn) = true; }
+    void setModuleEarlyReturn() { mutate_flag(FLAG_IDX_ModuleEarlyReturn) = std::nullptr_t{}; }
     void clearModuleEarlyReturn() { mutate_flag(FLAG_IDX_ModuleEarlyReturn) = std::monostate{}; }
   };
 
@@ -804,7 +804,7 @@ using IRI_STORAGE::FlagValue;
 
     // --- Flags ---
     bool hasNOT() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_NOT)); }
-    void setNOT() { mutate_flag(FLAG_IDX_NOT) = true; }
+    void setNOT() { mutate_flag(FLAG_IDX_NOT) = std::nullptr_t{}; }
     void clearNOT() { mutate_flag(FLAG_IDX_NOT) = std::monostate{}; }
 
     double getIDX() const { return std::get<double>(get_flag(FLAG_IDX_IDX)); }
@@ -848,7 +848,7 @@ using IRI_STORAGE::FlagValue;
 
     // --- Flags ---
     bool hasNOT() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_NOT)); }
-    void setNOT() { mutate_flag(FLAG_IDX_NOT) = true; }
+    void setNOT() { mutate_flag(FLAG_IDX_NOT) = std::nullptr_t{}; }
     void clearNOT() { mutate_flag(FLAG_IDX_NOT) = std::monostate{}; }
 
     double getTRUE() const { return std::get<double>(get_flag(FLAG_IDX_TRUE)); }
@@ -940,19 +940,19 @@ using IRI_STORAGE::FlagValue;
 
     // --- Flags ---
     bool hasJSLET() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_JSLET)); }
-    void setJSLET() { mutate_flag(FLAG_IDX_JSLET) = true; }
+    void setJSLET() { mutate_flag(FLAG_IDX_JSLET) = std::nullptr_t{}; }
     void clearJSLET() { mutate_flag(FLAG_IDX_JSLET) = std::monostate{}; }
 
     bool hasJSCONST() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_JSCONST)); }
-    void setJSCONST() { mutate_flag(FLAG_IDX_JSCONST) = true; }
+    void setJSCONST() { mutate_flag(FLAG_IDX_JSCONST) = std::nullptr_t{}; }
     void clearJSCONST() { mutate_flag(FLAG_IDX_JSCONST) = std::monostate{}; }
 
     bool hasJSVAR() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_JSVAR)); }
-    void setJSVAR() { mutate_flag(FLAG_IDX_JSVAR) = true; }
+    void setJSVAR() { mutate_flag(FLAG_IDX_JSVAR) = std::nullptr_t{}; }
     void clearJSVAR() { mutate_flag(FLAG_IDX_JSVAR) = std::monostate{}; }
 
     bool hasSLOPPY() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_SLOPPY)); }
-    void setSLOPPY() { mutate_flag(FLAG_IDX_SLOPPY) = true; }
+    void setSLOPPY() { mutate_flag(FLAG_IDX_SLOPPY) = std::nullptr_t{}; }
     void clearSLOPPY() { mutate_flag(FLAG_IDX_SLOPPY) = std::monostate{}; }
 
     bool getSAFE() const { return std::get<bool>(get_flag(FLAG_IDX_SAFE)); }
@@ -1111,47 +1111,47 @@ using IRI_STORAGE::FlagValue;
     void clearNAME() { mutate_flag(FLAG_IDX_NAME) = std::monostate{}; }
 
     bool hasARGUMENTS() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_ARGUMENTS)); }
-    void setARGUMENTS() { mutate_flag(FLAG_IDX_ARGUMENTS) = true; }
+    void setARGUMENTS() { mutate_flag(FLAG_IDX_ARGUMENTS) = std::nullptr_t{}; }
     void clearARGUMENTS() { mutate_flag(FLAG_IDX_ARGUMENTS) = std::monostate{}; }
 
     bool hasASYNC() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_ASYNC)); }
-    void setASYNC() { mutate_flag(FLAG_IDX_ASYNC) = true; }
+    void setASYNC() { mutate_flag(FLAG_IDX_ASYNC) = std::nullptr_t{}; }
     void clearASYNC() { mutate_flag(FLAG_IDX_ASYNC) = std::monostate{}; }
 
     bool hasSTRICT() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_STRICT)); }
-    void setSTRICT() { mutate_flag(FLAG_IDX_STRICT) = true; }
+    void setSTRICT() { mutate_flag(FLAG_IDX_STRICT) = std::nullptr_t{}; }
     void clearSTRICT() { mutate_flag(FLAG_IDX_STRICT) = std::monostate{}; }
 
     bool hasGENERATOR() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_GENERATOR)); }
-    void setGENERATOR() { mutate_flag(FLAG_IDX_GENERATOR) = true; }
+    void setGENERATOR() { mutate_flag(FLAG_IDX_GENERATOR) = std::nullptr_t{}; }
     void clearGENERATOR() { mutate_flag(FLAG_IDX_GENERATOR) = std::monostate{}; }
 
     bool hasPROTO() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_PROTO)); }
-    void setPROTO() { mutate_flag(FLAG_IDX_PROTO) = true; }
+    void setPROTO() { mutate_flag(FLAG_IDX_PROTO) = std::nullptr_t{}; }
     void clearPROTO() { mutate_flag(FLAG_IDX_PROTO) = std::monostate{}; }
 
     bool hasNEW() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_NEW)); }
-    void setNEW() { mutate_flag(FLAG_IDX_NEW) = true; }
+    void setNEW() { mutate_flag(FLAG_IDX_NEW) = std::nullptr_t{}; }
     void clearNEW() { mutate_flag(FLAG_IDX_NEW) = std::monostate{}; }
 
     bool hasSCALL() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_SCALL)); }
-    void setSCALL() { mutate_flag(FLAG_IDX_SCALL) = true; }
+    void setSCALL() { mutate_flag(FLAG_IDX_SCALL) = std::nullptr_t{}; }
     void clearSCALL() { mutate_flag(FLAG_IDX_SCALL) = std::monostate{}; }
 
     bool hasSOBJ() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_SOBJ)); }
-    void setSOBJ() { mutate_flag(FLAG_IDX_SOBJ) = true; }
+    void setSOBJ() { mutate_flag(FLAG_IDX_SOBJ) = std::nullptr_t{}; }
     void clearSOBJ() { mutate_flag(FLAG_IDX_SOBJ) = std::monostate{}; }
 
     bool hasHOME() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_HOME)); }
-    void setHOME() { mutate_flag(FLAG_IDX_HOME) = true; }
+    void setHOME() { mutate_flag(FLAG_IDX_HOME) = std::nullptr_t{}; }
     void clearHOME() { mutate_flag(FLAG_IDX_HOME) = std::monostate{}; }
 
     bool hasDERIVED() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_DERIVED)); }
-    void setDERIVED() { mutate_flag(FLAG_IDX_DERIVED) = true; }
+    void setDERIVED() { mutate_flag(FLAG_IDX_DERIVED) = std::nullptr_t{}; }
     void clearDERIVED() { mutate_flag(FLAG_IDX_DERIVED) = std::monostate{}; }
 
     bool hasTopLevel() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_TopLevel)); }
-    void setTopLevel() { mutate_flag(FLAG_IDX_TopLevel) = true; }
+    void setTopLevel() { mutate_flag(FLAG_IDX_TopLevel) = std::nullptr_t{}; }
     void clearTopLevel() { mutate_flag(FLAG_IDX_TopLevel) = std::monostate{}; }
 
     double getECMAArgs() const { return std::get<double>(get_flag(FLAG_IDX_ECMAArgs)); }
@@ -1478,27 +1478,27 @@ using IRI_STORAGE::FlagValue;
     void clearNAME() { mutate_flag(FLAG_IDX_NAME) = std::monostate{}; }
 
     bool hasASW() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_ASW)); }
-    void setASW() { mutate_flag(FLAG_IDX_ASW) = true; }
+    void setASW() { mutate_flag(FLAG_IDX_ASW) = std::nullptr_t{}; }
     void clearASW() { mutate_flag(FLAG_IDX_ASW) = std::monostate{}; }
 
     bool hasJSARG() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_JSARG)); }
-    void setJSARG() { mutate_flag(FLAG_IDX_JSARG) = true; }
+    void setJSARG() { mutate_flag(FLAG_IDX_JSARG) = std::nullptr_t{}; }
     void clearJSARG() { mutate_flag(FLAG_IDX_JSARG) = std::monostate{}; }
 
     bool hasJSRESTARG() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_JSRESTARG)); }
-    void setJSRESTARG() { mutate_flag(FLAG_IDX_JSRESTARG) = true; }
+    void setJSRESTARG() { mutate_flag(FLAG_IDX_JSRESTARG) = std::nullptr_t{}; }
     void clearJSRESTARG() { mutate_flag(FLAG_IDX_JSRESTARG) = std::monostate{}; }
 
     bool hasJSLET() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_JSLET)); }
-    void setJSLET() { mutate_flag(FLAG_IDX_JSLET) = true; }
+    void setJSLET() { mutate_flag(FLAG_IDX_JSLET) = std::nullptr_t{}; }
     void clearJSLET() { mutate_flag(FLAG_IDX_JSLET) = std::monostate{}; }
 
     bool hasJSCONST() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_JSCONST)); }
-    void setJSCONST() { mutate_flag(FLAG_IDX_JSCONST) = true; }
+    void setJSCONST() { mutate_flag(FLAG_IDX_JSCONST) = std::nullptr_t{}; }
     void clearJSCONST() { mutate_flag(FLAG_IDX_JSCONST) = std::monostate{}; }
 
     bool hasJSVAR() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_JSVAR)); }
-    void setJSVAR() { mutate_flag(FLAG_IDX_JSVAR) = true; }
+    void setJSVAR() { mutate_flag(FLAG_IDX_JSVAR) = std::nullptr_t{}; }
     void clearJSVAR() { mutate_flag(FLAG_IDX_JSVAR) = std::monostate{}; }
 
     double getIDX() const { return std::get<double>(get_flag(FLAG_IDX_IDX)); }
@@ -1561,7 +1561,7 @@ using IRI_STORAGE::FlagValue;
 
     // --- Flags ---
     bool hasNSIMPORT() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_NSIMPORT)); }
-    void setNSIMPORT() { mutate_flag(FLAG_IDX_NSIMPORT) = true; }
+    void setNSIMPORT() { mutate_flag(FLAG_IDX_NSIMPORT) = std::nullptr_t{}; }
     void clearNSIMPORT() { mutate_flag(FLAG_IDX_NSIMPORT) = std::monostate{}; }
 
     double getREFIDX() const { return std::get<double>(get_flag(FLAG_IDX_REFIDX)); }
@@ -1646,11 +1646,11 @@ using IRI_STORAGE::FlagValue;
 
     // --- Flags ---
     bool hasSLOPPY() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_SLOPPY)); }
-    void setSLOPPY() { mutate_flag(FLAG_IDX_SLOPPY) = true; }
+    void setSLOPPY() { mutate_flag(FLAG_IDX_SLOPPY) = std::nullptr_t{}; }
     void clearSLOPPY() { mutate_flag(FLAG_IDX_SLOPPY) = std::monostate{}; }
 
     bool hasTHROWERR() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_THROWERR)); }
-    void setTHROWERR() { mutate_flag(FLAG_IDX_THROWERR) = true; }
+    void setTHROWERR() { mutate_flag(FLAG_IDX_THROWERR) = std::nullptr_t{}; }
     void clearTHROWERR() { mutate_flag(FLAG_IDX_THROWERR) = std::monostate{}; }
 
     bool getSAFE() const { return std::get<bool>(get_flag(FLAG_IDX_SAFE)); }
@@ -1704,11 +1704,11 @@ using IRI_STORAGE::FlagValue;
 
     // --- Flags ---
     bool hasSLOPPY() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_SLOPPY)); }
-    void setSLOPPY() { mutate_flag(FLAG_IDX_SLOPPY) = true; }
+    void setSLOPPY() { mutate_flag(FLAG_IDX_SLOPPY) = std::nullptr_t{}; }
     void clearSLOPPY() { mutate_flag(FLAG_IDX_SLOPPY) = std::monostate{}; }
 
     bool hasTHROWERR() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_THROWERR)); }
-    void setTHROWERR() { mutate_flag(FLAG_IDX_THROWERR) = true; }
+    void setTHROWERR() { mutate_flag(FLAG_IDX_THROWERR) = std::nullptr_t{}; }
     void clearTHROWERR() { mutate_flag(FLAG_IDX_THROWERR) = std::monostate{}; }
 
     bool getSAFE() const { return std::get<bool>(get_flag(FLAG_IDX_SAFE)); }
@@ -1801,15 +1801,15 @@ using IRI_STORAGE::FlagValue;
     void clearNAME() { mutate_flag(FLAG_IDX_NAME) = std::monostate{}; }
 
     bool hasJSLET() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_JSLET)); }
-    void setJSLET() { mutate_flag(FLAG_IDX_JSLET) = true; }
+    void setJSLET() { mutate_flag(FLAG_IDX_JSLET) = std::nullptr_t{}; }
     void clearJSLET() { mutate_flag(FLAG_IDX_JSLET) = std::monostate{}; }
 
     bool hasJSCONST() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_JSCONST)); }
-    void setJSCONST() { mutate_flag(FLAG_IDX_JSCONST) = true; }
+    void setJSCONST() { mutate_flag(FLAG_IDX_JSCONST) = std::nullptr_t{}; }
     void clearJSCONST() { mutate_flag(FLAG_IDX_JSCONST) = std::monostate{}; }
 
     bool hasJSVAR() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_JSVAR)); }
-    void setJSVAR() { mutate_flag(FLAG_IDX_JSVAR) = true; }
+    void setJSVAR() { mutate_flag(FLAG_IDX_JSVAR) = std::nullptr_t{}; }
     void clearJSVAR() { mutate_flag(FLAG_IDX_JSVAR) = std::monostate{}; }
   };
 
@@ -1892,7 +1892,7 @@ using IRI_STORAGE::FlagValue;
     void clearNAME() { mutate_flag(FLAG_IDX_NAME) = std::monostate{}; }
 
     bool hasDERIVED() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_DERIVED)); }
-    void setDERIVED() { mutate_flag(FLAG_IDX_DERIVED) = true; }
+    void setDERIVED() { mutate_flag(FLAG_IDX_DERIVED) = std::nullptr_t{}; }
     void clearDERIVED() { mutate_flag(FLAG_IDX_DERIVED) = std::monostate{}; }
   };
 
@@ -2005,7 +2005,7 @@ using IRI_STORAGE::FlagValue;
     void clearNAME() { mutate_flag(FLAG_IDX_NAME) = std::monostate{}; }
 
     bool hasFULLY_RESOLVE() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_FULLY_RESOLVE)); }
-    void setFULLY_RESOLVE() { mutate_flag(FLAG_IDX_FULLY_RESOLVE) = true; }
+    void setFULLY_RESOLVE() { mutate_flag(FLAG_IDX_FULLY_RESOLVE) = std::nullptr_t{}; }
     void clearFULLY_RESOLVE() { mutate_flag(FLAG_IDX_FULLY_RESOLVE) = std::monostate{}; }
   };
 
@@ -2044,15 +2044,15 @@ using IRI_STORAGE::FlagValue;
 
     // --- Flags ---
     bool hasSYMBOL() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_SYMBOL)); }
-    void setSYMBOL() { mutate_flag(FLAG_IDX_SYMBOL) = true; }
+    void setSYMBOL() { mutate_flag(FLAG_IDX_SYMBOL) = std::nullptr_t{}; }
     void clearSYMBOL() { mutate_flag(FLAG_IDX_SYMBOL) = std::monostate{}; }
 
     bool hasMETHOD() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_METHOD)); }
-    void setMETHOD() { mutate_flag(FLAG_IDX_METHOD) = true; }
+    void setMETHOD() { mutate_flag(FLAG_IDX_METHOD) = std::nullptr_t{}; }
     void clearMETHOD() { mutate_flag(FLAG_IDX_METHOD) = std::monostate{}; }
 
     bool hasFULLY_RESOLVE() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_FULLY_RESOLVE)); }
-    void setFULLY_RESOLVE() { mutate_flag(FLAG_IDX_FULLY_RESOLVE) = true; }
+    void setFULLY_RESOLVE() { mutate_flag(FLAG_IDX_FULLY_RESOLVE) = std::nullptr_t{}; }
     void clearFULLY_RESOLVE() { mutate_flag(FLAG_IDX_FULLY_RESOLVE) = std::monostate{}; }
   };
 
@@ -2132,7 +2132,7 @@ using IRI_STORAGE::FlagValue;
 
     // --- Flags ---
     bool hasDECL() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_DECL)); }
-    void setDECL() { mutate_flag(FLAG_IDX_DECL) = true; }
+    void setDECL() { mutate_flag(FLAG_IDX_DECL) = std::nullptr_t{}; }
     void clearDECL() { mutate_flag(FLAG_IDX_DECL) = std::monostate{}; }
   };
 
@@ -3211,7 +3211,7 @@ using IRI_STORAGE::FlagValue;
 
     // --- Flags ---
     bool hasIridiumPrimitive() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_IridiumPrimitive)); }
-    void setIridiumPrimitive() { mutate_flag(FLAG_IDX_IridiumPrimitive) = true; }
+    void setIridiumPrimitive() { mutate_flag(FLAG_IDX_IridiumPrimitive) = std::nullptr_t{}; }
     void clearIridiumPrimitive() { mutate_flag(FLAG_IDX_IridiumPrimitive) = std::monostate{}; }
   };
 
@@ -3251,7 +3251,7 @@ using IRI_STORAGE::FlagValue;
 
     // --- Flags ---
     bool hasSAFE() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_SAFE)); }
-    void setSAFE() { mutate_flag(FLAG_IDX_SAFE) = true; }
+    void setSAFE() { mutate_flag(FLAG_IDX_SAFE) = std::nullptr_t{}; }
     void clearSAFE() { mutate_flag(FLAG_IDX_SAFE) = std::monostate{}; }
   };
 
@@ -3294,7 +3294,7 @@ using IRI_STORAGE::FlagValue;
 
     // --- Flags ---
     bool hasSAFE() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_SAFE)); }
-    void setSAFE() { mutate_flag(FLAG_IDX_SAFE) = true; }
+    void setSAFE() { mutate_flag(FLAG_IDX_SAFE) = std::nullptr_t{}; }
     void clearSAFE() { mutate_flag(FLAG_IDX_SAFE) = std::monostate{}; }
   };
 
@@ -3501,19 +3501,19 @@ using IRI_STORAGE::FlagValue;
 
     // --- Flags ---
     bool hasNOENUM() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_NOENUM)); }
-    void setNOENUM() { mutate_flag(FLAG_IDX_NOENUM) = true; }
+    void setNOENUM() { mutate_flag(FLAG_IDX_NOENUM) = std::nullptr_t{}; }
     void clearNOENUM() { mutate_flag(FLAG_IDX_NOENUM) = std::monostate{}; }
 
     bool hasMETHOD() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_METHOD)); }
-    void setMETHOD() { mutate_flag(FLAG_IDX_METHOD) = true; }
+    void setMETHOD() { mutate_flag(FLAG_IDX_METHOD) = std::nullptr_t{}; }
     void clearMETHOD() { mutate_flag(FLAG_IDX_METHOD) = std::monostate{}; }
 
     bool hasGET() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_GET)); }
-    void setGET() { mutate_flag(FLAG_IDX_GET) = true; }
+    void setGET() { mutate_flag(FLAG_IDX_GET) = std::nullptr_t{}; }
     void clearGET() { mutate_flag(FLAG_IDX_GET) = std::monostate{}; }
 
     bool hasSET() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_SET)); }
-    void setSET() { mutate_flag(FLAG_IDX_SET) = true; }
+    void setSET() { mutate_flag(FLAG_IDX_SET) = std::nullptr_t{}; }
     void clearSET() { mutate_flag(FLAG_IDX_SET) = std::monostate{}; }
   };
 

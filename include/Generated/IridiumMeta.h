@@ -1,4 +1,4 @@
-// Generated: 2026-04-18 19:42:16
+// Generated: 2026-04-18 23:54:32
 #pragma once
 #include "IridiumEnums.h"
 #include <cstdint>
