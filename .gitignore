@@ -49,3 +49,5 @@ gen.sh
 *.dwo
 
 forge.cjs
+
+backup*
