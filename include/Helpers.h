@@ -13,6 +13,11 @@ class IridiumBuildContext;
 
 namespace IRI_HELPERS {
 
+double findVARHoistingScope(
+    IRI_STORAGE::IridiumPool &pool, double startingScope,
+    std::unordered_map<int, std::shared_ptr<IRI_PARSE::IridiumBuildContext>>
+        &iridiumBuildContext);
+
 double findParentClosureScope(
     IRI_STORAGE::IridiumPool &pool, double startingScope,
     std::unordered_map<int, std::shared_ptr<IRI_PARSE::IridiumBuildContext>>
@@ -23,6 +28,10 @@ double getLexicalScope(
     std::unordered_map<int, std::shared_ptr<IRI_PARSE::IridiumBuildContext>>
         &iridiumBuildContext);
 
-IRI_STORAGE::IRID getTopLevelContainer(IRI_STORAGE::IridiumPool &pool, IRI_STORAGE::IRID fileSEXP);
-
+IRI_STORAGE::IRID getTopLevelContainer(IRI_STORAGE::IridiumPool &pool,
+                                       IRI_STORAGE::IRID fileSEXP);
+double getTopLevelScope(IRI_STORAGE::IridiumPool &pool,
+                        IRI_STORAGE::IRID fileSEXP);
+IRI_STORAGE::IRID resolveRemoteBinding(IRI_STORAGE::IridiumPool &pool,
+                                       IRI_STORAGE::IRID rbinID);
 } // namespace IRI_HELPERS

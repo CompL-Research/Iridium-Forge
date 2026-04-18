@@ -6,6 +6,24 @@
 
 namespace IRI_HELPERS {
 
+auto findVARHoistingScope(
+    IRI_STORAGE::IridiumPool &pool, double startingScope,
+    std::unordered_map<int, std::shared_ptr<IRI_PARSE::IridiumBuildContext>>
+        &iridiumBuildContext) -> double {
+  if (startingScope == -1)
+    return -1;
+  if (iridiumBuildContext.find(startingScope) == iridiumBuildContext.end())
+    throw std::runtime_error("build context not found for scope: " +
+                             std::to_string(startingScope));
+
+  auto &buildContext = iridiumBuildContext[startingScope];
+  IRI_GEN::BBSEXP startBB(buildContext->BB[0], pool);
+  if (startBB.hasClosureBoundary() || startBB.hasTopLevel() ||
+      startBB.hasVARBoundary())
+    return startingScope;
+  return findVARHoistingScope(pool, buildContext->parent, iridiumBuildContext);
+}
+
 auto findParentClosureScope(
     IRI_STORAGE::IridiumPool &pool, double startingScope,
     std::unordered_map<int, std::shared_ptr<IRI_PARSE::IridiumBuildContext>>
@@ -41,14 +59,34 @@ auto getLexicalScope(
 
 IRI_STORAGE::IRID getTopLevelContainer(IRI_STORAGE::IridiumPool &pool,
                                        IRI_STORAGE::IRID fileSEXP) {
+  if (pool.topLevelBBContainer.has_value())
+    return pool.topLevelBBContainer.value();
   for (auto &bbcIDX : pool.get_args(fileSEXP)) {
-    if (pool[bbcIDX].tag != IRI_GEN::BBContainer) continue;
+    if (pool[bbcIDX].tag != IRI_GEN::BBContainer)
+      continue;
 
     auto container = IRI_GEN::BBContainerSEXP(bbcIDX, pool);
-    if (container.hasTopLevel())
+    if (container.hasTopLevel()) {
+      pool.topLevelBBContainer = bbcIDX;
       return bbcIDX;
+    }
   }
   throw std::runtime_error("[Forge] Failed to find top level container SEXP");
+}
+IRI_STORAGE::IRID resolveRemoteBinding(IRI_STORAGE::IridiumPool &pool,
+                                       IRI_STORAGE::IRID rbinID) {
+  IRI_GEN::RemoteEnvBindingSEXP rbin(rbinID, pool);
+  IRI_STORAGE::IRID containedBinding = rbin.getArg_ParentReference();
+  if (pool[containedBinding].tag == IRI_GEN::EnvBinding) return containedBinding;
+  else return resolveRemoteBinding(pool, rbinID);
+}
+
+double getTopLevelScope(IRI_STORAGE::IridiumPool &pool,
+                        IRI_STORAGE::IRID fileSEXP) {
+  IRI_GEN::IRID topLevelContainer = getTopLevelContainer(pool, fileSEXP);
+  IRI_GEN::BBContainerSEXP c(topLevelContainer, pool);
+
+  return c.getScopeIDX();
 }
 
 } // namespace IRI_HELPERS
