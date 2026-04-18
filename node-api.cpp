@@ -1,5 +1,5 @@
 #include "Entrypoint.h"
-#include "Generated/IridiumEnums.h"
+#include "Generated/IridiumTypes.h"
 #include "IRIPerf.h"
 #include "Parser/IridiumParser.h"
 #include "Storage/Config.h"
@@ -74,8 +74,10 @@ Napi::Value execute(const Napi::CallbackInfo &info) {
   Napi::Array BUILDCTX = info[3].As<Napi::Array>();
 
   IRI_STORAGE::IridiumPool pool;
-  pool.NULL_SEXP = pool.add_node(IRI_GEN::Null, {}, {true});
-  pool.NOP_SEXP = pool.add_node(IRI_GEN::NOP, {}, {});
+  pool.NULL_SEXP = IRI_GEN::NullSEXP::create(pool, true);
+  pool.NOP_SEXP = IRI_GEN::NOPSEXP::create(pool);
+  pool.UNDEF_SEXP = IRI_GEN::EnvReadSEXP::create(pool, IRI_GEN::GlobalBindingSEXP::create(pool, pool.strings.intern("undefined")), false);
+  pool.NUBD_SEXP = IRI_GEN::JSNUBDSEXP::create(pool);
 
 
   perf.tick("iri-forge-main");
