@@ -40,7 +40,6 @@ void _4_2_PMB(IridiumPool &pool, IRID fileSEXP, BUILD_CTX &iridiumBuildContext) 
   auto container =
       BBContainerSEXP(IRI_HELPERS::getTopLevelContainer(pool, fileSEXP), pool);
   auto containerBC = iridiumBuildContext[container.getScopeIDX()];
-  bool isTopLevel = container.hasTopLevel();
 
   if (containerBC->moduleRequestMap) {
     auto &moduleRequestMap = containerBC->moduleRequestMap.value();
