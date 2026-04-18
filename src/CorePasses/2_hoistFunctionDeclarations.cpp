@@ -27,7 +27,7 @@ void _2_HFD(IridiumPool &pool, IRID sexp, BUILD_CTX &iridiumBuildContext) {
 
       if (stmt.tag == IRI_TAG::JSFuncDecl) {
         toHoist[scopeIDX].insert(stmtID);
-        pool.update_arg_inplace(currBBID, idx, pool.NULL_SEXP);
+        pool.update_arg_inplace(currBBID, idx, pool.NOP_SEXP);
       }
 
       idx++;

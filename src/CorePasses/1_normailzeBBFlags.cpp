@@ -7,7 +7,6 @@ namespace IRI_CORE_PASSES {
 using namespace IRI_PARSE;
 using namespace IRI_GEN;
 using namespace IRI_STORAGE;
-
 using BUILD_CTX = std::unordered_map<int, std::shared_ptr<IridiumBuildContext>>;
 
 inline IRI_FLAG getBBFlag(BBSEXP &b) {
