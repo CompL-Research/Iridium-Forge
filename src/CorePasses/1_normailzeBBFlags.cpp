@@ -22,54 +22,18 @@ inline IRI_FLAG getBBFlag(BBSEXP &b) {
 }
 
 inline void setBBFlag(BBSEXP &b, IRI_FLAG flagToSet) {
-  if (flagToSet == IRI_FLAG::ClosureBoundary) {
-    if (!b.hasClosureBoundary())
-      b.setClosureBoundary();
-    if (b.hasLexical())
-      b.clearLexical();
-    if (b.hasVARBoundary())
-      b.clearVARBoundary();
-    if (b.hasTopLevel())
-      b.clearTopLevel();
-    return;
-  }
-
-  else if (flagToSet == IRI_FLAG::Lexical) {
-    if (b.hasClosureBoundary())
-      b.clearClosureBoundary();
-    if (!b.hasLexical())
-      b.setLexical();
-    if (b.hasVARBoundary())
-      b.clearVARBoundary();
-    if (b.hasTopLevel())
-      b.clearTopLevel();
-    return;
-  }
-
-  else if (flagToSet == IRI_FLAG::VARBoundary) {
-    if (b.hasClosureBoundary())
-      b.clearClosureBoundary();
-    if (b.hasLexical())
-      b.clearLexical();
-    if (!b.hasVARBoundary())
-      b.setVARBoundary();
-    if (b.hasTopLevel())
-      b.clearTopLevel();
-    return;
-  }
-
-  else if (flagToSet == IRI_FLAG::TopLevel) {
-    if (b.hasClosureBoundary())
-      b.clearClosureBoundary();
-    if (b.hasLexical())
-      b.clearLexical();
-    if (b.hasVARBoundary())
-      b.clearVARBoundary();
-    if (!b.hasTopLevel())
-      b.setTopLevel();
-    return;
-  }
-
+  b.clearTopLevel();
+  b.clearClosureBoundary();
+  b.clearLexical();
+  b.clearVARBoundary();
+  if (flagToSet == IRI_GEN::TopLevel)
+    return b.setTopLevel();
+  if (flagToSet == IRI_GEN::ClosureBoundary)
+    return b.setClosureBoundary();
+  if (flagToSet == IRI_GEN::Lexical)
+    return b.setLexical();
+  if (flagToSet == IRI_GEN::VARBoundary)
+    return b.setVARBoundary();
   throw std::runtime_error("Impossible case reached setBBFlag");
 }
 
