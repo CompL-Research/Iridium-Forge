@@ -3,7 +3,7 @@ project(iridium_forge LANGUAGES CXX)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Get all C++ Source Files
@@ -49,7 +49,7 @@ include_directories(${NODE_ADDON_API_DIR})
 add_library(iridiumForge SHARED
     ${IRIDIUM_SRC}
     node-api.cpp
-    shared.cpp
+    Entrypoint.cpp
     ${CMAKE_JS_SRC}
 )
 
@@ -63,8 +63,10 @@ target_include_directories(iridiumForge PUBLIC ${CMAKE_SOURCE_DIR}/include)
 add_executable(forge
     ${IRIDIUM_SRC}
     main.cpp
-    shared.cpp
+    Entrypoint.cpp
 )
 
 target_link_libraries(forge PRIVATE ZLIB::ZLIB ${MSGPACK_TARGET})
 target_include_directories(forge PUBLIC ${CMAKE_SOURCE_DIR}/include)
+target_compile_features(iridiumForge PRIVATE cxx_std_20)
+target_compile_features(forge PRIVATE cxx_std_20)
