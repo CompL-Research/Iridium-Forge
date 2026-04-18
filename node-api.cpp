@@ -1,161 +1,146 @@
-#include <napi.h>
-#include <sstream>
-
-#include <zlib.h>
+#include "Entrypoint.h"
+#include "Generated/IridiumEnums.h"
+#include "IRIPerf.h"
+#include "Parser/IridiumParser.h"
+#include "Storage/Config.h"
+#include "Storage/IridiumPool.h"
+#include <cstddef>
+#include <functional>
 #include <msgpack.hpp>
-
-#include "Iridium/entrypoint.h"
-#include "Iridium/Globals.h"
-
-#include "shared.h"
-
-static std::vector<uint8_t> gunzip(const void *data, size_t size);
+#include <napi.h>
+#include <string>
+#include <zlib.h>
 
 //
-// Arg 0 (buffer)  : Code Buffer
-// Arg 1 (number)  : {0 = Only Core Passes} {1 = Level 1 Passes} {2 = Level 2 Passes} {3 = Level 3 Passes}
-// Arg 2 (boolean)  : {true = return JSON} {false = return binary}
+// Arg 0 (string)  : VERSION
+// Arg 1 (string)  : Path
+// Arg 2 (Array)   : IRIDIUM code
+// Arg 3 (Array)   : IRIDIUM build context
 //
-Napi::Value execute(const Napi::CallbackInfo &info)
-{
+Napi::Value execute(const Napi::CallbackInfo &info) {
   Napi::Env env = info.Env();
 
-  if (!info[0].IsBuffer())
-  {
-    Napi::TypeError::New(env, "Buffer expected").ThrowAsJavaScriptException();
+  if (!info[0].IsString()) {
+    Napi::TypeError::New(env, "Version string expected")
+        .ThrowAsJavaScriptException();
     return Napi::String::New(env, "");
   }
 
-  if (!info[1].IsNumber())
-  {
-    Napi::TypeError::New(env, "Number expected").ThrowAsJavaScriptException();
+  if (!info[1].IsString()) {
+    Napi::TypeError::New(env, "Filepath string expected")
+        .ThrowAsJavaScriptException();
     return Napi::String::New(env, "");
   }
 
-  if (!info[2].IsBoolean())
-  {
-    Napi::TypeError::New(env, "Boolean expected").ThrowAsJavaScriptException();
+  if (!info[2].IsArray()) {
+    Napi::TypeError::New(env, "Iridium code array expected")
+        .ThrowAsJavaScriptException();
     return Napi::String::New(env, "");
   }
 
-  Napi::Buffer<uint8_t> buffer = info[0].As<Napi::Buffer<uint8_t>>();
-  Napi::Number optFlag = info[1].As<Napi::Number>();
-  bool returnJSON = info[2].As<Napi::Boolean>().Value();
-
-  // Uncompress and load the
-  size_t length = buffer.Length();
-  char *data = reinterpret_cast<char *>(buffer.Data());
-  std::vector<uint8_t> raw = gunzip(data, length);
-
-  // FileData
-  msgpack::object_handle oh =
-      msgpack::unpack(reinterpret_cast<const char *>(raw.data()), raw.size());
-  msgpack::object parsedObj = oh.get();
-
-  msgpack::object VERSION = parsedObj.via.map.ptr[0].val;
-  msgpack::object path = parsedObj.via.map.ptr[1].val;
-  msgpack::object iridium = parsedObj.via.map.ptr[2].val;
-  msgpack::object buildContext = parsedObj.via.map.ptr[3].val;
-
-  // Ensure the data is in order before we start
-  if (VERSION.type != msgpack::type::STR)
-    Napi::Error::New(env, "[Forge] Expected 'version' to be STR!").ThrowAsJavaScriptException();
-
-  if (path.type != msgpack::type::STR)
-    Napi::Error::New(env, "[Forge] Expected 'path' to be STR!").ThrowAsJavaScriptException();
-
-  if (iridium.type != msgpack::type::ARRAY)
-    Napi::Error::New(env, "[Forge] Expected 'iridium' to be ARRAY!").ThrowAsJavaScriptException();
-
-  if (buildContext.type != msgpack::type::ARRAY)
-    Napi::Error::New(env, "[Forge] Expected 'buildContext' to be ARRAY!").ThrowAsJavaScriptException();
-
-
-  // Read Iridium SEXP
-  std::unordered_map<int, std::shared_ptr<BBSEXP>> bbIdxToSEXPMap;
-  std::unordered_map<int, IRIBUILDCONTEXT> iridiumBuildContext;
-  auto sexp = parseSEXP(iridium, &bbIdxToSEXPMap);
-
-  // Read Iridium Build Contexts
-  parseBuildContexts(buildContext, bbIdxToSEXPMap, iridiumBuildContext);
-
-  auto res = sharedEntrypoint(sexp, iridiumBuildContext);
-
-  std::ostringstream oss;
-
-  if (returnJSON)
-  {
-    oss << "{";
-    oss << "\"version\":" << "\"" << std::string(VERSION.via.str.ptr, VERSION.via.str.size) << "\",";
-    oss << "\"absoluteFilePath\":" << "\"" << std::string(path.via.str.ptr, path.via.str.size) << "\",";
-    oss << "\"iridium\":";
-    res->dump(oss, true);
-    oss << "}";
-  }
-  else
-  {
-    Napi::Error::New(env, "Binary format is not yet handled, use legacy JSON format").ThrowAsJavaScriptException();
+  if (!info[3].IsArray()) {
+    Napi::TypeError::New(env, "Iridium build context array expected")
+        .ThrowAsJavaScriptException();
+    return Napi::String::New(env, "");
   }
 
-  std::string str = oss.str(); // keep it alive
-  size_t len = str.size();
+  if (!info[4].IsFunction()) {
+    Napi::TypeError::New(env, "Tick function expected")
+        .ThrowAsJavaScriptException();
+    return Napi::String::New(env, "");
+  }
+
+  if (!info[5].IsFunction()) {
+    Napi::TypeError::New(env, "Tick function expected")
+        .ThrowAsJavaScriptException();
+    return Napi::String::New(env, "");
+  }
+
+  // 1. Cast the arguments to Napi::Function
+  Napi::Function NAPI_tick = info[4].As<Napi::Function>();
+  Napi::Function NAPI_tock = info[5].As<Napi::Function>();
+
+  IRIPerf perf;
+  perf.tick = [&](std::string msg) {
+    NAPI_tick.Call(env.Global(), { Napi::String::New(env, msg) });
+  };
+
+  perf.tock = [&](std::string msg) {
+    NAPI_tock.Call(env.Global(), { Napi::String::New(env, msg) });
+  };
+
+  std::string VERSION = info[0].As<Napi::String>().Utf8Value();
+  std::string PATH = info[1].As<Napi::String>().Utf8Value();
+  Napi::Array IRIDIUM = info[2].As<Napi::Array>();
+  Napi::Array BUILDCTX = info[3].As<Napi::Array>();
+
+  IRI_STORAGE::IridiumPool pool;
+  pool.NULL_SEXP = pool.add_node(IRI_GEN::Null, {}, {std::nullptr_t()});
+
+  perf.tick("iri-forge-main");
+
+  try {
+    perf.tick("iri-forge-parse");
+
+    IRI_PARSE::IridiumParser parser(pool);
+    perf.tick("iri-forge-parse-code");
+    parser.initParseCTX(IRIDIUM);
+    IRI_STORAGE::IRID root = parser.parse();
+    perf.tock("iri-forge-parse-code");
+
+    perf.tick("iri-forge-parse-buildContext");
+    parser.parseBuildContexts(BUILDCTX);
+    perf.tock("iri-forge-parse-buildContext");
+
+    perf.tock("iri-forge-parse");
+
+
+    perf.tick("iri-forge-entrypoint");
+    auto res =
+        IRI_ENTRY::sharedEntrypoint(pool, root, parser.iridiumBuildContext, perf);
+    perf.tock("iri-forge-entrypoint");
+
+  } catch (const std::exception &e) {
+    Napi::Error::New(env, std::string("[Forge] Parse Error: ") + e.what())
+        .ThrowAsJavaScriptException();
+    return env.Null();
+  }
+
+  // std::ostringstream oss;
+
+  // if (returnJSON)
+  // {
+  //   oss << "{";
+  //   oss << "\"version\":" << "\"" << std::string(VERSION.via.str.ptr,
+  //   VERSION.via.str.size) << "\","; oss << "\"absoluteFilePath\":" << "\"" <<
+  //   std::string(path.via.str.ptr, path.via.str.size) << "\","; oss <<
+  //   "\"iridium\":"; res->dump(oss, true); oss << "}";
+  // }
+  // else
+  // {
+  //   Napi::Error::New(env, "Binary format is not yet handled, use legacy JSON
+  //   format").ThrowAsJavaScriptException();
+  // }
+
+  // std::string str = oss.str(); // keep it alive
+  // size_t len = str.size();
 
   // Allocate raw buffer and copy data
-  char *resData = new char[len];
-  std::memcpy(resData, str.data(), len);
+  char *resData = new char[strlen("{}")];
+  resData[0] = '{';
+  resData[1] = '}';
+
+  perf.tock("iri-forge-main");
 
   // Create Node Buffer that owns `data` and cleans up with delete[]
-  return Napi::Buffer<char>::New(
-      env,
-      resData,
-      len,
-      [](Napi::Env, char *data)
-      {
-        delete[] data;
-      });
+  return Napi::Buffer<char>::New(env, resData, 2,
+                                 [](Napi::Env, char *data) { delete[] data; });
 }
 
-Napi::Object Init(Napi::Env env, Napi::Object exports)
-{
-  exports.Set("execute", Napi::Function::New(env, execute));
+Napi::Object Init(Napi::Env env, Napi::Object exports) {
+  exports.Set(Napi::String::New(env, "execute"),
+              Napi::Function::New(env, execute, "execute_iridium_cpp"));
   return exports;
 }
 
 NODE_API_MODULE(iridiumForge, Init)
-
-static std::vector<uint8_t> gunzip(const void *data, size_t size)
-{
-  if (size == 0)
-    return {};
-
-  z_stream strm{};
-  if (inflateInit2(&strm, 16 + MAX_WBITS) != Z_OK)
-    throw std::runtime_error("inflateInit2 failed");
-
-  strm.next_in = reinterpret_cast<Bytef *>(const_cast<void *>(data));
-  strm.avail_in = static_cast<uInt>(size);
-
-  std::vector<uint8_t> output;
-  const size_t CHUNK = 1 << 15;
-  std::vector<uint8_t> buf(CHUNK);
-
-  int ret;
-  do
-  {
-    strm.next_out = buf.data();
-    strm.avail_out = static_cast<uInt>(buf.size());
-
-    ret = inflate(&strm, Z_NO_FLUSH);
-    if (ret != Z_OK && ret != Z_STREAM_END)
-    {
-      inflateEnd(&strm);
-      throw std::runtime_error(std::string("inflate failed: ") + (strm.msg ? strm.msg : ""));
-    }
-
-    size_t produced = buf.size() - strm.avail_out;
-    output.insert(output.end(), buf.begin(), buf.begin() + produced);
-  } while (ret != Z_STREAM_END);
-
-  inflateEnd(&strm);
-  return output;
-}
