@@ -1,15 +1,25 @@
-#include "IRIFlags.hpp"
 #include "Storage/IridiumPool.h"
 #include "Generated/IridiumEnums.h"
 #include "Generated/IridiumMeta.h"
+#include "Generated/IridiumTypes.h"
+#include "IRIFlags.hpp"
 #include <algorithm>
+#include <iostream>
 #include <stdexcept>
 #include <string>
-#include <iostream>
 #if DEBUG_STORAGE == 1
 #include <iostream>
 #endif
 namespace IRI_STORAGE {
+
+IRID IridiumPool::getGlobalBindingSEXP(std::string s) {
+  return getGlobalBindingSEXP(strings.intern(s));
+}
+IRID IridiumPool::getGlobalBindingSEXP(StringID s) {
+  if (!globalBindingSEXPs.contains(s))
+    globalBindingSEXPs[s] = IRI_GEN::GlobalBindingSEXP::create(*this, s);
+  return globalBindingSEXPs[s];
+}
 
 //
 // Pool operations
@@ -27,8 +37,8 @@ IRID IridiumPool::add_node(IRI_GEN::IRI_TAG tag, const std::vector<IRID> &args,
   // 2. Pack Flags
   uint32_t expectedNumSlots = IRI_GEN::IridiumMeta::get_flag_slots(tag);
   if (expectedNumSlots != flags.size())
-    throw std::runtime_error("[Forge-IridiumPool]: " + IRI_GEN::dump_tag(tag) + " expects " +
-                             std::to_string(expectedNumSlots) +
+    throw std::runtime_error("[Forge-IridiumPool]: " + IRI_GEN::dump_tag(tag) +
+                             " expects " + std::to_string(expectedNumSlots) +
                              " flags, provided " +
                              std::to_string(flags.size()));
 
@@ -49,17 +59,21 @@ IRID IridiumPool::add_node(IRI_GEN::IRI_TAG tag, const std::vector<IRID> &args,
 
       // --- DEBUG BLOCK ---
       if (flags.size() > flags_pool.max_size() - flags_pool.size()) {
-          std::cerr << "[CRITICAL ERROR] Vector length limit reached!" << std::endl;
-          std::cerr << "Current pool size: " << flags_pool.size() << std::endl;
-          std::cerr << "Attempting to add: " << flags.size() << " elements" << std::endl;
-          std::cerr << "Vector max_size:   " << flags_pool.max_size() << std::endl;
-          // This is where the length_error is born
+        std::cerr << "[CRITICAL ERROR] Vector length limit reached!"
+                  << std::endl;
+        std::cerr << "Current pool size: " << flags_pool.size() << std::endl;
+        std::cerr << "Attempting to add: " << flags.size() << " elements"
+                  << std::endl;
+        std::cerr << "Vector max_size:   " << flags_pool.max_size()
+                  << std::endl;
+        // This is where the length_error is born
       }
 
       // Check for "Garbage" sizes (e.g., if tag metadata is corrupted)
       if (flags.size() > 0xFFFFFF) {
-          std::cerr << "[WARNING] Extremely large flag count detected for tag: "
-                    << IRI_GEN::dump_tag(tag) << " (" << flags.size() << ")" << std::endl;
+        std::cerr << "[WARNING] Extremely large flag count detected for tag: "
+                  << IRI_GEN::dump_tag(tag) << " (" << flags.size() << ")"
+                  << std::endl;
       }
       // -------------------
 
@@ -80,7 +94,9 @@ IRID IridiumPool::add_node(IRI_GEN::IRI_TAG tag, const std::vector<IRID> &args,
 //
 const IridiumSEXP &IridiumPool::operator[](IRID id) const { return nodes[id]; }
 
-void IridiumPool::update_tag(IRID id, IRI_GEN::IRI_TAG tag) { nodes[id].tag = tag; }
+void IridiumPool::update_tag(IRID id, IRI_GEN::IRI_TAG tag) {
+  nodes[id].tag = tag;
+}
 
 std::span<const IRID> IridiumPool::get_args_view(const IridiumSEXP *n) const {
   return {args_pool.data() + n->args_start_index, n->num_args};
