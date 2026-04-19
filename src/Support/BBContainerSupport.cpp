@@ -11,9 +11,7 @@ ITR_RET BBContainerSupport::bbs() const {
   BBContainerSEXP bbCont(id, *pool);
   IRID bbID = bbCont.getArg_BB();
   ListSEXP bbs(bbCont.getArg_BB(), *pool);
-
-  std::vector<IRID> args = pool->get_args(bbID);
-  return IndexedIterator(std::move(args));
+  return IndexedIterator(std::move(pool->get_args(bbID)));
 }
 
 } // namespace IRI_STRUCTURAL
