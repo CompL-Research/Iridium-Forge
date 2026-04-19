@@ -76,7 +76,7 @@ Napi::Value execute(const Napi::CallbackInfo &info) {
   IRI_STORAGE::IridiumPool pool;
   pool.NULL_SEXP = IRI_GEN::NullSEXP::create(pool, true);
   pool.NOP_SEXP = IRI_GEN::NOPSEXP::create(pool);
-  pool.UNDEF_SEXP = IRI_GEN::EnvReadSEXP::create(pool, IRI_GEN::GlobalBindingSEXP::create(pool, pool.strings.intern("undefined")), false);
+  pool.UNDEF_READ = IRI_GEN::EnvReadSEXP::create(pool, pool.getGlobalBindingSEXP("undefined"), false);
   pool.NUBD_SEXP = IRI_GEN::JSNUBDSEXP::create(pool);
 
 

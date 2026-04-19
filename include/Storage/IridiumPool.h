@@ -16,13 +16,16 @@ class IridiumPool {
 public:
   IRID NULL_SEXP;
   IRID NOP_SEXP;
-  IRID UNDEF_SEXP;
+  IRID UNDEF_READ;
   IRID NUBD_SEXP;
+
+  std::unordered_map<StringID, IRID> globalBindingSEXPs;
 
   std::optional<IRID> topLevelBBContainer;
   std::optional<double> topLevelScope;
 
-  // IridiumPool() : NULL_SEXP() {}
+  IRID getGlobalBindingSEXP(std::string);
+  IRID getGlobalBindingSEXP(StringID);
 
   //
   // String interning
