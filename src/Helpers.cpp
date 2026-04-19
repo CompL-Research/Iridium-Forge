@@ -2,6 +2,9 @@
 #include "Generated/IridiumEnums.h"
 #include "Generated/IridiumTypes.h"
 #include "Parser/IridiumBuildContext.h"
+#include "Storage/Config.h"
+#include "Storage/StringPool.h"
+#include <functional>
 #include <stdexcept>
 
 namespace IRI_HELPERS {
@@ -87,6 +90,26 @@ double getTopLevelScope(IRI_STORAGE::IridiumPool &pool,
   IRI_GEN::BBContainerSEXP c(topLevelContainer, pool);
 
   return c.getScopeIDX();
+}
+
+bool hasNodeWithPredicate(IRI_GEN::IRID id, IRI_GEN::IridiumPool *pool,
+                          std::function<bool(IRI_STORAGE::IRID)> pred) {
+
+  if (pred(id))
+    return true;
+  for (auto &i : pool->get_args_view(id))
+    if (hasNodeWithPredicate(i, pool, pred))
+      return true;
+
+  return false;
+}
+
+IRI_STORAGE::IRID createNoASWResolveEnvBindingSEXP(IRI_STORAGE::IridiumPool & pool, StringID s) {
+  return IRI_GEN::ResolveEnvBindingSEXP::create(pool, s, false);
+}
+
+IRI_STORAGE::IRID createUnsafeEnvReadSEXP(IRI_STORAGE::IridiumPool & pool, StringID s) {
+  return IRI_GEN::EnvReadSEXP::create(pool, createNoASWResolveEnvBindingSEXP(pool, s), false);
 }
 
 } // namespace IRI_HELPERS
