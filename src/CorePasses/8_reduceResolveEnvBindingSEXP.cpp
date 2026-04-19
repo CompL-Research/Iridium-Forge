@@ -109,6 +109,8 @@ inline void patchNode(IRIS &iris, FileSupport file, IridiumPool &pool,
       continue;
     }
 
+    if (unresolvedReferences == 0) return;
+
     patchNode(iris, file, pool, args[i], startScopeIDX, iridiumBuildContext,
               unresolvedReferences);
   }
