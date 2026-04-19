@@ -50,6 +50,7 @@ inline void normalizeIRIDIUM(
   runPass("_6_PHCSC", IRI_CORE_PASSES::_6_PHCSC);
   runPass("_7_RRPEBS", IRI_CORE_PASSES::_7_RRPEBS);
   runPass("_8_RREBS", IRI_CORE_PASSES::_8_RREBS);
+  runPass("_9_RLT", IRI_CORE_PASSES::_9_RLT);
 }
 
 IRI_STORAGE::IRID sharedEntrypoint(
