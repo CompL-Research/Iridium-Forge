@@ -19,7 +19,7 @@ using namespace IRI_STORAGE;
 using namespace IRI_STRUCTURAL;
 using BUILD_CTX = std::unordered_map<int, std::shared_ptr<IridiumBuildContext>>;
 
-void patchNode(IridiumPool &pool, IRID node, double startScopeIDX,
+inline void patchNode(IridiumPool &pool, IRID node, double startScopeIDX,
                BUILD_CTX &iridiumBuildContext) {
   auto args = pool.get_args(node);
   for (int i = 0; i < args.size(); i++) {
