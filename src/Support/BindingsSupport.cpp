@@ -2,9 +2,11 @@
 #include "Generated/IridiumTypes.h"
 #include "Helpers.h"
 #include "Parser/IridiumBuildContext.h"
+#include "Storage/StringPool.h"
 #include "Support/IndexedIterator.hpp"
 #include <algorithm>
 #include <functional>
+#include <optional>
 #include <stdexcept>
 
 namespace IRI_STRUCTURAL {
@@ -28,8 +30,8 @@ ITR_RET BindingsSupport::remoteBindings() const {
   IRID bindingsID = bSEXP.getArg_RemoteBindings();
   ListSEXP bindingsList(bindingsID, *pool);
   if (bindingsList.getTYPE() != pool->strings.intern("RemoteEnvBinding")) {
-    throw std::runtime_error(
-        "Expected TYPE RemoteEnvBinding to be set on remoteBindings list, found: ");
+    throw std::runtime_error("Expected TYPE RemoteEnvBinding to be set on "
+                             "remoteBindings list, found: ");
   }
   return IndexedIterator(std::move(pool->get_args(bindingsID)));
 }
@@ -45,7 +47,7 @@ ITR_RET BindingsSupport::lambdas() const {
 }
 using BUILD_CTX = std::unordered_map<int, std::shared_ptr<IridiumBuildContext>>;
 
-void BindingsSupport::balance(BUILD_CTX buildCTX) {
+void BindingsSupport::balance(BUILD_CTX &buildCTX) {
 
   bool isTopLevel = getParentScope() == -1;
 
@@ -139,6 +141,40 @@ void BindingsSupport::balance(BUILD_CTX buildCTX) {
   converted.insert(converted.end(), flattened.begin(), flattened.end());
 
   pool->set_args(getArg_LocalBindings(), converted);
+}
+
+std::optional<IRID> BindingsSupport::getBinding(BUILD_CTX &iridiumBuildContext,
+                                                StringID name,
+                                                double lookupScope) {
+  if (lookupScope == -1)
+    return std::nullopt
+    ;
+  for (auto [bID, _] : localBindings()) {
+    EnvBindingSEXP bSEXP(bID, *pool);
+    if (bSEXP.getScope() == lookupScope && bSEXP.getNAME() == name)
+      return bID;
+  }
+
+  for (auto [rbID, _] : remoteBindings()) {
+    RemoteEnvBindingSEXP rbSEXP(rbID, *pool);
+    auto bID = IRI_HELPERS::resolveRemoteBinding(*pool, rbID);
+    EnvBindingSEXP bSEXP(bID, *pool);
+    if (bSEXP.getScope() == lookupScope && bSEXP.getNAME() == name)
+      return rbID;
+  }
+
+  auto &buildContext = iridiumBuildContext[lookupScope];
+  double nextScope = buildContext->parent;
+  // If the scope is an ArgInit context, bypass lookup of non-argument bindings
+  // to parent scope
+  if (buildContext->isArgInitContext) {
+    // If the binding is not in the whitelist, bypass lookup scope...
+    if (buildContext->argInitContextWhitelist.find(std::string(pool->strings.get(name))) ==
+        buildContext->argInitContextWhitelist.end()) {
+      nextScope = buildContext->bypassParent;
+    }
+  }
+  return getBinding(iridiumBuildContext, name, nextScope);
 }
 
 } // namespace IRI_STRUCTURAL
