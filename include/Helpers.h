@@ -13,6 +13,11 @@ namespace IRI_PARSE {
 class IridiumBuildContext;
 }
 
+namespace IRI_STRUCTURAL {
+class FileSupport;
+class BindingsSupport;
+} // namespace IRI_STRUCTURAL
+
 namespace IRI_HELPERS {
 
 double findVARHoistingScope(
@@ -34,12 +39,34 @@ IRI_STORAGE::IRID getTopLevelContainer(IRI_STORAGE::IridiumPool &pool,
                                        IRI_STORAGE::IRID fileSEXP);
 double getTopLevelScope(IRI_STORAGE::IridiumPool &pool,
                         IRI_STORAGE::IRID fileSEXP);
+
 IRI_STORAGE::IRID resolveRemoteBinding(IRI_STORAGE::IridiumPool &pool,
                                        IRI_STORAGE::IRID rbinID);
 
 bool hasNodeWithPredicate(IRI_STORAGE::IRID id, IRI_STORAGE::IridiumPool *pool,
                           std::function<bool(IRI_STORAGE::IRID)> pred);
 
-IRI_STORAGE::IRID createNoASWResolveEnvBindingSEXP(IRI_STORAGE::IridiumPool & pool, StringID s);
-IRI_STORAGE::IRID createUnsafeEnvReadSEXP(IRI_STORAGE::IridiumPool & pool, StringID s);
+void countNodeOccurenceWithPredicate(
+    IRI_STORAGE::IRID id, IRI_STORAGE::IridiumPool *pool,
+    std::function<bool(IRI_STORAGE::IRID)> pred, size_t &count);
+
+IRI_STORAGE::IRID
+createNoASWResolveEnvBindingSEXP(IRI_STORAGE::IridiumPool &pool, StringID s);
+IRI_STORAGE::IRID createUnsafeEnvReadSEXP(IRI_STORAGE::IridiumPool &pool,
+                                          StringID s);
+
+bool isGlobalBinding(
+    IRI_STORAGE::IridiumPool &pool, IRI_STRUCTURAL::FileSupport fileSEXP,
+    std::unordered_map<int, std::shared_ptr<IRI_PARSE::IridiumBuildContext>>
+        &iridiumBuildContext,
+    StringID name, double startScope,
+    IRI_STRUCTURAL::BindingsSupport bindingsSEXP);
+
+IRI_STORAGE::IRID resolveScopedLookup(
+    IRI_STORAGE::IridiumPool &pool, IRI_STRUCTURAL::FileSupport fileSEXP,
+    std::unordered_map<int, std::shared_ptr<IRI_PARSE::IridiumBuildContext>>
+        &iridiumBuildContext,
+    StringID name, double startScope,
+    IRI_STRUCTURAL::BindingsSupport bindingsSEXP);
+
 } // namespace IRI_HELPERS
