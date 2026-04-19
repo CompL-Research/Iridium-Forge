@@ -17,5 +17,7 @@ public:
   IndexedIterator<std::vector<IRI_GEN::IRID>> staticExports() const;
 
   IndexedIterator<std::vector<IRI_GEN::IRID>> staticStarExports() const;
+
+  IRI_GEN::IRID operator[](double id) const;
 };
 } // namespace IRI_STRUCTURAL

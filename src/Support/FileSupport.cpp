@@ -1,6 +1,7 @@
 #include "Support/FileSupport.hpp"
 #include "Generated/IridiumTypes.h"
 #include "Storage/StringPool.h"
+#include "Support/BBContainerSupport.hpp"
 #include "Support/IndexedIterator.hpp"
 #include <stdexcept>
 
@@ -42,6 +43,15 @@ ITR_RET FileSupport::staticExports() const {
 
 ITR_RET FileSupport::staticStarExports() const {
   return getIt(pool, id, 3, pool->strings.intern("StarExport"));
+}
+
+IRI_GEN::IRID FileSupport::operator[](double id) const {
+  for (auto [cID, _] : containers()) {
+    BBContainerSupport c(cID, *pool);
+    if (c.getScopeIDX() == id) return cID;
+  }
+  throw std::runtime_error("BBContainer not found for scope idx " +
+                           std::to_string(id));
 }
 
 } // namespace IRI_STRUCTURAL
