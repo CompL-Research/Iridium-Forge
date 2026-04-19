@@ -144,7 +144,7 @@ void _4_5_PEB(IridiumPool &pool, IRID fileID, BUILD_CTX &iridiumBuildContext) {
               pool.update_arg_inplace(bbID, i, pool.NOP_SEXP);
             } else {
               auto envWrite = EnvWriteSEXP::create(
-                  pool, jsExpBD.getArg_LValTarget(), pool.UNDEF_SEXP,
+                  pool, jsExpBD.getArg_LValTarget(), pool.UNDEF_READ,
                   jsExpBD.hasSLOPPY(), false, jsExpBD.getSAFE(),
                   jsExpBD.getTHISINIT());
 
@@ -185,7 +185,7 @@ void _4_5_PEB(IridiumPool &pool, IRID fileID, BUILD_CTX &iridiumBuildContext) {
           IRID lval = ResolveEnvBindingSEXP::create(pool, bindingName, false);
           IRID rval;
           if (kindFlag == JSVAR)
-            rval = pool.UNDEF_SEXP;
+            rval = pool.UNDEF_READ;
           else
             rval = pool.NUBD_SEXP;
 
