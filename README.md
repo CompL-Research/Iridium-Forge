@@ -43,13 +43,13 @@ This project requires `npm` to function.
 The build system uses `cmake-js`, which is used to export this project as a node module.
 
 ```bash
-apt install zlib1g-dev libmsgpack-dev build-essential cmake pkg-config
+apt install build-essential cmake pkg-config
 npm install
 ```
 
 ### Building for debug
 ```bash
-npm run dev
+npm run dev # or dev-dump -- prints outputs of transformation-passes
 ```
 
 ### Building fore release
