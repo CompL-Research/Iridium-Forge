@@ -4,7 +4,8 @@
   "main": "forge.ts",
   "config": {
     "debug_info": "DEBUG_STORAGE;DEBUG_TIME_IRIS",
-    "debug_dump": "DUMP_CORE_PASSES"
+    "debug_dump": "DUMP_CORE_PASSES",
+    "others": "DEBUG_DECORATOR_PASS"
   },
   "scripts": {
     "clean": "cmake-js clean",
