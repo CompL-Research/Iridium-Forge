@@ -1,4 +1,4 @@
-// Generated: 2026-04-21 00:06:27
+// Generated: 2026-04-21 02:55:21
 #pragma once
 #include "IridiumEnums.h"
 #include <cstdint>
@@ -40,7 +40,7 @@ public:
       case IRI_GEN::ModuleRequest: return 2;
       case IRI_GEN::EnvBinding: return 12;
       case IRI_GEN::RemoteEnvBinding: return 2;
-      case IRI_GEN::GlobalBinding: return 1;
+      case IRI_GEN::GlobalBinding: return 2;
       case IRI_GEN::EnvWrite: return 4;
       case IRI_GEN::SiblingSpecialWrite: return 5;
       case IRI_GEN::JSNUBD: return 0;
@@ -356,6 +356,7 @@ public:
       case IRI_GEN::GlobalBinding:
         switch(flag) {
         case IRI_GEN::NAME: return 0;
+        case IRI_GEN::SLOPPYDECL: return 1;
           default: return -1;
         }
         break;
@@ -830,6 +831,7 @@ public:
       case IRI_GEN::GlobalBinding:
         switch(index) {
         case 0: return IRI_GEN::NAME;
+        case 1: return IRI_GEN::SLOPPYDECL;
           default: throw std::runtime_error("Invalid flag index");
         }
         break;

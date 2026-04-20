@@ -1,4 +1,4 @@
-// Generated: 2026-04-21 00:06:27
+// Generated: 2026-04-21 02:55:21
 #pragma once
 #include <string>
 
@@ -265,6 +265,7 @@ namespace IRI_GEN {
     REFIDX,
     Scope,
     NEXT,
+    SLOPPYDECL,
     THROWERR,
     NVAL,
     FULLY_RESOLVE,
@@ -348,6 +349,7 @@ namespace IRI_GEN {
       case REFIDX: return "REFIDX";
       case Scope: return "Scope";
       case NEXT: return "NEXT";
+      case SLOPPYDECL: return "SLOPPYDECL";
       case THROWERR: return "THROWERR";
       case NVAL: return "NVAL";
       case FULLY_RESOLVE: return "FULLY_RESOLVE";

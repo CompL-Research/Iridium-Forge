@@ -304,7 +304,7 @@ export default [
     "args": [],
     "flags": {
       "string": ["NAME"],
-      "void": [],
+      "void": ["SLOPPYDECL"],
       "bool": [],
       "double": [],
     }

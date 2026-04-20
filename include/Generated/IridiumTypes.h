@@ -1,4 +1,4 @@
-// Generated: 2026-04-21 00:06:27
+// Generated: 2026-04-21 02:55:21
 #pragma once
 #include "Storage/Config.h"
 #include "Storage/IridiumSEXP.h"
@@ -1613,14 +1613,15 @@ using IRI_STORAGE::FlagValue;
       }
     }
 
-    static IRID create(IridiumPool& p, StringID NAME) {
-      return p.add_node(IRI_GEN::IRI_TAG::GlobalBinding, {}, {FlagValue(NAME)});
+    static IRID create(IridiumPool& p, StringID NAME, bool SLOPPYDECL) {
+      return p.add_node(IRI_GEN::IRI_TAG::GlobalBinding, {}, {FlagValue(NAME), SLOPPYDECL ? FlagValue(SLOPPYDECL) : FlagValue(std::monostate())});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
-    static constexpr uint32_t TOTAL_FLAGS = 1;
+    static constexpr uint32_t TOTAL_FLAGS = 2;
 
     static constexpr uint32_t FLAG_IDX_NAME = 0;
+    static constexpr uint32_t FLAG_IDX_SLOPPYDECL = 1;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
@@ -1638,6 +1639,10 @@ using IRI_STORAGE::FlagValue;
     void setNAME(StringID val) { mutate_flag(FLAG_IDX_NAME) = val; }
     bool hasNAME() const { return std::holds_alternative<StringID>(get_flag(FLAG_IDX_NAME)); }
     void clearNAME() { mutate_flag(FLAG_IDX_NAME) = std::monostate{}; }
+
+    bool hasSLOPPYDECL() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_SLOPPYDECL)); }
+    void setSLOPPYDECL() { mutate_flag(FLAG_IDX_SLOPPYDECL) = std::nullptr_t{}; }
+    void clearSLOPPYDECL() { mutate_flag(FLAG_IDX_SLOPPYDECL) = std::monostate{}; }
   };
 
   struct EnvWriteSEXP {
