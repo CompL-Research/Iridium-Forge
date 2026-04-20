@@ -130,6 +130,9 @@ void _4_5_PEB(IridiumPool &pool, IRID fileID, BUILD_CTX &iridiumBuildContext) {
               explicitBindings[scopeToHoistTo].push_back(std::make_tuple(
                   binding.getNAME(), flag, doInit, binding.hasASW()));
             } else {
+              IRID globalBindingID = pool.getGlobalBindingSEXP(binding.getNAME());
+              GlobalBindingSEXP gBinding(globalBindingID, pool);
+              gBinding.setSLOPPYDECL();
               sloppyDeclarations.push_back(JSSloppyDeclSEXP::create(
                   pool, binding.getNAME(), flag == JSLET, flag == JSCONST,
                   flag == JSVAR));
