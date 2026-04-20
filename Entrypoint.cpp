@@ -1,4 +1,3 @@
-#include "IRIFlags.hpp"
 #include "Entrypoint.h"
 #include "CorePasses.h"
 #include "Storage/IridiumPool.h"
@@ -51,6 +50,7 @@ inline void normalizeIRIDIUM(
   runPass("_7_RRPEBS", IRI_CORE_PASSES::_7_RRPEBS);
   runPass("_8_RREBS", IRI_CORE_PASSES::_8_RREBS);
   runPass("_9_RLT", IRI_CORE_PASSES::_9_RLT);
+  runPass("_10_RBACT", IRI_CORE_PASSES::_10_RBACT);
 }
 
 IRI_STORAGE::IRID sharedEntrypoint(
