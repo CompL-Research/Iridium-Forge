@@ -16,7 +16,7 @@ IRID IridiumPool::getGlobalBindingSEXP(std::string s) {
 }
 IRID IridiumPool::getGlobalBindingSEXP(StringID s) {
   if (!globalBindingSEXPs.contains(s))
-    globalBindingSEXPs[s] = IRI_GEN::GlobalBindingSEXP::create(*this, s);
+    globalBindingSEXPs[s] = IRI_GEN::GlobalBindingSEXP::create(*this, s, false);
   return globalBindingSEXPs[s];
 }
 
