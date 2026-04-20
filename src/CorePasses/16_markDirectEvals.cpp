@@ -11,7 +11,9 @@
 #include "Support/BindingsSupport.hpp"
 #include "Support/FileSupport.hpp"
 #include "Support/IRIS.hpp"
+#ifdef PRINT_TAINT_TREE
 #include <iostream>
+#endif
 #include <stdexcept>
 
 namespace IRI_CORE_PASSES {
