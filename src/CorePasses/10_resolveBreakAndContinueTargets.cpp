@@ -160,13 +160,12 @@ void _10_RBACT(
                          .getScopeIDX()))) {
 
               BBSupport::insert_before(newStmtList, element,
-                                             PopCatchContextSEXP::create(pool));
+                                       PopCatchContextSEXP::create(pool));
 
               if (tryContext->finalizerIDX > -1) {
-                BBSupport::insert_before(
-                    newStmtList, element,
-                    InvokeFinalizerSEXP::create(pool,
-                                                tryContext->finalizerIDX));
+                BBSupport::insert_before(newStmtList, element,
+                                         InvokeFinalizerSEXP::create(
+                                             pool, tryContext->finalizerIDX));
               }
             } else {
 
@@ -209,116 +208,3 @@ void _10_RBACT(
   }
 }
 } // namespace IRI_CORE_PASSES
-
-// if (std::dynamic_pointer_cast<BindingsSEXP>(currSEXP))
-//   return;
-
-// if (auto bbSEXP = std::dynamic_pointer_cast<BBSEXP>(currSEXP)) {
-//   std::unordered_map<IRISEXP,
-//                      std::vector<std::variant<LoopConfig, TryContext>>>
-//       decoratorMap;
-//   std::unordered_map<IRISEXP, LoopConfig> isBreakTarget;
-
-//   for (int i = 0; i < bbSEXP->args.size(); i++) {
-//     if (auto bTarget = std::dynamic_pointer_cast<ResolveBreakTargetSEXP>(
-//             bbSEXP->args.at(i))) {
-//       std::vector<std::variant<LoopConfig, TryContext>>
-//           intermediateContextHolder;
-//       auto target = findLoopControlTarget(bbSEXP->getScopeIDX(), bTarget,
-//                                           iridiumBuildContext,
-//                                           intermediateContextHolder);
-//       auto gotoSEXP = std::make_shared<GotoSEXP>(target.breakTarget);
-//       bbSEXP->args.at(i) = gotoSEXP;
-//       decoratorMap[gotoSEXP] = intermediateContextHolder;
-//       isBreakTarget[gotoSEXP] = target;
-//     }
-
-//     if (auto cTarget =
-//     std::dynamic_pointer_cast<ResolveContinueTargetSEXP>(
-//             bbSEXP->args.at(i))) {
-//       std::vector<std::variant<LoopConfig, TryContext>>
-//           intermediateContextHolder;
-//       auto target = findLoopControlTarget(bbSEXP->getScopeIDX(), cTarget,
-//                                           iridiumBuildContext,
-//                                           intermediateContextHolder);
-//       auto gotoSEXP = std::make_shared<GotoSEXP>(target.continueTarget);
-//       gotoSEXP->setFlag("CONTINUE_TARGET", (double)target.breakTarget);
-//       bbSEXP->args.at(i) = gotoSEXP;
-//       decoratorMap[gotoSEXP] = intermediateContextHolder;
-//     }
-//   }
-
-//   // Decorate emitted targets by handling requirements of the enclosing
-//   // contexts
-//   for (auto &e : decoratorMap) {
-//     auto &element = e.first;
-//     auto &intermediateContexts = e.second;
-
-//     for (auto &intermediateContext : intermediateContexts) {
-//       if (auto loopConfig = std::get_if<LoopConfig>(&intermediateContext))
-//       {
-//         if (loopConfig->kind == LoopConfig::Kind::ForOf) {
-//           auto stackReject = std::make_shared<StackRejectSEXP>(0);
-//           auto forOfIteratorClose =
-//               std::make_shared<JSForOfIteratorCloseSEXP>();
-//           stackReject->args.push_back(forOfIteratorClose);
-//           insertBefore(bbSEXP->args, element, stackReject);
-//         }
-//       } else if (auto tryContext =
-//                      std::get_if<TryContext>(&intermediateContext)) {
-//         // If the context is reached via try or catch block, only then pop
-//         the
-//         // catch context and decorate to finalizer (if applicable)
-//         if (hasScopePath(
-//                 bbSEXP->getScopeIDX(),
-//                 getBBScopeIDX(tryContext->tryIDX, iridiumBuildContext),
-//                 iridiumBuildContext) ||
-//             (tryContext->udCatchIDX > -1 &&
-//              hasScopePath(
-//                  bbSEXP->getScopeIDX(),
-//                  getBBScopeIDX(tryContext->udCatchIDX,
-//                  iridiumBuildContext), iridiumBuildContext))) {
-//           insertBefore(bbSEXP->args, element,
-//                        std::make_shared<PopCatchContextSEXP>());
-//           if (tryContext->finalizerIDX > -1) {
-//             insertBefore(bbSEXP->args, element,
-//                          std::make_shared<InvokeFinalizerSEXP>(
-//                              tryContext->finalizerIDX));
-//           }
-//         } else {
-//           insertBefore(
-//               bbSEXP->args, element,
-//               std::make_shared<
-//                   PopFinalizerReturnTargetSEXP>()); // This pops the
-//                   finalizer
-//                                                     // return target from
-//                                                     the
-//                                                     // stack, should be
-//                                                     // renamed to prevent
-//                                                     // confusion
-//           // This must be reached through a finalizer block, we dont expect
-//           // any nesting inside the implicit catch block as its outside
-//           user
-//           // interference...
-//           assert(hasScopePath(
-//               bbSEXP->getScopeIDX(),
-//               getBBScopeIDX(tryContext->finalizerIDX, iridiumBuildContext),
-//               iridiumBuildContext));
-//         }
-//       }
-//     }
-
-//     if (isBreakTarget.find(element) != isBreakTarget.end()) {
-//       auto &finalLoopConfig = isBreakTarget[element];
-//       if (finalLoopConfig.kind == LoopConfig::Kind::ForOf) {
-//         auto stackReject = std::make_shared<StackRejectSEXP>(0);
-//         auto forOfIteratorClose =
-//             std::make_shared<JSForOfIteratorCloseSEXP>();
-//         stackReject->args.push_back(forOfIteratorClose);
-//         insertBefore(bbSEXP->args, element, stackReject);
-//       }
-//     }
-//   }
-// }
-// for (auto &e : currSEXP->args)
-//   resolveBreakAndContinueTargets(fileSEXP, e, iridiumBuildContext);
