@@ -6,16 +6,16 @@
 #include "Support/BBContainerSupport.hpp"
 #include "Support/BindingsSupport.hpp"
 #include "Support/FileSupport.hpp"
+#include <iomanip>
 #include <stdexcept>
 #include <vector>
-#include <iomanip>
 
 // Toggle this to 'true' to enable execution tracing
 constexpr bool TRACE_IRIS_LOGIC = false;
 
-#define IRIS_TRACE(msg) \
-  if constexpr (TRACE_IRIS_LOGIC) { \
-    std::cerr << "[IRIS TRACE] " << msg << "\n"; \
+#define IRIS_TRACE(msg)                                                        \
+  if constexpr (TRACE_IRIS_LOGIC) {                                            \
+    std::cerr << "[IRIS TRACE] " << msg << "\n";                               \
   }
 
 namespace IRI_STRUCTURAL {
@@ -89,8 +89,9 @@ IRIS::IRIS(
 //
 bool IRIS::isGlobal(StringID sid, double startScopeIDX) {
   if constexpr (TRACE_IRIS_LOGIC) {
-    std::cerr << "[IRIS TRACE] isGlobal check -> Name: '" << pool.strings.get(sid)
-              << "' (ID: " << sid << ") starting at Scope: " << startScopeIDX << "\n";
+    std::cerr << "[IRIS TRACE] isGlobal check -> Name: '"
+              << pool.strings.get(sid) << "' (ID: " << sid
+              << ") starting at Scope: " << startScopeIDX << "\n";
   }
 
   if (!allNames.contains(sid)) {
@@ -104,7 +105,8 @@ bool IRIS::isGlobal(StringID sid, double startScopeIDX) {
 
     auto scopeIt = scopeBindings.find(currScope);
     if (scopeIt != scopeBindings.end() && scopeIt->second.contains(sid)) {
-      IRIS_TRACE("  Found local binding in Scope: " << currScope << ". Returning false (not global).");
+      IRIS_TRACE("  Found local binding in Scope: "
+                 << currScope << ". Returning false (not global).");
       return false;
     }
 
@@ -115,7 +117,8 @@ bool IRIS::isGlobal(StringID sid, double startScopeIDX) {
     currScope = edgeIt->second;
   }
 
-  IRIS_TRACE("Reached top-level scope without finding local binding. Returning true.");
+  IRIS_TRACE(
+      "Reached top-level scope without finding local binding. Returning true.");
   return true;
 }
 
@@ -165,8 +168,9 @@ bool IRIS::isGlobal(StringID sid, double startScopeIDX) {
 
 IRI_STORAGE::IRID IRIS::resolve(StringID sid, double startScopeIDX) {
   if constexpr (TRACE_IRIS_LOGIC) {
-    std::cerr << "[IRIS TRACE] resolve requested -> Name: '" << pool.strings.get(sid)
-              << "' (ID: " << sid << ") starting at Scope: " << startScopeIDX << "\n";
+    std::cerr << "[IRIS TRACE] resolve requested -> Name: '"
+              << pool.strings.get(sid) << "' (ID: " << sid
+              << ") starting at Scope: " << startScopeIDX << "\n";
   }
 
   std::vector<double> headsCrossed;
@@ -179,7 +183,8 @@ IRI_STORAGE::IRID IRIS::resolve(StringID sid, double startScopeIDX) {
     auto scopeIt = scopeBindings.find(currScope);
     if (scopeIt != scopeBindings.end() && scopeIt->second.contains(sid)) {
       found = scopeIt->second.at(sid);
-      IRIS_TRACE("  Found existing IRID: " << found << " in Scope: " << currScope);
+      IRIS_TRACE("  Found existing IRID: " << found
+                                           << " in Scope: " << currScope);
       break;
     }
 
@@ -190,23 +195,27 @@ IRI_STORAGE::IRID IRIS::resolve(StringID sid, double startScopeIDX) {
 
     auto edgeIt = outEdges.find(currScope);
     if (edgeIt == outEdges.end()) {
-      throw std::runtime_error("Failed to resolve env binding: scope chain broken");
+      throw std::runtime_error(
+          "Failed to resolve env binding: scope chain broken");
     }
     currScope = edgeIt->second;
 
     if (currScope == -1) {
-      throw std::runtime_error("Failed to resolve env binding: reached top-level scope");
+      throw std::runtime_error(
+          "Failed to resolve env binding: reached top-level scope");
     }
   }
 
   if (headsCrossed.size() > 0) {
-    IRIS_TRACE("  Wiring " << headsCrossed.size() << " remote binding(s) across boundaries...");
+    IRIS_TRACE("  Wiring " << headsCrossed.size()
+                           << " remote binding(s) across boundaries...");
     while (!headsCrossed.empty()) {
       auto currHead = headsCrossed.back();
       headsCrossed.pop_back();
       found = IRI_GEN::RemoteEnvBindingSEXP::create(pool, found, false, -1);
 
-      IRIS_TRACE("    Created RemoteEnvBinding IRID: " << found << " for head Scope: " << currHead);
+      IRIS_TRACE("    Created RemoteEnvBinding IRID: "
+                 << found << " for head Scope: " << currHead);
 
       commitList[currHead].push_back(found);
       scopeBindings[currHead][sid] = found;
@@ -233,6 +242,21 @@ void IRIS::commit() {
     }
     pool.add_args_to_end(remoteBindingsID, currentCommits);
   }
+}
+
+bool IRIS::hasScopePath(double startScope, double targetScope) {
+  double currScope = startScope;
+  while (currScope != -1) {
+    if (currScope == targetScope)
+      return true;
+
+    auto edgeIt = outEdges.find(currScope);
+    if (edgeIt == outEdges.end()) {
+      throw std::runtime_error("Parent scope not found, error");
+    }
+    currScope = edgeIt->second;
+  }
+  return false;
 }
 
 void IRIS::dumpScopeTree() const {
@@ -268,16 +292,16 @@ void IRIS::dumpBindings() const {
     std::cerr << "  [Empty]\n";
     return;
   }
-  for (const auto& [scope, bindings] : scopeBindings) {
+  for (const auto &[scope, bindings] : scopeBindings) {
     std::cerr << "  Scope " << scope << ":\n";
     if (bindings.empty()) {
       std::cerr << "    [No bindings]\n";
     } else {
-      for (const auto& [nameID, irid] : bindings) {
+      for (const auto &[nameID, irid] : bindings) {
         // Resolving the StringID via the pool
         std::cerr << "    Name: " << std::left << std::setw(15)
-                  << pool.strings.get(nameID)
-                  << " (ID: " << nameID << ") -> IRID: " << irid << "\n";
+                  << pool.strings.get(nameID) << " (ID: " << nameID
+                  << ") -> IRID: " << irid << "\n";
       }
     }
   }
@@ -290,7 +314,7 @@ void IRIS::dumpAllNames() const {
     return;
   }
   std::cerr << "  ";
-  for (const auto& nameID : allNames) {
+  for (const auto &nameID : allNames) {
     // Resolving the StringID via the pool
     std::cerr << pool.strings.get(nameID) << "[" << nameID << "]" << " ";
   }

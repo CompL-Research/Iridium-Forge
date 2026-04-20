@@ -26,6 +26,9 @@ public:
 
   void commit();
 
+
+  bool hasScopePath(double, double);
+
 private:
   // Node Storage Pool
   IRI_STORAGE::IridiumPool &pool;
