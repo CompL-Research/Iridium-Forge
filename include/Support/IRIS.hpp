@@ -28,6 +28,8 @@ public:
 
   bool hasScopePath(double, double);
 
+  void taintScope(double);
+
 private:
   // Node Storage Pool
   IRI_STORAGE::IridiumPool &pool;
@@ -41,6 +43,9 @@ private:
   // Globals lookup fastcase, if a StringID is never encountered, it never
   // existed.
   std::set<StringID> allNames;
+
+  // Scopes tainted by direct eval
+  std::set<double> taintedScopes;
 
   // Scopes belonging to a BBContainer
   std::unordered_map<double, IRI_GEN::IRID> scopeHead;

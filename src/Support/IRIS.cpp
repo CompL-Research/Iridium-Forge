@@ -262,6 +262,21 @@ bool IRIS::hasScopePath(double startScope, double targetScope) {
   return false;
 }
 
+void IRIS::taintScope(double startScope) {
+  if (taintedScopes.contains(startScope)) return;
+
+  double currScope = startScope;
+  while (currScope != -1) {
+    taintedScopes.insert(currScope);
+
+    auto edgeIt = outEdges.find(currScope);
+    if (edgeIt == outEdges.end()) {
+      throw std::runtime_error("Parent scope not found, error");
+    }
+    currScope = edgeIt->second;
+  }
+}
+
 void IRIS::dumpScopeTree() const {
   std::cerr << "=== IRIS Scope Tree (Current -> Parent) ===\n";
   if (outEdges.empty()) {
@@ -370,7 +385,7 @@ void IRIS::printNode(
     const std::unordered_map<double, std::vector<double>> &childrenMap) const {
 
   // Print current node with branching characters
-  oss << prefix << (isLast ? "└── " : "├── ") << node << "\n";
+  oss << prefix << (isLast ? "└── " : "├── ") << (taintedScopes.contains(node) ? "(†)" : "") << node << (scopeHead.contains(node) ? "(*)" : "") << "\n";
 
   // Update prefix for children
   std::string newPrefix = prefix + (isLast ? "    " : "│   ");
