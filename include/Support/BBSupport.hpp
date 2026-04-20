@@ -40,5 +40,16 @@ public:
       return result;
   }
 
+  template <typename T>
+  static void insert_before(std::vector<T>& vec, const T& target_element, const T& new_element) {
+      auto it = std::ranges::find(vec, target_element);
+
+      // Check if the target element actually exists in the vector
+      if (it != vec.end()) {
+          // std::vector::insert automatically places the new element BEFORE the iterator
+          vec.insert(it, new_element);
+      }
+  }
+
 };
 } // namespace IRI_STRUCTURAL
