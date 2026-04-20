@@ -90,4 +90,9 @@ void _11_12_DAPRT(
     std::unordered_map<int, std::shared_ptr<IRI_PARSE::IridiumBuildContext>>
         &iridiumBuildContext);
 
+void _13_MNSI(
+    IRI_STORAGE::IridiumPool &pool, IRI_STORAGE::IRID fileSEXP,
+    std::unordered_map<int, std::shared_ptr<IRI_PARSE::IridiumBuildContext>>
+        &iridiumBuildContext);
+
 }; // namespace IRI_CORE_PASSES
