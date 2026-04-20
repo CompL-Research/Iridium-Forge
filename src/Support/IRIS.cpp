@@ -247,8 +247,10 @@ void IRIS::commit() {
 bool IRIS::hasScopePath(double startScope, double targetScope) {
   double currScope = startScope;
   while (currScope != -1) {
-    if (currScope == targetScope)
+    if (currScope == targetScope) {
+      IRIS_TRACE("Scope path TRUE: " << startScope << " " << targetScope);
       return true;
+    }
 
     auto edgeIt = outEdges.find(currScope);
     if (edgeIt == outEdges.end()) {
@@ -256,6 +258,7 @@ bool IRIS::hasScopePath(double startScope, double targetScope) {
     }
     currScope = edgeIt->second;
   }
+  IRIS_TRACE("Scope path FALSE: " << startScope << " " << targetScope);
   return false;
 }
 
@@ -330,6 +333,55 @@ void IRIS::dumpFullState() const {
   dumpBindings();
   dumpCommitList();
   std::cerr << "=============================================\n\n";
+}
+
+void IRIS::dumpFlat(std::ostream &oss, int indentLevel) const {
+  if (nodes.empty())
+    return;
+
+  // 1. Build an adjacency list (Parent -> Children) for O(N) lookup
+  std::unordered_map<double, std::vector<double>> childrenMap;
+  std::vector<double> roots;
+
+  for (double node : nodes) {
+    auto it = outEdges.find(node);
+    if (it != outEdges.end() && it->second != -1.0) {
+      childrenMap[it->second].push_back(node);
+    } else if (it != outEdges.end() && it->second == -1.0) {
+      roots.push_back(node);
+    }
+  }
+
+  // Sort for deterministic output
+  std::sort(roots.begin(), roots.end());
+  for (auto &[parent, children] : childrenMap) {
+    std::sort(children.begin(), children.end());
+  }
+
+  // 2. Recursively print with fancy connectors
+  for (size_t i = 0; i < roots.size(); ++i) {
+    bool isLast = (i == roots.size() - 1);
+    printNode(oss, roots[i], "", isLast, childrenMap);
+  }
+}
+
+void IRIS::printNode(
+    std::ostream &oss, double node, std::string prefix, bool isLast,
+    const std::unordered_map<double, std::vector<double>> &childrenMap) const {
+
+  // Print current node with branching characters
+  oss << prefix << (isLast ? "└── " : "├── ") << node << "\n";
+
+  // Update prefix for children
+  std::string newPrefix = prefix + (isLast ? "    " : "│   ");
+
+  if (childrenMap.count(node)) {
+    const auto &children = childrenMap.at(node);
+    for (size_t i = 0; i < children.size(); ++i) {
+      bool childIsLast = (i == children.size() - 1);
+      printNode(oss, children[i], newPrefix, childIsLast, childrenMap);
+    }
+  }
 }
 
 } // namespace IRI_STRUCTURAL

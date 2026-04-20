@@ -26,7 +26,6 @@ public:
 
   void commit();
 
-
   bool hasScopePath(double, double);
 
 private:
@@ -54,7 +53,13 @@ private:
   // For a given scope, commit newly created remote bindings at the very end
   // to avoid repeated resizing of the pool
   std::unordered_map<double, std::vector<IRI_STORAGE::IRID>> commitList;
+
+  void printNode(
+      std::ostream &oss, double node, std::string prefix, bool isLast,
+      const std::unordered_map<double, std::vector<double>> &childrenMap) const;
+
 public:
+  void dumpFlat(std::ostream &oss, int indentLevel = 0) const;
   void dumpScopeTree() const;
   void dumpBindings() const;
   void dumpCommitList() const;
