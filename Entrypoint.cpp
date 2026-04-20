@@ -53,6 +53,7 @@ inline void normalizeIRIDIUM(
   runPass("_10_RBACT", IRI_CORE_PASSES::_10_RBACT);
   runPass("_11_12_DAPRT", IRI_CORE_PASSES::_11_12_DAPRT);
   runPass("_13_MNSI", IRI_CORE_PASSES::_13_MNSI);
+  runPass("_14_MSW", IRI_CORE_PASSES::_14_MSW);
 }
 
 IRI_STORAGE::IRID sharedEntrypoint(
