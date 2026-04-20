@@ -9,7 +9,7 @@
   },
   "scripts": {
     "clean": "cmake-js clean",
-    "build": "cmake-js build && echo 'module.exports = require(\"./build/Release/iridiumForge.node\");' > forge.cjs",
+    "build": "cmake-js clean && cmake-js build && echo 'module.exports = require(\"./build/Release/iridiumForge.node\");' > forge.cjs",
     "dev"     : "cmake-js clean && cmake-js build --debug --CDDEBUG_FLAGS=\"$npm_package_config_debug_info\" && echo 'module.exports = require(\"./build/Debug/iridiumForge.node\");' > forge.cjs",
     "dev-dump": "cmake-js clean && cmake-js build --debug --CDDEBUG_FLAGS=\"$npm_package_config_debug_info;$npm_package_config_debug_dump\"  && echo 'module.exports = require(\"./build/Debug/iridiumForge.node\");' > forge.cjs"
 

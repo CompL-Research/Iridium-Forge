@@ -1,6 +1,22 @@
 cmake_minimum_required(VERSION 3.15)
 project(iridium_forge LANGUAGES CXX)
 
+# Force ccache to use a local folder
+set(ENV{CCACHE_DIR} "${CMAKE_SOURCE_DIR}/.ccache")
+
+find_program(CCACHE_PROGRAM ccache)
+
+if(CCACHE_PROGRAM)
+    # Set the launchers
+    set(CMAKE_C_COMPILER_LAUNCHER   ${CCACHE_PROGRAM})
+    set(CMAKE_CXX_COMPILER_LAUNCHER ${CCACHE_PROGRAM})
+
+    # Print a status message to the console
+    message(STATUS "--- ccache: ENABLED (Dir: $ENV{CCACHE_DIR}) ---")
+else()
+    message(WARNING "--- ccache: NOT FOUND (Builds will be slower) ---")
+endif()
+
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(CMAKE_CXX_STANDARD 20)

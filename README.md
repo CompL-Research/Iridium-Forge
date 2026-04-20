@@ -43,7 +43,7 @@ This project requires `npm` to function.
 The build system uses `cmake-js`, which is used to export this project as a node module.
 
 ```bash
-apt install build-essential cmake pkg-config
+apt install build-essential cmake pkg-config ccache # ccache is optional, but recommended
 npm install
 ```
 

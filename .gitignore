@@ -6,6 +6,8 @@ out
 test.sh
 gen.sh
 
+.ccache
+
 # Prerequisites
 *.d
 
