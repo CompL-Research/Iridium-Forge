@@ -34,6 +34,15 @@ void _14_MSW(IRI_STORAGE::IridiumPool &pool, IRI_STORAGE::IRID fileSEXP,
           if (!bbc.hasSTRICT()) {
             envWrite.setSLOPPY();
           }
+
+          IRID right = envWrite.getArg_RVal();
+          // Eventually this should not be needed
+          if (pool[right].tag == EnvWrite){
+            EnvWriteSEXP envWrite(right, pool);
+            if (!bbc.hasSTRICT()) {
+              envWrite.setSLOPPY();
+            }
+          }
         }
 
         if (stmtTag == IRI_GEN::JSExplicitBindingDeclaration ||
