@@ -45,7 +45,7 @@ ITR_RET FileSupport::staticStarExports() const {
   return getIt(pool, id, 3, pool->strings.intern("StarExport"));
 }
 
-IRI_GEN::IRID FileSupport::operator[](double id) const {
+IRI_GEN::IRID FileSupport::getBBContainerByScopeIDX(double id) const {
   for (auto [cID, _] : containers()) {
     BBContainerSupport c(cID, *pool);
     if (c.getScopeIDX() == id) return cID;

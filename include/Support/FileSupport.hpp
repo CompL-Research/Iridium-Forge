@@ -18,6 +18,6 @@ public:
 
   IndexedIterator<std::vector<IRI_GEN::IRID>> staticStarExports() const;
 
-  IRI_GEN::IRID operator[](double id) const;
+  IRI_GEN::IRID getBBContainerByScopeIDX(double id) const;
 };
 } // namespace IRI_STRUCTURAL
