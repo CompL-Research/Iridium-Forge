@@ -6,3 +6,5 @@ JSImplicitBindingsSEXP
 Ensure each BBs ScopeIDX exists in the build context
 
 clearJSDirectEval at calls sites is messy, make the it more rigid
+
+JSImplicitBindingsSEXP does not need SLOPPY, when will this write ever write to a Global?
