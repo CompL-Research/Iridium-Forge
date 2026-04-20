@@ -49,12 +49,11 @@ double TIME_IRIS_COMMIT = 0;
   do {                                                                         \
     std::cout << "-- TIME INFO --" << std::endl;                               \
     std::cout << "IRIS-Init -- " << TIME_IRIS_INIT << "ms" << std::endl;       \
-    std::cout << "  IRIS-Global Check -- " << TIME_IRIS_GLOBAL_CHECK << "ms"     \
+    std::cout << "  IRIS-Global Check -- " << TIME_IRIS_GLOBAL_CHECK << "ms"   \
               << std::endl;                                                    \
-    std::cout << "  IRIS-Resolution -- " << TIME_IRIS_RESOLUTION << "ms"         \
+    std::cout << "  IRIS-Resolution -- " << TIME_IRIS_RESOLUTION << "ms"       \
               << std::endl;                                                    \
-    std::cout << "  IRIS-Commit -- " << TIME_IRIS_COMMIT << "ms"         \
-              << std::endl;                                                    \
+    std::cout << "  IRIS-Commit -- " << TIME_IRIS_COMMIT << "ms" << std::endl; \
   } while (0)
 #else
 #define TIME_START(name)
@@ -62,8 +61,9 @@ double TIME_IRIS_COMMIT = 0;
 #define PRINT_PROFILING_REPORT()
 #endif
 
-inline IRID resolveBinding(std::shared_ptr<IRIS> iris, IridiumPool &pool, bool isASW,
-                           StringID bindingName, double lookupStartScope) {
+inline IRID resolveBinding(std::shared_ptr<IRIS> iris, IridiumPool &pool,
+                           bool isASW, StringID bindingName,
+                           double lookupStartScope) {
 
   TIME_START(globalCheck);
   bool isGlobal = iris->isGlobal(bindingName, lookupStartScope);
@@ -88,8 +88,8 @@ inline IRID resolveBinding(std::shared_ptr<IRIS> iris, IridiumPool &pool, bool i
   }
 };
 
-inline void patchNode(std::shared_ptr<IRIS> iris, FileSupport file, IridiumPool &pool,
-                      IRID node, double startScopeIDX,
+inline void patchNode(std::shared_ptr<IRIS> iris, FileSupport file,
+                      IridiumPool &pool, IRID node, double startScopeIDX,
                       BUILD_CTX &iridiumBuildContext,
                       size_t &unresolvedReferences) {
   if (unresolvedReferences == 0)
@@ -111,7 +111,8 @@ inline void patchNode(std::shared_ptr<IRIS> iris, FileSupport file, IridiumPool 
       continue;
     }
 
-    if (unresolvedReferences == 0) return;
+    if (unresolvedReferences == 0)
+      return;
 
     patchNode(iris, file, pool, args[i], startScopeIDX, iridiumBuildContext,
               unresolvedReferences);
@@ -121,7 +122,8 @@ inline void patchNode(std::shared_ptr<IRIS> iris, FileSupport file, IridiumPool 
 void _8_RREBS(IridiumPool &pool, IRID fileSEXP,
               BUILD_CTX &iridiumBuildContext) {
   TIME_START(init);
-  std::shared_ptr<IRIS> iris = std::make_shared<IRIS>(pool, iridiumBuildContext, fileSEXP);
+  std::shared_ptr<IRIS> iris =
+      std::make_shared<IRIS>(pool, iridiumBuildContext, fileSEXP);
   TIME_END(init, TIME_IRIS_INIT);
 
   FileSupport file(fileSEXP, pool);
@@ -168,6 +170,36 @@ void _8_RREBS(IridiumPool &pool, IRID fileSEXP,
         }
       }
     }
+  }
+
+  auto topLevelScope = IRI_HELPERS::getTopLevelScope(pool, fileSEXP);
+  for (auto [sImportID, _] : file.staticImports()) {
+    StaticImportSEXP sImport(sImportID, pool);
+    ResolveEnvBindingSEXP uBinding(sImport.getArg_StorageLocation(), pool);
+
+    auto resolved = resolveBinding(iris, pool, uBinding.hasASW(),
+                                   uBinding.getNAME(), topLevelScope);
+
+    if (pool[resolved].tag != IRI_GEN::RemoteEnvBinding) {
+      throw std::runtime_error(
+          "Expected static imports to resolve to RemoteEnvBindings");
+    }
+    sImport.setArg_StorageLocation(resolved);
+  }
+
+  for (auto [sExportID, _] : file.staticExports()) {
+    auto sExportTag = pool[sExportID].tag;
+    if (sExportTag != IRI_GEN::LocalStaticExport)
+      continue;
+    LocalStaticExportSEXP sExport(sExportID, pool);
+    ResolveEnvBindingSEXP uBinding(sExport.getArg_StorageLocation(), pool);
+    auto resolved = resolveBinding(iris, pool, uBinding.hasASW(),
+                                   uBinding.getNAME(), topLevelScope);
+    if (pool[resolved].tag != IRI_GEN::RemoteEnvBinding) {
+      throw std::runtime_error(
+          "Expected static exports to resolve to RemoteEnvBindings");
+    }
+    sExport.setArg_StorageLocation(resolved);
   }
 
   TIME_START(commit);
