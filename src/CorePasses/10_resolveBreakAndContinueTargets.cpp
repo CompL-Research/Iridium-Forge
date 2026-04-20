@@ -147,8 +147,6 @@ void _10_RBACT(
                          std::get_if<TryContext>(&intermediateContext)) {
             // If the context is reached via try or catch block, only then pop
             // the catch context and decorate to finalizer (if applicable)
-            IRID tryTargetBBID = bbc.getBBByIDX(tryContext->tryIDX);
-            BBSupport tryTargetBB(tryTargetBBID, pool);
             if (pool.iris->hasScopePath(
                     bbSEXP.getScopeIDX(),
                     BBSupport(bbc.getBBByIDX(tryContext->tryIDX), pool)
