@@ -99,4 +99,9 @@ void _14_MSW(
     IRI_STORAGE::IridiumPool &pool, IRI_STORAGE::IRID fileSEXP,
     std::unordered_map<int, std::shared_ptr<IRI_PARSE::IridiumBuildContext>>
         &iridiumBuildContext);
+
+void _15_LWTA(
+    IRI_STORAGE::IridiumPool &pool, IRI_STORAGE::IRID fileSEXP,
+    std::unordered_map<int, std::shared_ptr<IRI_PARSE::IridiumBuildContext>>
+        &iridiumBuildContext);
 }; // namespace IRI_CORE_PASSES
