@@ -10,3 +10,5 @@ clearJSDirectEval at calls sites is messy, make the it more rigid
 JSImplicitBindingsSEXP does not need SLOPPY, when will this write ever write to a Global?
 
 early assert EnvWriteSEXP only occurs directly or as a RVAL of another EnvWrite
+
+Assert all call sites have valid callees i.e. >1 args
