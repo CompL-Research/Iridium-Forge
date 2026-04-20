@@ -30,6 +30,8 @@ public:
 
   void taintScope(double);
 
+  double getJSEvalLookupREFIDX(double, double);
+
 private:
   // Node Storage Pool
   IRI_STORAGE::IridiumPool &pool;

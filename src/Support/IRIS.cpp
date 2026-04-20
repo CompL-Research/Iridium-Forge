@@ -277,6 +277,57 @@ void IRIS::taintScope(double startScope) {
   }
 }
 
+static inline std::vector<IRI_GEN::EnvBindingSEXP> filterLocalBindingsByScope(IRI_STORAGE::IridiumPool & pool, std::span<const IRI_STORAGE::IRID> bindingsObjLocalBindings, double currLookup)
+{
+  std::vector<IRI_GEN::EnvBindingSEXP> result;
+
+  for (auto & e : bindingsObjLocalBindings)
+  {
+    IRI_GEN::EnvBindingSEXP eBinding(e, pool);
+    result.push_back(eBinding);
+  }
+
+
+  std::sort(result.begin(), result.end(),
+  [](IRI_GEN::EnvBindingSEXP &a, IRI_GEN::EnvBindingSEXP &b) {
+    return a.getREFIDX() < b.getREFIDX();
+  });
+
+  return result;
+}
+
+double IRIS::getJSEvalLookupREFIDX(double scope, double parentScope) {
+  if (!scopeHead.contains(parentScope)) {
+    throw std::runtime_error("getJSEvalLookupREFIDX called on a non container scope");
+  }
+
+  BBContainerSupport bbc(scopeHead[parentScope], pool);
+  BindingsSupport bindings(bbc.getArg_Bindings(), pool);
+
+  std::span<const IRI_STORAGE::IRID> localBindingsList = pool.get_args_view(bindings.getArg_LocalBindings());
+
+  auto currLookup = scope;
+  do {
+    auto bs = filterLocalBindingsByScope(pool, localBindingsList, currLookup);
+
+    if (bs.size() > 0)
+    {
+      return bs.back().getREFIDX();
+      break;
+    }
+    else
+    {
+      if (currLookup == parentScope) return 0;
+
+      auto edgeIt = outEdges.find(currLookup);
+      if (edgeIt == outEdges.end()) {
+        throw std::runtime_error("JSEvalLookup :: Parent scope not found, error");
+      }
+      currLookup = edgeIt->second;
+    }
+  } while (true);
+}
+
 void IRIS::dumpScopeTree() const {
   std::cerr << "=== IRIS Scope Tree (Current -> Parent) ===\n";
   if (outEdges.empty()) {
