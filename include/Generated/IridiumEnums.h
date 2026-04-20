@@ -1,4 +1,4 @@
-// Generated: 2026-04-20 15:09:56
+// Generated: 2026-04-21 00:06:27
 #pragma once
 #include <string>
 
@@ -255,6 +255,7 @@ namespace IRI_GEN {
     ParentScope,
     MODULEREQIDX,
     FIELD,
+    NSIMPORT,
     LOCALNAME,
     EXPORTNAME,
     SOURCE,
@@ -264,7 +265,6 @@ namespace IRI_GEN {
     REFIDX,
     Scope,
     NEXT,
-    NSIMPORT,
     THROWERR,
     NVAL,
     FULLY_RESOLVE,
@@ -338,6 +338,7 @@ namespace IRI_GEN {
       case ParentScope: return "ParentScope";
       case MODULEREQIDX: return "MODULEREQIDX";
       case FIELD: return "FIELD";
+      case NSIMPORT: return "NSIMPORT";
       case LOCALNAME: return "LOCALNAME";
       case EXPORTNAME: return "EXPORTNAME";
       case SOURCE: return "SOURCE";
@@ -347,7 +348,6 @@ namespace IRI_GEN {
       case REFIDX: return "REFIDX";
       case Scope: return "Scope";
       case NEXT: return "NEXT";
-      case NSIMPORT: return "NSIMPORT";
       case THROWERR: return "THROWERR";
       case NVAL: return "NVAL";
       case FULLY_RESOLVE: return "FULLY_RESOLVE";

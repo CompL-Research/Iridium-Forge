@@ -244,7 +244,7 @@ export default [
     "args": ["StorageLocation"],
     "flags": {
       "string": ["FIELD"],
-      "void": [],
+      "void": ["NSIMPORT"],
       "bool": [],
       "double": ["MODULEREQIDX"],
     }

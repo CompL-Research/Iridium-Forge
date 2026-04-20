@@ -1,4 +1,4 @@
-// Generated: 2026-04-20 15:09:56
+// Generated: 2026-04-21 00:06:27
 #pragma once
 #include "Storage/Config.h"
 #include "Storage/IridiumSEXP.h"
@@ -1291,15 +1291,16 @@ using IRI_STORAGE::FlagValue;
       }
     }
 
-    static IRID create(IridiumPool& p, IRID StorageLocation, StringID FIELD, double MODULEREQIDX) {
-      return p.add_node(IRI_GEN::IRI_TAG::StaticImport, {StorageLocation}, {FlagValue(FIELD), FlagValue(MODULEREQIDX)});
+    static IRID create(IridiumPool& p, IRID StorageLocation, StringID FIELD, bool NSIMPORT, double MODULEREQIDX) {
+      return p.add_node(IRI_GEN::IRI_TAG::StaticImport, {StorageLocation}, {FlagValue(FIELD), NSIMPORT ? FlagValue(NSIMPORT) : FlagValue(std::monostate()), FlagValue(MODULEREQIDX)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 1;
-    static constexpr uint32_t TOTAL_FLAGS = 2;
+    static constexpr uint32_t TOTAL_FLAGS = 3;
 
     static constexpr uint32_t FLAG_IDX_FIELD = 0;
-    static constexpr uint32_t FLAG_IDX_MODULEREQIDX = 1;
+    static constexpr uint32_t FLAG_IDX_NSIMPORT = 1;
+    static constexpr uint32_t FLAG_IDX_MODULEREQIDX = 2;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
@@ -1319,6 +1320,10 @@ using IRI_STORAGE::FlagValue;
     void setFIELD(StringID val) { mutate_flag(FLAG_IDX_FIELD) = val; }
     bool hasFIELD() const { return std::holds_alternative<StringID>(get_flag(FLAG_IDX_FIELD)); }
     void clearFIELD() { mutate_flag(FLAG_IDX_FIELD) = std::monostate{}; }
+
+    bool hasNSIMPORT() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_NSIMPORT)); }
+    void setNSIMPORT() { mutate_flag(FLAG_IDX_NSIMPORT) = std::nullptr_t{}; }
+    void clearNSIMPORT() { mutate_flag(FLAG_IDX_NSIMPORT) = std::monostate{}; }
 
     double getMODULEREQIDX() const { return std::get<double>(get_flag(FLAG_IDX_MODULEREQIDX)); }
     void setMODULEREQIDX(double val) { mutate_flag(FLAG_IDX_MODULEREQIDX) = val; }

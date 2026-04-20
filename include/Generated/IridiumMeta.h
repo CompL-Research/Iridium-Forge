@@ -1,4 +1,4 @@
-// Generated: 2026-04-20 15:09:56
+// Generated: 2026-04-21 00:06:27
 #pragma once
 #include "IridiumEnums.h"
 #include <cstdint>
@@ -34,7 +34,7 @@ public:
       case IRI_GEN::BBContainer: return 16;
       case IRI_GEN::Bindings: return 1;
       case IRI_GEN::StarExport: return 1;
-      case IRI_GEN::StaticImport: return 2;
+      case IRI_GEN::StaticImport: return 3;
       case IRI_GEN::LocalStaticExport: return 2;
       case IRI_GEN::NamedReexport: return 2;
       case IRI_GEN::ModuleRequest: return 2;
@@ -303,7 +303,8 @@ public:
       case IRI_GEN::StaticImport:
         switch(flag) {
         case IRI_GEN::FIELD: return 0;
-        case IRI_GEN::MODULEREQIDX: return 1;
+        case IRI_GEN::NSIMPORT: return 1;
+        case IRI_GEN::MODULEREQIDX: return 2;
           default: return -1;
         }
         break;
@@ -776,7 +777,8 @@ public:
       case IRI_GEN::StaticImport:
         switch(index) {
         case 0: return IRI_GEN::FIELD;
-        case 1: return IRI_GEN::MODULEREQIDX;
+        case 1: return IRI_GEN::NSIMPORT;
+        case 2: return IRI_GEN::MODULEREQIDX;
           default: throw std::runtime_error("Invalid flag index");
         }
         break;
