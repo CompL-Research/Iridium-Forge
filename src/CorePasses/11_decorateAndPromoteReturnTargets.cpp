@@ -10,6 +10,28 @@
 #include <stdexcept>
 #include <vector>
 
+#ifdef DEBUG_DECORATOR_PASS
+#include <iostream>
+
+// General logging macro
+#define DEC_LOG(msg) std::cout << msg << std::endl
+
+// Helper macro to conditionally print the @ scope if the index is valid
+#define DEC_LOG_IDX(label, idx)                                                \
+  do {                                                                         \
+    if ((idx) > -1) {                                                          \
+      std::cout << "    " << label << ": " << (idx) << "@"                     \
+                << BBSupport(bbc.getBBByIDX(idx), pool).getScopeIDX()          \
+                << std::endl;                                                  \
+    } else {                                                                   \
+      std::cout << "    " << label << ": " << (idx) << std::endl;              \
+    }                                                                          \
+  } while (0)
+#else
+#define DEC_LOG(msg)
+#define DEC_LOG_IDX(label, idx)
+#endif
+
 namespace IRI_CORE_PASSES {
 using namespace IRI_PARSE;
 using namespace IRI_GEN;
@@ -18,7 +40,7 @@ using namespace IRI_STRUCTURAL;
 
 using BUILD_CTX = std::unordered_map<int, std::shared_ptr<IridiumBuildContext>>;
 
-std::shared_ptr<IridiumBuildContext> findReturnTarget(
+static inline std::shared_ptr<IridiumBuildContext> findReturnTarget(
     IridiumPool &pool, double localScope, BUILD_CTX &iridiumBuildContext,
     std::vector<std::variant<LoopConfig, TryContext>> &intermediateContexts) {
   if (localScope == -1)
@@ -55,10 +77,15 @@ std::shared_ptr<IridiumBuildContext> findReturnTarget(
                           intermediateContexts);
 }
 
-void _11_DRT(
+void _11_DAPRT(
     IRI_STORAGE::IridiumPool &pool, IRI_STORAGE::IRID fileSEXP,
     std::unordered_map<int, std::shared_ptr<IRI_PARSE::IridiumBuildContext>>
         &iridiumBuildContext) {
+#ifdef DEBUG_DECORATOR_PASS
+  std::cout << "::_11_DAPRT::" << std::endl;
+  pool.iris->dumpFlat(std::cout);
+#endif
+
   FileSupport fileSupport(fileSEXP, pool);
   for (auto [bbContID, _] : fileSupport.containers()) {
     BBContainerSupport bbc(bbContID, pool);
@@ -85,9 +112,8 @@ void _11_DRT(
           auto retID = stmtID;
           std::vector<std::variant<LoopConfig, TryContext>>
               intermediateContextHolder;
-          auto target =
-              findReturnTarget(pool, bbSEXP.getScopeIDX(), iridiumBuildContext,
-                               intermediateContextHolder);
+          auto target = findReturnTarget(pool, bbScopeIDX, iridiumBuildContext,
+                                         intermediateContextHolder);
 
           // Promote to Async return if the return matches an async context
           if (target->isAsync || target->isGenerator) {
@@ -102,7 +128,7 @@ void _11_DRT(
 
           std::vector<std::variant<LoopConfig, TryContext>>
               intermediateContextHolder;
-          findReturnTarget(pool, bbSEXP.getScopeIDX(), iridiumBuildContext,
+          findReturnTarget(pool, bbScopeIDX, iridiumBuildContext,
                            intermediateContextHolder);
           decoratorMap[stmtID] = intermediateContextHolder;
         }
@@ -115,11 +141,35 @@ void _11_DRT(
       for (auto &e : decoratorMap) {
         auto &element = e.first;
         auto &intermediateContexts = e.second;
-
+#ifdef DEBUG_DECORATOR_PASS
+        if (!intermediateContexts.empty()) {
+          std::cout << "::Decorator Map::\n"
+                    << "BB: " << bbSEXP.getIDX() << "@" << bbScopeIDX << "\n"
+                    << "Stmt: \n";
+          pool[element].dumpFlat(std::cout, &pool, 2);
+          std::cout << "\nIntermediate Contexts: \n";
+        }
+#endif
         for (auto &intermediateContext : intermediateContexts) {
           if (auto loopConfig = std::get_if<LoopConfig>(&intermediateContext)) {
-            if (loopConfig->kind == LoopConfig::Kind::ForOf) {
+            DEC_LOG("  LoopConfig("
+                    << (loopConfig->kind == LoopConfig::Kind::ForOf
+                            ? "ForOf"
+                            : "Standard")
+                    << ")");
+            DEC_LOG_IDX("loopHeadIDX", loopConfig->loopHeadIDX);
+            DEC_LOG_IDX("loopBodyIDX", loopConfig->loopBodyIDX);
+            DEC_LOG_IDX("loopInitIDX", loopConfig->loopInitIDX);
 
+            if (loopConfig->label.has_value()) {
+              DEC_LOG("    label: " << loopConfig->label.value());
+            } else {
+              DEC_LOG("    NO_LABEL: ");
+            }
+            DEC_LOG_IDX("breakTarget", loopConfig->breakTarget);
+            DEC_LOG_IDX("continueTarget", loopConfig->continueTarget);
+
+            if (loopConfig->kind == LoopConfig::Kind::ForOf) {
               IRID stackReject = StackRejectSEXP::create(pool, 0);
               IRID forOfIteratorClose = JSForOfIteratorCloseSEXP::create(pool);
               pool.set_args(stackReject, {forOfIteratorClose});
@@ -127,15 +177,22 @@ void _11_DRT(
             }
           } else if (auto tryContext =
                          std::get_if<TryContext>(&intermediateContext)) {
+            DEC_LOG("TryContext");
+            DEC_LOG_IDX("tryContextIDX", tryContext->tryContextIDX);
+            DEC_LOG_IDX("tryIDX", tryContext->tryIDX);
+            DEC_LOG_IDX("udCatchIDX", tryContext->udCatchIDX);
+            DEC_LOG_IDX("imCatchIDX", tryContext->imCatchIDX);
+            DEC_LOG_IDX("finalizerIDX", tryContext->finalizerIDX);
+
             // If the context is reached via try or catch block, only then pop
             // the catch context and decorate to finalizer (if applicable)
             if (pool.iris->hasScopePath(
-                    bbSEXP.getScopeIDX(),
+                    bbScopeIDX,
                     BBSupport(bbc.getBBByIDX(tryContext->tryIDX), pool)
                         .getScopeIDX()) ||
                 (tryContext->udCatchIDX > -1 &&
                  pool.iris->hasScopePath(
-                     bbSEXP.getScopeIDX(),
+                     bbScopeIDX,
                      BBSupport(bbc.getBBByIDX(tryContext->udCatchIDX), pool)
                          .getScopeIDX()))) {
               BBSupport::insert_before(newStmtList, element,
@@ -156,7 +213,7 @@ void _11_DRT(
               // expect any nesting inside the implicit catch block as
               // its outside user
               // interference...
-              if (pool.iris->hasScopePath(
+              if (!pool.iris->hasScopePath(
                       bbSEXP.getScopeIDX(),
                       BBSupport(bbc.getBBByIDX(tryContext->finalizerIDX), pool)
                           .getScopeIDX())) {
