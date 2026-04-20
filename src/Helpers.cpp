@@ -184,7 +184,7 @@ bool isGlobalBinding(
         return g_isGlobalCache[key] = true;
     }
 
-    auto bbContainerID = fileSEXP[findParentClosureScope(pool, parentScope, iridiumBuildContext)];
+    auto bbContainerID = fileSEXP.getBBContainerByScopeIDX(findParentClosureScope(pool, parentScope, iridiumBuildContext));
     IRI_STRUCTURAL::BBContainerSupport bbContainer(bbContainerID, pool);
     IRI_STRUCTURAL::BindingsSupport next(bbContainer.getArg_Bindings(), pool);
 
@@ -215,7 +215,7 @@ IRI_GEN::IRID resolveScopedLookup(
         throw std::runtime_error("Failed to resolve lookup: " + std::string(pool.strings.get(name)));
     }
 
-    auto bbContainerID = fileSEXP[findParentClosureScope(pool, parentScope, iridiumBuildContext)];
+    auto bbContainerID = fileSEXP.getBBContainerByScopeIDX(findParentClosureScope(pool, parentScope, iridiumBuildContext));
     IRI_STRUCTURAL::BBContainerSupport bbContainer(bbContainerID, pool);
     IRI_STRUCTURAL::BindingsSupport next(bbContainer.getArg_Bindings(), pool);
 
