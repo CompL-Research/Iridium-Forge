@@ -8,7 +8,6 @@
 #include "Support/BBSupport.hpp"
 #include "Support/FileSupport.hpp"
 #include "Support/IRIS.hpp"
-#include <stdexcept>
 
 namespace IRI_CORE_PASSES {
 using namespace IRI_PARSE;
