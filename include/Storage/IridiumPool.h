@@ -23,6 +23,8 @@ public:
   IRID NOP_SEXP;
   IRID UNDEF_READ;
   IRID NUBD_SEXP;
+  IRID TRUE_SEXP;
+  IRID FALSE_SEXP;
 
   std::unordered_map<StringID, IRID> globalBindingSEXPs;
 

@@ -78,6 +78,8 @@ Napi::Value execute(const Napi::CallbackInfo &info) {
   pool.NOP_SEXP = IRI_GEN::NOPSEXP::create(pool);
   pool.UNDEF_READ = IRI_GEN::EnvReadSEXP::create(pool, pool.getGlobalBindingSEXP("undefined"), false);
   pool.NUBD_SEXP = IRI_GEN::JSNUBDSEXP::create(pool);
+  pool.TRUE_SEXP = IRI_GEN::BooleanSEXP::create(pool, true);
+  pool.FALSE_SEXP = IRI_GEN::BooleanSEXP::create(pool, false);
 
 
   perf.tick("iri-forge-main");
