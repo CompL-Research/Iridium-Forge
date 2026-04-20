@@ -2,12 +2,35 @@
 #include "Generated/IridiumEnums.h"
 #include "Generated/IridiumTypes.h"
 #include "Parser/IridiumBuildContext.h"
+#include "Storage/IridiumPool.h"
 #include "Support/BBContainerSupport.hpp"
 #include "Support/BBSupport.hpp"
 #include "Support/FileSupport.hpp"
 #include "Support/IRIS.hpp"
 #include <stdexcept>
 #include <vector>
+
+#ifdef DEBUG_DECORATOR_PASS
+#include <iostream>
+
+// General logging macro
+#define DEC_LOG(msg) std::cout << msg << std::endl
+
+// Helper macro to conditionally print the @ scope if the index is valid
+#define DEC_LOG_IDX(label, idx)                                                \
+  do {                                                                         \
+    if ((idx) > -1) {                                                          \
+      std::cout << "    " << label << ": " << (idx) << "@"                     \
+                << BBSupport(bbc.getBBByIDX(idx), pool).getScopeIDX()          \
+                << std::endl;                                                  \
+    } else {                                                                   \
+      std::cout << "    " << label << ": " << (idx) << std::endl;              \
+    }                                                                          \
+  } while (0)
+#else
+#define DEC_LOG(msg)
+#define DEC_LOG_IDX(label, idx)
+#endif
 
 namespace IRI_CORE_PASSES {
 using namespace IRI_PARSE;
@@ -17,14 +40,15 @@ using namespace IRI_STRUCTURAL;
 
 using BUILD_CTX = std::unordered_map<int, std::shared_ptr<IridiumBuildContext>>;
 
-inline LoopConfig findLoopControlTarget(
-    double localScope,
+static inline LoopConfig findLoopControlTarget(
+    IridiumPool &pool, double localScope,
     std::variant<ResolveBreakTargetSEXP, ResolveContinueTargetSEXP> node,
     BUILD_CTX &iridiumBuildContext,
     std::vector<std::variant<LoopConfig, TryContext>> &intermediateContexts) {
   if (localScope == -1)
     throw std::runtime_error("Failed to find loop control target!!!");
-  assert(iridiumBuildContext.find(localScope) != iridiumBuildContext.end());
+  assert(iridiumBuildContext.contains(localScope));
+
   auto &buildContext = iridiumBuildContext[localScope];
 
   if (buildContext->tryContext) {
@@ -33,7 +57,7 @@ inline LoopConfig findLoopControlTarget(
 
   // If not loop context, recurse
   if (!buildContext->loopConfig)
-    return findLoopControlTarget(buildContext->parent, node,
+    return findLoopControlTarget(pool, buildContext->parent, node,
                                  iridiumBuildContext, intermediateContexts);
 
   auto &loopConfig = buildContext->loopConfig;
@@ -44,19 +68,19 @@ inline LoopConfig findLoopControlTarget(
   if (auto breakTarget = std::get_if<ResolveBreakTargetSEXP>(&node)) {
     hasLabel = breakTarget->hasLabel();
     if (hasLabel)
-      label = breakTarget->getLabel();
+      label = pool.strings.get(breakTarget->getLabel());
   } else if (auto continueTarget =
                  std::get_if<ResolveContinueTargetSEXP>(&node)) {
     hasLabel = continueTarget->hasLabel();
     if (hasLabel)
-      label = continueTarget->getLabel();
+      label = pool.strings.get(continueTarget->getLabel());
   }
 
   // Intermediate loop context, but not the one we are trying to flow to
   if (hasLabel) {
     if ((!loopConfig->label) || (label != loopConfig->label.value())) {
       intermediateContexts.push_back(loopConfig.value());
-      return findLoopControlTarget(buildContext->parent, node,
+      return findLoopControlTarget(pool, buildContext->parent, node,
                                    iridiumBuildContext, intermediateContexts);
     }
   }
@@ -66,7 +90,7 @@ inline LoopConfig findLoopControlTarget(
   if (std::holds_alternative<ResolveContinueTargetSEXP>(node) &&
       loopConfig->continueTarget == -1) {
     intermediateContexts.push_back(loopConfig.value());
-    return findLoopControlTarget(buildContext->parent, node,
+    return findLoopControlTarget(pool, buildContext->parent, node,
                                  iridiumBuildContext, intermediateContexts);
   }
 
@@ -77,6 +101,11 @@ void _10_RBACT(
     IRI_STORAGE::IridiumPool &pool, IRI_STORAGE::IRID fileSEXP,
     std::unordered_map<int, std::shared_ptr<IRI_PARSE::IridiumBuildContext>>
         &iridiumBuildContext) {
+
+#ifdef DEBUG_DECORATOR_PASS
+  std::cout << "::_10_RBACT::" << std::endl;
+  pool.iris->dumpFlat(std::cout);
+#endif
   FileSupport fileSupport(fileSEXP, pool);
   for (auto [bbContID, _] : fileSupport.containers()) {
     BBContainerSupport bbc(bbContID, pool);
@@ -99,9 +128,10 @@ void _10_RBACT(
 
           std::vector<std::variant<LoopConfig, TryContext>>
               intermediateContextHolder;
-          auto target =
-              findLoopControlTarget(bbScopeIDX, bTarget, iridiumBuildContext,
-                                    intermediateContextHolder);
+
+          LoopConfig target = findLoopControlTarget(pool, bbScopeIDX, bTarget,
+                                                    iridiumBuildContext,
+                                                    intermediateContextHolder);
           auto gotoSEXPID = GotoSEXP::create(pool, target.breakTarget);
           pool.update_arg_inplace(bbID, stmtOffset, gotoSEXPID);
           decoratorMap[gotoSEXPID] = intermediateContextHolder;
@@ -111,9 +141,13 @@ void _10_RBACT(
 
           std::vector<std::variant<LoopConfig, TryContext>>
               intermediateContextHolder;
-          auto target = findLoopControlTarget(bbSEXP.getScopeIDX(), cTarget,
-                                              iridiumBuildContext,
-                                              intermediateContextHolder);
+          LoopConfig target = findLoopControlTarget(pool, bbScopeIDX, cTarget,
+                                                    iridiumBuildContext,
+                                                    intermediateContextHolder);
+
+          // auto target = findLoopControlTarget(bbSEXP.getScopeIDX(), cTarget,
+          //                                     iridiumBuildContext,
+          //                                     intermediateContextHolder);
           auto gotoSEXPID = GotoSEXP::create(pool, target.continueTarget);
           GotoSEXP gotoSEXP(gotoSEXPID, pool);
 
@@ -135,8 +169,36 @@ void _10_RBACT(
         auto &element = e.first;
         auto &intermediateContexts = e.second;
 
+#ifdef DEBUG_DECORATOR_PASS
+        if (!intermediateContexts.empty()) {
+          std::cout << "::Decorator Map::\n"
+                    << "BB: " << bbSEXP.getIDX() << "@" << bbScopeIDX << "\n"
+                    << "Stmt: \n";
+          pool[element].dumpFlat(std::cout, &pool, 2);
+          std::cout << "\nIntermediate Contexts: \n";
+        }
+#endif
+
         for (auto &intermediateContext : intermediateContexts) {
           if (auto loopConfig = std::get_if<LoopConfig>(&intermediateContext)) {
+
+            DEC_LOG("  LoopConfig("
+                    << (loopConfig->kind == LoopConfig::Kind::ForOf
+                            ? "ForOf"
+                            : "Standard")
+                    << ")");
+            DEC_LOG_IDX("loopHeadIDX", loopConfig->loopHeadIDX);
+            DEC_LOG_IDX("loopBodyIDX", loopConfig->loopBodyIDX);
+            DEC_LOG_IDX("loopInitIDX", loopConfig->loopInitIDX);
+
+            if (loopConfig->label.has_value()) {
+              DEC_LOG("    label: " << loopConfig->label.value());
+            } else {
+              DEC_LOG("    NO_LABEL: ");
+            }
+            DEC_LOG_IDX("breakTarget", loopConfig->breakTarget);
+            DEC_LOG_IDX("continueTarget", loopConfig->continueTarget);
+
             if (loopConfig->kind == LoopConfig::Kind::ForOf) {
               IRID stackReject = StackRejectSEXP::create(pool, 0);
               IRID forOfIteratorClose = JSForOfIteratorCloseSEXP::create(pool);
@@ -145,6 +207,13 @@ void _10_RBACT(
             }
           } else if (auto tryContext =
                          std::get_if<TryContext>(&intermediateContext)) {
+            DEC_LOG("TryContext");
+            DEC_LOG_IDX("tryContextIDX", tryContext->tryContextIDX);
+            DEC_LOG_IDX("tryIDX", tryContext->tryIDX);
+            DEC_LOG_IDX("udCatchIDX", tryContext->udCatchIDX);
+            DEC_LOG_IDX("imCatchIDX", tryContext->imCatchIDX);
+            DEC_LOG_IDX("finalizerIDX", tryContext->finalizerIDX);
+
             // If the context is reached via try or catch block, only then pop
             // the catch context and decorate to finalizer (if applicable)
             if (pool.iris->hasScopePath(
@@ -177,7 +246,7 @@ void _10_RBACT(
               // expect any nesting inside the implicit catch block as
               // its outside user
               // interference...
-              if (pool.iris->hasScopePath(
+              if (!pool.iris->hasScopePath(
                       bbSEXP.getScopeIDX(),
                       BBSupport(bbc.getBBByIDX(tryContext->finalizerIDX), pool)
                           .getScopeIDX())) {
