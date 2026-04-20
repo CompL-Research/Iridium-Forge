@@ -3,15 +3,15 @@
   "version": "1.0.0",
   "main": "forge.ts",
   "config": {
-    "debug_info": "DEBUG_STORAGE;DEBUG_TIME_IRIS",
-    "debug_dump": "DUMP_CORE_PASSES",
-    "others": "DEBUG_DECORATOR_PASS"
+    "info": "DEBUG_STORAGE;DEBUG_TIME_IRIS;PRINT_TAINT_TREE",
+    "dump": "DUMP_CORE_PASSES",
+    "others": "DEBUG_DECORATOR_PASS;PRINT_TAINT_TREE"
   },
   "scripts": {
     "clean": "cmake-js clean",
     "build": "cmake-js clean && cmake-js build && echo 'module.exports = require(\"./build/Release/iridiumForge.node\");' > forge.cjs",
-    "dev"     : "cmake-js clean && cmake-js build --debug --CDDEBUG_FLAGS=\"$npm_package_config_debug_info\" && echo 'module.exports = require(\"./build/Debug/iridiumForge.node\");' > forge.cjs",
-    "dev-dump": "cmake-js clean && cmake-js build --debug --CDDEBUG_FLAGS=\"$npm_package_config_debug_info;$npm_package_config_debug_dump\"  && echo 'module.exports = require(\"./build/Debug/iridiumForge.node\");' > forge.cjs"
+    "dev"     : "cmake-js clean && cmake-js build --debug --CDDEBUG_FLAGS=\"$npm_package_config_info\" && echo 'module.exports = require(\"./build/Debug/iridiumForge.node\");' > forge.cjs",
+    "dev-dump": "cmake-js clean && cmake-js build --debug --CDDEBUG_FLAGS=\"$npm_package_config_info;$npm_package_config_dump\"  && echo 'module.exports = require(\"./build/Debug/iridiumForge.node\");' > forge.cjs"
 
   },
   "dependencies": {
