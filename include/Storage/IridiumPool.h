@@ -4,11 +4,16 @@
 #include "Generated/IridiumEnums.h"
 #include "IridiumSEXP.h"
 #include "StringPool.h"
+#include <memory>
 #include <optional>
 #include <set>
 #include <span>
 #include <unordered_map>
 #include <vector>
+
+namespace IRI_STRUCTURAL {
+  class IRIS;
+}
 
 namespace IRI_STORAGE {
 class IridiumPool {
@@ -26,6 +31,14 @@ public:
 
   IRID getGlobalBindingSEXP(std::string);
   IRID getGlobalBindingSEXP(StringID);
+
+  // Must be empty after stack->heap pass
+  // added here as creating a new flag just for this is very memory
+  // hungry
+  std::unordered_map<IRID, double> CONTINUE_TARGETS;
+
+
+  std::shared_ptr<IRI_STRUCTURAL::IRIS> iris = nullptr;
 
   //
   // String interning

@@ -2,7 +2,6 @@
 #include "Generated/IridiumEnums.h"
 #include "Generated/IridiumTypes.h"
 #include "Helpers.h"
-#include "IRIFlags.hpp"
 #include "Parser/IridiumBuildContext.h"
 #include "Storage/IridiumPool.h"
 #include "Storage/StringPool.h"
@@ -11,9 +10,12 @@
 #include "Support/BindingsSupport.hpp"
 #include "Support/FileSupport.hpp"
 #include "Support/IRIS.hpp"
+#ifdef DEBUG_TIME_IRIS
 #include <chrono>
+#endif
 #include <cstddef>
 #include <functional>
+#include <memory>
 #include <stdexcept>
 #include <vector>
 
@@ -24,7 +26,7 @@ using namespace IRI_STORAGE;
 using namespace IRI_STRUCTURAL;
 using BUILD_CTX = std::unordered_map<int, std::shared_ptr<IridiumBuildContext>>;
 
-#if DEBUG_TIME_IRIS == 1
+#ifdef DEBUG_TIME_IRIS
 double TIME_IRIS_INIT = 0;
 double TIME_IRIS_GLOBAL_CHECK = 0;
 double TIME_IRIS_RESOLUTION = 0;
@@ -60,11 +62,11 @@ double TIME_IRIS_COMMIT = 0;
 #define PRINT_PROFILING_REPORT()
 #endif
 
-inline IRID resolveBinding(IRIS &iris, IridiumPool &pool, bool isASW,
+inline IRID resolveBinding(std::shared_ptr<IRIS> iris, IridiumPool &pool, bool isASW,
                            StringID bindingName, double lookupStartScope) {
 
   TIME_START(globalCheck);
-  bool isGlobal = iris.isGlobal(bindingName, lookupStartScope);
+  bool isGlobal = iris->isGlobal(bindingName, lookupStartScope);
   TIME_END(globalCheck, TIME_IRIS_GLOBAL_CHECK);
   if (isGlobal) {
     if (isASW)
@@ -74,7 +76,7 @@ inline IRID resolveBinding(IRIS &iris, IridiumPool &pool, bool isASW,
     return pool.getGlobalBindingSEXP(bindingName);
   } else {
     TIME_START(resolve);
-    IRID resolvedBinding = iris.resolve(bindingName, lookupStartScope);
+    IRID resolvedBinding = iris->resolve(bindingName, lookupStartScope);
     TIME_END(resolve, TIME_IRIS_RESOLUTION);
     if (isASW) {
       if (pool[resolvedBinding].tag == IRI_GEN::EnvBinding) {
@@ -86,7 +88,7 @@ inline IRID resolveBinding(IRIS &iris, IridiumPool &pool, bool isASW,
   }
 };
 
-inline void patchNode(IRIS &iris, FileSupport file, IridiumPool &pool,
+inline void patchNode(std::shared_ptr<IRIS> iris, FileSupport file, IridiumPool &pool,
                       IRID node, double startScopeIDX,
                       BUILD_CTX &iridiumBuildContext,
                       size_t &unresolvedReferences) {
@@ -119,7 +121,7 @@ inline void patchNode(IRIS &iris, FileSupport file, IridiumPool &pool,
 void _8_RREBS(IridiumPool &pool, IRID fileSEXP,
               BUILD_CTX &iridiumBuildContext) {
   TIME_START(init);
-  IRIS iris(pool, iridiumBuildContext, fileSEXP);
+  std::shared_ptr<IRIS> iris = std::make_shared<IRIS>(pool, iridiumBuildContext, fileSEXP);
   TIME_END(init, TIME_IRIS_INIT);
 
   FileSupport file(fileSEXP, pool);
@@ -169,10 +171,13 @@ void _8_RREBS(IridiumPool &pool, IRID fileSEXP,
   }
 
   TIME_START(commit);
-  iris.commit();
+  // Make sure to commit after any pass to keep the
+  // underlying storage in sync.
+  iris->commit();
   TIME_END(commit, TIME_IRIS_COMMIT);
 
-  // #if DEBUG_TIME_IRIS == 1
+  pool.iris = iris;
+  // #ifdef DEBUG_TIME_IRIS
   // iris.dumpFullState();
   // #endif
 
