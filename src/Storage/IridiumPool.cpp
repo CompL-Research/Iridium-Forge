@@ -2,12 +2,11 @@
 #include "Generated/IridiumEnums.h"
 #include "Generated/IridiumMeta.h"
 #include "Generated/IridiumTypes.h"
-#include "IRIFlags.hpp"
 #include <algorithm>
 #include <iostream>
 #include <stdexcept>
 #include <string>
-#if DEBUG_STORAGE == 1
+#ifdef DEBUG_STORAGE
 #include <iostream>
 #endif
 namespace IRI_STORAGE {
@@ -256,7 +255,7 @@ void IridiumPool::remove_args_matching_tag(IRID id, IRI_GEN::IRI_TAG tag) {
 }
 
 IridiumPool::~IridiumPool() {
-#if DEBUG_STORAGE == 1
+#ifdef DEBUG_STORAGE
   if (nodes.empty())
     return;
 
