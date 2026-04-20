@@ -1,4 +1,4 @@
-#pragma once
+// #pragma once
 #include "Generated/IridiumTypes.h"
 #include "Support/IndexedIterator.hpp"
 
@@ -9,5 +9,7 @@ public:
       : IRI_GEN::BBContainerSEXP(n, p) {}
 
   IndexedIterator<std::vector<IRI_GEN::IRID>> bbs() const;
+
+  IRI_STORAGE::IRID getBBByIDX(double);
 };
 } // namespace IRI_STRUCTURAL
