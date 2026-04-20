@@ -57,6 +57,7 @@ inline void normalizeIRIDIUM(
   runPass("_15_LWTA", IRI_CORE_PASSES::_15_LWTA);
   runPass("_16_MDE", IRI_CORE_PASSES::_16_MDE);
   runPass("_17_RTDZ", IRI_CORE_PASSES::_17_RTDZ);
+  runPass("_18_DELOP", IRI_CORE_PASSES::_18_DELOP);
 }
 
 IRI_STORAGE::IRID sharedEntrypoint(
