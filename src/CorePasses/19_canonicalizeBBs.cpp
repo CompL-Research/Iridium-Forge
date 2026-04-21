@@ -11,7 +11,6 @@
 #include "Support/BindingsSupport.hpp"
 #include "Support/FileSupport.hpp"
 #include "Support/IRIS.hpp"
-#include <algorithm>
 #include <stdexcept>
 #include <vector>
 
