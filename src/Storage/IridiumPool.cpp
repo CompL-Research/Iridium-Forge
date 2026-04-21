@@ -3,6 +3,7 @@
 #include "Generated/IridiumMeta.h"
 #include "Generated/IridiumTypes.h"
 #include <algorithm>
+#include <cstdint>
 #include <iostream>
 #include <stdexcept>
 #include <string>
@@ -252,6 +253,17 @@ void IridiumPool::remove_args_matching_tag(IRID id, IRI_GEN::IRI_TAG tag) {
   );
 
   node.num_args = std::distance(node_args.begin(), removed_begin);
+}
+
+void IridiumPool::update_num_args(IRID id, uint32_t num_args) {
+  auto &node = nodes[id];
+  if (node.num_args == num_args) // no change
+    return;
+
+  if (node.num_args < num_args)
+    throw std::runtime_error("update_num_args is only expected to shrink args inplace, not extend it!");
+
+  node.num_args = num_args;
 }
 
 IridiumPool::~IridiumPool() {

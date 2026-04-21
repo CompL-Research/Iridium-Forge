@@ -99,6 +99,8 @@ public:
 
   void remove_args_matching_tag(IRID id, IRI_GEN::IRI_TAG tag);
 
+  void update_num_args(IRID id, uint32_t num_args);
+
   ~IridiumPool();
   IridiumPool() = default;
   IridiumPool(const IridiumPool &) = delete;
