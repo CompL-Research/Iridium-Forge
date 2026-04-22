@@ -1,4 +1,4 @@
-// Generated: 2026-04-21 02:55:21
+// Generated: 2026-04-22 17:35:29
 #pragma once
 #include <string>
 
@@ -262,9 +262,11 @@ namespace IRI_GEN {
     REQIDX,
     JSARG,
     JSRESTARG,
+    LINK,
     REFIDX,
     Scope,
     NEXT,
+    MODULETOPLEVELBINDING,
     SLOPPYDECL,
     THROWERR,
     NVAL,
@@ -346,9 +348,11 @@ namespace IRI_GEN {
       case REQIDX: return "REQIDX";
       case JSARG: return "JSARG";
       case JSRESTARG: return "JSRESTARG";
+      case LINK: return "LINK";
       case REFIDX: return "REFIDX";
       case Scope: return "Scope";
       case NEXT: return "NEXT";
+      case MODULETOPLEVELBINDING: return "MODULETOPLEVELBINDING";
       case SLOPPYDECL: return "SLOPPYDECL";
       case THROWERR: return "THROWERR";
       case NVAL: return "NVAL";

@@ -284,7 +284,7 @@ export default [
     "args": [],
     "flags": {
       "string": ["NAME"],
-      "void": ["ASW", "JSARG", "JSRESTARG", "JSLET", "JSCONST", "JSVAR"],
+      "void": ["ASW", "JSARG", "JSRESTARG", "JSLET", "JSCONST", "JSVAR", "LINK"],
       "bool": [],
       "double": ["IDX", "REFIDX", "Scope", "ParentScope", "NEXT"],
     }
@@ -294,7 +294,7 @@ export default [
     "args": ["ParentReference"],
     "flags": {
       "string": [],
-      "void": ["NSIMPORT"],
+      "void": ["NSIMPORT", "LINK", "MODULETOPLEVELBINDING"],
       "bool": [],
       "double": ["REFIDX"],
     }
