@@ -2,8 +2,11 @@
 #pragma once
 #include "Generated/IridiumTypes.h"
 #include "Parser/IridiumBuildContext.h"
+#include "Storage/BindingsPool.h"
 #include "Storage/Config.h"
 #include "Storage/StringPool.h"
+#include <cstddef>
+#include <memory>
 #include <unordered_map>
 #include <vector>
 
@@ -32,10 +35,21 @@ public:
 
   double getJSEvalLookupREFIDX(double, double);
 
+  double getEnclosingThrowScope(double);
+
+  size_t computePoolCapacity();
+
+  void initializeBindingsPool();
+
+  std::vector<IRI_STORAGE::IRID> getBindingsToMoveToHeap(double startScope, double endScope);
+
+  const IRI_STORAGE::BindingMeta & getBindingsMetaView(IRI_STORAGE::IRID id) const;
+
 private:
   // Node Storage Pool
   IRI_STORAGE::IridiumPool &pool;
 
+  std::unique_ptr<IRI_STORAGE::BindingsPool> bindingsPool = nullptr;
   // Graph
   // In a scope tree, each node has atmost one outgoing edges, with -1 denoting
   // end of top level scope
@@ -48,6 +62,9 @@ private:
 
   // Scopes tainted by direct eval
   std::set<double> taintedScopes;
+
+  // Scopes representing a try context
+  std::set<double> tryScopes;
 
   // Scopes belonging to a BBContainer
   std::unordered_map<double, IRI_GEN::IRID> scopeHead;
@@ -67,10 +84,10 @@ private:
 
 public:
   void dumpFlat(std::ostream &oss, int indentLevel = 0) const;
-  void dumpScopeTree() const;
-  void dumpBindings() const;
-  void dumpCommitList() const;
-  void dumpAllNames() const;
-  void dumpFullState() const;
+  void dumpScopeTree(std::ostream &oss, int indentLevel = 0) const;
+  void dumpBindingsAtScope(std::ostream &oss, double node) const;
+  void dumpCommitList(std::ostream &oss) const;
+  void dumpAllNames(std::ostream &oss) const;
+  void dumpFullState(std::ostream &oss) const;
 };
 } // namespace IRI_STRUCTURAL

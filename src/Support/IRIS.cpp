@@ -1,22 +1,18 @@
 #include "Support/IRIS.hpp"
+#include "Generated/IridiumEnums.h"
 #include "Generated/IridiumTypes.h"
 #include "Helpers.h"
+#include "Storage/BindingsPool.h"
 #include "Storage/Config.h"
 #include "Storage/IridiumPool.h"
 #include "Support/BBContainerSupport.hpp"
+#include "Support/BBSupport.hpp"
 #include "Support/BindingsSupport.hpp"
 #include "Support/FileSupport.hpp"
-#include <iomanip>
+#include <cstdint>
+#include <memory>
 #include <stdexcept>
 #include <vector>
-
-// Toggle this to 'true' to enable execution tracing
-constexpr bool TRACE_IRIS_LOGIC = false;
-
-#define IRIS_TRACE(msg)                                                        \
-  if constexpr (TRACE_IRIS_LOGIC) {                                            \
-    std::cerr << "[IRIS TRACE] " << msg << "\n";                               \
-  }
 
 namespace IRI_STRUCTURAL {
 
@@ -31,11 +27,20 @@ IRIS::IRIS(
   // Initialize scope tree
   //
   for (auto &e : iriBC) {
-    auto curr = e.first;
-    auto parent = e.second->parent;
-    outEdges[curr] = parent;
-    nodes.insert(curr);
-    nodes.insert(parent);
+    auto &currScope = e.first;
+    auto &bcon = e.second;
+    auto parentScope = bcon->parent;
+    outEdges[currScope] = parentScope;
+    nodes.insert(currScope);
+    nodes.insert(parentScope);
+
+    //
+    // If this is a try scope, add it to the tryScopes set
+    //
+    IRI_STORAGE::IRID firstBBInScope = bcon->BB[0];
+    BBSupport bb(firstBBInScope, pool);
+    if (bb.hasTryBB())
+      tryScopes.insert(currScope);
   }
 
   //
@@ -60,136 +65,52 @@ IRIS::IRIS(
       IRI_GEN::RemoteEnvBindingSEXP rb(rbID, pool);
       auto bID = IRI_HELPERS::resolveRemoteBinding(pool, rbID);
       IRI_GEN::EnvBindingSEXP b(bID, pool);
-      allNames.insert(b.getNAME());
+      allNames.insert(b.getNAME()); // TODO: This is probably redundant...
       scopeBindings[containerScope][b.getNAME()] = rbID;
     }
   }
 }
 
-// bool IRIS::isGlobal(StringID sid, double startScopeIDX) {
-//   if (!allNames.contains(sid))
-//     return true;
-
-//   double currScope = startScopeIDX;
-//   while (currScope != -1) {
-//     auto scopeIt = scopeBindings.find(currScope);
-//     if (scopeIt != scopeBindings.end() && scopeIt->second.contains(sid)) {
-//       return false;
-//     }
-
-//     auto edgeIt = outEdges.find(currScope);
-//     if (edgeIt == outEdges.end()) {
-//       throw std::runtime_error("Parent scope not found, error");
-//     }
-//     currScope = edgeIt->second;
-//   }
-
-//   return true;
-// }
-//
 bool IRIS::isGlobal(StringID sid, double startScopeIDX) {
-  if constexpr (TRACE_IRIS_LOGIC) {
-    std::cerr << "[IRIS TRACE] isGlobal check -> Name: '"
-              << pool.strings.get(sid) << "' (ID: " << sid
-              << ") starting at Scope: " << startScopeIDX << "\n";
-  }
 
+  // If no scope in the scope tree ever saw this string, it must be a
+  // global
   if (!allNames.contains(sid)) {
-    IRIS_TRACE("Name not in allNames. Returning true (is global).");
     return true;
   }
 
   double currScope = startScopeIDX;
   while (currScope != -1) {
-    IRIS_TRACE("  Visiting Scope: " << currScope);
-
     auto scopeIt = scopeBindings.find(currScope);
     if (scopeIt != scopeBindings.end() && scopeIt->second.contains(sid)) {
-      IRIS_TRACE("  Found local binding in Scope: "
-                 << currScope << ". Returning false (not global).");
       return false;
     }
 
     auto edgeIt = outEdges.find(currScope);
     if (edgeIt == outEdges.end()) {
-      throw std::runtime_error("Parent scope not found, error");
+      assert (false && "Parent scope not found, error");
     }
     currScope = edgeIt->second;
   }
 
-  IRIS_TRACE(
-      "Reached top-level scope without finding local binding. Returning true.");
   return true;
 }
 
-// IRI_STORAGE::IRID IRIS::resolve(StringID sid, double startScopeIDX) {
-
-//   std::vector<double> headsCrossed;
-
-//   double currScope = startScopeIDX;
-//   IRI_STORAGE::IRID found;
-//   while (true) {
-
-//     // Safe lookup: avoids inserting empty maps into scopeBindings
-//     auto scopeIt = scopeBindings.find(currScope);
-//     if (scopeIt != scopeBindings.end() && scopeIt->second.contains(sid)) {
-//       found = scopeIt->second.at(sid);
-//       break;
-//     }
-
-//     if (scopeHead.contains(currScope))
-//       headsCrossed.push_back(currScope);
-
-//     auto edgeIt = outEdges.find(currScope);
-//     if (edgeIt == outEdges.end()) {
-//       throw std::runtime_error(
-//           "Failed to resolve env binding: scope chain broken");
-//     }
-//     currScope = edgeIt->second;
-
-//     if (currScope == -1) {
-//       throw std::runtime_error(
-//           "Failed to resolve env binding: reached top-level scope");
-//     }
-//   }
-
-//   if (headsCrossed.size() > 0) {
-//     while (!headsCrossed.empty()) {
-//       auto currHead = headsCrossed.back();
-//       headsCrossed.pop_back();
-//       found = IRI_GEN::RemoteEnvBindingSEXP::create(pool, found, false, -1);
-//       commitList[currHead].push_back(found);
-//       scopeBindings[currHead][sid] = found;
-//     }
-//   }
-
-//   return found;
-// }
-
 IRI_STORAGE::IRID IRIS::resolve(StringID sid, double startScopeIDX) {
-  if constexpr (TRACE_IRIS_LOGIC) {
-    std::cerr << "[IRIS TRACE] resolve requested -> Name: '"
-              << pool.strings.get(sid) << "' (ID: " << sid
-              << ") starting at Scope: " << startScopeIDX << "\n";
-  }
 
   std::vector<double> headsCrossed;
   double currScope = startScopeIDX;
   IRI_STORAGE::IRID found;
 
   while (true) {
-    IRIS_TRACE("  Searching in Scope: " << currScope);
 
     auto scopeIt = scopeBindings.find(currScope);
     if (scopeIt != scopeBindings.end() && scopeIt->second.contains(sid)) {
       found = scopeIt->second.at(sid);
-      IRIS_TRACE("  Found existing IRID: " << found
-                                           << " in Scope: " << currScope);
       break;
     }
 
     if (scopeHead.contains(currScope)) {
-      IRIS_TRACE("  Crossed BBContainer boundary at head Scope: " << currScope);
       headsCrossed.push_back(currScope);
     }
 
@@ -207,22 +128,17 @@ IRI_STORAGE::IRID IRIS::resolve(StringID sid, double startScopeIDX) {
   }
 
   if (headsCrossed.size() > 0) {
-    IRIS_TRACE("  Wiring " << headsCrossed.size()
-                           << " remote binding(s) across boundaries...");
     while (!headsCrossed.empty()) {
       auto currHead = headsCrossed.back();
       headsCrossed.pop_back();
-      found = IRI_GEN::RemoteEnvBindingSEXP::create(pool, found, false, -1);
-
-      IRIS_TRACE("    Created RemoteEnvBinding IRID: "
-                 << found << " for head Scope: " << currHead);
+      found = IRI_GEN::RemoteEnvBindingSEXP::create(pool, found, false, false,
+                                                    false, -1);
 
       commitList[currHead].push_back(found);
       scopeBindings[currHead][sid] = found;
     }
   }
 
-  IRIS_TRACE("Resolution complete. Returning IRID: " << found);
   return found;
 }
 
@@ -242,28 +158,32 @@ void IRIS::commit() {
     }
     pool.add_args_to_end(remoteBindingsID, currentCommits);
   }
+  commitList.clear();
+  // Only added becauase I was unsure about what clear does,
+  // just to be safe let this be for now...
+  if (!commitList.empty())
+    throw std::runtime_error("Expected commit List to be empty");
 }
 
 bool IRIS::hasScopePath(double startScope, double targetScope) {
   double currScope = startScope;
   while (currScope != -1) {
     if (currScope == targetScope) {
-      IRIS_TRACE("Scope path TRUE: " << startScope << " " << targetScope);
       return true;
     }
 
     auto edgeIt = outEdges.find(currScope);
     if (edgeIt == outEdges.end()) {
-      throw std::runtime_error("Parent scope not found, error");
+      assert (false && "Parent scope not found, error");
     }
     currScope = edgeIt->second;
   }
-  IRIS_TRACE("Scope path FALSE: " << startScope << " " << targetScope);
   return false;
 }
 
 void IRIS::taintScope(double startScope) {
-  if (taintedScopes.contains(startScope)) return;
+  if (taintedScopes.contains(startScope))
+    return;
 
   double currScope = startScope;
   while (currScope != -1) {
@@ -271,139 +191,246 @@ void IRIS::taintScope(double startScope) {
 
     auto edgeIt = outEdges.find(currScope);
     if (edgeIt == outEdges.end()) {
-      throw std::runtime_error("Parent scope not found, error");
+      assert (false && "Parent scope not found, error");
     }
     currScope = edgeIt->second;
   }
 }
 
-static inline std::vector<IRI_GEN::EnvBindingSEXP> filterLocalBindingsByScope(IRI_STORAGE::IridiumPool & pool, std::span<const IRI_STORAGE::IRID> bindingsObjLocalBindings, double currLookup)
-{
+static inline std::vector<IRI_GEN::EnvBindingSEXP> filterLocalBindingsByScope(
+    IRI_STORAGE::IridiumPool &pool,
+    std::span<const IRI_STORAGE::IRID> bindingsObjLocalBindings,
+    double currLookup) {
   std::vector<IRI_GEN::EnvBindingSEXP> result;
 
-  for (auto & e : bindingsObjLocalBindings)
-  {
+  for (auto &e : bindingsObjLocalBindings) {
     IRI_GEN::EnvBindingSEXP eBinding(e, pool);
     result.push_back(eBinding);
   }
 
-
   std::sort(result.begin(), result.end(),
-  [](IRI_GEN::EnvBindingSEXP &a, IRI_GEN::EnvBindingSEXP &b) {
-    return a.getREFIDX() < b.getREFIDX();
-  });
+            [](IRI_GEN::EnvBindingSEXP &a, IRI_GEN::EnvBindingSEXP &b) {
+              return a.getREFIDX() < b.getREFIDX();
+            });
 
   return result;
 }
 
 double IRIS::getJSEvalLookupREFIDX(double scope, double parentScope) {
   if (!scopeHead.contains(parentScope)) {
-    throw std::runtime_error("getJSEvalLookupREFIDX called on a non container scope");
+    throw std::runtime_error(
+        "getJSEvalLookupREFIDX called on a non container scope");
   }
 
   BBContainerSupport bbc(scopeHead[parentScope], pool);
   BindingsSupport bindings(bbc.getArg_Bindings(), pool);
 
-  std::span<const IRI_STORAGE::IRID> localBindingsList = pool.get_args_view(bindings.getArg_LocalBindings());
+  std::span<const IRI_STORAGE::IRID> localBindingsList =
+      pool.get_args_view(bindings.getArg_LocalBindings());
 
   auto currLookup = scope;
   do {
     auto bs = filterLocalBindingsByScope(pool, localBindingsList, currLookup);
 
-    if (bs.size() > 0)
-    {
+    if (bs.size() > 0) {
       return bs.back().getREFIDX();
       break;
-    }
-    else
-    {
-      if (currLookup == parentScope) return 0;
+    } else {
+      if (currLookup == parentScope)
+        return 0;
 
       auto edgeIt = outEdges.find(currLookup);
       if (edgeIt == outEdges.end()) {
-        throw std::runtime_error("JSEvalLookup :: Parent scope not found, error");
+        assert (false && "JSEvalLookup :: Parent scope not found, error");
       }
       currLookup = edgeIt->second;
     }
   } while (true);
 }
 
-void IRIS::dumpScopeTree() const {
-  std::cerr << "=== IRIS Scope Tree (Current -> Parent) ===\n";
-  if (outEdges.empty()) {
-    std::cerr << "  [Empty]\n";
-    return;
+double IRIS::getEnclosingThrowScope(double startScope) {
+  assert(startScope != -1);
+
+  double currScope = startScope;
+  while (true) {
+    if (scopeHead.contains(currScope) || tryScopes.contains(currScope))
+      return currScope;
+
+    auto edgeIt = outEdges.find(currScope);
+    if (edgeIt == outEdges.end()) {
+      assert (false && "Parent scope not found, error");
+    }
+    currScope = edgeIt->second;
   }
-  for (const auto &[curr, parent] : outEdges) {
-    std::cerr << "  Scope " << std::left << std::setw(6) << curr << " -> "
-              << parent << "\n";
+
+  return -1;
+}
+
+void IRIS::initializeBindingsPool() {
+  if (!commitList.empty())
+    throw std::runtime_error(
+        "Expected commitList to be empty before creating the bindingsPool");
+
+  // Get all the bindings
+  std::vector<IRI_STORAGE::IRID> bindings;
+  for (auto &e : scopeBindings) {
+
+    for (auto &b : e.second) {
+      IRI_STORAGE::IRID currID = b.second;
+      IRI_STORAGE::IRID currTAG = pool[currID].tag;
+      // EnvBindings for top level bindings in modules, need to be added
+      // explicitly as they are not part of the local bindings list...
+      if (currTAG == IRI_GEN::RemoteEnvBinding) {
+        IRI_GEN::RemoteEnvBindingSEXP rb(currID, pool);
+        if (rb.hasMODULETOPLEVELBINDING()) {
+          IRI_STORAGE::IRID targetID = rb.getArg_ParentReference();
+          IRI_GEN::EnvBindingSEXP bb(targetID, pool);
+          bindings.push_back(targetID);
+        }
+      }
+      bindings.push_back(b.second);
+    }
+  }
+
+  // Initialize the bindings pool
+  bindingsPool = std::make_unique<IRI_STORAGE::BindingsPool>(bindings.size());
+
+  //
+  // Allocate the stub before inserting any bindings
+  // - Stub always occupies the 0th index of the pool.
+  // - If a back offset for any node is zero, that means that its missing.
+  //
+  bindingsPool->allocateStub();
+
+  // Store all the bindings in the pool
+  for (auto &bID : bindings) {
+    bindingsPool->allocate(pool, bID);
+  }
+
+  // Make child parent links
+  for (auto &bID : bindings) {
+    auto currTag = pool[bID].tag;
+    if (currTag == IRI_GEN::RemoteEnvBinding) {
+      uint32_t childRemoteIdx =
+          IRI_STORAGE::BindingsPool::getBPoolOffsetForEnvBinding(pool, bID);
+
+      // Verify we are working on the right object...
+      auto &bindingMeta = (*bindingsPool)[childRemoteIdx];
+      assert(bindingMeta.tag == currTag && bindingMeta.ID == bID &&
+             "Binding pool may be corrupted");
+
+      uint32_t parentIdx =
+          IRI_STORAGE::BindingsPool::getBPoolOffsetForEnvBinding(
+              pool, IRI_GEN::RemoteEnvBindingSEXP(bID, pool)
+                        .getArg_ParentReference());
+
+      (*bindingsPool).addCapture(parentIdx, childRemoteIdx);
+    }
   }
 }
 
-void IRIS::dumpCommitList() const {
-  std::cerr << "=== IRIS Pending Commit List ===\n";
+std::vector<IRI_STORAGE::IRID> IRIS::getBindingsToMoveToHeap(double startScope,
+                                                             double endScope) {
+  if (!hasScopePath(startScope, endScope))
+    return {};
+
+  std::vector<IRI_STORAGE::IRID> res;
+
+  double currScope = startScope;
+  do {
+    auto scopeIt = scopeBindings.find(currScope);
+    if (scopeIt != scopeBindings.end()) {
+      auto &bindingsMapAtScope = scopeIt->second;
+      for (auto &b : bindingsMapAtScope) {
+        auto bID = b.second;
+        if (pool[bID].tag == IRI_GEN::EnvBinding && getBindingsMetaView(bID).forwardOffsets.size() > 0) {
+          res.push_back(bID);
+        }
+      }
+    }
+
+    if (startScope == endScope) break;
+
+    auto edgeIt = outEdges.find(currScope);
+    if (edgeIt == outEdges.end()) {
+      assert (false && "Parent scope not found, error");
+    }
+    currScope = edgeIt->second;
+  } while (currScope != endScope);
+
+  return res;
+}
+
+const IRI_STORAGE::BindingMeta &
+IRIS::getBindingsMetaView(IRI_STORAGE::IRID id) const {
+  auto offset = IRI_STORAGE::BindingsPool::getBPoolOffsetForEnvBinding(pool, id);
+  return (*bindingsPool)[offset];
+}
+
+void IRIS::dumpCommitList(std::ostream &oss) const {
+  oss << "=== IRIS Pending Commit List ===\n";
   if (commitList.empty()) {
-    std::cerr << "  [Empty]\n";
+    oss << "  [Empty]\n";
     return;
   }
   for (const auto &[headScope, commits] : commitList) {
-    std::cerr << "  BBContainer Head Scope " << headScope << " ("
-              << commits.size() << " pending remote bindings):\n";
+    oss << "  BBContainer Head Scope " << headScope << " (" << commits.size()
+        << " pending remote bindings):\n";
     for (size_t i = 0; i < commits.size(); ++i) {
-      std::cerr << "    [" << i << "] IRID: " << commits[i] << "\n";
+      oss << "    [" << i << "] IRID: " << commits[i] << "\n";
     }
   }
 }
 
-void IRIS::dumpBindings() const {
-  std::cerr << "=== IRIS Scope Bindings ===\n";
-  if (scopeBindings.empty()) {
-    std::cerr << "  [Empty]\n";
+void IRIS::dumpBindingsAtScope(std::ostream &oss, double currScope) const {
+  if (!scopeBindings.contains(currScope)) {
+    oss << "[No bindings]";
     return;
   }
-  for (const auto &[scope, bindings] : scopeBindings) {
-    std::cerr << "  Scope " << scope << ":\n";
-    if (bindings.empty()) {
-      std::cerr << "    [No bindings]\n";
-    } else {
-      for (const auto &[nameID, irid] : bindings) {
-        // Resolving the StringID via the pool
-        std::cerr << "    Name: " << std::left << std::setw(15)
-                  << pool.strings.get(nameID) << " (ID: " << nameID
-                  << ") -> IRID: " << irid << "\n";
-      }
-    }
+
+  for (auto &[sID, bID] : scopeBindings.at(currScope)) {
+    bool captured = false;
+    if (bindingsPool != nullptr) captured = getBindingsMetaView(bID).forwardOffsets.size() > 0;
+    oss << pool.strings.get(sID) << "@" << bID << ":"
+        << (pool[bID].tag == IRI_GEN::RemoteEnvBinding ? "R" : "L")
+        << (bindingsPool != nullptr && captured ? "^" : "")
+        << " ";
   }
 }
 
-void IRIS::dumpAllNames() const {
-  std::cerr << "=== IRIS Fast-Lookup Global Names ===\n";
+void IRIS::dumpAllNames(std::ostream &oss) const {
+  oss << "=== IRIS : All declared names ===\n";
   if (allNames.empty()) {
-    std::cerr << "  [Empty]\n";
+    oss << "  [Empty]\n";
     return;
   }
-  std::cerr << "  ";
+  oss << "  ";
   for (const auto &nameID : allNames) {
-    // Resolving the StringID via the pool
-    std::cerr << pool.strings.get(nameID) << "[" << nameID << "]" << " ";
+    oss << pool.strings.get(nameID) << " ";
   }
-  std::cerr << "\n";
-}
-
-void IRIS::dumpFullState() const {
-  std::cerr << "\n=============================================\n";
-  std::cerr << "            IRIS STATE DUMP                  \n";
-  std::cerr << "=============================================\n";
-  dumpAllNames();
-  dumpScopeTree();
-  dumpBindings();
-  dumpCommitList();
-  std::cerr << "=============================================\n\n";
+  oss << "\n";
 }
 
 void IRIS::dumpFlat(std::ostream &oss, int indentLevel) const {
-  if (nodes.empty())
+  oss << "\n=============================================\n";
+  oss << "            IRIS STATE DUMP                  \n";
+  oss << "=============================================\n";
+  dumpScopeTree(oss, indentLevel);
+  dumpAllNames(oss);
+  dumpCommitList(oss);
+  if (bindingsPool)
+    bindingsPool->dump(oss);
+  else
+    oss << "[BindingsPool not yet initialized]\n";
+  oss << "=============================================\n\n";
+}
+
+void IRIS::dumpScopeTree(std::ostream &oss, int indentLevel) const {
+  oss << "=== IRIS Scope Tree ===\n";
+  if (nodes.empty()) {
+    oss << "  [Empty]\n";
     return;
+  }
 
   // 1. Build an adjacency list (Parent -> Children) for O(N) lookup
   std::unordered_map<double, std::vector<double>> childrenMap;
@@ -436,7 +463,11 @@ void IRIS::printNode(
     const std::unordered_map<double, std::vector<double>> &childrenMap) const {
 
   // Print current node with branching characters
-  oss << prefix << (isLast ? "└── " : "├── ") << (taintedScopes.contains(node) ? "(†)" : "") << node << (scopeHead.contains(node) ? "(*)" : "") << "\n";
+  oss << prefix << (isLast ? "└── " : "├── ")
+      << (taintedScopes.contains(node) ? "(†)" : "") << node
+      << (scopeHead.contains(node) ? "(*)" : "") << " : ";
+  dumpBindingsAtScope(oss, node);
+  oss << "\n";
 
   // Update prefix for children
   std::string newPrefix = prefix + (isLast ? "    " : "│   ");
