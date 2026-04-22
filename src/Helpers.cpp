@@ -228,6 +228,8 @@ IRI_GEN::IRID resolveScopedLookup(
         pool,
         resolvedInParent,
         false,
+        false,
+        false,
         static_cast<double>(updatedRemoteBindings.size())
     );
 
