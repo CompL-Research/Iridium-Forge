@@ -56,7 +56,7 @@ void _4_3_PIB(IridiumPool &pool, IRID fileID, BUILD_CTX &iridiumBuildContext) {
 
           auto bindingSEXP = EnvBindingSEXP::create(pool, ibs.getNAME(), false, false, false,
                                  ibs.hasJSLET(), ibs.hasJSCONST(),
-                                 ibs.hasJSVAR(), containerBC->scopeIDX, -1,
+                                 ibs.hasJSVAR(), false, containerBC->scopeIDX, -1,
                                  localScope, parentScope, -1);
           localBindingsVec.push_back(bindingSEXP);
         }

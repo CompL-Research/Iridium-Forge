@@ -38,7 +38,7 @@ void _4_6_CBA(IridiumPool &pool, IRID fileID, BUILD_CTX &iridiumBuildContext) {
 
       auto res = EnvBindingSEXP::create(pool,
           pool.strings.intern(containerBC->args[k]), false, flag == IRI_GEN::IRI_FLAG::JSARG,
-          flag == IRI_GEN::IRI_FLAG::JSRESTARG, false, false, false,
+          flag == IRI_GEN::IRI_FLAG::JSRESTARG, false, false, false, false,
           containerBC->scopeIDX, k, containerBC->scopeIDX, containerBC->parent,
           -1);
 

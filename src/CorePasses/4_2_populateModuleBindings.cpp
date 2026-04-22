@@ -77,8 +77,8 @@ void _4_2_PMB(IridiumPool &pool, IRID fileSEXP, BUILD_CTX &iridiumBuildContext) 
         StaticImportSEXP staticImportStmt(stmtID, pool);
         ResolveEnvBindingSEXP storageTarget(staticImportStmt.getArg_StorageLocation(), pool);
         StringID bindingName = storageTarget.getNAME();
-        IRID binding = EnvBindingSEXP::create(pool, bindingName, false, false, false, true, false, false, containerBC->scopeIDX, -1, localScope, parentClosureScope, -1);
-        IRID remoteBinding = RemoteEnvBindingSEXP::create(pool, binding, false, -1);
+        IRID binding = EnvBindingSEXP::create(pool, bindingName, false, false, false, true, false, false, false, containerBC->scopeIDX, -1, localScope, parentClosureScope, -1);
+        IRID remoteBinding = RemoteEnvBindingSEXP::create(pool, binding, false, false, true, -1);
         remoteBindingsVector.push_back(remoteBinding);
         staticImportsVec.push_back(stmtID);
         pool.update_arg_inplace(bbIDX, i, pool.NOP_SEXP);

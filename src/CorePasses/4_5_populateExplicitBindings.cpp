@@ -198,10 +198,10 @@ void _4_5_PEB(IridiumPool &pool, IRID fileID, BUILD_CTX &iridiumBuildContext) {
             if (startBB.hasTopLevel() && USE_TOP_LEVEL_LOCALS == false) {
               IRID localBinding = EnvBindingSEXP::create(
                   pool, bindingName, isASW, false, false, kindFlag == JSLET,
-                  kindFlag == JSCONST, kindFlag == JSVAR, containerBC->scopeIDX,
+                  kindFlag == JSCONST, kindFlag == JSVAR, false, containerBC->scopeIDX,
                   -1, localScope, parentScope, -1);
               IRID remoteBinding =
-                  RemoteEnvBindingSEXP::create(pool, localBinding, false, -1);
+                  RemoteEnvBindingSEXP::create(pool, localBinding, false, false, true, -1);
               remoteBindings.push_back(remoteBinding);
               if (doInit) {
                 hoistedEnvWrites.push_back(EnvWriteSEXP::create(
@@ -210,7 +210,7 @@ void _4_5_PEB(IridiumPool &pool, IRID fileID, BUILD_CTX &iridiumBuildContext) {
             } else {
               IRID localBinding = EnvBindingSEXP::create(
                   pool, bindingName, isASW, false, false, kindFlag == JSLET,
-                  kindFlag == JSCONST, kindFlag == JSVAR, containerBC->scopeIDX,
+                  kindFlag == JSCONST, kindFlag == JSVAR, false, containerBC->scopeIDX,
                   -1, localScope, parentScope, -1);
               localBindings.push_back(localBinding);
               if (doInit) {
