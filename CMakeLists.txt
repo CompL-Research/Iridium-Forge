@@ -6,6 +6,20 @@ set(ENV{CCACHE_DIR} "${CMAKE_SOURCE_DIR}/.ccache")
 
 find_program(CCACHE_PROGRAM ccache)
 
+include(FetchContent)
+
+FetchContent_Declare(small
+    GIT_REPOSITORY https://github.com/alandefreitas/small
+    GIT_TAG origin/master # or whatever tag you want
+)
+
+FetchContent_GetProperties(small)
+if(NOT small_POPULATED)
+    FetchContent_Populate(small)
+    add_subdirectory(${small_SOURCE_DIR} ${small_BINARY_DIR} EXCLUDE_FROM_ALL)
+endif()
+
+
 if(CCACHE_PROGRAM)
     # Set the launchers
     set(CMAKE_C_COMPILER_LAUNCHER   ${CCACHE_PROGRAM})
@@ -72,3 +86,10 @@ target_include_directories(forge PUBLIC ${CMAKE_SOURCE_DIR}/include)
 # ----------------------
 target_compile_features(iridiumForge PRIVATE cxx_std_20)
 target_compile_features(forge PRIVATE cxx_std_20)
+
+
+# ----------------------
+# Link "small"
+# ----------------------
+target_link_libraries(iridiumForge PUBLIC small::small)
+target_link_libraries(forge PUBLIC small::small)
