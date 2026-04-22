@@ -1,7 +1,8 @@
 #include "Storage/IridiumSEXP.h"
-#include "Storage/IridiumPool.h"
-#include "Storage/Config.h"
+#include "Generated/IridiumEnums.h"
 #include "Generated/IridiumMeta.h"
+#include "Storage/Config.h"
+#include "Storage/IridiumPool.h"
 #include <iomanip>
 
 namespace IRI_STORAGE {
@@ -138,15 +139,14 @@ void IridiumSEXP::dump(std::ostream &oss, const IridiumPool *pool,
   for (uint32_t i = 0; i < num_flag_slots; ++i) {
     const auto &v = flags_span[i];
 
-    // Skip empty slots
-    if (std::holds_alternative<std::monostate>(v))
+    IRI_GEN::IRI_FLAG flagEnum = IRI_GEN::IridiumMeta::get_flag_enum(tag, i);
+    if (flagEnum == IRI_GEN::IRI_FLAG::LINK || std::holds_alternative<std::monostate>(v))
       continue;
 
     if (!first_flag)
       oss << ",";
     first_flag = false;
 
-    IRI_GEN::IRI_FLAG flagEnum = IRI_GEN::IridiumMeta::get_flag_enum(tag, i);
     oss << "[\"" << IRI_GEN::dump_flag(flagEnum) << "\",";
 
     if (std::holds_alternative<double>(v)) {
@@ -181,8 +181,9 @@ void IridiumSEXP::dumpFlat(std::ostream &oss, const IridiumPool *pool,
   for (uint32_t i = 0; i < num_flag_slots; ++i) {
     const auto &v = flags_span[i];
 
-    // Skip empty/monostate slots
-    if (std::holds_alternative<std::monostate>(v))
+
+    IRI_GEN::IRI_FLAG flagEnum = IRI_GEN::IridiumMeta::get_flag_enum(tag, i);
+    if (flagEnum == IRI_GEN::IRI_FLAG::LINK || std::holds_alternative<std::monostate>(v))
       continue;
 
     if (first_flag) {
@@ -191,9 +192,6 @@ void IridiumSEXP::dumpFlat(std::ostream &oss, const IridiumPool *pool,
     } else {
       oss << ", ";
     }
-
-    // Resolve flag name
-    IRI_GEN::IRI_FLAG flagEnum = IRI_GEN::IridiumMeta::get_flag_enum(tag, i);
 
     // Stream the variant value
     if (std::holds_alternative<double>(v)) {
