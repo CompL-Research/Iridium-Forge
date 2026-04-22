@@ -3,6 +3,7 @@
 #include "CorePasses.h"
 #include "Generated/IridiumEnums.h"
 #include "Generated/IridiumTypes.h"
+#include "Helpers.h"
 #include "Parser/IridiumBuildContext.h"
 #include "Storage/Config.h"
 #include "Storage/IridiumPool.h"
@@ -49,15 +50,31 @@ inline static size_t CBB(IRI_STORAGE::IridiumPool &pool, std::vector<IRID> &v) {
   throw std::runtime_error("Found a BB with no control flow statement");
 }
 
-void _19_CBB(IRI_STORAGE::IridiumPool &pool, IRI_STORAGE::IRID fileSEXP,
+void _19_CBBAMTLA(IRI_STORAGE::IridiumPool &pool, IRI_STORAGE::IRID fileSEXP,
              BUILD_CTX &iridiumBuildContext) {
+  assert(pool.topLevelBBContainer.has_value() &&
+         "Expected that the pool is aware about the top level container...");
+  IRID topLevelContainer = pool.topLevelBBContainer.value();
   FileSupport file(fileSEXP, pool);
   for (auto [bbcID, _] : file.containers()) {
     BBContainerSupport bbc(bbcID, pool);
     for (auto [bbID, _] : bbc.bbs()) {
       BBSupport bb(bbID, pool);
       std::vector<IRID> newBB = pool.get_args(bbID);
-      pool.update_num_args(bbID, CBB(pool, newBB));
+      //
+      // Mark TLA before it is possibly deleted
+      //
+      if (bbcID == topLevelContainer) {
+        for (auto [stmtID, _] : bb.stmts()) {
+          auto currTag = pool[stmtID].tag;
+          if (IRI_HELPERS::hasNodeWithPredicate(stmtID, &pool, [&](IRID id) { return pool[id].tag == IRI_GEN::Await; })) {
+            file.setTLA();
+            break;
+          }
+        }
+      }
+
+        pool.update_num_args(bbID, CBB(pool, newBB));
     }
   }
 }
