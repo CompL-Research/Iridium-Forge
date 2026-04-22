@@ -121,8 +121,14 @@ void _18_DELOP(
         &iridiumBuildContext);
 
 
-void _19_CBB(
+void _19_CBBAMTLA(
     IRI_STORAGE::IridiumPool &pool, IRI_STORAGE::IRID fileSEXP,
     std::unordered_map<int, std::shared_ptr<IRI_PARSE::IridiumBuildContext>>
         &iridiumBuildContext);
+
+void _20_ESTKTHM(
+    IRI_STORAGE::IridiumPool &pool, IRI_STORAGE::IRID fileSEXP,
+    std::unordered_map<int, std::shared_ptr<IRI_PARSE::IridiumBuildContext>>
+        &iridiumBuildContext);
+
 }; // namespace IRI_CORE_PASSES
