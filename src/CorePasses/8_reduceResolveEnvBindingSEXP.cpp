@@ -153,13 +153,25 @@ void _8_RREBS(IridiumPool &pool, IRID fileSEXP,
               siblingSpecialWrite.getTHISINIT());
 
           pool.update_arg_inplace(bbID, stmtIDX, writeStmt);
+
+          size_t unresolvedReferences = 0;
+          IRI_HELPERS::countNodeOccurenceWithPredicate(
+              siblingSpecialWrite.getArg_RVal(), &pool,
+              [&](IRID arg) {
+                return pool[arg].tag == IRI_GEN::ResolveEnvBinding;
+              },
+              unresolvedReferences);
+          if (unresolvedReferences > 0) {
+            patchNode(iris, file, pool, siblingSpecialWrite.getArg_RVal(), bbScopeIDX, iridiumBuildContext,
+                      unresolvedReferences);
+            assert(unresolvedReferences == 0);
+          }
         } else {
           size_t unresolvedReferences = 0;
           IRI_HELPERS::countNodeOccurenceWithPredicate(
               stmtID, &pool,
               [&](IRID arg) {
-                return pool[arg].tag == IRI_GEN::ResolveEnvBinding ||
-                       pool[arg].tag == IRI_GEN::SiblingSpecialWrite;
+                return pool[arg].tag == IRI_GEN::ResolveEnvBinding;
               },
               unresolvedReferences);
           if (unresolvedReferences > 0) {
