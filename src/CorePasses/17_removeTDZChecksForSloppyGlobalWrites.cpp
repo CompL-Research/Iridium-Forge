@@ -43,10 +43,9 @@ void _17_RTDZ(IRI_STORAGE::IridiumPool &pool, IRI_STORAGE::IRID fileSEXP,
 
             // Strict mode, let the check be there, reduce to a normal read
             if (bbc.hasSTRICT()) {
-              pool.update_arg_inplace(bbID, stmtOffset,
-                                      EnvReadSEXP::create(pool,
-                                                          tdzRead.getArg_Obj(),
-                                                          tdzRead.hasSAFE()));
+              IRID srej = StackRejectSEXP::create(pool, 1);
+              pool.set_args(srej, { EnvReadSEXP::create(pool, tdzRead.getArg_Obj(), tdzRead.hasSAFE()) });
+              pool.update_arg_inplace(bbID, stmtOffset, srej);
               continue;
             }
 
@@ -55,16 +54,16 @@ void _17_RTDZ(IRI_STORAGE::IridiumPool &pool, IRI_STORAGE::IRID fileSEXP,
               GlobalBindingSEXP gg(obj, pool);
               if (!gg.hasSLOPPYDECL())
                 pool.update_arg_inplace(bbID, stmtOffset, pool.NOP_SEXP);
-              else
-                pool.update_arg_inplace(bbID, stmtOffset,
-                                        EnvReadSEXP::create(pool,
-                                                            tdzRead.getArg_Obj(),
-                                                            tdzRead.hasSAFE()));
+              else {
+                IRID srej = StackRejectSEXP::create(pool, 1);
+                pool.set_args(srej, { EnvReadSEXP::create(pool, tdzRead.getArg_Obj(), tdzRead.hasSAFE()) });
+                pool.update_arg_inplace(bbID, stmtOffset, srej);
+
+              }
             } else {
-              pool.update_arg_inplace(bbID, stmtOffset,
-                                      EnvReadSEXP::create(pool,
-                                                          tdzRead.getArg_Obj(),
-                                                          tdzRead.hasSAFE()));
+              IRID srej = StackRejectSEXP::create(pool, 1);
+              pool.set_args(srej, { EnvReadSEXP::create(pool, tdzRead.getArg_Obj(), tdzRead.hasSAFE()) });
+              pool.update_arg_inplace(bbID, stmtOffset, srej);
             }
           }
         }
