@@ -55,9 +55,24 @@ Napi::Value execute(const Napi::CallbackInfo &info) {
     return Napi::String::New(env, "");
   }
 
+  if (!info[6].IsBoolean()) {
+    Napi::TypeError::New(env, "LegacyJSON flag not specified")
+        .ThrowAsJavaScriptException();
+    return Napi::String::New(env, "");
+  }
+
   // 1. Cast the arguments to Napi::Function
   Napi::Function NAPI_tick = info[4].As<Napi::Function>();
   Napi::Function NAPI_tock = info[5].As<Napi::Function>();
+
+  bool isLegacyJSON = info[6].As<Napi::Boolean>().ToBoolean();
+
+  if (isLegacyJSON == false) {
+    Napi::TypeError::New(
+        env, "LegacyJSON == false is not yet supported, please use --ljson")
+        .ThrowAsJavaScriptException();
+    return Napi::String::New(env, "");
+  }
 
   IRIPerf perf;
   perf.tick = [&](std::string msg) {
@@ -76,69 +91,54 @@ Napi::Value execute(const Napi::CallbackInfo &info) {
   IRI_STORAGE::IridiumPool pool;
   pool.NULL_SEXP = IRI_GEN::NullSEXP::create(pool, true);
   pool.NOP_SEXP = IRI_GEN::NOPSEXP::create(pool);
-  pool.UNDEF_READ = IRI_GEN::EnvReadSEXP::create(pool, pool.getGlobalBindingSEXP("undefined"), false);
+  pool.UNDEF_READ = IRI_GEN::EnvReadSEXP::create(
+      pool, pool.getGlobalBindingSEXP("undefined"), false);
   pool.NUBD_SEXP = IRI_GEN::JSNUBDSEXP::create(pool);
   pool.TRUE_SEXP = IRI_GEN::BooleanSEXP::create(pool, true);
   pool.FALSE_SEXP = IRI_GEN::BooleanSEXP::create(pool, false);
 
-
   perf.tick("iri-forge-main");
 
-  try {
-    perf.tick("iri-forge-parse");
+  perf.tick("iri-forge-parse");
 
-    IRI_PARSE::IridiumParser parser(pool);
-    perf.tick("iri-forge-parse-code");
-    parser.initParseCTX(IRIDIUM);
-    IRI_STORAGE::IRID root = parser.parse();
-    perf.tock("iri-forge-parse-code");
+  IRI_PARSE::IridiumParser parser(pool);
+  perf.tick("iri-forge-parse-code");
+  parser.initParseCTX(IRIDIUM);
+  IRI_STORAGE::IRID root = parser.parse();
+  perf.tock("iri-forge-parse-code");
 
-    perf.tick("iri-forge-parse-buildContext");
-    parser.parseBuildContexts(BUILDCTX);
-    perf.tock("iri-forge-parse-buildContext");
+  perf.tick("iri-forge-parse-buildContext");
+  parser.parseBuildContexts(BUILDCTX);
+  perf.tock("iri-forge-parse-buildContext");
 
-    perf.tock("iri-forge-parse");
+  perf.tock("iri-forge-parse");
 
-    perf.tick("iri-forge-entrypoint");
-    auto res = IRI_ENTRY::sharedEntrypoint(pool, root,
-                                           parser.iridiumBuildContext, perf);
-    perf.tock("iri-forge-entrypoint");
+  perf.tick("iri-forge-entrypoint");
+  auto res =
+      IRI_ENTRY::sharedEntrypoint(pool, root, parser.iridiumBuildContext, perf);
+  perf.tock("iri-forge-entrypoint");
 
-  } catch (const std::exception &e) {
-    Napi::Error::New(env, std::string("[Forge] Parse Error: ") + e.what())
-        .ThrowAsJavaScriptException();
-    return env.Null();
-  }
+  std::ostringstream oss;
 
-  // std::ostringstream oss;
+  oss << "{";
+  oss << "\"version\":" << "\"" << VERSION << "\",";
+  oss << "\"absoluteFilePath\":" << "\"" << PATH << "\",";
+  oss << "\"iridium\":";
+  pool[res].dump(oss, &pool, true);
+  oss << "}";
 
-  // if (returnJSON)
-  // {
-  //   oss << "{";
-  //   oss << "\"version\":" << "\"" << std::string(VERSION.via.str.ptr,
-  //   VERSION.via.str.size) << "\","; oss << "\"absoluteFilePath\":" << "\"" <<
-  //   std::string(path.via.str.ptr, path.via.str.size) << "\","; oss <<
-  //   "\"iridium\":"; res->dump(oss, true); oss << "}";
-  // }
-  // else
-  // {
-  //   Napi::Error::New(env, "Binary format is not yet handled, use legacy JSON
-  //   format").ThrowAsJavaScriptException();
-  // }
+  std::string resultStr = oss.str();
+  size_t length = resultStr.length();
 
-  // std::string str = oss.str(); // keep it alive
-  // size_t len = str.size();
+  // 2. Allocate heap memory for the Buffer to "own"
+  // We use new char[length] to ensure the buffer has its own copy
+  char *resData = new char[length];
+  std::memcpy(resData, resultStr.c_str(), length);
 
-  // Allocate raw buffer and copy data
-  char *resData = new char[strlen("{}")];
-  resData[0] = '{';
-  resData[1] = '}';
-
-  perf.tock("iri-forge-main");
-
-  // Create Node Buffer that owns `data` and cleans up with delete[]
-  return Napi::Buffer<char>::New(env, resData, 2,
-                                 [](Napi::Env, char *data) { delete[] data; });
+  // 3. Return the Napi::Buffer
+  // The lambda at the end acts as a "finalizer" to clean up the memory
+  return Napi::Buffer<char>::New(
+      env, resData, length, [](Napi::Env env, char *data) { delete[] data; });
 }
 
 Napi::Object Init(Napi::Env env, Napi::Object exports) {

@@ -19,6 +19,7 @@ interface IridiumForge {
     buildContext: Array<any>,
     tick: (arg0: string) => void,
     tock: (arg0: string) => void,
+    returnLegacyJSONResult: boolean,
   ): Array<any>;
 }
 
