@@ -35,8 +35,9 @@ void _20_ESTKTHM(IRI_STORAGE::IridiumPool &pool, IRI_STORAGE::IRID fileSEXP,
       std::vector<IRID> newBB = pool.get_args(bbID);
       size_t oldNumArgs = newBB.size();
 
-      double currScope = bb.getScopeIDX();
 
+      double currScope = bb.getScopeIDX();
+      bool dirty = false;
       std::vector<IRID> &args = newBB;
       for (auto it = args.begin(); it != args.end(); ++it) {
         IRID stmtID = *it;
@@ -61,6 +62,7 @@ void _20_ESTKTHM(IRI_STORAGE::IridiumPool &pool, IRI_STORAGE::IRID fileSEXP,
               pool.iris->getBindingsToMoveToHeap(currScope, targetScope);
 
           if (bindingsToMove.size() > 0) {
+            dirty = true;
             IRI_STORAGE::IRID stackToHeapNodeID = StackToHeapSEXP::create(pool);
             pool.set_args(stackToHeapNodeID, bindingsToMove);
             // Insert stackToHeapNode just before the current stmt in the
@@ -77,6 +79,7 @@ void _20_ESTKTHM(IRI_STORAGE::IridiumPool &pool, IRI_STORAGE::IRID fileSEXP,
               pool.iris->getBindingsToMoveToHeap(currScope, targetScope);
 
           if (bindingsToMove.size() > 0) {
+            dirty = true;
             IRI_STORAGE::IRID stackToHeapNodeID = StackToHeapSEXP::create(pool);
             pool.set_args(stackToHeapNodeID, bindingsToMove);
             // Insert stackToHeapNode just before the current stmt in the
@@ -88,6 +91,9 @@ void _20_ESTKTHM(IRI_STORAGE::IridiumPool &pool, IRI_STORAGE::IRID fileSEXP,
           }
 
         } else if (stmtTAG == IRI_GEN::LoopInitPreludeEnd) {
+
+          dirty = true;
+
           double targetScope = currScope;
           auto bindingsToMove =
               pool.iris->getBindingsToMoveToHeap(currScope, targetScope);
@@ -100,12 +106,13 @@ void _20_ESTKTHM(IRI_STORAGE::IridiumPool &pool, IRI_STORAGE::IRID fileSEXP,
             pool.set_args(stackToHeapNodeID, bindingsToMove);
             *it = stackToHeapNodeID;
           } else {
+
             *it = pool.NOP_SEXP;
           }
         }
       }
 
-      if (newBB.size() > oldNumArgs) {
+      if (dirty) {
         pool.set_args(bbID, newBB);
       }
     }
