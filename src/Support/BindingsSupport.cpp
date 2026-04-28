@@ -165,15 +165,19 @@ std::optional<IRID> BindingsSupport::getBinding(BUILD_CTX &iridiumBuildContext,
 
   auto &buildContext = iridiumBuildContext[lookupScope];
   double nextScope = buildContext->parent;
-  // If the scope is an ArgInit context, bypass lookup of non-argument bindings
-  // to parent scope
-  if (buildContext->isArgInitContext) {
-    // If the binding is not in the whitelist, bypass lookup scope...
-    if (buildContext->argInitContextWhitelist.find(std::string(pool->strings.get(name))) ==
-        buildContext->argInitContextWhitelist.end()) {
-      nextScope = buildContext->bypassParent;
-    }
-  }
+
+  //
+  // We deprecated this logic a while ago, not sure why it was still here...
+  //
+  // // If the scope is an ArgInit context, bypass lookup of non-argument bindings
+  // // to parent scope
+  // if (buildContext->isArgInitContext) {
+  //   // If the binding is not in the whitelist, bypass lookup scope...
+  //   if (buildContext->argInitContextWhitelist.find(std::string(pool->strings.get(name))) ==
+  //       buildContext->argInitContextWhitelist.end()) {
+  //     nextScope = buildContext->bypassParent;
+  //   }
+  // }
   return getBinding(iridiumBuildContext, name, nextScope);
 }
 
