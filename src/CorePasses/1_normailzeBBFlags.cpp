@@ -2,6 +2,9 @@
 #include "Generated/IridiumEnums.h"
 #include "Generated/IridiumTypes.h"
 #include "Parser/IridiumBuildContext.h"
+#include "Support/BBSupport.hpp"
+#include <unordered_map>
+#include <algorithm>
 
 namespace IRI_CORE_PASSES {
 using namespace IRI_PARSE;
@@ -9,7 +12,85 @@ using namespace IRI_GEN;
 using namespace IRI_STORAGE;
 using BUILD_CTX = std::unordered_map<int, std::shared_ptr<IridiumBuildContext>>;
 
-inline IRI_FLAG getBBFlag(BBSEXP &b) {
+static inline bool mergeCTXWithAIScope(IridiumPool &pool, int curr,
+                                       BUILD_CTX &ctx) {
+  auto &buildContext = ctx[curr];
+  IRI_GEN::BBSEXP startBB(buildContext->BB.at(0), pool);
+
+  if (startBB.hasClosureBoundary() || startBB.hasTopLevel())
+    return false;
+  return true;
+}
+
+void collapseSubtree(int argInitNode, int parentNode, int currNode,
+                     std::unordered_map<int, int> &outEdges,
+                     std::unordered_map<int, std::vector<int>> &inEdges,
+                     BUILD_CTX &iridiumBuildContext, IridiumPool &pool) {
+
+  // 1. Copy the children to avoid iterator invalidation when modifying inEdges
+  std::vector<int> children = inEdges[currNode];
+
+  // 2. Check the collapse condition (skipping the root argInitNode itself)
+  bool shouldCollapse = false;
+  if (currNode != argInitNode) {
+    shouldCollapse = mergeCTXWithAIScope(pool, currNode, iridiumBuildContext);
+  }
+
+  if (shouldCollapse) {
+    // --- REWIRING PHASE ---
+
+    // a. Rewire all immediate incoming edges (children) to argInitNode
+    for (int child : children) {
+      outEdges[child] = argInitNode;
+      inEdges[argInitNode].push_back(child);
+
+      // b. Update the context parent pointer
+      iridiumBuildContext[child]->parent = argInitNode;
+    }
+
+    // c. Remove currNode from its original parent's inEdges list
+    auto &parentChildren = inEdges[parentNode];
+    parentChildren.erase(
+        std::remove(parentChildren.begin(), parentChildren.end(), currNode),
+        parentChildren.end());
+
+    // d. Clean up the collapsed node from the maps
+    inEdges.erase(currNode);
+    outEdges.erase(currNode);
+
+    // e. Copy over BBs from the removed node into argInitScope
+    auto &aiBBs = iridiumBuildContext[argInitNode]->BB;
+    auto &bbsToMerge = iridiumBuildContext[currNode]->BB;
+    for (auto & x : bbsToMerge) {
+      IRI_STRUCTURAL::BBSupport bb(x, pool);
+      bb.setScopeIDX(argInitNode);
+    }
+    aiBBs.insert(aiBBs.end(), bbsToMerge.begin(), bbsToMerge.end());
+
+    // 1. Create a weak_ptr observer. This does NOT increase the reference count.
+    std::weak_ptr<IridiumBuildContext> observer = iridiumBuildContext[currNode];
+
+    // 2. Erase the node. This destroys the shared_ptr held by the map.
+    iridiumBuildContext.erase(currNode);
+
+    // 3. Assert that the memory was actually freed.
+    // weak_ptr::expired() returns true if the reference count hit 0.
+    assert(observer.expired() && "Memory leak: Another shared_ptr is still holding this context!");
+
+    // e. TERMINATE RECURSION
+    return;
+  }
+
+  // --- NO COLLAPSE PHASE ---
+
+  // If the node didn't collapse, we continue traversing further down the tree.
+  for (int child : children) {
+    collapseSubtree(argInitNode, currNode, child, outEdges, inEdges,
+                    iridiumBuildContext, pool);
+  }
+}
+
+static inline IRI_FLAG getBBFlag(BBSEXP &b) {
   if (b.hasTopLevel())
     return IRI_FLAG::TopLevel;
   if (b.hasClosureBoundary())
@@ -21,7 +102,7 @@ inline IRI_FLAG getBBFlag(BBSEXP &b) {
   throw std::runtime_error("Failed to get a valid flag from a BBSEXP");
 }
 
-inline void setBBFlag(BBSEXP &b, IRI_FLAG flagToSet) {
+static inline void setBBFlag(BBSEXP &b, IRI_FLAG flagToSet) {
   b.clearTopLevel();
   b.clearClosureBoundary();
   b.clearLexical();
@@ -38,9 +119,42 @@ inline void setBBFlag(BBSEXP &b, IRI_FLAG flagToSet) {
 }
 
 void _1_NBBF(IridiumPool &pool, IRID sexp, BUILD_CTX &iridiumBuildContext) {
+  std::unordered_map<int, int> outEdges;
+  std::unordered_map<int, std::vector<int>> inEdges;
+  std::vector<int> argInitScopes;
+  //
+  // Build a scope tree... this is messy, we do this again later
+  // but for simplicity its a small reimplementation...
+  //
   for (auto &e : iridiumBuildContext) {
-    int scopeIdx = e.first;
+    auto &buildContext = e.second;
+
+    int currScope = e.first;
+    int parentScope = buildContext->parent;
+    outEdges[currScope] = parentScope;
+    inEdges[parentScope].push_back(currScope);
+
+    if (buildContext->isArgInitContext)
+      argInitScopes.push_back(currScope);
+  }
+
+  //
+  // Collapse all scopes inside ArgInitScope [excluding boundaries of course]
+  //
+  for (auto &aiScope : argInitScopes) {
+    collapseSubtree(aiScope, aiScope, aiScope, outEdges, inEdges, iridiumBuildContext, pool);
+  }
+
+  for (auto &e : iridiumBuildContext) {
     std::shared_ptr<IridiumBuildContext> buildContext = e.second;
+
+    int currScope = e.first;
+    int parentScope = buildContext->parent;
+    outEdges[currScope] = parentScope;
+    inEdges[parentScope].push_back(currScope);
+
+    if (buildContext->isArgInitContext)
+      argInitScopes.push_back(currScope);
 
     BBSEXP firstBB(buildContext->BB[0], pool);
 
