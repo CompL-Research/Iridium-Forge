@@ -197,54 +197,48 @@ void IRIS::taintScope(double startScope) {
   }
 }
 
-static inline std::vector<IRI_GEN::EnvBindingSEXP> filterLocalBindingsByScope(
-    IRI_STORAGE::IridiumPool &pool,
-    std::span<const IRI_STORAGE::IRID> bindingsObjLocalBindings,
-    double currLookup) {
-  std::vector<IRI_GEN::EnvBindingSEXP> result;
-
-  for (auto &e : bindingsObjLocalBindings) {
-    IRI_GEN::EnvBindingSEXP eBinding(e, pool);
-    result.push_back(eBinding);
-  }
-
-  std::sort(result.begin(), result.end(),
-            [](IRI_GEN::EnvBindingSEXP &a, IRI_GEN::EnvBindingSEXP &b) {
-              return a.getREFIDX() < b.getREFIDX();
-            });
-
-  return result;
-}
-
 double IRIS::getJSEvalLookupREFIDX(double scope, double parentScope) {
+
   if (!scopeHead.contains(parentScope)) {
     throw std::runtime_error(
         "getJSEvalLookupREFIDX called on a non container scope");
   }
 
-  BBContainerSupport bbc(scopeHead[parentScope], pool);
-  BindingsSupport bindings(bbc.getArg_Bindings(), pool);
+  if (!hasScopePath(scope, parentScope)) {
+    throw std::runtime_error(
+        "getJSEvalLookupREFIDX scope is invalid");
+  }
 
-  std::span<const IRI_STORAGE::IRID> localBindingsList =
-      pool.get_args_view(bindings.getArg_LocalBindings());
+  double currScope = scope;
 
-  auto currLookup = scope;
+
   do {
-    auto bs = filterLocalBindingsByScope(pool, localBindingsList, currLookup);
-
-    if (bs.size() > 0) {
-      return bs.back().getREFIDX();
-      break;
-    } else {
-      if (currLookup == parentScope)
-        return 0;
-
-      auto edgeIt = outEdges.find(currLookup);
-      if (edgeIt == outEdges.end()) {
-        assert (false && "JSEvalLookup :: Parent scope not found, error");
+    auto scopeIt = scopeBindings.find(currScope);
+    if (scopeIt != scopeBindings.end() && scopeIt->second.size() > 0) {
+      double largestREFIDX = -1;
+      // Found a scope with >1 bindings
+      for (auto & b : scopeIt->second) {
+        IRI_STORAGE::IRID bID = b.second;
+        if (pool[bID].tag == IRI_GEN::EnvBinding) {
+          IRI_GEN::EnvBindingSEXP ebSEXP(bID, pool);
+          if (ebSEXP.getREFIDX() > largestREFIDX) largestREFIDX = ebSEXP.getREFIDX();
+        }
       }
-      currLookup = edgeIt->second;
+      if (largestREFIDX == -1) {
+        assert(scopeHead.contains(currScope));
+      }
+      return largestREFIDX + 1;
+      break;
     }
+
+    if (currScope == parentScope) return 0;
+
+    auto edgeIt = outEdges.find(currScope);
+    if (edgeIt == outEdges.end()) {
+      throw std::runtime_error(
+          "Failed to resolve env binding: scope chain broken");
+    }
+    currScope = edgeIt->second;
   } while (true);
 }
 
