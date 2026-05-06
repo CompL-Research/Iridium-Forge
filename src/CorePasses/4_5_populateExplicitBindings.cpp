@@ -88,11 +88,16 @@ void _4_5_PEB(IridiumPool &pool, IRID fileID, BUILD_CTX &iridiumBuildContext) {
 
     BindingsSEXP bindingsSEXP(container.getArg_Bindings(), pool);
 
+    std::set<StringID> argsRedecl;
+    for (auto &a : containerBC->args)
+      argsRedecl.insert(pool.strings.intern(a));
+
     for (auto &bbID : bbs) {
       BBSEXP bb(bbID, pool);
       auto stmts = pool.get_args(bbID);
 
       auto localScope = bb.getScopeIDX();
+      auto directParent = iridiumBuildContext[localScope]->parent;
       auto varHoistingScope = IRI_HELPERS::findVARHoistingScope(
           pool, localScope, iridiumBuildContext);
 
@@ -123,14 +128,33 @@ void _4_5_PEB(IridiumPool &pool, IRID fileID, BUILD_CTX &iridiumBuildContext) {
           } else
             throw std::runtime_error("[Forge]: Unknown explicit binding kind!");
 
+          bool possibleArgRedl = scopeToHoistTo == varHoistingScope && directParent == containerScope;
+
           ResolveEnvBindingSEXP binding(jsExpBD.getArg_LValTarget(), pool);
+
+          if (possibleArgRedl && argsRedecl.contains(binding.getNAME())) {
+            if (jsExpBD.hasArg_RVal()) {
+              auto envWrite = EnvWriteSEXP::create(
+                pool, jsExpBD.getArg_LValTarget(), jsExpBD.getArg_RVal(),
+                jsExpBD.hasSLOPPY(), false, jsExpBD.getSAFE(),
+                jsExpBD.getTHISINIT());
+
+              pool.update_arg_inplace(bbID, i, envWrite);
+            } else {
+              pool.update_arg_inplace(bbID, i, NOPSEXP::create(pool));
+            }
+            continue;
+          }
+
+
 
           if (!isModule && scopeToHoistTo == topLevelScope) {
             if (USE_TOP_LEVEL_LOCALS) {
               explicitBindings[scopeToHoistTo].push_back(std::make_tuple(
                   binding.getNAME(), flag, doInit, binding.hasASW()));
             } else {
-              IRID globalBindingID = pool.getGlobalBindingSEXP(binding.getNAME());
+              IRID globalBindingID =
+                  pool.getGlobalBindingSEXP(binding.getNAME());
               GlobalBindingSEXP gBinding(globalBindingID, pool);
               gBinding.setSLOPPYDECL();
               sloppyDeclarations.push_back(JSSloppyDeclSEXP::create(
@@ -198,10 +222,10 @@ void _4_5_PEB(IridiumPool &pool, IRID fileID, BUILD_CTX &iridiumBuildContext) {
             if (startBB.hasTopLevel() && USE_TOP_LEVEL_LOCALS == false) {
               IRID localBinding = EnvBindingSEXP::create(
                   pool, bindingName, isASW, false, false, kindFlag == JSLET,
-                  kindFlag == JSCONST, kindFlag == JSVAR, false, containerBC->scopeIDX,
-                  -1, localScope, parentScope, -1);
-              IRID remoteBinding =
-                  RemoteEnvBindingSEXP::create(pool, localBinding, false, false, true, -1);
+                  kindFlag == JSCONST, kindFlag == JSVAR, false,
+                  containerBC->scopeIDX, -1, localScope, parentScope, -1);
+              IRID remoteBinding = RemoteEnvBindingSEXP::create(
+                  pool, localBinding, false, false, true, -1);
               remoteBindings.push_back(remoteBinding);
               if (doInit) {
                 hoistedEnvWrites.push_back(EnvWriteSEXP::create(
@@ -210,8 +234,8 @@ void _4_5_PEB(IridiumPool &pool, IRID fileID, BUILD_CTX &iridiumBuildContext) {
             } else {
               IRID localBinding = EnvBindingSEXP::create(
                   pool, bindingName, isASW, false, false, kindFlag == JSLET,
-                  kindFlag == JSCONST, kindFlag == JSVAR, false, containerBC->scopeIDX,
-                  -1, localScope, parentScope, -1);
+                  kindFlag == JSCONST, kindFlag == JSVAR, false,
+                  containerBC->scopeIDX, -1, localScope, parentScope, -1);
               localBindings.push_back(localBinding);
               if (doInit) {
                 hoistedEnvWrites.push_back(EnvWriteSEXP::create(
