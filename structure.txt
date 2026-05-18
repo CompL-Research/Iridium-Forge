@@ -1,0 +1,157 @@
+File -> List[TYPE=ModuleRequest]
+        List[TYPE=StaticImport]
+        List[TYPE=]
+        List[TYPE=StarExport]
+        (BBContainer)+
+      | (BB)+
+
+BBContainer -> Bindings
+               List[TYPE=BB]
+
+Bindings -> List[TYPE=EnvBinding]
+            List[TYPE=RemoteEnvBinding]
+            List[TYPE=PoolBinding]
+
+BB -> (STMT)+
+
+STMT := JSExplicitBindingDeclarationN     {Transitional}
+      | JSExplicitBindingDeclaration      {Transitional}
+      | JSFuncDeclSEXP                    {Transitional}
+      | SiblingSpecialWrite               {Transitional}
+      | ResolveContinueTarget             {Transitional}
+      | ResolveBreakTarget                {Transitional}
+
+      <-- Env OPs -->
+      | EnvWrite                          <- Maybe split into sloppy and non sloppy nodes
+        - GWrite
+          - SLOPPY
+          - TAINTED                       # May always be tainted by eval adding var bindings to scope
+          - SAFE
+
+        - LWrite
+          - SLOPPY
+          - SAFE
+          - THISINIT
+
+        - RWrite
+          - SLOPPY
+          - TAINTED                       # May always be tainted by eval adding var bindings to scope
+          - SAFE
+
+      | JSSloppyFuncDecl                  <- Added [Renamed JSFuncDecl]
+      | JSSloppyDecl                      <- Maybe merge with the prev
+      | JSImplicitBindingDeclaration      <- Add Reduction into EnvWrite + VSysCall
+      | FieldWrite
+      | JSSuperFieldWrite
+      | JSComputedFieldWrite
+      | JSPrivateFieldWrite
+
+      <-- CFlow -->
+      | ReturnAsync
+      | Return
+      | IfJump
+      | IfElseJump
+      | Goto
+
+      <-- Async CFlow -->
+      | JSInitialYield
+      | Yield
+
+      <-- Err Handling -->
+      | PushCatchContext
+      | Throw
+      | PopCatchContext
+      | InvokeFinalizer
+      | Ret
+      | PopFinalizerReturnTarget
+
+      <-- Stack OPs -->
+      | StackReject
+      | StackRetain
+
+      <-- Loop Related -->
+      | LoopInitPreludeEnd
+
+      <-- Garbage -->
+      | NOP
+
+RVAL := ResolveEnvBinding                 {Transitional}
+      | ResolvePrivateEnvBinding          {Transitional}
+      | PVTEnvRead                        {Transitional}
+      | TDZRead                           {Transitional}
+
+      <-- Environment Atoms -->
+      | EnvBinding
+      | RemoteEnvBinding
+      | GlobalBinding
+
+      <-- CFlow Transfer -->
+      | CallSite
+      | Apply
+      | Await
+
+      <-- Environment OPs -->
+      | EnvRead
+        - SAFE
+        - TAINTED
+
+      <-- OBJ OPs -->
+      | FieldRead
+      | JSPrivateFieldRead
+      | JSComputedFieldRead
+      | JSSuperFieldRead
+
+      <-- Primitives -->
+      | String
+      | Lambda                            {Semi-Transitional}
+      | Number
+      | PoolBinding
+      | Boolean
+      | Null
+      | RegExp
+      | JSNUBD
+      | JSClass
+      | JSPrivate
+      | JSObject
+      | JSArray
+      | JSTemplate
+      | BitInt                            <- Typo here
+
+      <-- VSysCall [Proto] -->
+      | JSSetPrototypeOf
+      | JSCheckConstructor
+      | JSSetHome
+      | JSADDBRAND
+
+      <-- VSysCall [Object] -->
+      | JSToObject
+      | JSDefineObjProp
+      | JSDefineObjMethod
+      | JSCopyDataProperties
+
+      <-- VSysCall [Array] -->
+      | JSAppend
+
+      <-- VSysCall [Methods] -->
+      | JSSetName
+
+      <-- STKOPs -->
+      | StackPop
+
+      <-- Binops -->
+      | Unop
+      | Binop
+      | JSBinop
+      | JSUnop
+        | UNOPDelMemberExpr
+        | UNOPDelVar
+      | IDOP
+      | JSIDOP
+
+      | JSForOfIteratorClose              <- This has no business being an RVAL
+      | JSForInStart                      <- Messy RVAL
+      | JSForInNext                       <- Messy RVAL
+      | JSForOfStart                      <- Messy RVAL
+      | JSForOfNext                       <- Messy RVAL
+      | JSCatchContext                    <- This is just an StackPop, merge + flags maybe??
+      | StackToHeap                       <- This has no business being an RVAL
