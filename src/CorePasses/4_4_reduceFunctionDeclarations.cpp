@@ -42,8 +42,10 @@ void _4_4_RFD(IridiumPool &pool, IRID fileID, BUILD_CTX &iridiumBuildContext) {
         IRI_TAG currTag = pool[stmtID].tag;
 
         if (currTag == IRI_GEN::JSFuncDecl) {
+          JSFuncDeclSEXP fDecl(stmtID, pool);
           if (!isModule && containerScope == topLevelScope) {
-            // NADA
+            // TODO
+            pool.update_arg_inplace(bbID, i, JSSloppyFuncDeclSEXP::create(pool, fDecl.getArg_LValTarget(), fDecl.getArg_RVal()));
           } else {
             pool.update_arg_inplace(bbID, i, reduceJSFuncDecl(pool, stmtID));
           }
