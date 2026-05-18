@@ -136,7 +136,7 @@ void _4_5_PEB(IridiumPool &pool, IRID fileID, BUILD_CTX &iridiumBuildContext) {
             if (jsExpBD.hasArg_RVal()) {
               auto envWrite = EnvWriteSEXP::create(
                 pool, jsExpBD.getArg_LValTarget(), jsExpBD.getArg_RVal(),
-                jsExpBD.hasSLOPPY(), false, jsExpBD.getSAFE(),
+                jsExpBD.hasSLOPPY(), jsExpBD.getSAFE(),
                 jsExpBD.getTHISINIT());
 
               pool.update_arg_inplace(bbID, i, envWrite);
@@ -172,7 +172,7 @@ void _4_5_PEB(IridiumPool &pool, IRID fileID, BUILD_CTX &iridiumBuildContext) {
             } else {
               auto envWrite = EnvWriteSEXP::create(
                   pool, jsExpBD.getArg_LValTarget(), pool.UNDEF_READ,
-                  jsExpBD.hasSLOPPY(), false, jsExpBD.getSAFE(),
+                  jsExpBD.hasSLOPPY(), jsExpBD.getSAFE(),
                   jsExpBD.getTHISINIT());
 
               pool.update_arg_inplace(bbID, i, envWrite);
@@ -180,7 +180,7 @@ void _4_5_PEB(IridiumPool &pool, IRID fileID, BUILD_CTX &iridiumBuildContext) {
           } else {
             auto envWrite = EnvWriteSEXP::create(
                 pool, jsExpBD.getArg_LValTarget(), jsExpBD.getArg_RVal(),
-                jsExpBD.hasSLOPPY(), false, jsExpBD.getSAFE(),
+                jsExpBD.hasSLOPPY(), jsExpBD.getSAFE(),
                 jsExpBD.getTHISINIT());
 
             pool.update_arg_inplace(bbID, i, envWrite);
@@ -229,7 +229,7 @@ void _4_5_PEB(IridiumPool &pool, IRID fileID, BUILD_CTX &iridiumBuildContext) {
               remoteBindings.push_back(remoteBinding);
               if (doInit) {
                 hoistedEnvWrites.push_back(EnvWriteSEXP::create(
-                    pool, lval, rval, false, false, true, false));
+                    pool, lval, rval, false, true, false));
               }
             } else {
               IRID localBinding = EnvBindingSEXP::create(
@@ -239,7 +239,7 @@ void _4_5_PEB(IridiumPool &pool, IRID fileID, BUILD_CTX &iridiumBuildContext) {
               localBindings.push_back(localBinding);
               if (doInit) {
                 hoistedEnvWrites.push_back(EnvWriteSEXP::create(
-                    pool, lval, rval, false, false, true, false));
+                    pool, lval, rval, false, true, false));
               }
             }
           }
