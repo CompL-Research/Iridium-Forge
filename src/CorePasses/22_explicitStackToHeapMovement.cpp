@@ -22,7 +22,7 @@ using namespace IRI_STRUCTURAL;
 
 using BUILD_CTX = std::unordered_map<int, std::shared_ptr<IridiumBuildContext>>;
 
-void _20_ESTKTHM(IRI_STORAGE::IridiumPool &pool, IRI_STORAGE::IRID fileSEXP,
+void _22_ESTKTHM(IRI_STORAGE::IridiumPool &pool, IRI_STORAGE::IRID fileSEXP,
                  BUILD_CTX &iridiumBuildContext) {
 
   pool.iris->initializeBindingsPool();
