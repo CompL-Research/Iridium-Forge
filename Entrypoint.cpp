@@ -45,7 +45,8 @@ inline void normalizeIRIDIUM(
   runPass("_4_5_1_PEB", IRI_CORE_PASSES::_4_5_PEB);
   runPass("_4_5_2_FNOPS", IRI_CORE_PASSES::_3_FNOPS);
   runPass("_4_6_CBA", IRI_CORE_PASSES::_4_6_CBA);
-  runPass("_5_INITSFRAME", IRI_CORE_PASSES::_5_INITSFRAME);
+  runPass("_5_1_INITSFRAME", IRI_CORE_PASSES::_5_1_INITSFRAME);
+  runPass("_5_2_RUR", IRI_CORE_PASSES::_5_2_RUR);
   runPass("_6_PHCSC", IRI_CORE_PASSES::_6_PHCSC);
   runPass("_7_RRPEBS", IRI_CORE_PASSES::_7_RRPEBS);
   runPass("_8_RREBS", IRI_CORE_PASSES::_8_RREBS);
@@ -59,8 +60,9 @@ inline void normalizeIRIDIUM(
   runPass("_17_RTDZ", IRI_CORE_PASSES::_17_RTDZ);
   runPass("_18_DELOP", IRI_CORE_PASSES::_18_DELOP);
   runPass("_19_CBBAMTLA", IRI_CORE_PASSES::_19_CBBAMTLA);
-  runPass("_20_ESTKTHM", IRI_CORE_PASSES::_20_ESTKTHM);
-
+  runPass("_20_REW", IRI_CORE_PASSES::_20_REW);
+  runPass("_21_TER", IRI_CORE_PASSES::_21_TER);
+  runPass("_22_ESTKTHM", IRI_CORE_PASSES::_22_ESTKTHM);
   dump("AFTER_CORE_PASSES");
 }
 

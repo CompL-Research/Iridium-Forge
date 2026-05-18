@@ -128,7 +128,7 @@ createNoASWResolveEnvBindingSEXP(IRI_STORAGE::IridiumPool &pool, StringID s) {
 IRI_STORAGE::IRID createUnsafeEnvReadSEXP(IRI_STORAGE::IridiumPool &pool,
                                           StringID s) {
   return IRI_GEN::EnvReadSEXP::create(
-      pool, createNoASWResolveEnvBindingSEXP(pool, s), false);
+      pool, createNoASWResolveEnvBindingSEXP(pool, s), false, false);
 }
 
 namespace {
