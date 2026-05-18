@@ -68,7 +68,10 @@ inline void patchNode(IridiumPool &pool, IRID node, double scopeToTaint,
         if (pool[calleeBindingID].tag == IRI_GEN::GlobalBinding) {
           GlobalBindingSEXP gBinding(calleeBindingID, pool);
           if (gBinding.getNAME() == EVAL) {
-            pool.iris->taintScope(scopeToTaint);
+            if (pool.iris->isArgInitScope(scopeToTaint)) {
+              throw std::runtime_error("IRI build failed ::TODO:: Eval in ArgInitScope");
+            }
+            pool.iris->addEvalRemoteBindingsToParentClosure(scopeToTaint);
             double evalREFIDX =
                 pool.iris->getJSEvalLookupREFIDX(scopeToTaint, containerScope);
             callSite.setJSDirectEval(evalREFIDX);
@@ -91,7 +94,10 @@ inline void patchNode(IridiumPool &pool, IRID node, double scopeToTaint,
         if (pool[calleeBindingID].tag == IRI_GEN::GlobalBinding) {
           GlobalBindingSEXP gBinding(calleeBindingID, pool);
           if (gBinding.getNAME() == EVAL) {
-            pool.iris->taintScope(scopeToTaint);
+            if (pool.iris->isArgInitScope(scopeToTaint)) {
+              throw std::runtime_error("IRI build failed ::TODO:: Eval in ArgInitScope");
+            }
+            pool.iris->addEvalRemoteBindingsToParentClosure(scopeToTaint);
 
             double evalREFIDX =
                 pool.iris->getJSEvalLookupREFIDX(scopeToTaint, containerScope);
