@@ -1,4 +1,5 @@
 
+#include "Config.h"
 #include "CorePasses.h"
 #include "Generated/IridiumTypes.h"
 #include "Helpers.h"
@@ -12,65 +13,134 @@ using BUILD_CTX = std::unordered_map<int, std::shared_ptr<IridiumBuildContext>>;
 
 inline void setClosureFlags(double flag, BBContainerSEXP bbContainer) {
   bbContainer.setContainerFlagID(flag);
+
+  // ::func_kind::
+  // GENERATOR && ASYNC = JS_FUNC_ASYNC_GENERATOR
+  // GENERATOR          = JS_FUNC_GENERATOR
+  // ASYNC              = JS_FUNC_ASYNC
+
+  // ::has_simple_parameter_list::
+
+  // has_prototype:                PROTO
+  // is_derived_class_constructor: DERIVED
+  // need_home_object:             HOME
+  // new_target_allowed:           NEW
+  // super_call_allowed:           SCALL
+  // super_allowed:                SOBJ
+  // arguments_allowed:            ARGUMENTS
+
   switch ((int)flag) {
-  case 0:
-    throw std::runtime_error("Invalid closure flag");
-  case 1:
+  case CF_TOP_LEVEL_MODULE:
+    bbContainer.setARGUMENTS();
     break;
-  case 2:
+
+  case CF_TOP_LEVEL_SCRIPT:
+    bbContainer.setARGUMENTS();
+    break;
+
+  case CF_ARROW_FUNCTION:
+    bbContainer.setARGUMENTS();
+    break;
+
+  case CF_FUNCTION:
     bbContainer.setPROTO();
     bbContainer.setNEW();
-    break; // flags.push("PROTO", "NEW");
-  case 3:
-    bbContainer.setPROTO();
+    bbContainer.setARGUMENTS();
+    break;
+
+  case CF_CTR:
+    bbContainer.setHOME();
+    bbContainer.setNEW();
+    bbContainer.setSOBJ();
+    bbContainer.setARGUMENTS();
+    break;
+
+  case CF_DERIVED_CTR:
+    bbContainer.setDERIVED();
+    bbContainer.setHOME();
     bbContainer.setNEW();
     bbContainer.setSCALL();
     bbContainer.setSOBJ();
-    bbContainer.setHOME();
-    bbContainer.setDERIVED();
-    break; // flags.push("PROTO", "NEW", "SCALL", "SOBJ", "HOME", "DERIVED");
-  case 4:
-    bbContainer.setSOBJ();
-    bbContainer.setHOME();
-    break; // flags.push("SOBJ", "HOME");
-  case 5:
-    bbContainer.setHOME();
-    break; // flags.push("HOME");
-  case 6:
-    bbContainer.setNEW();
-    break;
-  case 7:
-    bbContainer.setNEW();
-    bbContainer.setSOBJ();
-    bbContainer.setHOME();
-    break; // flags.push("SOBJ", "HOME");
-  case 8:
-    bbContainer.setNEW();
-    bbContainer.setHOME();
-    break; // flags.push("HOME");
-  case 9:
-    bbContainer.setNEW();
-    bbContainer.setSOBJ();
-    bbContainer.setHOME();
-    break; // flags.push("SOBJ", "HOME");
-  case 10:
-    bbContainer.setSOBJ();
-    bbContainer.setHOME();
-    break; // flags.push("SOBJ", "HOME")
-  case 11:
-    bbContainer.setNEW();
-    bbContainer.setSOBJ();
-    bbContainer.setHOME();
-    break;
-  case 12:
-    bbContainer.setSOBJ();
-    bbContainer.setHOME();
-    break; // flags.push("SOBJ", "HOME");
-  case 13:
     bbContainer.setARGUMENTS();
     break;
+
+  case CF_CLASS_METHOD:
+    bbContainer.setHOME();
+    bbContainer.setNEW();
+    bbContainer.setSOBJ();
+    bbContainer.setARGUMENTS();
+    break;
+
+  case CF_PROP_INIT:
+    bbContainer.setHOME();
+    bbContainer.setNEW();
+    bbContainer.setSOBJ();
+    break;
+
   default:
-    throw std::runtime_error("expected a valid closure flag");
+    throw std::runtime_error("Invalid closure flag");
+
+  // case 0:
+  //   throw std::runtime_error("Invalid closure flag");
+  // case 1:
+  //   break;
+  // case 2:
+  //   // bbContainer.setPROTO();
+  //   bbContainer.setHOME();
+  //   bbContainer.setNEW();
+  //   bbContainer.setSOBJ();
+  //   bbContainer.setARGUMENTS();
+  //   break; // flags.push("PROTO", "NEW");
+  // case 3:
+  //   bbContainer.setPROTO();
+  //   bbContainer.setNEW();
+  //   bbContainer.setSCALL();
+  //   bbContainer.setSOBJ();
+  //   bbContainer.setHOME();
+  //   bbContainer.setDERIVED();
+  //   break; // flags.push("PROTO", "NEW", "SCALL", "SOBJ", "HOME", "DERIVED");
+  // case 4:
+  //   bbContainer.setSOBJ();
+  //   bbContainer.setHOME();
+  //   break; // flags.push("SOBJ", "HOME");
+  // case 5:
+  //   bbContainer.setHOME();
+  //   break; // flags.push("HOME");
+  // case 6:
+  //   bbContainer.setNEW();
+  //   break;
+  // case 7:
+  //   bbContainer.setNEW();
+  //   bbContainer.setSOBJ();
+  //   bbContainer.setHOME();
+  //   break; // flags.push("SOBJ", "HOME");
+  // case 8:
+  //   bbContainer.setNEW();
+  //   bbContainer.setHOME();
+  //   break; // flags.push("HOME");
+  // case 9:
+  //   bbContainer.setNEW();
+  //   bbContainer.setSOBJ();
+  //   bbContainer.setHOME();
+  //   break; // flags.push("SOBJ", "HOME");
+  // case 10:
+  //   bbContainer.setSOBJ();
+  //   bbContainer.setHOME();
+  //   break; // flags.push("SOBJ", "HOME")
+  // case 11:
+  //   bbContainer.setNEW();
+  //   bbContainer.setSOBJ();
+  //   bbContainer.setHOME();
+  //   break;
+  // case 12:
+  //   bbContainer.setSOBJ();
+  //   bbContainer.setHOME();
+  //   break; // flags.push("SOBJ", "HOME");
+  // case 13:
+  //   bbContainer.setARGUMENTS();
+  //   break;
+  // default:
+  //   throw std::runtime_error("expected a valid closure flag");
   }
 }
 
