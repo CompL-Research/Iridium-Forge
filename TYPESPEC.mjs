@@ -44,7 +44,7 @@ export default [
     "args": ["Obj"],
     "flags": {
       "string": [],
-      "void": ["SAFE"],
+      "void": ["SAFE", "TAINTED"],
       "bool": [],
       "double": [],
     }
@@ -145,6 +145,16 @@ export default [
     "flags": {
       "string": [],
       "void": ["ModuleEarlyReturn"],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "UnresolvedReturn",
+    "args": [],
+    "flags": {
+      "string": [],
+      "void": [],
       "bool": [],
       "double": [],
     }
@@ -314,7 +324,7 @@ export default [
     "args": ["LValTarget", "RVal"],
     "flags": {
       "string": [],
-      "void": ["SLOPPY", "THROWERR"],
+      "void": ["SLOPPY"],
       "bool": ["SAFE", "THISINIT"],
       "double": [],
     }
@@ -324,7 +334,7 @@ export default [
     "args": ["LValTarget", "RVal"],
     "flags": {
       "string": [],
-      "void": ["SLOPPY", "THROWERR"],
+      "void": ["SLOPPY"],
       "bool": ["SAFE", "THISINIT"],
       "double": ["ScopeIDX"],
     }
@@ -345,6 +355,16 @@ export default [
     "flags": {
       "string": ["NAME"],
       "void": ["JSLET", "JSCONST", "JSVAR"],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "JSSloppyFuncDecl",
+    "args": ["LValTarget", "RVal"],
+    "flags": {
+      "string": [],
+      "void": [],
       "bool": [],
       "double": [],
     }
@@ -948,5 +968,35 @@ export default [
       "bool": [],
       "double": [],
     }
-  }
+  },
+  {
+    "tag": "GWrite",
+    "args": ["LValTarget", "RVal"],
+    "flags": {
+      "string": [],
+      "void": ["SLOPPY", "TAINTED", "SAFE"],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "LWrite",
+    "args": ["LValTarget", "RVal"],
+    "flags": {
+      "string": [],
+      "void": ["SLOPPY", "SAFE", "THISINIT"],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "RWrite",
+    "args": ["LValTarget", "RVal"],
+    "flags": {
+      "string": [],
+      "void": ["SLOPPY", "TAINTED", "SAFE", "THISINIT"],
+      "bool": [],
+      "double": [],
+    }
+  },
 ];
