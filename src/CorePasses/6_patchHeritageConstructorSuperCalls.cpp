@@ -31,7 +31,6 @@ inline std::vector<IRID> heritageThisInit(IridiumPool & pool, StringID thisValHo
       IRI_HELPERS::createUnsafeEnvReadSEXP(pool, thisValHolder),
       false,
       false,
-      false,
       true // <- This is about the only place where we set THISINIT flag to true
     )
   );
@@ -102,7 +101,7 @@ void _6_PHCSC(IridiumPool &pool, IRID fileSEXP,
         auto buildContext = closureScope;
 
         while (true) {
-          if (buildContext->kind == getDerivedConstructorClosureFlag()) {
+          if (buildContext->kind == CF_DERIVED_CTR) {
             EnvWriteSEXP envWrite(scallHolder, pool);
 
             auto lValHolder = envWrite.getArg_LValTarget();

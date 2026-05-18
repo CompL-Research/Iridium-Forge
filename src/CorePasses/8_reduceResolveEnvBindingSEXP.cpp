@@ -149,7 +149,7 @@ void _8_RREBS(IridiumPool &pool, IRID fileSEXP,
                              siblingSpecialWrite.getScopeIDX()),
               siblingSpecialWrite.getArg_RVal(),
               siblingSpecialWrite.hasSLOPPY(),
-              siblingSpecialWrite.hasTHROWERR(), true,
+              true,
               siblingSpecialWrite.getTHISINIT());
 
           pool.update_arg_inplace(bbID, stmtIDX, writeStmt);
