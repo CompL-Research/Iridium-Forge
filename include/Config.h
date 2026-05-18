@@ -1,5 +1,16 @@
 #pragma once
 
+
+static constexpr int CF_TOP_LEVEL_MODULE = 100;
+static constexpr int CF_TOP_LEVEL_SCRIPT = 101;
+static constexpr int CF_ARROW_FUNCTION   = 102;
+static constexpr int CF_FUNCTION         = 103;
+static constexpr int CF_CTR              = 104;
+static constexpr int CF_DERIVED_CTR      = 105;
+static constexpr int CF_CLASS_METHOD     = 106;
+static constexpr int CF_PROP_INIT        = 107;
+
+
 static int getRegularClosureFlag() { return 1; }
 static int getConstructorClosureFlag() { return 2; }
 static int getDerivedConstructorClosureFlag() { return 3; }
