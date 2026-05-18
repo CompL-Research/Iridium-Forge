@@ -44,7 +44,7 @@ void _17_RTDZ(IRI_STORAGE::IridiumPool &pool, IRI_STORAGE::IRID fileSEXP,
             // Strict mode, let the check be there, reduce to a normal read
             if (bbc.hasSTRICT()) {
               IRID srej = StackRejectSEXP::create(pool, 1);
-              pool.set_args(srej, { EnvReadSEXP::create(pool, tdzRead.getArg_Obj(), tdzRead.hasSAFE()) });
+              pool.set_args(srej, { EnvReadSEXP::create(pool, tdzRead.getArg_Obj(), tdzRead.hasSAFE(), false) });
               pool.update_arg_inplace(bbID, stmtOffset, srej);
               continue;
             }
@@ -56,13 +56,13 @@ void _17_RTDZ(IRI_STORAGE::IridiumPool &pool, IRI_STORAGE::IRID fileSEXP,
                 pool.update_arg_inplace(bbID, stmtOffset, pool.NOP_SEXP);
               else {
                 IRID srej = StackRejectSEXP::create(pool, 1);
-                pool.set_args(srej, { EnvReadSEXP::create(pool, tdzRead.getArg_Obj(), tdzRead.hasSAFE()) });
+                pool.set_args(srej, { EnvReadSEXP::create(pool, tdzRead.getArg_Obj(), tdzRead.hasSAFE(), false) });
                 pool.update_arg_inplace(bbID, stmtOffset, srej);
 
               }
             } else {
               IRID srej = StackRejectSEXP::create(pool, 1);
-              pool.set_args(srej, { EnvReadSEXP::create(pool, tdzRead.getArg_Obj(), tdzRead.hasSAFE()) });
+              pool.set_args(srej, { EnvReadSEXP::create(pool, tdzRead.getArg_Obj(), tdzRead.hasSAFE(), false) });
               pool.update_arg_inplace(bbID, stmtOffset, srej);
             }
           }
