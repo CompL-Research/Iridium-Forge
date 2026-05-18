@@ -1,4 +1,4 @@
-// Generated: 2026-04-22 17:35:29
+// Generated: 2026-05-17 15:37:32
 #pragma once
 #include <string>
 
@@ -19,6 +19,7 @@ namespace IRI_GEN {
     ReturnAsync,
     BB,
     Return,
+    UnresolvedReturn,
     IfJump,
     IfElseJump,
     Goto,
@@ -39,6 +40,7 @@ namespace IRI_GEN {
     SiblingSpecialWrite,
     JSNUBD,
     JSSloppyDecl,
+    JSSloppyFuncDecl,
     Number,
     JSClass,
     JSCheckConstructor,
@@ -98,7 +100,10 @@ namespace IRI_GEN {
     LoopInitPreludeEnd,
     JSSetHome,
     JSSetName,
-    JSSetPrototypeOf
+    JSSetPrototypeOf,
+    GWrite,
+    LWrite,
+    RWrite
   };
 
   inline std::string dump_tag(IRI_TAG value) {
@@ -118,6 +123,7 @@ namespace IRI_GEN {
       case ReturnAsync: return "ReturnAsync";
       case BB: return "BB";
       case Return: return "Return";
+      case UnresolvedReturn: return "UnresolvedReturn";
       case IfJump: return "IfJump";
       case IfElseJump: return "IfElseJump";
       case Goto: return "Goto";
@@ -138,6 +144,7 @@ namespace IRI_GEN {
       case SiblingSpecialWrite: return "SiblingSpecialWrite";
       case JSNUBD: return "JSNUBD";
       case JSSloppyDecl: return "JSSloppyDecl";
+      case JSSloppyFuncDecl: return "JSSloppyFuncDecl";
       case Number: return "Number";
       case JSClass: return "JSClass";
       case JSCheckConstructor: return "JSCheckConstructor";
@@ -198,6 +205,9 @@ namespace IRI_GEN {
       case JSSetHome: return "JSSetHome";
       case JSSetName: return "JSSetName";
       case JSSetPrototypeOf: return "JSSetPrototypeOf";
+      case GWrite: return "GWrite";
+      case LWrite: return "LWrite";
+      case RWrite: return "RWrite";
       default: return "unknown_tag";
     }
   }
@@ -217,6 +227,7 @@ namespace IRI_GEN {
     SAFE,
     THISINIT,
     OPID,
+    TAINTED,
     IridiumPrimitive,
     CCall,
     ConstructorCall,
@@ -268,7 +279,6 @@ namespace IRI_GEN {
     NEXT,
     MODULETOPLEVELBINDING,
     SLOPPYDECL,
-    THROWERR,
     NVAL,
     FULLY_RESOLVE,
     SYMBOL,
@@ -303,6 +313,7 @@ namespace IRI_GEN {
       case SAFE: return "SAFE";
       case THISINIT: return "THISINIT";
       case OPID: return "OPID";
+      case TAINTED: return "TAINTED";
       case IridiumPrimitive: return "IridiumPrimitive";
       case CCall: return "CCall";
       case ConstructorCall: return "ConstructorCall";
@@ -354,7 +365,6 @@ namespace IRI_GEN {
       case NEXT: return "NEXT";
       case MODULETOPLEVELBINDING: return "MODULETOPLEVELBINDING";
       case SLOPPYDECL: return "SLOPPYDECL";
-      case THROWERR: return "THROWERR";
       case NVAL: return "NVAL";
       case FULLY_RESOLVE: return "FULLY_RESOLVE";
       case SYMBOL: return "SYMBOL";

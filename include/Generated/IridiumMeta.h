@@ -1,4 +1,4 @@
-// Generated: 2026-04-22 17:35:29
+// Generated: 2026-05-17 15:37:32
 #pragma once
 #include "IridiumEnums.h"
 #include <cstdint>
@@ -14,7 +14,7 @@ public:
       case IRI_GEN::ResolveEnvBinding: return 2;
       case IRI_GEN::List: return 1;
       case IRI_GEN::JSImplicitBindingDeclaration: return 9;
-      case IRI_GEN::EnvRead: return 1;
+      case IRI_GEN::EnvRead: return 2;
       case IRI_GEN::TDZRead: return 1;
       case IRI_GEN::String: return 1;
       case IRI_GEN::FieldRead: return 0;
@@ -25,6 +25,7 @@ public:
       case IRI_GEN::ReturnAsync: return 0;
       case IRI_GEN::BB: return 7;
       case IRI_GEN::Return: return 1;
+      case IRI_GEN::UnresolvedReturn: return 0;
       case IRI_GEN::IfJump: return 2;
       case IRI_GEN::IfElseJump: return 3;
       case IRI_GEN::Goto: return 1;
@@ -41,10 +42,11 @@ public:
       case IRI_GEN::EnvBinding: return 13;
       case IRI_GEN::RemoteEnvBinding: return 4;
       case IRI_GEN::GlobalBinding: return 2;
-      case IRI_GEN::EnvWrite: return 4;
-      case IRI_GEN::SiblingSpecialWrite: return 5;
+      case IRI_GEN::EnvWrite: return 3;
+      case IRI_GEN::SiblingSpecialWrite: return 4;
       case IRI_GEN::JSNUBD: return 0;
       case IRI_GEN::JSSloppyDecl: return 4;
+      case IRI_GEN::JSSloppyFuncDecl: return 0;
       case IRI_GEN::Number: return 1;
       case IRI_GEN::JSClass: return 2;
       case IRI_GEN::JSCheckConstructor: return 0;
@@ -105,6 +107,9 @@ public:
       case IRI_GEN::JSSetHome: return 0;
       case IRI_GEN::JSSetName: return 0;
       case IRI_GEN::JSSetPrototypeOf: return 0;
+      case IRI_GEN::GWrite: return 3;
+      case IRI_GEN::LWrite: return 3;
+      case IRI_GEN::RWrite: return 4;
       default: return 0;
     }
   }
@@ -150,6 +155,7 @@ public:
       case IRI_GEN::EnvRead:
         switch(flag) {
         case IRI_GEN::SAFE: return 0;
+        case IRI_GEN::TAINTED: return 1;
           default: return -1;
         }
         break;
@@ -366,19 +372,17 @@ public:
       case IRI_GEN::EnvWrite:
         switch(flag) {
         case IRI_GEN::SLOPPY: return 0;
-        case IRI_GEN::THROWERR: return 1;
-        case IRI_GEN::SAFE: return 2;
-        case IRI_GEN::THISINIT: return 3;
+        case IRI_GEN::SAFE: return 1;
+        case IRI_GEN::THISINIT: return 2;
           default: return -1;
         }
         break;
       case IRI_GEN::SiblingSpecialWrite:
         switch(flag) {
         case IRI_GEN::SLOPPY: return 0;
-        case IRI_GEN::THROWERR: return 1;
-        case IRI_GEN::SAFE: return 2;
-        case IRI_GEN::THISINIT: return 3;
-        case IRI_GEN::ScopeIDX: return 4;
+        case IRI_GEN::SAFE: return 1;
+        case IRI_GEN::THISINIT: return 2;
+        case IRI_GEN::ScopeIDX: return 3;
           default: return -1;
         }
         break;
@@ -583,6 +587,31 @@ public:
           default: return -1;
         }
         break;
+      case IRI_GEN::GWrite:
+        switch(flag) {
+        case IRI_GEN::SLOPPY: return 0;
+        case IRI_GEN::TAINTED: return 1;
+        case IRI_GEN::SAFE: return 2;
+          default: return -1;
+        }
+        break;
+      case IRI_GEN::LWrite:
+        switch(flag) {
+        case IRI_GEN::SLOPPY: return 0;
+        case IRI_GEN::SAFE: return 1;
+        case IRI_GEN::THISINIT: return 2;
+          default: return -1;
+        }
+        break;
+      case IRI_GEN::RWrite:
+        switch(flag) {
+        case IRI_GEN::SLOPPY: return 0;
+        case IRI_GEN::TAINTED: return 1;
+        case IRI_GEN::SAFE: return 2;
+        case IRI_GEN::THISINIT: return 3;
+          default: return -1;
+        }
+        break;
       default: return -1;
     }
   }
@@ -628,6 +657,7 @@ public:
       case IRI_GEN::EnvRead:
         switch(index) {
         case 0: return IRI_GEN::SAFE;
+        case 1: return IRI_GEN::TAINTED;
           default: throw std::runtime_error("Invalid flag index");
         }
         break;
@@ -844,19 +874,17 @@ public:
       case IRI_GEN::EnvWrite:
         switch(index) {
         case 0: return IRI_GEN::SLOPPY;
-        case 1: return IRI_GEN::THROWERR;
-        case 2: return IRI_GEN::SAFE;
-        case 3: return IRI_GEN::THISINIT;
+        case 1: return IRI_GEN::SAFE;
+        case 2: return IRI_GEN::THISINIT;
           default: throw std::runtime_error("Invalid flag index");
         }
         break;
       case IRI_GEN::SiblingSpecialWrite:
         switch(index) {
         case 0: return IRI_GEN::SLOPPY;
-        case 1: return IRI_GEN::THROWERR;
-        case 2: return IRI_GEN::SAFE;
-        case 3: return IRI_GEN::THISINIT;
-        case 4: return IRI_GEN::ScopeIDX;
+        case 1: return IRI_GEN::SAFE;
+        case 2: return IRI_GEN::THISINIT;
+        case 3: return IRI_GEN::ScopeIDX;
           default: throw std::runtime_error("Invalid flag index");
         }
         break;
@@ -1058,6 +1086,31 @@ public:
         switch(index) {
         case 0: return IRI_GEN::PREFIX;
         case 1: return IRI_GEN::INCREMENT;
+          default: throw std::runtime_error("Invalid flag index");
+        }
+        break;
+      case IRI_GEN::GWrite:
+        switch(index) {
+        case 0: return IRI_GEN::SLOPPY;
+        case 1: return IRI_GEN::TAINTED;
+        case 2: return IRI_GEN::SAFE;
+          default: throw std::runtime_error("Invalid flag index");
+        }
+        break;
+      case IRI_GEN::LWrite:
+        switch(index) {
+        case 0: return IRI_GEN::SLOPPY;
+        case 1: return IRI_GEN::SAFE;
+        case 2: return IRI_GEN::THISINIT;
+          default: throw std::runtime_error("Invalid flag index");
+        }
+        break;
+      case IRI_GEN::RWrite:
+        switch(index) {
+        case 0: return IRI_GEN::SLOPPY;
+        case 1: return IRI_GEN::TAINTED;
+        case 2: return IRI_GEN::SAFE;
+        case 3: return IRI_GEN::THISINIT;
           default: throw std::runtime_error("Invalid flag index");
         }
         break;

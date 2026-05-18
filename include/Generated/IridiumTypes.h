@@ -1,4 +1,4 @@
-// Generated: 2026-04-22 17:35:29
+// Generated: 2026-05-17 15:37:32
 #pragma once
 #include "Storage/Config.h"
 #include "Storage/IridiumSEXP.h"
@@ -234,14 +234,15 @@ using IRI_STORAGE::FlagValue;
       }
     }
 
-    static IRID create(IridiumPool& p, IRID Obj, bool SAFE) {
-      return p.add_node(IRI_GEN::IRI_TAG::EnvRead, {Obj}, {SAFE ? FlagValue(SAFE) : FlagValue(std::monostate())});
+    static IRID create(IridiumPool& p, IRID Obj, bool SAFE, bool TAINTED) {
+      return p.add_node(IRI_GEN::IRI_TAG::EnvRead, {Obj}, {SAFE ? FlagValue(SAFE) : FlagValue(std::monostate()), TAINTED ? FlagValue(TAINTED) : FlagValue(std::monostate())});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 1;
-    static constexpr uint32_t TOTAL_FLAGS = 1;
+    static constexpr uint32_t TOTAL_FLAGS = 2;
 
     static constexpr uint32_t FLAG_IDX_SAFE = 0;
+    static constexpr uint32_t FLAG_IDX_TAINTED = 1;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
@@ -260,6 +261,10 @@ using IRI_STORAGE::FlagValue;
     bool hasSAFE() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_SAFE)); }
     void setSAFE() { mutate_flag(FLAG_IDX_SAFE) = std::nullptr_t{}; }
     void clearSAFE() { mutate_flag(FLAG_IDX_SAFE) = std::monostate{}; }
+
+    bool hasTAINTED() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_TAINTED)); }
+    void setTAINTED() { mutate_flag(FLAG_IDX_TAINTED) = std::nullptr_t{}; }
+    void clearTAINTED() { mutate_flag(FLAG_IDX_TAINTED) = std::monostate{}; }
   };
 
   struct TDZReadSEXP {
@@ -784,6 +789,40 @@ using IRI_STORAGE::FlagValue;
     bool hasModuleEarlyReturn() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_ModuleEarlyReturn)); }
     void setModuleEarlyReturn() { mutate_flag(FLAG_IDX_ModuleEarlyReturn) = std::nullptr_t{}; }
     void clearModuleEarlyReturn() { mutate_flag(FLAG_IDX_ModuleEarlyReturn) = std::monostate{}; }
+  };
+
+  struct UnresolvedReturnSEXP {
+    IRID id;
+    IridiumPool* pool;
+
+    explicit UnresolvedReturnSEXP(IRID n, IridiumPool& p) : id(n), pool(&p) {
+      if (pool->operator[](n).tag != IRI_GEN::UnresolvedReturn) {
+        throw std::runtime_error("Schema Cast Error: Expected UnresolvedReturn, but got " + IRI_GEN::dump_tag(pool->operator[](n).tag));
+      }
+    }
+
+    static IRID create(IridiumPool& p) {
+      return p.add_node(IRI_GEN::IRI_TAG::UnresolvedReturn, {}, {});
+    }
+
+    static constexpr uint32_t TOTAL_ARGS = 0;
+    static constexpr uint32_t TOTAL_FLAGS = 0;
+
+
+
+    // --- Helpers ---
+    inline FlagValue& mutate_flag(uint32_t idx) {
+        return pool->get_flags_m(id)[idx];
+    }
+    inline const FlagValue& get_flag(uint32_t idx) const {
+        return pool->get_flags(id)[idx];
+    }
+
+    // --- Arguments ---
+
+
+    // --- Flags ---
+
   };
 
   struct IfJumpSEXP {
@@ -1670,17 +1709,16 @@ using IRI_STORAGE::FlagValue;
       }
     }
 
-    static IRID create(IridiumPool& p, IRID LValTarget, IRID RVal, bool SLOPPY, bool THROWERR, bool SAFE, bool THISINIT) {
-      return p.add_node(IRI_GEN::IRI_TAG::EnvWrite, {LValTarget, RVal}, {SLOPPY ? FlagValue(SLOPPY) : FlagValue(std::monostate()), THROWERR ? FlagValue(THROWERR) : FlagValue(std::monostate()), FlagValue(SAFE), FlagValue(THISINIT)});
+    static IRID create(IridiumPool& p, IRID LValTarget, IRID RVal, bool SLOPPY, bool SAFE, bool THISINIT) {
+      return p.add_node(IRI_GEN::IRI_TAG::EnvWrite, {LValTarget, RVal}, {SLOPPY ? FlagValue(SLOPPY) : FlagValue(std::monostate()), FlagValue(SAFE), FlagValue(THISINIT)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 2;
-    static constexpr uint32_t TOTAL_FLAGS = 4;
+    static constexpr uint32_t TOTAL_FLAGS = 3;
 
     static constexpr uint32_t FLAG_IDX_SLOPPY = 0;
-    static constexpr uint32_t FLAG_IDX_THROWERR = 1;
-    static constexpr uint32_t FLAG_IDX_SAFE = 2;
-    static constexpr uint32_t FLAG_IDX_THISINIT = 3;
+    static constexpr uint32_t FLAG_IDX_SAFE = 1;
+    static constexpr uint32_t FLAG_IDX_THISINIT = 2;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
@@ -1703,10 +1741,6 @@ using IRI_STORAGE::FlagValue;
     bool hasSLOPPY() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_SLOPPY)); }
     void setSLOPPY() { mutate_flag(FLAG_IDX_SLOPPY) = std::nullptr_t{}; }
     void clearSLOPPY() { mutate_flag(FLAG_IDX_SLOPPY) = std::monostate{}; }
-
-    bool hasTHROWERR() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_THROWERR)); }
-    void setTHROWERR() { mutate_flag(FLAG_IDX_THROWERR) = std::nullptr_t{}; }
-    void clearTHROWERR() { mutate_flag(FLAG_IDX_THROWERR) = std::monostate{}; }
 
     bool getSAFE() const { return std::get<bool>(get_flag(FLAG_IDX_SAFE)); }
     void setSAFE(bool val) { mutate_flag(FLAG_IDX_SAFE) = val; }
@@ -1729,18 +1763,17 @@ using IRI_STORAGE::FlagValue;
       }
     }
 
-    static IRID create(IridiumPool& p, IRID LValTarget, IRID RVal, bool SLOPPY, bool THROWERR, bool SAFE, bool THISINIT, double ScopeIDX) {
-      return p.add_node(IRI_GEN::IRI_TAG::SiblingSpecialWrite, {LValTarget, RVal}, {SLOPPY ? FlagValue(SLOPPY) : FlagValue(std::monostate()), THROWERR ? FlagValue(THROWERR) : FlagValue(std::monostate()), FlagValue(SAFE), FlagValue(THISINIT), FlagValue(ScopeIDX)});
+    static IRID create(IridiumPool& p, IRID LValTarget, IRID RVal, bool SLOPPY, bool SAFE, bool THISINIT, double ScopeIDX) {
+      return p.add_node(IRI_GEN::IRI_TAG::SiblingSpecialWrite, {LValTarget, RVal}, {SLOPPY ? FlagValue(SLOPPY) : FlagValue(std::monostate()), FlagValue(SAFE), FlagValue(THISINIT), FlagValue(ScopeIDX)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 2;
-    static constexpr uint32_t TOTAL_FLAGS = 5;
+    static constexpr uint32_t TOTAL_FLAGS = 4;
 
     static constexpr uint32_t FLAG_IDX_SLOPPY = 0;
-    static constexpr uint32_t FLAG_IDX_THROWERR = 1;
-    static constexpr uint32_t FLAG_IDX_SAFE = 2;
-    static constexpr uint32_t FLAG_IDX_THISINIT = 3;
-    static constexpr uint32_t FLAG_IDX_ScopeIDX = 4;
+    static constexpr uint32_t FLAG_IDX_SAFE = 1;
+    static constexpr uint32_t FLAG_IDX_THISINIT = 2;
+    static constexpr uint32_t FLAG_IDX_ScopeIDX = 3;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
@@ -1763,10 +1796,6 @@ using IRI_STORAGE::FlagValue;
     bool hasSLOPPY() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_SLOPPY)); }
     void setSLOPPY() { mutate_flag(FLAG_IDX_SLOPPY) = std::nullptr_t{}; }
     void clearSLOPPY() { mutate_flag(FLAG_IDX_SLOPPY) = std::monostate{}; }
-
-    bool hasTHROWERR() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_THROWERR)); }
-    void setTHROWERR() { mutate_flag(FLAG_IDX_THROWERR) = std::nullptr_t{}; }
-    void clearTHROWERR() { mutate_flag(FLAG_IDX_THROWERR) = std::monostate{}; }
 
     bool getSAFE() const { return std::get<bool>(get_flag(FLAG_IDX_SAFE)); }
     void setSAFE(bool val) { mutate_flag(FLAG_IDX_SAFE) = val; }
@@ -1868,6 +1897,46 @@ using IRI_STORAGE::FlagValue;
     bool hasJSVAR() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_JSVAR)); }
     void setJSVAR() { mutate_flag(FLAG_IDX_JSVAR) = std::nullptr_t{}; }
     void clearJSVAR() { mutate_flag(FLAG_IDX_JSVAR) = std::monostate{}; }
+  };
+
+  struct JSSloppyFuncDeclSEXP {
+    IRID id;
+    IridiumPool* pool;
+
+    explicit JSSloppyFuncDeclSEXP(IRID n, IridiumPool& p) : id(n), pool(&p) {
+      if (pool->operator[](n).tag != IRI_GEN::JSSloppyFuncDecl) {
+        throw std::runtime_error("Schema Cast Error: Expected JSSloppyFuncDecl, but got " + IRI_GEN::dump_tag(pool->operator[](n).tag));
+      }
+    }
+
+    static IRID create(IridiumPool& p, IRID LValTarget, IRID RVal) {
+      return p.add_node(IRI_GEN::IRI_TAG::JSSloppyFuncDecl, {LValTarget, RVal}, {});
+    }
+
+    static constexpr uint32_t TOTAL_ARGS = 2;
+    static constexpr uint32_t TOTAL_FLAGS = 0;
+
+
+
+    // --- Helpers ---
+    inline FlagValue& mutate_flag(uint32_t idx) {
+        return pool->get_flags_m(id)[idx];
+    }
+    inline const FlagValue& get_flag(uint32_t idx) const {
+        return pool->get_flags(id)[idx];
+    }
+
+    // --- Arguments ---
+    IRID getArg_LValTarget() const { return pool->get_args(id)[0]; }
+    bool hasArg_LValTarget() const { return 0 < pool->get_args(id).size(); }
+    void setArg_LValTarget(IRID val) { assert(hasArg_LValTarget() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
+
+    IRID getArg_RVal() const { return pool->get_args(id)[1]; }
+    bool hasArg_RVal() const { return 1 < pool->get_args(id).size(); }
+    void setArg_RVal(IRID val) { assert(hasArg_RVal() && "Tried to set missing ARG"); pool->update_arg_inplace(id,1,val); }
+
+    // --- Flags ---
+
   };
 
   struct NumberSEXP {
@@ -4245,6 +4314,167 @@ using IRI_STORAGE::FlagValue;
 
     // --- Flags ---
 
+  };
+
+  struct GWriteSEXP {
+    IRID id;
+    IridiumPool* pool;
+
+    explicit GWriteSEXP(IRID n, IridiumPool& p) : id(n), pool(&p) {
+      if (pool->operator[](n).tag != IRI_GEN::GWrite) {
+        throw std::runtime_error("Schema Cast Error: Expected GWrite, but got " + IRI_GEN::dump_tag(pool->operator[](n).tag));
+      }
+    }
+
+    static IRID create(IridiumPool& p, IRID LValTarget, IRID RVal, bool SLOPPY, bool TAINTED, bool SAFE) {
+      return p.add_node(IRI_GEN::IRI_TAG::GWrite, {LValTarget, RVal}, {SLOPPY ? FlagValue(SLOPPY) : FlagValue(std::monostate()), TAINTED ? FlagValue(TAINTED) : FlagValue(std::monostate()), SAFE ? FlagValue(SAFE) : FlagValue(std::monostate())});
+    }
+
+    static constexpr uint32_t TOTAL_ARGS = 2;
+    static constexpr uint32_t TOTAL_FLAGS = 3;
+
+    static constexpr uint32_t FLAG_IDX_SLOPPY = 0;
+    static constexpr uint32_t FLAG_IDX_TAINTED = 1;
+    static constexpr uint32_t FLAG_IDX_SAFE = 2;
+
+    // --- Helpers ---
+    inline FlagValue& mutate_flag(uint32_t idx) {
+        return pool->get_flags_m(id)[idx];
+    }
+    inline const FlagValue& get_flag(uint32_t idx) const {
+        return pool->get_flags(id)[idx];
+    }
+
+    // --- Arguments ---
+    IRID getArg_LValTarget() const { return pool->get_args(id)[0]; }
+    bool hasArg_LValTarget() const { return 0 < pool->get_args(id).size(); }
+    void setArg_LValTarget(IRID val) { assert(hasArg_LValTarget() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
+
+    IRID getArg_RVal() const { return pool->get_args(id)[1]; }
+    bool hasArg_RVal() const { return 1 < pool->get_args(id).size(); }
+    void setArg_RVal(IRID val) { assert(hasArg_RVal() && "Tried to set missing ARG"); pool->update_arg_inplace(id,1,val); }
+
+    // --- Flags ---
+    bool hasSLOPPY() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_SLOPPY)); }
+    void setSLOPPY() { mutate_flag(FLAG_IDX_SLOPPY) = std::nullptr_t{}; }
+    void clearSLOPPY() { mutate_flag(FLAG_IDX_SLOPPY) = std::monostate{}; }
+
+    bool hasTAINTED() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_TAINTED)); }
+    void setTAINTED() { mutate_flag(FLAG_IDX_TAINTED) = std::nullptr_t{}; }
+    void clearTAINTED() { mutate_flag(FLAG_IDX_TAINTED) = std::monostate{}; }
+
+    bool hasSAFE() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_SAFE)); }
+    void setSAFE() { mutate_flag(FLAG_IDX_SAFE) = std::nullptr_t{}; }
+    void clearSAFE() { mutate_flag(FLAG_IDX_SAFE) = std::monostate{}; }
+  };
+
+  struct LWriteSEXP {
+    IRID id;
+    IridiumPool* pool;
+
+    explicit LWriteSEXP(IRID n, IridiumPool& p) : id(n), pool(&p) {
+      if (pool->operator[](n).tag != IRI_GEN::LWrite) {
+        throw std::runtime_error("Schema Cast Error: Expected LWrite, but got " + IRI_GEN::dump_tag(pool->operator[](n).tag));
+      }
+    }
+
+    static IRID create(IridiumPool& p, IRID LValTarget, IRID RVal, bool SLOPPY, bool SAFE, bool THISINIT) {
+      return p.add_node(IRI_GEN::IRI_TAG::LWrite, {LValTarget, RVal}, {SLOPPY ? FlagValue(SLOPPY) : FlagValue(std::monostate()), SAFE ? FlagValue(SAFE) : FlagValue(std::monostate()), THISINIT ? FlagValue(THISINIT) : FlagValue(std::monostate())});
+    }
+
+    static constexpr uint32_t TOTAL_ARGS = 2;
+    static constexpr uint32_t TOTAL_FLAGS = 3;
+
+    static constexpr uint32_t FLAG_IDX_SLOPPY = 0;
+    static constexpr uint32_t FLAG_IDX_SAFE = 1;
+    static constexpr uint32_t FLAG_IDX_THISINIT = 2;
+
+    // --- Helpers ---
+    inline FlagValue& mutate_flag(uint32_t idx) {
+        return pool->get_flags_m(id)[idx];
+    }
+    inline const FlagValue& get_flag(uint32_t idx) const {
+        return pool->get_flags(id)[idx];
+    }
+
+    // --- Arguments ---
+    IRID getArg_LValTarget() const { return pool->get_args(id)[0]; }
+    bool hasArg_LValTarget() const { return 0 < pool->get_args(id).size(); }
+    void setArg_LValTarget(IRID val) { assert(hasArg_LValTarget() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
+
+    IRID getArg_RVal() const { return pool->get_args(id)[1]; }
+    bool hasArg_RVal() const { return 1 < pool->get_args(id).size(); }
+    void setArg_RVal(IRID val) { assert(hasArg_RVal() && "Tried to set missing ARG"); pool->update_arg_inplace(id,1,val); }
+
+    // --- Flags ---
+    bool hasSLOPPY() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_SLOPPY)); }
+    void setSLOPPY() { mutate_flag(FLAG_IDX_SLOPPY) = std::nullptr_t{}; }
+    void clearSLOPPY() { mutate_flag(FLAG_IDX_SLOPPY) = std::monostate{}; }
+
+    bool hasSAFE() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_SAFE)); }
+    void setSAFE() { mutate_flag(FLAG_IDX_SAFE) = std::nullptr_t{}; }
+    void clearSAFE() { mutate_flag(FLAG_IDX_SAFE) = std::monostate{}; }
+
+    bool hasTHISINIT() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_THISINIT)); }
+    void setTHISINIT() { mutate_flag(FLAG_IDX_THISINIT) = std::nullptr_t{}; }
+    void clearTHISINIT() { mutate_flag(FLAG_IDX_THISINIT) = std::monostate{}; }
+  };
+
+  struct RWriteSEXP {
+    IRID id;
+    IridiumPool* pool;
+
+    explicit RWriteSEXP(IRID n, IridiumPool& p) : id(n), pool(&p) {
+      if (pool->operator[](n).tag != IRI_GEN::RWrite) {
+        throw std::runtime_error("Schema Cast Error: Expected RWrite, but got " + IRI_GEN::dump_tag(pool->operator[](n).tag));
+      }
+    }
+
+    static IRID create(IridiumPool& p, IRID LValTarget, IRID RVal, bool SLOPPY, bool TAINTED, bool SAFE, bool THISINIT) {
+      return p.add_node(IRI_GEN::IRI_TAG::RWrite, {LValTarget, RVal}, {SLOPPY ? FlagValue(SLOPPY) : FlagValue(std::monostate()), TAINTED ? FlagValue(TAINTED) : FlagValue(std::monostate()), SAFE ? FlagValue(SAFE) : FlagValue(std::monostate()), THISINIT ? FlagValue(THISINIT) : FlagValue(std::monostate())});
+    }
+
+    static constexpr uint32_t TOTAL_ARGS = 2;
+    static constexpr uint32_t TOTAL_FLAGS = 4;
+
+    static constexpr uint32_t FLAG_IDX_SLOPPY = 0;
+    static constexpr uint32_t FLAG_IDX_TAINTED = 1;
+    static constexpr uint32_t FLAG_IDX_SAFE = 2;
+    static constexpr uint32_t FLAG_IDX_THISINIT = 3;
+
+    // --- Helpers ---
+    inline FlagValue& mutate_flag(uint32_t idx) {
+        return pool->get_flags_m(id)[idx];
+    }
+    inline const FlagValue& get_flag(uint32_t idx) const {
+        return pool->get_flags(id)[idx];
+    }
+
+    // --- Arguments ---
+    IRID getArg_LValTarget() const { return pool->get_args(id)[0]; }
+    bool hasArg_LValTarget() const { return 0 < pool->get_args(id).size(); }
+    void setArg_LValTarget(IRID val) { assert(hasArg_LValTarget() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
+
+    IRID getArg_RVal() const { return pool->get_args(id)[1]; }
+    bool hasArg_RVal() const { return 1 < pool->get_args(id).size(); }
+    void setArg_RVal(IRID val) { assert(hasArg_RVal() && "Tried to set missing ARG"); pool->update_arg_inplace(id,1,val); }
+
+    // --- Flags ---
+    bool hasSLOPPY() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_SLOPPY)); }
+    void setSLOPPY() { mutate_flag(FLAG_IDX_SLOPPY) = std::nullptr_t{}; }
+    void clearSLOPPY() { mutate_flag(FLAG_IDX_SLOPPY) = std::monostate{}; }
+
+    bool hasTAINTED() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_TAINTED)); }
+    void setTAINTED() { mutate_flag(FLAG_IDX_TAINTED) = std::nullptr_t{}; }
+    void clearTAINTED() { mutate_flag(FLAG_IDX_TAINTED) = std::monostate{}; }
+
+    bool hasSAFE() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_SAFE)); }
+    void setSAFE() { mutate_flag(FLAG_IDX_SAFE) = std::nullptr_t{}; }
+    void clearSAFE() { mutate_flag(FLAG_IDX_SAFE) = std::monostate{}; }
+
+    bool hasTHISINIT() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_THISINIT)); }
+    void setTHISINIT() { mutate_flag(FLAG_IDX_THISINIT) = std::nullptr_t{}; }
+    void clearTHISINIT() { mutate_flag(FLAG_IDX_THISINIT) = std::monostate{}; }
   };
 
 } // namespace IRI_GEN
