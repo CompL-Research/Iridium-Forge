@@ -31,11 +31,19 @@ public:
 
   bool hasScopePath(double, double);
 
-  void taintScope(double);
+  bool isTopLevelScope(double);
+
+  bool mayReadFromATaintedScope(double);
+
+  void addEvalRemoteBindingsToParentClosure(double);
 
   double getJSEvalLookupREFIDX(double, double);
 
   double getEnclosingThrowScope(double);
+
+  double getEnclosingClosureScope(double);
+
+  double isArgInitScope(double);
 
   size_t computePoolCapacity();
 
@@ -65,6 +73,10 @@ private:
 
   // Scopes representing a try context
   std::set<double> tryScopes;
+
+  // Scopes representing a argInitContext
+  std::set<double> argInitScopes;
+
 
   // Scopes belonging to a BBContainer
   std::unordered_map<double, IRI_GEN::IRID> scopeHead;

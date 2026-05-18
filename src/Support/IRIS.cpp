@@ -5,12 +5,14 @@
 #include "Storage/BindingsPool.h"
 #include "Storage/Config.h"
 #include "Storage/IridiumPool.h"
+#include "Storage/StringPool.h"
 #include "Support/BBContainerSupport.hpp"
 #include "Support/BBSupport.hpp"
 #include "Support/BindingsSupport.hpp"
 #include "Support/FileSupport.hpp"
 #include <cstdint>
 #include <memory>
+#include <set>
 #include <stdexcept>
 #include <vector>
 
@@ -34,10 +36,14 @@ IRIS::IRIS(
     nodes.insert(currScope);
     nodes.insert(parentScope);
 
+    IRI_STORAGE::IRID firstBBInScope = bcon->BB[0];
+
+    if (bcon->isArgInitContext)
+      argInitScopes.insert(currScope);
+
     //
     // If this is a try scope, add it to the tryScopes set
     //
-    IRI_STORAGE::IRID firstBBInScope = bcon->BB[0];
     BBSupport bb(firstBBInScope, pool);
     if (bb.hasTryBB())
       tryScopes.insert(currScope);
@@ -88,7 +94,7 @@ bool IRIS::isGlobal(StringID sid, double startScopeIDX) {
 
     auto edgeIt = outEdges.find(currScope);
     if (edgeIt == outEdges.end()) {
-      assert (false && "Parent scope not found, error");
+      assert(false && "Parent scope not found, error");
     }
     currScope = edgeIt->second;
   }
@@ -174,27 +180,80 @@ bool IRIS::hasScopePath(double startScope, double targetScope) {
 
     auto edgeIt = outEdges.find(currScope);
     if (edgeIt == outEdges.end()) {
-      assert (false && "Parent scope not found, error");
+      assert(false && "Parent scope not found, error");
     }
     currScope = edgeIt->second;
   }
   return false;
 }
 
-void IRIS::taintScope(double startScope) {
+double IRIS::isArgInitScope(double argInitScope) {
+  return argInitScopes.contains(argInitScope);
+}
+
+bool IRIS::isTopLevelScope(double startScope) {
+  auto edgeIt = outEdges.find(startScope);
+  if (edgeIt == outEdges.end()) {
+    assert(false && "Parent scope not found, error");
+  }
+  return edgeIt->second == -1;
+}
+
+bool IRIS::mayReadFromATaintedScope(double startScope) {
+  for (auto & ts : taintedScopes) {
+    // std::cout << "Check: " << startScope << " --> " << ts << std::endl;
+    if (hasScopePath(startScope, ts)) return true;
+  }
+  return false;
+}
+
+void IRIS::addEvalRemoteBindingsToParentClosure(double startScope) {
   if (taintedScopes.contains(startScope))
     return;
 
-  double currScope = startScope;
+  taintedScopes.insert(startScope);
+
+  //
+  // 1. Add all (possibly) read bindings
+  //    to the current closure scope.
+  // 2. Populate remote env reads in the closure frame
+  //
+  double closureScope = getEnclosingClosureScope(startScope);
+
+  std::set<StringID> shadowedReads;
+  std::set<StringID> pollutedReads;
+
+  double currScope = closureScope;
+  bool crossedClosureScope = false;
   while (currScope != -1) {
-    taintedScopes.insert(currScope);
+    if (scopeBindings.contains(currScope)) {
+      for (auto &[sID, bID] : scopeBindings.at(currScope)) {
+        if (pool[bID].tag == IRI_GEN::EnvBinding) {
+          if (crossedClosureScope) {
+            pollutedReads.insert(sID);
+          } else {
+            shadowedReads.insert(sID);
+          }
+        }
+      }
+    }
+
+    if (scopeHead.contains(currScope))
+      crossedClosureScope = true;
 
     auto edgeIt = outEdges.find(currScope);
     if (edgeIt == outEdges.end()) {
-      assert (false && "Parent scope not found, error");
+      assert(false && "Parent scope not found, error");
     }
     currScope = edgeIt->second;
   }
+
+  for (auto &sid : pollutedReads) {
+    if (shadowedReads.contains(sid)) continue;
+    resolve(sid, startScope);
+  }
+
+  commit();
 }
 
 double IRIS::getJSEvalLookupREFIDX(double scope, double parentScope) {
@@ -205,23 +264,22 @@ double IRIS::getJSEvalLookupREFIDX(double scope, double parentScope) {
   }
 
   if (!hasScopePath(scope, parentScope)) {
-    throw std::runtime_error(
-        "getJSEvalLookupREFIDX scope is invalid");
+    throw std::runtime_error("getJSEvalLookupREFIDX scope is invalid");
   }
 
   double currScope = scope;
-
 
   do {
     auto scopeIt = scopeBindings.find(currScope);
     if (scopeIt != scopeBindings.end() && scopeIt->second.size() > 0) {
       double largestREFIDX = -1;
       // Found a scope with >1 bindings
-      for (auto & b : scopeIt->second) {
+      for (auto &b : scopeIt->second) {
         IRI_STORAGE::IRID bID = b.second;
         if (pool[bID].tag == IRI_GEN::EnvBinding) {
           IRI_GEN::EnvBindingSEXP ebSEXP(bID, pool);
-          if (ebSEXP.getREFIDX() > largestREFIDX) largestREFIDX = ebSEXP.getREFIDX();
+          if (ebSEXP.getREFIDX() > largestREFIDX)
+            largestREFIDX = ebSEXP.getREFIDX();
         }
       }
       if (largestREFIDX == -1) {
@@ -231,7 +289,8 @@ double IRIS::getJSEvalLookupREFIDX(double scope, double parentScope) {
       break;
     }
 
-    if (currScope == parentScope) return 0;
+    if (currScope == parentScope)
+      return 0;
 
     auto edgeIt = outEdges.find(currScope);
     if (edgeIt == outEdges.end()) {
@@ -240,6 +299,24 @@ double IRIS::getJSEvalLookupREFIDX(double scope, double parentScope) {
     }
     currScope = edgeIt->second;
   } while (true);
+}
+
+double IRIS::getEnclosingClosureScope(double startScope) {
+  assert(startScope != -1);
+
+  double currScope = startScope;
+  while (true) {
+    if (scopeHead.contains(currScope))
+      return currScope;
+
+    auto edgeIt = outEdges.find(currScope);
+    if (edgeIt == outEdges.end()) {
+      assert(false && "Parent scope not found, error");
+    }
+    currScope = edgeIt->second;
+  }
+  throw std::runtime_error("Failed to resolve parent closure scope");
+  return -1;
 }
 
 double IRIS::getEnclosingThrowScope(double startScope) {
@@ -252,7 +329,7 @@ double IRIS::getEnclosingThrowScope(double startScope) {
 
     auto edgeIt = outEdges.find(currScope);
     if (edgeIt == outEdges.end()) {
-      assert (false && "Parent scope not found, error");
+      assert(false && "Parent scope not found, error");
     }
     currScope = edgeIt->second;
   }
@@ -337,17 +414,19 @@ std::vector<IRI_STORAGE::IRID> IRIS::getBindingsToMoveToHeap(double startScope,
       auto &bindingsMapAtScope = scopeIt->second;
       for (auto &b : bindingsMapAtScope) {
         auto bID = b.second;
-        if (pool[bID].tag == IRI_GEN::EnvBinding && getBindingsMetaView(bID).forwardOffsets.size() > 0) {
+        if (pool[bID].tag == IRI_GEN::EnvBinding &&
+            getBindingsMetaView(bID).forwardOffsets.size() > 0) {
           res.push_back(bID);
         }
       }
     }
 
-    if (startScope == endScope) break;
+    if (startScope == endScope)
+      break;
 
     auto edgeIt = outEdges.find(currScope);
     if (edgeIt == outEdges.end()) {
-      assert (false && "Parent scope not found, error");
+      assert(false && "Parent scope not found, error");
     }
     currScope = edgeIt->second;
   } while (currScope != endScope);
@@ -357,7 +436,8 @@ std::vector<IRI_STORAGE::IRID> IRIS::getBindingsToMoveToHeap(double startScope,
 
 const IRI_STORAGE::BindingMeta &
 IRIS::getBindingsMetaView(IRI_STORAGE::IRID id) const {
-  auto offset = IRI_STORAGE::BindingsPool::getBPoolOffsetForEnvBinding(pool, id);
+  auto offset =
+      IRI_STORAGE::BindingsPool::getBPoolOffsetForEnvBinding(pool, id);
   return (*bindingsPool)[offset];
 }
 
@@ -384,11 +464,11 @@ void IRIS::dumpBindingsAtScope(std::ostream &oss, double currScope) const {
 
   for (auto &[sID, bID] : scopeBindings.at(currScope)) {
     bool captured = false;
-    if (bindingsPool != nullptr) captured = getBindingsMetaView(bID).forwardOffsets.size() > 0;
+    if (bindingsPool != nullptr)
+      captured = getBindingsMetaView(bID).forwardOffsets.size() > 0;
     oss << pool.strings.get(sID) << "@" << bID << ":"
         << (pool[bID].tag == IRI_GEN::RemoteEnvBinding ? "R" : "L")
-        << (bindingsPool != nullptr && captured ? "^" : "")
-        << " ";
+        << (bindingsPool != nullptr && captured ? "^" : "") << " ";
   }
 }
 
