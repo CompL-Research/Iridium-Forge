@@ -118,6 +118,50 @@ static inline void setBBFlag(BBSEXP &b, IRI_FLAG flagToSet) {
   throw std::runtime_error("Impossible case reached setBBFlag");
 }
 
+
+// Recursive helper to print the tree with indentation
+void printTreeHelper(int node, const std::unordered_map<int, std::vector<int>>& inEdges, int depth = 0) {
+    // Create indentation based on depth
+    std::string indent(depth * 4, ' ');
+    std::cout << indent << "|-- " << node << "\n";
+
+    // Find and print all children
+    auto it = inEdges.find(node);
+    if (it != inEdges.end()) {
+        for (int child : it->second) {
+            printTreeHelper(child, inEdges, depth + 1);
+        }
+    }
+}
+
+// Main method to find roots and trigger the printing
+void printTree(const std::unordered_map<int, int>& outEdges,
+               const std::unordered_map<int, std::vector<int>>& inEdges) {
+
+    // 1. Find the root(s)
+    // A root is a node that acts as a parent (exists in inEdges)
+    // but has no parent itself (does not exist as a key in outEdges).
+    std::vector<int> roots;
+    for (const auto& pair : inEdges) {
+        int node = pair.first;
+        if (outEdges.find(node) == outEdges.end()) {
+            roots.push_back(node);
+        }
+    }
+
+    if (roots.empty()) {
+        std::cout << "Tree is empty or contains a cycle with no clear root.\n";
+        return;
+    }
+
+    // 2. Print each root (handles forests if there are disconnected trees)
+    for (int root : roots) {
+        std::cout << "Tree rooted at " << root << ":\n";
+        printTreeHelper(root, inEdges, 0);
+        std::cout << "\n";
+    }
+}
+
 void _1_NBBF(IridiumPool &pool, IRID sexp, BUILD_CTX &iridiumBuildContext) {
   std::unordered_map<int, int> outEdges;
   std::unordered_map<int, std::vector<int>> inEdges;
@@ -137,6 +181,8 @@ void _1_NBBF(IridiumPool &pool, IRID sexp, BUILD_CTX &iridiumBuildContext) {
     if (buildContext->isArgInitContext)
       argInitScopes.push_back(currScope);
   }
+
+  // printTree(outEdges, inEdges);
 
   //
   // Collapse all scopes inside ArgInitScope [excluding boundaries of course]
