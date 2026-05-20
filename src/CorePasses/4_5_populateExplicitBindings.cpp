@@ -88,9 +88,28 @@ void _4_5_PEB(IridiumPool &pool, IRID fileID, BUILD_CTX &iridiumBuildContext) {
 
     BindingsSEXP bindingsSEXP(container.getArg_Bindings(), pool);
 
+    IRI_STORAGE::StringID str_arguments     = pool.strings.intern("arguments");
+    IRI_STORAGE::StringID str_closureName   = pool.strings.intern(containerBC->name);
+    bool declaresArguments    = false;
+    IRID envBindingArguments;
+    bool declaresClosureName  = false;
+    IRID envBindingClosureName;
+
     std::set<StringID> argsRedecl;
     for (auto &a : containerBC->args)
       argsRedecl.insert(pool.strings.intern(a));
+
+    auto lbList = pool.get_args(bindingsSEXP.getArg_LocalBindings());
+    for (auto &eb : lbList) {
+      EnvBindingSEXP ebs(eb, pool);
+      if (ebs.getNAME() == str_arguments) {
+        declaresArguments = true;
+        envBindingArguments = eb;
+      } else if (ebs.getNAME() == str_closureName) {
+        declaresClosureName = true;
+        envBindingClosureName = eb;
+      }
+    }
 
     for (auto &bbID : bbs) {
       BBSEXP bb(bbID, pool);
@@ -146,7 +165,29 @@ void _4_5_PEB(IridiumPool &pool, IRID fileID, BUILD_CTX &iridiumBuildContext) {
             continue;
           }
 
+          if (possibleArgRedl && declaresArguments && binding.getNAME() == str_arguments) {
+            if (flag == JSVAR) {
+            //   EnvBindingSEXP ebs(envBindingArguments, pool);
+            //   ebs.setNAME(pool.strings.intern("<arguments-shadowed>"));
+            // } else {
+              if (jsExpBD.hasArg_RVal()) {
+                auto envWrite = EnvWriteSEXP::create(
+                  pool, jsExpBD.getArg_LValTarget(), jsExpBD.getArg_RVal(),
+                  jsExpBD.hasSLOPPY(), jsExpBD.getSAFE(),
+                  jsExpBD.getTHISINIT());
 
+                pool.update_arg_inplace(bbID, i, envWrite);
+              } else {
+                pool.update_arg_inplace(bbID, i, NOPSEXP::create(pool));
+              }
+              continue;
+            }
+          }
+
+          if (possibleArgRedl && declaresClosureName && binding.getNAME() == str_closureName) {
+            EnvBindingSEXP ebs(envBindingClosureName, pool);
+            ebs.setNAME(pool.strings.intern("<closureName-shadowed>"));
+          }
 
           if (!isModule && scopeToHoistTo == topLevelScope) {
             if (USE_TOP_LEVEL_LOCALS) {
