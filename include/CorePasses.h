@@ -25,10 +25,16 @@ void _3_FNOPS(
     IRI_STORAGE::IridiumPool &pool, IRI_STORAGE::IRID fileSEXP,
     std::unordered_map<int, std::shared_ptr<IRI_PARSE::IridiumBuildContext>>
         &iridiumBuildContext);
-void _4_1_GICG(
+void _4_1_1_GICG(
     IRI_STORAGE::IridiumPool &pool, IRI_STORAGE::IRID fileSEXP,
     std::unordered_map<int, std::shared_ptr<IRI_PARSE::IridiumBuildContext>>
         &iridiumBuildContext);
+
+void _4_1_2_RUR(
+    IRI_STORAGE::IridiumPool &pool, IRI_STORAGE::IRID fileSEXP,
+    std::unordered_map<int, std::shared_ptr<IRI_PARSE::IridiumBuildContext>>
+        &iridiumBuildContext);
+
 
 void _4_2_PMB(
     IRI_STORAGE::IridiumPool &pool, IRI_STORAGE::IRID fileSEXP,
@@ -55,12 +61,7 @@ void _4_6_CBA(
     std::unordered_map<int, std::shared_ptr<IRI_PARSE::IridiumBuildContext>>
         &iridiumBuildContext);
 
-void _5_1_INITSFRAME(
-    IRI_STORAGE::IridiumPool &pool, IRI_STORAGE::IRID fileSEXP,
-    std::unordered_map<int, std::shared_ptr<IRI_PARSE::IridiumBuildContext>>
-        &iridiumBuildContext);
-
-void _5_2_RUR(
+void _5_INITSFRAME(
     IRI_STORAGE::IridiumPool &pool, IRI_STORAGE::IRID fileSEXP,
     std::unordered_map<int, std::shared_ptr<IRI_PARSE::IridiumBuildContext>>
         &iridiumBuildContext);

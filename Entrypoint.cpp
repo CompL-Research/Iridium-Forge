@@ -38,15 +38,15 @@ inline void normalizeIRIDIUM(
   runPass("_1_NBBF", IRI_CORE_PASSES::_1_NBBF);
   runPass("_2_HFD", IRI_CORE_PASSES::_2_HFD);
   runPass("_3_FNOPS", IRI_CORE_PASSES::_3_FNOPS);
-  runPass("_4_1_GICG", IRI_CORE_PASSES::_4_1_GICG);
+  runPass("_4_1_1_GICG", IRI_CORE_PASSES::_4_1_1_GICG);
+  runPass("_4_1_2_RUR", IRI_CORE_PASSES::_4_1_2_RUR);
   runPass("_4_2_PMB", IRI_CORE_PASSES::_4_2_PMB);
   runPass("_4_3_PIB", IRI_CORE_PASSES::_4_3_PIB);
   runPass("_4_4_RFD", IRI_CORE_PASSES::_4_4_RFD);
   runPass("_4_5_1_PEB", IRI_CORE_PASSES::_4_5_PEB);
   runPass("_4_5_2_FNOPS", IRI_CORE_PASSES::_3_FNOPS);
   runPass("_4_6_CBA", IRI_CORE_PASSES::_4_6_CBA);
-  runPass("_5_1_INITSFRAME", IRI_CORE_PASSES::_5_1_INITSFRAME);
-  runPass("_5_2_RUR", IRI_CORE_PASSES::_5_2_RUR);
+  runPass("_5_INITSFRAME", IRI_CORE_PASSES::_5_INITSFRAME);
   runPass("_6_PHCSC", IRI_CORE_PASSES::_6_PHCSC);
   runPass("_7_RRPEBS", IRI_CORE_PASSES::_7_RRPEBS);
   runPass("_8_RREBS", IRI_CORE_PASSES::_8_RREBS);
