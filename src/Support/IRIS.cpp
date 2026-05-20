@@ -1,4 +1,5 @@
 #include "Support/IRIS.hpp"
+#include "Config.h"
 #include "Generated/IridiumEnums.h"
 #include "Generated/IridiumTypes.h"
 #include "Helpers.h"
@@ -40,6 +41,9 @@ IRIS::IRIS(
 
     if (bcon->isArgInitContext)
       argInitScopes.insert(currScope);
+
+    if (bcon->kind == CF_PROP_INIT)
+      propInitScopes.insert(currScope);
 
     //
     // If this is a try scope, add it to the tryScopes set
@@ -189,6 +193,13 @@ bool IRIS::hasScopePath(double startScope, double targetScope) {
 
 double IRIS::isArgInitScope(double argInitScope) {
   return argInitScopes.contains(argInitScope);
+}
+
+bool IRIS::isEnclosedInAPropInitScope(double currScope) {
+  for (auto & pis : propInitScopes) {
+    if (hasScopePath(currScope, pis)) return true;
+  }
+  return false;
 }
 
 bool IRIS::isTopLevelScope(double startScope) {

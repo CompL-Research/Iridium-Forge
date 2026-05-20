@@ -45,6 +45,8 @@ public:
 
   double isArgInitScope(double);
 
+  bool isEnclosedInAPropInitScope(double);
+
   size_t computePoolCapacity();
 
   void initializeBindingsPool();
@@ -77,6 +79,8 @@ private:
   // Scopes representing a argInitContext
   std::set<double> argInitScopes;
 
+  // Scopes representing a argInitContext
+  std::set<double> propInitScopes;
 
   // Scopes belonging to a BBContainer
   std::unordered_map<double, IRI_GEN::IRID> scopeHead;
