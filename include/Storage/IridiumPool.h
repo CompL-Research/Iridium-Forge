@@ -4,6 +4,7 @@
 #include "Generated/IridiumEnums.h"
 #include "IridiumSEXP.h"
 #include "StringPool.h"
+#include <cstdint>
 #include <memory>
 #include <optional>
 #include <set>
@@ -26,6 +27,8 @@ public:
   IRID TRUE_SEXP;
   IRID FALSE_SEXP;
 
+  double lastBBIDX = 0;
+
   std::unordered_map<StringID, IRID> globalBindingSEXPs;
 
   std::optional<IRID> topLevelBBContainer;
@@ -39,6 +42,7 @@ public:
   // hungry
   std::unordered_map<IRID, double> CONTINUE_TARGETS;
 
+  StringID getTemp();
 
   std::shared_ptr<IRI_STRUCTURAL::IRIS> iris = nullptr;
 
@@ -114,6 +118,7 @@ private:
                      FlagVectorEq>
       flag_intern_map;
   std::set<IRID> mutatedFlags;
+  uint32_t tempIDX = 0;
 };
 
 } // namespace IRI_STORAGE
