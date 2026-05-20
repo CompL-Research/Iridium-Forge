@@ -1,4 +1,4 @@
-// Generated: 2026-05-17 15:37:32
+// Generated: 2026-05-19 23:15:32
 #pragma once
 #include "Storage/Config.h"
 #include "Storage/IridiumSEXP.h"
@@ -4475,6 +4475,112 @@ using IRI_STORAGE::FlagValue;
     bool hasTHISINIT() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_THISINIT)); }
     void setTHISINIT() { mutate_flag(FLAG_IDX_THISINIT) = std::nullptr_t{}; }
     void clearTHISINIT() { mutate_flag(FLAG_IDX_THISINIT) = std::monostate{}; }
+  };
+
+  struct DCTRRetSEXP {
+    IRID id;
+    IridiumPool* pool;
+
+    explicit DCTRRetSEXP(IRID n, IridiumPool& p) : id(n), pool(&p) {
+      if (pool->operator[](n).tag != IRI_GEN::DCTRRet) {
+        throw std::runtime_error("Schema Cast Error: Expected DCTRRet, but got " + IRI_GEN::dump_tag(pool->operator[](n).tag));
+      }
+    }
+
+    static IRID create(IridiumPool& p, IRID userObj) {
+      return p.add_node(IRI_GEN::IRI_TAG::DCTRRet, {userObj}, {});
+    }
+
+    static constexpr uint32_t TOTAL_ARGS = 1;
+    static constexpr uint32_t TOTAL_FLAGS = 0;
+
+
+
+    // --- Helpers ---
+    inline FlagValue& mutate_flag(uint32_t idx) {
+        return pool->get_flags_m(id)[idx];
+    }
+    inline const FlagValue& get_flag(uint32_t idx) const {
+        return pool->get_flags(id)[idx];
+    }
+
+    // --- Arguments ---
+    IRID getArg_userObj() const { return pool->get_args(id)[0]; }
+    bool hasArg_userObj() const { return 0 < pool->get_args(id).size(); }
+    void setArg_userObj(IRID val) { assert(hasArg_userObj() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
+
+    // --- Flags ---
+
+  };
+
+  struct NIPCatchCTXSEXP {
+    IRID id;
+    IridiumPool* pool;
+
+    explicit NIPCatchCTXSEXP(IRID n, IridiumPool& p) : id(n), pool(&p) {
+      if (pool->operator[](n).tag != IRI_GEN::NIPCatchCTX) {
+        throw std::runtime_error("Schema Cast Error: Expected NIPCatchCTX, but got " + IRI_GEN::dump_tag(pool->operator[](n).tag));
+      }
+    }
+
+    static IRID create(IridiumPool& p) {
+      return p.add_node(IRI_GEN::IRI_TAG::NIPCatchCTX, {}, {});
+    }
+
+    static constexpr uint32_t TOTAL_ARGS = 0;
+    static constexpr uint32_t TOTAL_FLAGS = 0;
+
+
+
+    // --- Helpers ---
+    inline FlagValue& mutate_flag(uint32_t idx) {
+        return pool->get_flags_m(id)[idx];
+    }
+    inline const FlagValue& get_flag(uint32_t idx) const {
+        return pool->get_flags(id)[idx];
+    }
+
+    // --- Arguments ---
+
+
+    // --- Flags ---
+
+  };
+
+  struct ToNumericSEXP {
+    IRID id;
+    IridiumPool* pool;
+
+    explicit ToNumericSEXP(IRID n, IridiumPool& p) : id(n), pool(&p) {
+      if (pool->operator[](n).tag != IRI_GEN::ToNumeric) {
+        throw std::runtime_error("Schema Cast Error: Expected ToNumeric, but got " + IRI_GEN::dump_tag(pool->operator[](n).tag));
+      }
+    }
+
+    static IRID create(IridiumPool& p, IRID Obj) {
+      return p.add_node(IRI_GEN::IRI_TAG::ToNumeric, {Obj}, {});
+    }
+
+    static constexpr uint32_t TOTAL_ARGS = 1;
+    static constexpr uint32_t TOTAL_FLAGS = 0;
+
+
+
+    // --- Helpers ---
+    inline FlagValue& mutate_flag(uint32_t idx) {
+        return pool->get_flags_m(id)[idx];
+    }
+    inline const FlagValue& get_flag(uint32_t idx) const {
+        return pool->get_flags(id)[idx];
+    }
+
+    // --- Arguments ---
+    IRID getArg_Obj() const { return pool->get_args(id)[0]; }
+    bool hasArg_Obj() const { return 0 < pool->get_args(id).size(); }
+    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
+
+    // --- Flags ---
+
   };
 
 } // namespace IRI_GEN

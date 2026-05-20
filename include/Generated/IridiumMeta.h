@@ -1,4 +1,4 @@
-// Generated: 2026-05-17 15:37:32
+// Generated: 2026-05-19 23:15:32
 #pragma once
 #include "IridiumEnums.h"
 #include <cstdint>
@@ -110,6 +110,9 @@ public:
       case IRI_GEN::GWrite: return 3;
       case IRI_GEN::LWrite: return 3;
       case IRI_GEN::RWrite: return 4;
+      case IRI_GEN::DCTRRet: return 0;
+      case IRI_GEN::NIPCatchCTX: return 0;
+      case IRI_GEN::ToNumeric: return 0;
       default: return 0;
     }
   }

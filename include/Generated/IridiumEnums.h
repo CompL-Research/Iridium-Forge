@@ -1,4 +1,4 @@
-// Generated: 2026-05-17 15:37:32
+// Generated: 2026-05-19 23:15:32
 #pragma once
 #include <string>
 
@@ -103,7 +103,10 @@ namespace IRI_GEN {
     JSSetPrototypeOf,
     GWrite,
     LWrite,
-    RWrite
+    RWrite,
+    DCTRRet,
+    NIPCatchCTX,
+    ToNumeric
   };
 
   inline std::string dump_tag(IRI_TAG value) {
@@ -208,6 +211,9 @@ namespace IRI_GEN {
       case GWrite: return "GWrite";
       case LWrite: return "LWrite";
       case RWrite: return "RWrite";
+      case DCTRRet: return "DCTRRet";
+      case NIPCatchCTX: return "NIPCatchCTX";
+      case ToNumeric: return "ToNumeric";
       default: return "unknown_tag";
     }
   }

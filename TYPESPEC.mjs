@@ -999,4 +999,34 @@ export default [
       "double": [],
     }
   },
+  {
+    "tag": "DCTRRet",
+    "args": ["userObj"],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "NIPCatchCTX",
+    "args": [],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "ToNumeric",
+    "args": ["Obj"],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
+  },
 ];
