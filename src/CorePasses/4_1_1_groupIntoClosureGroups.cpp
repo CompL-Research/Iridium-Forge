@@ -175,7 +175,7 @@ inline IRID createBBContainerSEXP(IridiumPool &pool, double targetScopeIDX,
   return bbContainer;
 }
 
-void _4_1_GICG(IridiumPool &pool, IRID fileSEXP, BUILD_CTX &iridiumBuildContext) {
+void _4_1_1_GICG(IridiumPool &pool, IRID fileSEXP, BUILD_CTX &iridiumBuildContext) {
 
   std::unordered_map<double, IRID> bbGroups;
   std::unordered_map<IRID, std::vector<IRID>> hhGroupArgs;
