@@ -21,3 +21,7 @@ Create a pass for checking stack consistency.
 If a catch arg can capture the arg init environment then use the special routine.
 
 Direct eval in arrow function arg init scope can currently end up injecting vars into the global scope.
+
+Increment Decrement is treated as an unop now, because a = a + 1 rewrite for a++ is invalid when a is a BigInt.
+
+Rename JSIDOP and IDOP, to be more meaningful like FieldIncDecOP and ComputedFieldIncDecOP.
