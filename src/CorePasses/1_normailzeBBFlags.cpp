@@ -120,23 +120,28 @@ static inline void setBBFlag(BBSEXP &b, IRI_FLAG flagToSet) {
 
 
 // Recursive helper to print the tree with indentation
-void printTreeHelper(int node, const std::unordered_map<int, std::vector<int>>& inEdges, int depth = 0) {
+void printTreeHelper(int node, const std::unordered_map<int, std::vector<int>>& inEdges, int depth, BUILD_CTX & iridiumBuildContext) {
     // Create indentation based on depth
     std::string indent(depth * 4, ' ');
-    std::cout << indent << "|-- " << node << "\n";
+    if (node >= 0 && iridiumBuildContext[node]->loopConfig) {
+      auto lc = iridiumBuildContext[node]->loopConfig.value();
+      std::cout << indent << "|-- " << node << "[LOOP_CTX] {" << (lc.label ? lc.label.value() : "") << "}\n";
+    } else {
+      std::cout << indent << "|-- " << node << "\n";
+    }
 
     // Find and print all children
     auto it = inEdges.find(node);
     if (it != inEdges.end()) {
         for (int child : it->second) {
-            printTreeHelper(child, inEdges, depth + 1);
+            printTreeHelper(child, inEdges, depth + 1, iridiumBuildContext);
         }
     }
 }
 
 // Main method to find roots and trigger the printing
 void printTree(const std::unordered_map<int, int>& outEdges,
-               const std::unordered_map<int, std::vector<int>>& inEdges) {
+               const std::unordered_map<int, std::vector<int>>& inEdges, BUILD_CTX &iridiumBuildContext) {
 
     // 1. Find the root(s)
     // A root is a node that acts as a parent (exists in inEdges)
@@ -157,7 +162,7 @@ void printTree(const std::unordered_map<int, int>& outEdges,
     // 2. Print each root (handles forests if there are disconnected trees)
     for (int root : roots) {
         std::cout << "Tree rooted at " << root << ":\n";
-        printTreeHelper(root, inEdges, 0);
+        printTreeHelper(root, inEdges, 0, iridiumBuildContext);
         std::cout << "\n";
     }
 }
@@ -182,7 +187,7 @@ void _1_NBBF(IridiumPool &pool, IRID sexp, BUILD_CTX &iridiumBuildContext) {
       argInitScopes.push_back(currScope);
   }
 
-  // printTree(outEdges, inEdges);
+  // printTree(outEdges, inEdges, iridiumBuildContext);
 
   //
   // Collapse all scopes inside ArgInitScope [excluding boundaries of course]
@@ -208,6 +213,10 @@ void _1_NBBF(IridiumPool &pool, IRID sexp, BUILD_CTX &iridiumBuildContext) {
     for (auto &b : buildContext->BB) {
       BBSEXP currBB(b, pool);
       setBBFlag(currBB, mainBBFlag);
+      double currIDX = currBB.getIDX();
+      if (pool.lastBBIDX < currIDX) {
+        pool.lastBBIDX = currIDX;
+      }
     }
   }
 }
