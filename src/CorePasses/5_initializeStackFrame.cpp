@@ -11,7 +11,7 @@ using namespace IRI_STORAGE;
 using namespace IRI_STRUCTURAL;
 using BUILD_CTX = std::unordered_map<int, std::shared_ptr<IridiumBuildContext>>;
 
-void _5_1_INITSFRAME(IridiumPool &pool, IRID fileSEXP,
+void _5_INITSFRAME(IridiumPool &pool, IRID fileSEXP,
                    BUILD_CTX &iridiumBuildContext) {
 
   FileSupport fileSupport(fileSEXP, pool);
