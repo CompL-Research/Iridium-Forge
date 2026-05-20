@@ -21,6 +21,10 @@ IRID IridiumPool::getGlobalBindingSEXP(StringID s) {
   return globalBindingSEXPs[s];
 }
 
+StringID IridiumPool::getTemp() {
+  return strings.intern("<iritemp-" + std::to_string(tempIDX) + ">");
+}
+
 //
 // Pool operations
 //
