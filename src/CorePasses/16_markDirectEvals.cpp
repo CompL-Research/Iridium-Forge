@@ -71,6 +71,10 @@ inline void patchNode(IridiumPool &pool, IRID node, double scopeToTaint,
             if (pool.iris->isArgInitScope(scopeToTaint)) {
               throw std::runtime_error("IRI build failed ::TODO:: Eval in ArgInitScope");
             }
+            // Direct eval enclosed in a prop init scope is unsupported
+            if (pool.iris->isEnclosedInAPropInitScope(scopeToTaint)) {
+              throw std::runtime_error("IRI build failed ::TODO:: Eval in arg init scopes is unsupported");
+            }
             pool.iris->addEvalRemoteBindingsToParentClosure(scopeToTaint);
             double evalREFIDX =
                 pool.iris->getJSEvalLookupREFIDX(scopeToTaint, containerScope);
@@ -96,6 +100,10 @@ inline void patchNode(IridiumPool &pool, IRID node, double scopeToTaint,
           if (gBinding.getNAME() == EVAL) {
             if (pool.iris->isArgInitScope(scopeToTaint)) {
               throw std::runtime_error("IRI build failed ::TODO:: Eval in ArgInitScope");
+            }
+            // Direct eval enclosed in a prop init scope is unsupported
+            if (pool.iris->isEnclosedInAPropInitScope(scopeToTaint)) {
+              throw std::runtime_error("IRI build failed ::TODO:: Eval in arg init scopes is unsupported");
             }
             pool.iris->addEvalRemoteBindingsToParentClosure(scopeToTaint);
 
