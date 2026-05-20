@@ -180,6 +180,13 @@ void _8_RREBS(IridiumPool &pool, IRID fileSEXP,
             assert(unresolvedReferences == 0);
           }
         }
+
+        if (currStmtTag == IRI_GEN::JSImplicitBindingDeclaration) {
+          JSImplicitBindingDeclarationSEXP jsImp(stmtID, pool);
+          if (pool[jsImp.getArg_Store()].tag != IRI_GEN::EnvBinding) {
+            pool.update_arg_inplace(bbID, stmtIDX, NOPSEXP::create(pool));
+          }
+        }
       }
     }
   }
