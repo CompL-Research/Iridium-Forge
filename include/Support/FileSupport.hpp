@@ -8,7 +8,7 @@ public:
   FileSupport(IRI_GEN::IRID n, IRI_GEN::IridiumPool &p)
       : IRI_GEN::FileSEXP(n, p) {}
 
-  IndexedIterator<std::vector<IRI_GEN::IRID>> containers() const;
+  IndexedIterator<std::vector<IRI_GEN::IRID>> containers(bool subspan = true) const;
 
   IndexedIterator<std::vector<IRI_GEN::IRID>> moduleRequests() const;
 

@@ -10,12 +10,18 @@ using namespace IRI_GEN;
 using namespace IRI_STORAGE;
 using ITR_RET = IndexedIterator<std::vector<IRID>>;
 
-ITR_RET FileSupport::containers() const {
+ITR_RET FileSupport::containers(bool subspan) const {
   std::span<const IRID> allIDX = pool->get_args_view(id);
-  std::span<const IRID> sub = allIDX.subspan(4);
-  std::vector<IRID> targetIDXs(sub.begin(), sub.end());
+  if (subspan) {
+    std::span<const IRID> sub = allIDX.subspan(4);
+    std::vector<IRID> targetIDXs(sub.begin(), sub.end());
 
-  return IndexedIterator(std::move(targetIDXs));
+    return IndexedIterator(std::move(targetIDXs));
+  } else {
+    std::vector<IRID> targetIDXs(allIDX.begin(), allIDX.end());
+
+    return IndexedIterator(std::move(targetIDXs));
+  }
 }
 
 inline ITR_RET getIt(IridiumPool * pool, IRID fileID, int offset, StringID type) {
