@@ -6,7 +6,7 @@
 #include "Parser/IridiumBuildContext.h"
 #include "Support/BBContainerSupport.hpp"
 #include "Support/BBSupport.hpp"
-#include "Support/BindingsSupport.hpp"
+#include "Support/IRIS.hpp"
 #include "Support/FileSupport.hpp"
 
 namespace IRI_CORE_PASSES {
@@ -50,7 +50,7 @@ void _9_RLT(IridiumPool &pool, IRID fileSEXP, BUILD_CTX &iridiumBuildContext) {
   FileSupport fileSupport(fileSEXP, pool);
   for (auto [bbContID, _] : fileSupport.containers()) {
     BBContainerSupport container(bbContID, pool);
-
+    double scopeIDX = container.getScopeIDX();
     std::vector<IRID> res;
 
     for (auto [bbID, _] : container.bbs()) {
@@ -71,14 +71,10 @@ void _9_RLT(IridiumPool &pool, IRID fileSEXP, BUILD_CTX &iridiumBuildContext) {
       }
     }
 
-    BindingsSupport bindings(container.getArg_Bindings(), pool);
-    ListSEXP lambdas(bindings.getArg_Lambdas(), pool);
-    size_t oldNumLambdas = pool.get_args_view(lambdas.id).size();
     for (size_t i = 0; i < res.size(); i++) {
       PoolBindingSEXP pbSEXP(res[i], pool);
-      pbSEXP.setREFIDX(oldNumLambdas + i);
+      pool.iris->addClosureAtScope(scopeIDX, res[i]);
     }
-    pool.add_args_to_end(lambdas.id, res);
   }
 }
 } // namespace IRI_CORE_PASSES
