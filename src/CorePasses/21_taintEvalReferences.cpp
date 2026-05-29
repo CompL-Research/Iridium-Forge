@@ -9,7 +9,6 @@
 #include "Storage/IridiumPool.h"
 #include "Support/BBContainerSupport.hpp"
 #include "Support/BBSupport.hpp"
-#include "Support/BindingsSupport.hpp"
 #include "Support/FileSupport.hpp"
 #include "Support/IRIS.hpp"
 #include <memory>
@@ -80,14 +79,10 @@ void _21_TER(IRI_STORAGE::IridiumPool &pool, IRI_STORAGE::IRID fileSEXP,
         IRI_TAG stmtTAG = pool[stmtID].tag;
 
         if (stmtTAG == IRI_GEN::GWrite) {
-          GWriteSEXP gw(stmtID, pool);
-          gw.setTAINTED();
           throw std::runtime_error("IRI build failed ::TODO:: Eval Unstable GWrite");
         }
 
         if (stmtTAG == IRI_GEN::RWrite) {
-          RWriteSEXP rw(stmtID, pool);
-          rw.setTAINTED();
           throw std::runtime_error("IRI build failed ::TODO:: Eval Unstable RWrite");
         }
 
