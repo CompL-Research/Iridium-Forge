@@ -8,7 +8,6 @@
 #include "Storage/IridiumPool.h"
 #include "Support/BBContainerSupport.hpp"
 #include "Support/BBSupport.hpp"
-#include "Support/BindingsSupport.hpp"
 #include "Support/FileSupport.hpp"
 #include "Support/IRIS.hpp"
 
@@ -46,24 +45,15 @@ void _17_RTDZ(IRI_STORAGE::IridiumPool &pool, IRI_STORAGE::IRID fileSEXP,
               IRID srej = StackRejectSEXP::create(pool, 1);
               pool.set_args(srej, { EnvReadSEXP::create(pool, tdzRead.getArg_Obj(), tdzRead.hasSAFE(), false) });
               pool.update_arg_inplace(bbID, stmtOffset, srej);
-              continue;
-            }
-
-            IRID obj = tdzRead.getArg_Obj();
-            if (pool[obj].tag == IRI_GEN::GlobalBinding) {
-              GlobalBindingSEXP gg(obj, pool);
-              if (!gg.hasSLOPPYDECL())
+            } else {
+              IRID obj = tdzRead.getArg_Obj();
+              if (pool[obj].tag == IRI_GEN::GlobalBinding) {
                 pool.update_arg_inplace(bbID, stmtOffset, pool.NOP_SEXP);
-              else {
+              } else {
                 IRID srej = StackRejectSEXP::create(pool, 1);
                 pool.set_args(srej, { EnvReadSEXP::create(pool, tdzRead.getArg_Obj(), tdzRead.hasSAFE(), false) });
                 pool.update_arg_inplace(bbID, stmtOffset, srej);
-
               }
-            } else {
-              IRID srej = StackRejectSEXP::create(pool, 1);
-              pool.set_args(srej, { EnvReadSEXP::create(pool, tdzRead.getArg_Obj(), tdzRead.hasSAFE(), false) });
-              pool.update_arg_inplace(bbID, stmtOffset, srej);
             }
           }
         }
