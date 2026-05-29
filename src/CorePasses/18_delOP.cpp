@@ -8,7 +8,6 @@
 #include "Storage/IridiumPool.h"
 #include "Support/BBContainerSupport.hpp"
 #include "Support/BBSupport.hpp"
-#include "Support/BindingsSupport.hpp"
 #include "Support/FileSupport.hpp"
 #include "Support/IRIS.hpp"
 
@@ -30,8 +29,9 @@ inline void patchNode(IridiumPool &pool, IRID node, double startScope) {
       IRID val = unop.getArg_Val();
       if (pool[val].tag == IRI_GEN::UNOPDelVar) {
         UNOPDelVarSEXP dv(val, pool);
-        if (!pool.iris->isGlobal(dv.getNAME(), startScope))
+        if (!pool.iris->isGlobal(dv.getNAME(), startScope)) {
           pool.update_arg_inplace(node, i, pool.FALSE_SEXP);
+        }
       }
     }
     patchNode(pool, args[i], startScope);
