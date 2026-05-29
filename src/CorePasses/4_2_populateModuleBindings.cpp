@@ -3,36 +3,42 @@
 #include "Generated/IridiumTypes.h"
 #include "Helpers.h"
 #include "Parser/IridiumBuildContext.h"
+#include "Support/FileSupport.hpp"
+#include "Support/IRIS.hpp"
+#include <cassert>
+#include <memory>
 
 namespace IRI_CORE_PASSES {
 using namespace IRI_PARSE;
 using namespace IRI_GEN;
 using namespace IRI_STORAGE;
+using namespace IRI_STRUCTURAL;
+
 using BUILD_CTX = std::unordered_map<int, std::shared_ptr<IridiumBuildContext>>;
 
-void _4_2_PMB(IridiumPool &pool, IRID fileSEXP, BUILD_CTX &iridiumBuildContext) {
+void _4_2_PMB(IridiumPool &pool, IRID fileSEXP,
+              BUILD_CTX &iridiumBuildContext) {
 
+  pool.iris = std::make_shared<IRIS>(pool, iridiumBuildContext, fileSEXP);
 
   // Vectors to allocate
+  FileSupport fileSupport(fileSEXP, pool);
 
   // Other files referenced by this module
   std::vector<IRID> moduleRequestsVec;
-  auto moduleRequests =
-      ListSEXP::create(pool, pool.strings.intern("ModuleRequest"));
+  auto moduleRequests = pool.get_args_view(fileSEXP)[0];
 
   // Objects imported by this module
   std::vector<IRID> staticImportsVec;
-  auto staticImports =
-      ListSEXP::create(pool, pool.strings.intern("StaticImport"));
+  auto staticImports = pool.get_args_view(fileSEXP)[1];
 
   // Objects exported by this module
   std::vector<IRID> staticExportsVec;
-  auto staticExports = ListSEXP::create(pool, pool.strings.intern(""));
+  auto staticExports = pool.get_args_view(fileSEXP)[2];
 
   // Reexports by this module
   std::vector<IRID> staticStarExportsVec;
-  auto staticStarExports =
-      ListSEXP::create(pool, pool.strings.intern("StarExport"));
+  auto staticStarExports = pool.get_args_view(fileSEXP)[3];
 
   //
   // Get top level container and Build Context
@@ -49,44 +55,39 @@ void _4_2_PMB(IridiumPool &pool, IRID fileSEXP, BUILD_CTX &iridiumBuildContext) 
     }
   }
 
-
   auto bbs = pool.get_args(container.getArg_BB());
-
-
-  //
-  // Bindings added to top level scope by the import statements
-  //
-  std::vector<IRID> remoteBindingsVector;
-  BindingsSEXP bindings(container.getArg_Bindings(), pool);
-  ListSEXP remoteBindings(bindings.getArg_RemoteBindings(), pool);
-
 
   for (auto &bbIDX : bbs) {
     BBSEXP bb(bbIDX, pool);
     auto localScope = bb.getScopeIDX();
-    auto parentClosureScope = IRI_HELPERS::findParentClosureScope(
-        pool, localScope, iridiumBuildContext);
     auto stmts = pool.get_args(bbIDX);
-
 
     for (size_t i = 0; i < stmts.size(); i++) {
       IRID stmtID = stmts[i];
       IRI_TAG currTag = pool[stmtID].tag;
+      // import "SOURCE";
       // import a from "SOURCE";
+      // import {a} from "SOURCE";
+      // import * as foo from "SOURCE";
       if (currTag == IRI_GEN::StaticImport) {
         StaticImportSEXP staticImportStmt(stmtID, pool);
-        ResolveEnvBindingSEXP storageTarget(staticImportStmt.getArg_StorageLocation(), pool);
+        ResolveEnvBindingSEXP storageTarget(
+            staticImportStmt.getArg_StorageLocation(), pool);
         StringID bindingName = storageTarget.getNAME();
-        IRID binding = EnvBindingSEXP::create(pool, bindingName, false, false, false, true, false, false, false, containerBC->scopeIDX, -1, localScope, parentClosureScope, -1);
-        IRID remoteBinding = RemoteEnvBindingSEXP::create(pool, binding, false, false, true, -1);
-        remoteBindingsVector.push_back(remoteBinding);
+
+        assert(localScope == pool.iris->getTopLevelScope());
+
+        IRID store = pool.iris->declareRBinding(localScope, bindingName, IRI_GEN::JSCONST, staticImportStmt.hasNSIMPORT() ? MODULENSI : MODULEI).ID;
+        staticImportStmt.setArg_StorageLocation(store);
+
         staticImportsVec.push_back(stmtID);
         pool.update_arg_inplace(bbIDX, i, pool.NOP_SEXP);
       }
       // export { a as b };
       else if (currTag == IRI_GEN::LocalStaticExport) {
         LocalStaticExportSEXP localStaticExportStmt(stmtID, pool);
-        ResolveEnvBindingSEXP localBinding(localStaticExportStmt.getArg_StorageLocation(), pool);
+        ResolveEnvBindingSEXP localBinding(
+            localStaticExportStmt.getArg_StorageLocation(), pool);
         staticExportsVec.push_back(stmtID);
         pool.update_arg_inplace(bbIDX, i, pool.NOP_SEXP);
       }
@@ -109,7 +110,5 @@ void _4_2_PMB(IridiumPool &pool, IRID fileSEXP, BUILD_CTX &iridiumBuildContext) 
   pool.set_args(staticImports, staticImportsVec);
   pool.set_args(staticExports, staticExportsVec);
   pool.set_args(staticStarExports, staticStarExportsVec);
-  pool.add_args_to_beginning(fileSEXP, { moduleRequests, staticImports, staticExports, staticStarExports });
-  pool.set_args(remoteBindings.id, remoteBindingsVector);
 }
 } // namespace IRI_CORE_PASSES
