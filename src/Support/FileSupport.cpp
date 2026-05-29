@@ -10,18 +10,11 @@ using namespace IRI_GEN;
 using namespace IRI_STORAGE;
 using ITR_RET = IndexedIterator<std::vector<IRID>>;
 
-ITR_RET FileSupport::containers(bool subspan) const {
+ITR_RET FileSupport::containers() const {
   std::span<const IRID> allIDX = pool->get_args_view(id);
-  if (subspan) {
-    std::span<const IRID> sub = allIDX.subspan(4);
-    std::vector<IRID> targetIDXs(sub.begin(), sub.end());
-
-    return IndexedIterator(std::move(targetIDXs));
-  } else {
-    std::vector<IRID> targetIDXs(allIDX.begin(), allIDX.end());
-
-    return IndexedIterator(std::move(targetIDXs));
-  }
+  std::span<const IRID> sub = allIDX.subspan(4);
+  std::vector<IRID> targetIDXs(sub.begin(), sub.end());
+  return IndexedIterator(std::move(targetIDXs));
 }
 
 inline ITR_RET getIt(IridiumPool * pool, IRID fileID, int offset, StringID type) {
@@ -33,22 +26,22 @@ inline ITR_RET getIt(IridiumPool * pool, IRID fileID, int offset, StringID type)
   return IndexedIterator(std::move(pool->get_args(moduleRequestsIDX)));
 }
 
-ITR_RET FileSupport::moduleRequests() const {
-  return getIt(pool, id, 0, pool->strings.intern("ModuleRequest"));
+IRID FileSupport::moduleRequests() const {
+  return pool->get_args_view(id)[0];
 }
 
 
-ITR_RET FileSupport::staticImports() const {
-  return getIt(pool, id, 1, pool->strings.intern("StaticImport"));
+IRID FileSupport::staticImports() const {
+  return pool->get_args_view(id)[1];
 }
 
-ITR_RET FileSupport::staticExports() const {
-  return getIt(pool, id, 2, pool->strings.intern(""));
+IRID FileSupport::staticExports() const {
+  return pool->get_args_view(id)[2];
 }
 
 
-ITR_RET FileSupport::staticStarExports() const {
-  return getIt(pool, id, 3, pool->strings.intern("StarExport"));
+IRID FileSupport::staticStarExports() const {
+  return pool->get_args_view(id)[3];
 }
 
 IRI_GEN::IRID FileSupport::getBBContainerByScopeIDX(double id) const {

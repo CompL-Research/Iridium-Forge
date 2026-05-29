@@ -8,15 +8,15 @@ public:
   FileSupport(IRI_GEN::IRID n, IRI_GEN::IridiumPool &p)
       : IRI_GEN::FileSEXP(n, p) {}
 
-  IndexedIterator<std::vector<IRI_GEN::IRID>> containers(bool subspan = true) const;
+  IndexedIterator<std::vector<IRI_GEN::IRID>> containers() const;
 
-  IndexedIterator<std::vector<IRI_GEN::IRID>> moduleRequests() const;
+  IRI_STORAGE::IRID moduleRequests() const;
 
-  IndexedIterator<std::vector<IRI_GEN::IRID>> staticImports() const;
+  IRI_STORAGE::IRID staticImports() const;
 
-  IndexedIterator<std::vector<IRI_GEN::IRID>> staticExports() const;
+  IRI_STORAGE::IRID staticExports() const;
 
-  IndexedIterator<std::vector<IRI_GEN::IRID>> staticStarExports() const;
+  IRI_STORAGE::IRID staticStarExports() const;
 
   IRI_GEN::IRID getBBContainerByScopeIDX(double id) const;
 };
