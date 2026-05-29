@@ -79,68 +79,6 @@ inline void setClosureFlags(double flag, BBContainerSEXP bbContainer) {
 
   default:
     throw std::runtime_error("Invalid closure flag");
-
-  // case 0:
-  //   throw std::runtime_error("Invalid closure flag");
-  // case 1:
-  //   break;
-  // case 2:
-  //   // bbContainer.setPROTO();
-  //   bbContainer.setHOME();
-  //   bbContainer.setNEW();
-  //   bbContainer.setSOBJ();
-  //   bbContainer.setARGUMENTS();
-  //   break; // flags.push("PROTO", "NEW");
-  // case 3:
-  //   bbContainer.setPROTO();
-  //   bbContainer.setNEW();
-  //   bbContainer.setSCALL();
-  //   bbContainer.setSOBJ();
-  //   bbContainer.setHOME();
-  //   bbContainer.setDERIVED();
-  //   break; // flags.push("PROTO", "NEW", "SCALL", "SOBJ", "HOME", "DERIVED");
-  // case 4:
-  //   bbContainer.setSOBJ();
-  //   bbContainer.setHOME();
-  //   break; // flags.push("SOBJ", "HOME");
-  // case 5:
-  //   bbContainer.setHOME();
-  //   break; // flags.push("HOME");
-  // case 6:
-  //   bbContainer.setNEW();
-  //   break;
-  // case 7:
-  //   bbContainer.setNEW();
-  //   bbContainer.setSOBJ();
-  //   bbContainer.setHOME();
-  //   break; // flags.push("SOBJ", "HOME");
-  // case 8:
-  //   bbContainer.setNEW();
-  //   bbContainer.setHOME();
-  //   break; // flags.push("HOME");
-  // case 9:
-  //   bbContainer.setNEW();
-  //   bbContainer.setSOBJ();
-  //   bbContainer.setHOME();
-  //   break; // flags.push("SOBJ", "HOME");
-  // case 10:
-  //   bbContainer.setSOBJ();
-  //   bbContainer.setHOME();
-  //   break; // flags.push("SOBJ", "HOME")
-  // case 11:
-  //   bbContainer.setNEW();
-  //   bbContainer.setSOBJ();
-  //   bbContainer.setHOME();
-  //   break;
-  // case 12:
-  //   bbContainer.setSOBJ();
-  //   bbContainer.setHOME();
-  //   break; // flags.push("SOBJ", "HOME");
-  // case 13:
-  //   bbContainer.setARGUMENTS();
-  //   break;
-  // default:
-  //   throw std::runtime_error("expected a valid closure flag");
   }
 }
 
@@ -157,25 +95,25 @@ inline IRID createBBContainerSEXP(IridiumPool &pool, double targetScopeIDX,
   IRID poolBindingsID =
       ListSEXP::create(pool, pool.strings.intern("PoolBinding"));
 
-  IRID bindingsID = BindingsSEXP::create(
-      pool, localBindingsID, remoteBindingsID, poolBindingsID, parent);
+  IRID bindingsID = BindingsSEXP::create(pool, localBindingsID, remoteBindingsID, poolBindingsID);
 
   IRID BBListID = ListSEXP::create(pool, pool.strings.intern("BB"));
 
   auto &currContext = iridiumBuildContext[targetScopeIDX];
 
   IRID bbContainer = BBContainerSEXP::create(
-      pool, bindingsID, BBListID, pool.strings.intern(currContext->name),
-      false, currContext->isAsync, currContext->isStrict,
-      currContext->isGenerator, false, false, false, false, false, false,
-      isTopLevel, currContext->ecmaArgs,
-      BBSEXP(currContext->BB[0], pool).getIDX(), targetScopeIDX, -1);
+      pool, bindingsID, BBListID, pool.strings.intern(currContext->name), false,
+      currContext->isAsync, currContext->isStrict, currContext->isGenerator,
+      false, false, false, false, false, false, isTopLevel,
+      currContext->ecmaArgs, BBSEXP(currContext->BB[0], pool).getIDX(),
+      targetScopeIDX, -1);
 
   setClosureFlags(currContext->kind, BBContainerSEXP(bbContainer, pool));
   return bbContainer;
 }
 
-void _4_1_1_GICG(IridiumPool &pool, IRID fileSEXP, BUILD_CTX &iridiumBuildContext) {
+void _4_1_1_GICG(IridiumPool &pool, IRID fileSEXP,
+                 BUILD_CTX &iridiumBuildContext) {
 
   std::unordered_map<double, IRID> bbGroups;
   std::unordered_map<IRID, std::vector<IRID>> hhGroupArgs;
@@ -205,5 +143,32 @@ void _4_1_1_GICG(IridiumPool &pool, IRID fileSEXP, BUILD_CTX &iridiumBuildContex
   for (auto &e : hhGroupArgs) {
     pool.set_args(e.first, e.second);
   }
+
+  // Other files referenced by this module
+  std::vector<IRID> moduleRequestsVec;
+  auto moduleRequests =
+      ListSEXP::create(pool, pool.strings.intern("ModuleRequest"));
+
+  // Objects imported by this module
+  std::vector<IRID> staticImportsVec;
+  auto staticImports =
+      ListSEXP::create(pool, pool.strings.intern("StaticImport"));
+
+  // Objects exported by this module
+  std::vector<IRID> staticExportsVec;
+  auto staticExports = ListSEXP::create(pool, pool.strings.intern(""));
+
+  // Reexports by this module
+  std::vector<IRID> staticStarExportsVec;
+  auto staticStarExports =
+      ListSEXP::create(pool, pool.strings.intern("StarExport"));
+
+  pool.set_args(moduleRequests, moduleRequestsVec);
+  pool.set_args(staticImports, staticImportsVec);
+  pool.set_args(staticExports, staticExportsVec);
+  pool.set_args(staticStarExports, staticStarExportsVec);
+  pool.add_args_to_beginning(fileSEXP, {moduleRequests, staticImports,
+                                        staticExports, staticStarExports});
+
 }
 } // namespace IRI_CORE_PASSES
