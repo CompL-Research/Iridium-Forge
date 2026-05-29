@@ -64,7 +64,7 @@ void _4_1_2_RUR(IridiumPool &pool, IRID fileID,
   StringID undefined_str = pool.strings.intern("undefined");
   StringID this_str = pool.strings.intern("this");
   FileSupport fileSupport(fileID, pool);
-  for (auto [bbContID, _] : fileSupport.containers(false)) {
+  for (auto [bbContID, _] : fileSupport.containers()) {
     BBContainerSupport container(bbContID, pool);
 
     bool returnThis = container.getContainerFlagID() == CF_DERIVED_CTR;
