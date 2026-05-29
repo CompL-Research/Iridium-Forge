@@ -25,3 +25,5 @@ Direct eval in arrow function arg init scope can currently end up injecting vars
 Increment Decrement is treated as an unop now, because a = a + 1 rewrite for a++ is invalid when a is a BigInt.
 
 Rename JSIDOP and IDOP, to be more meaningful like FieldIncDecOP and ComputedFieldIncDecOP.
+
+Need for NIPCatchCTX may not be needed in Iridium, we just need to ensure all catch ctx's are nipped before the ctr check happens. What about finalizers? need to check

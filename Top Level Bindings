@@ -1,0 +1,69 @@
+LBinding
+  - REFIDX : -1
+  - LOC    : 0: Frame | 1: Module | 2: Script | 3. ModuleNSImport
+  - KIND   : 0: LET | 1: CONST | 2: VAR | 3: ARG | 4: RESTARG |
+  - X      : false
+  - SCOPE  : -1
+  - NEXT   : -1
+  - LINK   : -1
+
+RBinding
+  - REFIDX : -1
+
+CBinding
+  - NAME    : ""
+  - CNAME   : false
+  - SETNAME : flase
+  - BBIDX   : -1
+
+Let top level bindings in module be treated like local bindings until codegen:
+ - I do believe this is a good idea, let codegen worry about the other details,
+   the IR gets bloated treating things top level bindings so specially.
+    - Top Level Module bindings and Sloppy bindings can be treated as local stack bindings.
+      They can simply be marked as TopLevelBindings in the EnvBinding itself.
+    - All different writes will have to generate targeted code based on the binding/scope
+      at codegen time, but this simplifies the IR and the stack model significantly.
+
+Framing: I think splitting the stack frame into four parts might be a good idea:
+  - Exclusive Local Bindings
+    - This part of the frame is clean, traditional code, free to be reordered, optimized.
+  - Captured Local Bindings
+    - These are captured bindings, these need more care, they need to preserve their scoping information for things like eval.
+  - Remote Binding References
+    - These are slots that redirect to a local binding in a remote frame.
+  - Pool Bindings
+    - These store the closures being declared.
+
+LWrite:
+   a   = RVAL
+
+RWrite:
+  ^a   = RVAL
+
+LFWrite:
+   a.f = RVAL
+
+RFWrite:
+  ^a.f = RVAL
+
+JSGFWrite:
+  ~a.f = RVAL
+
+GWrite:
+  ~a   = RVAL
+
+JSGDecl:
+  let ~a; const ~a; var ~a; function ~foo() {}
+
+JSSFWrite:
+  super.f  = RVAL
+
+JSCFWrite:
+   a[f]    = RVAL
+  ^a[f]    = RVAL
+  ~a[f]    = RVAL
+
+JSPFWrite:
+  a.#f     = RVAL
+  ^a.#f    = RVAL
+  ~a.#f    = RVAL

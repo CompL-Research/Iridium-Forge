@@ -1,0 +1,27 @@
+DECLVAR|DECLFUN:
+  - Declares the existance of a binding in scope (needed for top level script bindings)
+
+INIT:
+  - Marks the start/end of a TDZ for a binding
+  - Const check not needed
+
+SAFE:
+  - Directly updating a value known to be outside TDZ
+  - Const check needed
+
+THISINIT:
+  - Initializes the 'this' binding
+
+::Stmts::
+
+GWrite:
+  INIT, DECLVAR | DECLFUNC
+
+LWrite:
+  INIT, SAFE, THISINIT
+
+RWrite:
+  INIT, SAFE, THISINIT
+
+MWrite:
+  INIT, SAFE

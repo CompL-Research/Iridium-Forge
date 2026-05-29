@@ -14,42 +14,61 @@ Bindings -> List[TYPE=EnvBinding]
 
 BB -> (STMT)+
 
+EnvBinding
+  - string : NAME
+  - bool   : ASW                           <- Probably Useless
+    - bool   : JSARG
+    - bool   : JSRESTARG
+    - bool   : JSLET
+    - bool   : JSCONST
+    - bool   : JSVAR
+  - bool*  : LINK
+  - double : IDX                           <- Probably Useless
+  - double : REFIDX
+  - double : Scope
+  - double : ParentScope                   <- Probably Useless
+  - double : NEXT
+
+RemoteEnvBinding : [EnvBinding]
+  - bool   : NSIMPORT
+  - bool   : LINK
+  - bool   : MODULETOPLEVELBINDING                   <- Probably Useless
+  - double : REFIDX
+
 STMT := JSExplicitBindingDeclarationN     {Transitional}
       | JSExplicitBindingDeclaration      {Transitional}
       | JSFuncDeclSEXP                    {Transitional}
       | SiblingSpecialWrite               {Transitional}
       | ResolveContinueTarget             {Transitional}
       | ResolveBreakTarget                {Transitional}
+      | JSImplicitBindingDeclaration      {Transitional}
 
       <-- Env OPs -->
-      | EnvWrite                          <- Maybe split into sloppy and non sloppy nodes
-        - GWrite
-          - SLOPPY
-          - TAINTED                       # May always be tainted by eval adding var bindings to scope
-          - SAFE
-
-        - LWrite
-          - SLOPPY
-          - SAFE
-          - THISINIT
-
-        - RWrite
-          - SLOPPY
-          - TAINTED                       # May always be tainted by eval adding var bindings to scope
-          - SAFE
-
-      | JSSloppyFuncDecl                  <- Added [Renamed JSFuncDecl]
-      | JSSloppyDecl                      <- Maybe merge with the prev
-      | JSImplicitBindingDeclaration      <- Add Reduction into EnvWrite + VSysCall
+      | LWrite
+        - XWrite  - Non Aliased binding local stack binding
+        - LWrite  - Aliased local stack binding
+      | RWrite
+        - XRWrite - Exclusive ownership over remote binding
+        - RWrite  - Non exclusive owenership over remote binding
       | FieldWrite
+        - LFWrite
+        - RFWrite
+        - JSGFWrite
+      | GWrite
+        - JSGWrite
+      | JSSloppyFuncDecl + JSSloppyDecl
+        - JSGDecl
       | JSSuperFieldWrite
+        - JSSFWrite
       | JSComputedFieldWrite
+        - JSCFWrite
       | JSPrivateFieldWrite
+        - JSPFWrite
 
       <-- CFlow -->
       | ReturnAsync
       | Return
-      | IfJump
+      | IfJump                            {Only-Execution-Target}
       | IfElseJump
       | Goto
 
@@ -75,15 +94,14 @@ STMT := JSExplicitBindingDeclarationN     {Transitional}
       <-- Garbage -->
       | NOP
 
+EnvAtoms := EnvBinding
+          | RemoteEnvBinding
+          | GlobalBinding
+
 RVAL := ResolveEnvBinding                 {Transitional}
       | ResolvePrivateEnvBinding          {Transitional}
       | PVTEnvRead                        {Transitional}
       | TDZRead                           {Transitional}
-
-      <-- Environment Atoms -->
-      | EnvBinding
-      | RemoteEnvBinding
-      | GlobalBinding
 
       <-- CFlow Transfer -->
       | CallSite
@@ -136,7 +154,7 @@ RVAL := ResolveEnvBinding                 {Transitional}
       | JSSetName
 
       <-- STKOPs -->
-      | StackPop
+      | StackPop                          <- Not very informative
 
       <-- Binops -->
       | Unop
@@ -155,3 +173,5 @@ RVAL := ResolveEnvBinding                 {Transitional}
       | JSForOfNext                       <- Messy RVAL
       | JSCatchContext                    <- This is just an StackPop, merge + flags maybe??
       | StackToHeap                       <- This has no business being an RVAL
+
+      | JSCTX                             <- VSysCall
