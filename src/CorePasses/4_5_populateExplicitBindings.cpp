@@ -6,7 +6,10 @@
 #include "Storage/Config.h"
 #include "Storage/IridiumPool.h"
 #include "Storage/StringPool.h"
+#include "Support/BBSupport.hpp"
+#include "Support/IRIS.hpp"
 #include <cstdlib>
+#include <optional>
 #include <stdexcept>
 #include <tuple>
 #include <unordered_map>
@@ -16,57 +19,17 @@ namespace IRI_CORE_PASSES {
 using namespace IRI_PARSE;
 using namespace IRI_GEN;
 using namespace IRI_STORAGE;
+using namespace IRI_STRUCTURAL;
 using BUILD_CTX = std::unordered_map<int, std::shared_ptr<IridiumBuildContext>>;
 
-inline bool sameKindFlag(EnvBindingSEXP binding, IRI_FLAG kindFlag) {
-  if (kindFlag == IRI_FLAG::JSLET && binding.hasJSLET())
-    return true;
-  if (kindFlag == IRI_FLAG::JSCONST && binding.hasJSCONST())
-    return true;
-  if (kindFlag == IRI_FLAG::JSVAR && binding.hasJSVAR())
-    return true;
-  if (kindFlag == IRI_FLAG::JSARG && binding.hasJSARG())
-    return true;
-  if (kindFlag == IRI_FLAG::JSRESTARG && binding.hasJSRESTARG())
-    return true;
-  return false;
-}
-
-inline bool hasBindingReference(IridiumPool &pool, BindingsSEXP bindingsSEXP,
-                                double idx, StringID name,
-                                IRI_GEN::IRI_FLAG kindFlag, double localScope,
-                                double parentScope) {
-  auto localBindingsArgs = pool.get_args(bindingsSEXP.getArg_LocalBindings());
-  auto remoteBindingsArgs = pool.get_args(bindingsSEXP.getArg_RemoteBindings());
-  for (auto &b : localBindingsArgs) {
-    EnvBindingSEXP bin(b, pool);
-    if (bin.getIDX() == idx && bin.getNAME() == name &&
-        sameKindFlag(bin, kindFlag) && bin.getScope() == localScope &&
-        bin.getParentScope() == parentScope)
-      return true;
-  }
-
-  for (auto &b : remoteBindingsArgs) {
-    RemoteEnvBindingSEXP rbin(b, pool);
-    EnvBindingSEXP bin(IRI_HELPERS::resolveRemoteBinding(pool, b), pool);
-    if (bin.getIDX() == idx && bin.getNAME() == name &&
-        sameKindFlag(bin, kindFlag) && bin.getScope() == localScope &&
-        bin.getParentScope() == parentScope)
-      return true;
-  }
-
-  return false;
-}
+enum class LOC { FRAME, MODULE, SCRIPT };
 
 void _4_5_PEB(IridiumPool &pool, IRID fileID, BUILD_CTX &iridiumBuildContext) {
-  bool USE_TOP_LEVEL_LOCALS = getenv("FORCE_TOP_LEVEL_LOCALS") ? true : false;
+  StringID str_undefined = pool.strings.intern("undefined");
+  StringID str_arguments = pool.strings.intern("arguments");
   FileSEXP fileSEXP(fileID, pool);
-
-  std::unordered_map<IRID, std::vector<IRID>> prefixVector;
-  std::unordered_map<IRID, std::vector<IRID>> postfixVector;
-
   bool isModule = iridiumBuildContext[0]->isModule;
-  double topLevelScope = IRI_HELPERS::getTopLevelScope(pool, fileID);
+  double topLevelScope = pool.iris->getTopLevelScope();
 
   auto args = pool.get_args(fileID);
 
@@ -74,11 +37,7 @@ void _4_5_PEB(IridiumPool &pool, IRID fileID, BUILD_CTX &iridiumBuildContext) {
     if (pool[bbcID].tag != IRI_GEN::BBContainer)
       continue;
 
-    std::vector<IRID> sloppyDeclarations;
-    std::unordered_map<double,
-                       std::vector<std::tuple<IRI_STORAGE::StringID,
-                                              IRI_GEN::IRI_FLAG, bool, bool>>>
-        explicitBindings;
+    std::unordered_map<double, std::vector<IRID>> scopewiseHoisting;
 
     BBContainerSEXP container(bbcID, pool);
     auto bbs = pool.get_args(container.getArg_BB());
@@ -86,47 +45,28 @@ void _4_5_PEB(IridiumPool &pool, IRID fileID, BUILD_CTX &iridiumBuildContext) {
 
     auto &containerBC = iridiumBuildContext[containerScope];
 
-    BindingsSEXP bindingsSEXP(container.getArg_Bindings(), pool);
-
-    IRI_STORAGE::StringID str_arguments     = pool.strings.intern("arguments");
-    IRI_STORAGE::StringID str_closureName   = pool.strings.intern(containerBC->name);
-    bool declaresArguments    = false;
-    IRID envBindingArguments;
-    bool declaresClosureName  = false;
-    IRID envBindingClosureName;
-
-    std::set<StringID> argsRedecl;
-    for (auto &a : containerBC->args)
-      argsRedecl.insert(pool.strings.intern(a));
-
-    auto lbList = pool.get_args(bindingsSEXP.getArg_LocalBindings());
-    for (auto &eb : lbList) {
-      EnvBindingSEXP ebs(eb, pool);
-      if (ebs.getNAME() == str_arguments) {
-        declaresArguments = true;
-        envBindingArguments = eb;
-      } else if (ebs.getNAME() == str_closureName) {
-        declaresClosureName = true;
-        envBindingClosureName = eb;
-      }
-    }
-
     for (auto &bbID : bbs) {
-      BBSEXP bb(bbID, pool);
-      auto stmts = pool.get_args(bbID);
+      BBSupport bb(bbID, pool);
 
       auto localScope = bb.getScopeIDX();
       auto directParent = iridiumBuildContext[localScope]->parent;
       auto varHoistingScope = IRI_HELPERS::findVARHoistingScope(
           pool, localScope, iridiumBuildContext);
 
-      for (size_t i = 0; i < stmts.size(); i++) {
-        IRID stmtID = stmts[i];
+      for (auto [stmtID, stmtOffset] : bb.stmts()) {
         IRI_TAG currTag = pool[stmtID].tag;
+        bool doHoist = true;
+        bool isArgX = false;
 
-        bool doInit = true;
         if (currTag == IRI_GEN::JSExplicitBindingDeclarationN) {
-          doInit = false;
+          doHoist = false;
+          pool.update_tag(stmtID, JSExplicitBindingDeclaration);
+          currTag = JSExplicitBindingDeclaration;
+        }
+
+        if (currTag == IRI_GEN::JSExplicitBindingDeclarationX) {
+          isArgX = true;
+          doHoist = false;
           pool.update_tag(stmtID, JSExplicitBindingDeclaration);
           currTag = JSExplicitBindingDeclaration;
         }
@@ -134,163 +74,107 @@ void _4_5_PEB(IridiumPool &pool, IRID fileID, BUILD_CTX &iridiumBuildContext) {
         if (currTag == IRI_GEN::JSExplicitBindingDeclaration) {
           JSExplicitBindingDeclarationSEXP jsExpBD(stmtID, pool);
           double scopeToHoistTo;
-          IRI_FLAG flag;
+          IRI_FLAG kind;
           if (jsExpBD.hasJSLET()) {
             scopeToHoistTo = localScope;
-            flag = IRI_GEN::JSLET;
+            kind = JSLET;
           } else if (jsExpBD.hasJSCONST()) {
             scopeToHoistTo = localScope;
-            flag = IRI_GEN::JSCONST;
+            kind = JSCONST;
           } else if (jsExpBD.hasJSVAR()) {
             scopeToHoistTo = varHoistingScope;
-            flag = IRI_GEN::JSVAR;
+            kind = JSVAR;
           } else
             throw std::runtime_error("[Forge]: Unknown explicit binding kind!");
 
-          bool possibleArgRedl = scopeToHoistTo == varHoistingScope && directParent == containerScope;
-
+          LOC loc;
           ResolveEnvBindingSEXP binding(jsExpBD.getArg_LValTarget(), pool);
+          StringID currBindingName = binding.getNAME();
 
-          if (possibleArgRedl && argsRedecl.contains(binding.getNAME())) {
-            if (jsExpBD.hasArg_RVal()) {
-              auto envWrite = EnvWriteSEXP::create(
-                pool, jsExpBD.getArg_LValTarget(), jsExpBD.getArg_RVal(),
-                jsExpBD.hasSLOPPY(), jsExpBD.getSAFE(),
-                jsExpBD.getTHISINIT());
-
-              pool.update_arg_inplace(bbID, i, envWrite);
+          if (scopeToHoistTo == topLevelScope) {
+            if (isModule) {
+              loc = LOC::MODULE;
             } else {
-              pool.update_arg_inplace(bbID, i, NOPSEXP::create(pool));
+              loc = LOC::SCRIPT;
             }
-            continue;
+          } else {
+            loc = LOC::FRAME;
           }
 
-          if (possibleArgRedl && declaresArguments && binding.getNAME() == str_arguments) {
-            if (flag == JSVAR) {
-            //   EnvBindingSEXP ebs(envBindingArguments, pool);
-            //   ebs.setNAME(pool.strings.intern("<arguments-shadowed>"));
-            // } else {
-              if (jsExpBD.hasArg_RVal()) {
-                auto envWrite = EnvWriteSEXP::create(
-                  pool, jsExpBD.getArg_LValTarget(), jsExpBD.getArg_RVal(),
-                  jsExpBD.hasSLOPPY(), jsExpBD.getSAFE(),
-                  jsExpBD.getTHISINIT());
+          IRID resolvedLVAL;
 
-                pool.update_arg_inplace(bbID, i, envWrite);
-              } else {
-                pool.update_arg_inplace(bbID, i, NOPSEXP::create(pool));
+          {
+            //
+            // Add binding to IRIS and add hoist declarations
+            //
+            IRI_STORAGE::StringID bindingName = binding.getNAME();
+            IRID target, rval;
+            if (kind == JSVAR)
+              rval = IRI_HELPERS::createUnsafeEnvReadSEXP(pool, str_undefined);
+            else
+              rval = pool.NUBD_SEXP;
+
+            // Prevent duplicate declaration of var bindings and functions
+            bool alreadyHasBinding = pool.iris->hasBinding(bindingName, scopeToHoistTo);
+
+            if (alreadyHasBinding && bindingName == str_arguments) {
+              auto & decl = pool.iris->resolve(bindingName, scopeToHoistTo);
+              resolvedLVAL = decl.ID;
+            } else {
+              if (loc == LOC::FRAME) {
+                auto & decl = pool.iris->declareLBinding(scopeToHoistTo, bindingName, kind);
+                if (isArgX) decl.isARGX = true;
+                resolvedLVAL = decl.ID;
+                target = LWriteSEXP::create(pool, resolvedLVAL, rval, true, false, false);
+              } else if (loc == LOC::MODULE) {
+                auto & decl = pool.iris->declareRBinding(scopeToHoistTo, bindingName, kind, IRI_GEN::MODULE);
+                if (isArgX) decl.isARGX = true;
+                resolvedLVAL = decl.ID;
+                target = MWriteSEXP::create(pool, resolvedLVAL, rval, true, false);
+              } else if (loc == LOC::SCRIPT) {
+                auto & decl = pool.iris->declareScriptBinding(scopeToHoistTo, bindingName, kind);
+                if (isArgX) decl.isARGX = true;
+                resolvedLVAL = decl.ID;
+                target = GWriteSEXP::create(pool, resolvedLVAL, rval, false, false, true, false);
+                doHoist = true;
               }
-              continue;
+              if (alreadyHasBinding == false && doHoist == true) {
+                scopewiseHoisting[scopeToHoistTo].push_back(target);
+              }
             }
           }
 
-          if (possibleArgRedl && declaresClosureName && binding.getNAME() == str_closureName) {
-            EnvBindingSEXP ebs(envBindingClosureName, pool);
-            ebs.setNAME(pool.strings.intern("<closureName-shadowed>"));
-          }
-
-          if (!isModule && scopeToHoistTo == topLevelScope) {
-            if (USE_TOP_LEVEL_LOCALS) {
-              explicitBindings[scopeToHoistTo].push_back(std::make_tuple(
-                  binding.getNAME(), flag, doInit, binding.hasASW()));
-            } else {
-              IRID globalBindingID =
-                  pool.getGlobalBindingSEXP(binding.getNAME());
-              GlobalBindingSEXP gBinding(globalBindingID, pool);
-              gBinding.setSLOPPYDECL();
-              sloppyDeclarations.push_back(JSSloppyDeclSEXP::create(
-                  pool, binding.getNAME(), flag == JSLET, flag == JSCONST,
-                  flag == JSVAR));
-            }
+          IRID inlineReplacement, irRVal;
+          if (jsExpBD.hasArg_RVal()) {
+            irRVal = jsExpBD.getArg_RVal();
           } else {
-            explicitBindings[scopeToHoistTo].push_back(std::make_tuple(
-                binding.getNAME(), flag, doInit, binding.hasASW()));
+            irRVal = IRI_HELPERS::createUnsafeEnvReadSEXP(pool, str_undefined);
           }
 
-          if (!jsExpBD.hasArg_RVal()) {
-            if (jsExpBD.hasJSVAR() || doInit == false) {
-              pool.update_arg_inplace(bbID, i, pool.NOP_SEXP);
-            } else {
-              auto envWrite = EnvWriteSEXP::create(
-                  pool, jsExpBD.getArg_LValTarget(), pool.UNDEF_READ,
-                  jsExpBD.hasSLOPPY(), jsExpBD.getSAFE(),
-                  jsExpBD.getTHISINIT());
-
-              pool.update_arg_inplace(bbID, i, envWrite);
-            }
+          if (!jsExpBD.hasArg_RVal() && (jsExpBD.hasJSVAR() || doHoist == false)) {
+            inlineReplacement = pool.NOP_SEXP;
           } else {
-            auto envWrite = EnvWriteSEXP::create(
-                pool, jsExpBD.getArg_LValTarget(), jsExpBD.getArg_RVal(),
-                jsExpBD.hasSLOPPY(), jsExpBD.getSAFE(),
-                jsExpBD.getTHISINIT());
-
-            pool.update_arg_inplace(bbID, i, envWrite);
+            if (pool[resolvedLVAL].tag == IRI_GEN::EnvBinding) {
+              inlineReplacement = LWriteSEXP::create(pool, resolvedLVAL, irRVal, true, false, false);
+            } else if (pool[resolvedLVAL].tag == IRI_GEN::RemoteEnvBinding) {
+              inlineReplacement = MWriteSEXP::create(pool, resolvedLVAL, irRVal, true, false);
+            } else if (pool[resolvedLVAL].tag == IRI_GEN::ScriptBinding) {
+              inlineReplacement = GWriteSEXP::create(pool, resolvedLVAL, irRVal, true, false, false, false);
+            } else {
+              throw std::runtime_error("Unexpected binding kind");
+            }
           }
+          pool.update_arg_inplace(bbID, stmtOffset, inlineReplacement);
         }
       }
     }
-    {
-      // Handle Sloppy Declarations
-      IRID startBB = containerBC->BB[0];
-      pool.add_args_to_beginning(startBB, sloppyDeclarations);
-    }
-    {
-
-      std::vector<IRID> remoteBindings;
-      std::vector<IRID> localBindings;
-      // Handle Explicit Declarations
-      for (auto &e : explicitBindings) {
-        auto &bindingContext = iridiumBuildContext[e.first];
-        double localScope = bindingContext->scopeIDX;
-        double parentScope = bindingContext->parent;
-
-        IRID startBBID = bindingContext->BB[0];
-        BBSEXP startBB(startBBID, pool);
-        std::vector<IRID> hoistedEnvWrites;
-
-        for (auto &b : e.second) {
-          auto &[bindingName, kindFlag, doInit, isASW] = b;
-          IRID lval = ResolveEnvBindingSEXP::create(pool, bindingName, false);
-          IRID rval;
-          if (kindFlag == JSVAR)
-            rval = pool.UNDEF_READ;
-          else
-            rval = pool.NUBD_SEXP;
-
-          if (!hasBindingReference(pool, bindingsSEXP, containerScope,
-                                   bindingName, kindFlag, localScope,
-                                   parentScope)) {
-            if (startBB.hasTopLevel() && USE_TOP_LEVEL_LOCALS == false) {
-              IRID localBinding = EnvBindingSEXP::create(
-                  pool, bindingName, isASW, false, false, kindFlag == JSLET,
-                  kindFlag == JSCONST, kindFlag == JSVAR, false,
-                  containerBC->scopeIDX, -1, localScope, parentScope, -1);
-              IRID remoteBinding = RemoteEnvBindingSEXP::create(
-                  pool, localBinding, false, false, true, -1);
-              remoteBindings.push_back(remoteBinding);
-              if (doInit) {
-                hoistedEnvWrites.push_back(EnvWriteSEXP::create(
-                    pool, lval, rval, false, true, false));
-              }
-            } else {
-              IRID localBinding = EnvBindingSEXP::create(
-                  pool, bindingName, isASW, false, false, kindFlag == JSLET,
-                  kindFlag == JSCONST, kindFlag == JSVAR, false,
-                  containerBC->scopeIDX, -1, localScope, parentScope, -1);
-              localBindings.push_back(localBinding);
-              if (doInit) {
-                hoistedEnvWrites.push_back(EnvWriteSEXP::create(
-                    pool, lval, rval, false, true, false));
-              }
-            }
-          }
-        }
-        pool.add_args_to_beginning(startBBID, hoistedEnvWrites);
-      }
-      pool.add_args_to_beginning(bindingsSEXP.getArg_LocalBindings(),
-                                 localBindings);
-      pool.add_args_to_beginning(bindingsSEXP.getArg_RemoteBindings(),
-                                 remoteBindings);
+    // Handle Explicit Declarations
+    for (auto &e : scopewiseHoisting) {
+      auto &containerBC = iridiumBuildContext[e.first];
+      double localScope = containerBC->scopeIDX;
+      double parentScope = containerBC->parent;
+      IRID startBBID = containerBC->BB[0];
+      pool.add_args_to_beginning(startBBID, e.second);
     }
   }
 }
