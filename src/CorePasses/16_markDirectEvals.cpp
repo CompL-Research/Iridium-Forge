@@ -8,7 +8,6 @@
 #include "Storage/IridiumPool.h"
 #include "Support/BBContainerSupport.hpp"
 #include "Support/BBSupport.hpp"
-#include "Support/BindingsSupport.hpp"
 #include "Support/FileSupport.hpp"
 #include "Support/IRIS.hpp"
 #ifdef PRINT_TAINT_TREE
@@ -76,9 +75,10 @@ inline void patchNode(IridiumPool &pool, IRID node, double scopeToTaint,
               throw std::runtime_error("IRI build failed ::TODO:: Eval in arg init scopes is unsupported");
             }
             pool.iris->addEvalRemoteBindingsToParentClosure(scopeToTaint);
-            double evalREFIDX =
-                pool.iris->getJSEvalLookupREFIDX(scopeToTaint, containerScope);
-            callSite.setJSDirectEval(evalREFIDX);
+            pool.iris->registerDirectEval(node, scopeToTaint, containerScope);
+            // double evalREFIDX =
+            //     pool.iris->getJSEvalLookupREFIDX(scopeToTaint, containerScope);
+            callSite.setJSDirectEval(-3);
           }
         }
       }
@@ -106,10 +106,11 @@ inline void patchNode(IridiumPool &pool, IRID node, double scopeToTaint,
               throw std::runtime_error("IRI build failed ::TODO:: Eval in arg init scopes is unsupported");
             }
             pool.iris->addEvalRemoteBindingsToParentClosure(scopeToTaint);
+            pool.iris->registerDirectEval(node, scopeToTaint, containerScope);
 
-            double evalREFIDX =
-                pool.iris->getJSEvalLookupREFIDX(scopeToTaint, containerScope);
-            callSite.setJSDirectEval(evalREFIDX);
+            // double evalREFIDX =
+            //     pool.iris->getJSEvalLookupREFIDX(scopeToTaint, containerScope);
+            callSite.setJSDirectEval(-3);
           }
         }
       }
