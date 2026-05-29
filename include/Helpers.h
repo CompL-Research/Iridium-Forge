@@ -55,18 +55,4 @@ createNoASWResolveEnvBindingSEXP(IRI_STORAGE::IridiumPool &pool, StringID s);
 IRI_STORAGE::IRID createUnsafeEnvReadSEXP(IRI_STORAGE::IridiumPool &pool,
                                           StringID s);
 
-bool isGlobalBinding(
-    IRI_STORAGE::IridiumPool &pool, IRI_STRUCTURAL::FileSupport fileSEXP,
-    std::unordered_map<int, std::shared_ptr<IRI_PARSE::IridiumBuildContext>>
-        &iridiumBuildContext,
-    StringID name, double startScope,
-    IRI_STRUCTURAL::BindingsSupport bindingsSEXP);
-
-IRI_STORAGE::IRID resolveScopedLookup(
-    IRI_STORAGE::IridiumPool &pool, IRI_STRUCTURAL::FileSupport fileSEXP,
-    std::unordered_map<int, std::shared_ptr<IRI_PARSE::IridiumBuildContext>>
-        &iridiumBuildContext,
-    StringID name, double startScope,
-    IRI_STRUCTURAL::BindingsSupport bindingsSEXP);
-
 } // namespace IRI_HELPERS

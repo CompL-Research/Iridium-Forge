@@ -6,8 +6,6 @@
 #include "Storage/IridiumPool.h"
 #include "Storage/StringPool.h"
 #include "Support/BBContainerSupport.hpp"
-#include "Support/BindingsSupport.hpp"
-#include "Support/FileSupport.hpp"
 #include <functional>
 #include <stdexcept>
 
@@ -84,10 +82,13 @@ IRI_STORAGE::IRID resolveRemoteBinding(IRI_STORAGE::IridiumPool &pool,
                                        IRI_STORAGE::IRID rbinID) {
   IRI_GEN::RemoteEnvBindingSEXP rbin(rbinID, pool);
   IRI_STORAGE::IRID containedBinding = rbin.getArg_ParentReference();
-  if (pool[containedBinding].tag == IRI_GEN::EnvBinding)
+  if (pool[containedBinding].tag == IRI_GEN::EnvBinding) {
     return containedBinding;
-  else
+  } else if (pool[containedBinding].tag == IRI_GEN::RemoteEnvBinding) {
     return resolveRemoteBinding(pool, containedBinding);
+  } else {
+    throw std::runtime_error("[Forge] Failed to resolve RemoteEnvBinding");
+  }
 }
 
 double getTopLevelScope(IRI_STORAGE::IridiumPool &pool,
@@ -159,138 +160,5 @@ namespace {
     std::unordered_map<BindingKey, bool, BindingKeyHash> g_isGlobalCache;
     std::unordered_map<BindingKey, IRI_GEN::IRID, BindingKeyHash> g_resolveLookupCache;
 }
-
-bool isGlobalBinding(
-    IRI_STORAGE::IridiumPool &pool, IRI_STRUCTURAL::FileSupport fileSEXP,
-    std::unordered_map<int, std::shared_ptr<IRI_PARSE::IridiumBuildContext>> &iridiumBuildContext,
-    StringID name, double startScope,
-    IRI_STRUCTURAL::BindingsSupport bindingsSEXP)
-{
-    // NOTE: Replace .getID() with however you access the underlying IRID in BindingsSupport
-    BindingKey key{name, startScope, bindingsSEXP.id};
-
-    auto it = g_isGlobalCache.find(key);
-    if (it != g_isGlobalCache.end()) {
-        return it->second;
-    }
-
-    auto res = bindingsSEXP.getBinding(iridiumBuildContext, name, startScope);
-    if (res.has_value()) {
-        return g_isGlobalCache[key] = false;
-    }
-
-    auto parentScope = bindingsSEXP.getParentScope();
-    if (parentScope == -1) {
-        return g_isGlobalCache[key] = true;
-    }
-
-    auto bbContainerID = fileSEXP.getBBContainerByScopeIDX(findParentClosureScope(pool, parentScope, iridiumBuildContext));
-    IRI_STRUCTURAL::BBContainerSupport bbContainer(bbContainerID, pool);
-    IRI_STRUCTURAL::BindingsSupport next(bbContainer.getArg_Bindings(), pool);
-
-    return g_isGlobalCache[key] = isGlobalBinding(pool, fileSEXP, iridiumBuildContext, name, startScope, next);
-}
-
-// --- Cached resolveScopedLookup ---
-IRI_GEN::IRID resolveScopedLookup(
-    IRI_STORAGE::IridiumPool &pool, IRI_STRUCTURAL::FileSupport fileSEXP,
-    std::unordered_map<int, std::shared_ptr<IRI_PARSE::IridiumBuildContext>> &iridiumBuildContext,
-    StringID name, double startScope,
-    IRI_STRUCTURAL::BindingsSupport bindingsSEXP)
-{
-    BindingKey key{name, startScope, bindingsSEXP.id};
-
-    auto it = g_resolveLookupCache.find(key);
-    if (it != g_resolveLookupCache.end()) {
-        return it->second;
-    }
-
-    auto res = bindingsSEXP.getBinding(iridiumBuildContext, name, startScope);
-    if (res.has_value()) {
-        return g_resolveLookupCache[key] = res.value();
-    }
-
-    auto parentScope = bindingsSEXP.getParentScope();
-    if (parentScope == -1) {
-        throw std::runtime_error("Failed to resolve lookup: " + std::string(pool.strings.get(name)));
-    }
-
-    auto bbContainerID = fileSEXP.getBBContainerByScopeIDX(findParentClosureScope(pool, parentScope, iridiumBuildContext));
-    IRI_STRUCTURAL::BBContainerSupport bbContainer(bbContainerID, pool);
-    IRI_STRUCTURAL::BindingsSupport next(bbContainer.getArg_Bindings(), pool);
-
-    IRI_GEN::IRID resolvedInParent = resolveScopedLookup(pool, fileSEXP, iridiumBuildContext, name, startScope, next);
-
-    IRI_GEN::ListSEXP remoteBindingsList(bindingsSEXP.getArg_RemoteBindings(), pool);
-    auto updatedRemoteBindings = pool.get_args(remoteBindingsList.id);
-
-    IRI_GEN::IRID newlyCreatedRemoteBindingSEXP = IRI_GEN::RemoteEnvBindingSEXP::create(
-        pool,
-        resolvedInParent,
-        false,
-        false,
-        false,
-        static_cast<double>(updatedRemoteBindings.size())
-    );
-
-    updatedRemoteBindings.push_back(newlyCreatedRemoteBindingSEXP);
-    pool.set_args(remoteBindingsList.id, updatedRemoteBindings);
-
-    return g_resolveLookupCache[key] = newlyCreatedRemoteBindingSEXP;
-}
-
-// bool isGlobalBinding(
-//     IRI_STORAGE::IridiumPool &pool, IRI_STRUCTURAL::FileSupport fileSEXP,
-//     std::unordered_map<int, std::shared_ptr<IRI_PARSE::IridiumBuildContext>>
-//         &iridiumBuildContext,
-//     StringID name, double startScope,
-//     IRI_STRUCTURAL::BindingsSupport bindingsSEXP) {
-//   auto res = bindingsSEXP.getBinding(iridiumBuildContext, name, startScope);
-//   if (res.has_value())
-//     return false;
-//   auto parentScope = bindingsSEXP.getParentScope();
-//   if (parentScope == -1)
-//     return true;
-//   auto bbContainerID =
-//       fileSEXP[findParentClosureScope(pool, parentScope, iridiumBuildContext)];
-//   IRI_STRUCTURAL::BBContainerSupport bbContainer(bbContainerID, pool);
-//   IRI_STRUCTURAL::BindingsSupport next(bbContainer.getArg_Bindings(), pool);
-
-//   return isGlobalBinding(pool, fileSEXP, iridiumBuildContext, name, startScope,
-//                          next);
-// }
-
-// IRI_GEN::IRID resolveScopedLookup(
-//     IRI_STORAGE::IridiumPool &pool, IRI_STRUCTURAL::FileSupport fileSEXP,
-//     std::unordered_map<int, std::shared_ptr<IRI_PARSE::IridiumBuildContext>>
-//         &iridiumBuildContext,
-//     StringID name, double startScope,
-//     IRI_STRUCTURAL::BindingsSupport bindingsSEXP) {
-//   auto res = bindingsSEXP.getBinding(iridiumBuildContext, name, startScope);
-//   if (res.has_value())
-//     return res.value();
-//   auto parentScope = bindingsSEXP.getParentScope();
-//   if (parentScope == -1)
-//     throw std::runtime_error("Failed to resolve lookup");
-//   auto bbContainerID =
-//       fileSEXP[findParentClosureScope(pool, parentScope, iridiumBuildContext)];
-//   IRI_STRUCTURAL::BBContainerSupport bbContainer(bbContainerID, pool);
-//   IRI_STRUCTURAL::BindingsSupport next(bbContainer.getArg_Bindings(), pool);
-//   IRI_GEN::ListSEXP remoteBindingsList(bindingsSEXP.getArg_RemoteBindings(),
-//                                        pool);
-
-//   auto updatedRemoteBindings = pool.get_args(remoteBindingsList.id);
-
-//   IRI_GEN::IRID newlyCreatedRemoteBindingSEXP =
-//       IRI_GEN::RemoteEnvBindingSEXP::create(
-//           pool,
-//           resolveScopedLookup(pool, fileSEXP, iridiumBuildContext, name,
-//                               startScope, next),
-//           false, updatedRemoteBindings.size());
-
-//   updatedRemoteBindings.push_back(newlyCreatedRemoteBindingSEXP);
-//   pool.set_args(remoteBindingsList.id, updatedRemoteBindings);
-//   return newlyCreatedRemoteBindingSEXP;
-// }
 
 } // namespace IRI_HELPERS
