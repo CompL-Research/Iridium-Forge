@@ -1,9 +1,12 @@
 #include "Storage/IridiumSEXP.h"
 #include "Generated/IridiumEnums.h"
 #include "Generated/IridiumMeta.h"
+#include "Generated/IridiumTypes.h"
 #include "Storage/Config.h"
 #include "Storage/IridiumPool.h"
+#include "Support/IRIS.hpp"
 #include <iomanip>
+#include <stdexcept>
 
 namespace IRI_STORAGE {
 
@@ -104,14 +107,14 @@ void append_escaped_json_string(std::ostream &oss, std::string_view s) {
 
 // --- Implementations for IridiumSEXP ---
 
-void IridiumSEXP::dump(std::ostream &oss, const IridiumPool *pool,
+void IridiumSEXP::dump(std::ostream &oss, IridiumPool *pool,
                        bool compressed, int indent) const {
   std::string pad = compressed ? "" : std::string(indent, ' ');
   std::string pad1 = compressed ? "" : std::string(indent + 2, ' ');
   std::string nl = compressed ? "" : "\n";
 
   oss << pad << "[" << nl;
-  oss << pad1 << "\"" << IRI_GEN::dump_tag(tag) << "\"," << nl;
+  oss << pad1 << "\"" << IRI_GEN::dump_tag(tag == IRI_GEN::ScriptBinding ? GlobalBinding : tag) << "\"," << nl;
 
   // Serialize args
   if (num_args == 0) {
@@ -166,10 +169,38 @@ void IridiumSEXP::dump(std::ostream &oss, const IridiumPool *pool,
   oss << "]" << nl << pad << "]";
 }
 
-void IridiumSEXP::dumpFlat(std::ostream &oss, const IridiumPool *pool,
-                           int depth) const {
+void IridiumSEXP::dumpFlat(std::ostream &oss, IridiumPool *pool,
+                           int depth, bool full) const {
   // 1. Setup Indentation
   std::string indent(depth, ' ');
+
+  // if (tag == IRI_GEN::EnvBinding) {
+  //   auto flags_span = pool->get_flags(this);
+  //   const auto &v = flags_span[IRI_GEN::EnvBindingSEXP::FLAG_IDX_LINK];
+  //   if (!std::holds_alternative<double>(v)) {
+  //     throw std::runtime_error("Expected LINK to be a double");
+  //   }
+  //   double link = std::get<double>(v);
+  //   oss << indent;
+  //   pool->iris->getBindingMetaFromLINK(link).dump(*pool, oss, full);
+  //   oss << "\n";
+
+  //   return;
+  // }
+
+  // if (tag == IRI_GEN::RemoteEnvBinding) {
+  //   auto flags_span = pool->get_flags(this);
+  //   const auto &v = flags_span[IRI_GEN::RemoteEnvBindingSEXP::FLAG_IDX_LINK];
+  //   if (!std::holds_alternative<double>(v)) {
+  //     throw std::runtime_error("Expected LINK to be a double");
+  //   }
+  //   double link = std::get<double>(v);
+  //   oss << indent;
+  //   pool->iris->getBindingMetaFromLINK(link).dump(*pool, oss, full);
+  //   oss << "\n";
+
+  //   return;
+  // }
 
   // 2. Resolve Tag Name
   oss << indent << IRI_GEN::dump_tag(tag);
@@ -219,7 +250,7 @@ void IridiumSEXP::dumpFlat(std::ostream &oss, const IridiumPool *pool,
   auto args_span = pool->get_args_view(this);
   for (uint32_t i = 0; i < num_args; ++i) {
     IRID child_id = args_span[i];
-    pool->operator[](child_id).dumpFlat(oss, pool, depth + 2);
+    pool->operator[](child_id).dumpFlat(oss, pool, depth + 2, tag == IRI_GEN::BB ? false : full);
   }
 }
 
