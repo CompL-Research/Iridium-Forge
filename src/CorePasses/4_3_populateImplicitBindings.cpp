@@ -3,6 +3,8 @@
 #include "Generated/IridiumTypes.h"
 #include "Helpers.h"
 #include "Parser/IridiumBuildContext.h"
+#include "Storage/Config.h"
+#include "Support/IRIS.hpp"
 #include <stdexcept>
 
 namespace IRI_CORE_PASSES {
@@ -12,7 +14,10 @@ using namespace IRI_STORAGE;
 using BUILD_CTX = std::unordered_map<int, std::shared_ptr<IridiumBuildContext>>;
 
 void _4_3_PIB(IridiumPool &pool, IRID fileID, BUILD_CTX &iridiumBuildContext) {
+  StringID str_arguments = pool.strings.intern("arguments");
   FileSEXP fileSEXP(fileID, pool);
+
+  StringID str_undefined = pool.strings.intern("undefined");
 
   auto args = pool.get_args(fileID);
 
@@ -22,11 +27,9 @@ void _4_3_PIB(IridiumPool &pool, IRID fileID, BUILD_CTX &iridiumBuildContext) {
 
     BBContainerSEXP container(bbcID, pool);
 
-    std::vector<IRID> localBindingsVec;
-    BindingsSEXP bindingsSEXP(container.getArg_Bindings(), pool);
-    IRID localBindingsID = bindingsSEXP.getArg_LocalBindings();
-
     auto &containerBC = iridiumBuildContext[container.getScopeIDX()];
+
+    StringID str_closure = pool.strings.intern(containerBC->name);
 
     auto bbs = pool.get_args(container.getArg_BB());
     for (auto &bbID : bbs) {
@@ -42,28 +45,53 @@ void _4_3_PIB(IridiumPool &pool, IRID fileID, BUILD_CTX &iridiumBuildContext) {
         if (currTag == IRI_GEN::JSImplicitBindingDeclaration) {
           JSImplicitBindingDeclarationSEXP ibs(stmtID, pool);
 
-          IRI_FLAG kind;
+          IRI_FLAG KIND;
           if (ibs.hasJSLET()) {
-            kind = IRI_GEN::JSLET;
+            KIND = IRI_GEN::JSLET;
           } else if (ibs.hasJSCONST()) {
-            kind = IRI_GEN::JSCONST;
+            KIND = IRI_GEN::JSCONST;
           } else if (ibs.hasJSVAR()) {
-            kind = IRI_GEN::JSVAR;
+            KIND = IRI_GEN::JSVAR;
           } else {
             throw std::runtime_error(
                 "[Forge]: Invalid kind for an implicit binding");
           }
 
-          auto bindingSEXP = EnvBindingSEXP::create(pool, ibs.getNAME(), false, false, false,
-                                 ibs.hasJSLET(), ibs.hasJSCONST(),
-                                 ibs.hasJSVAR(), false, containerBC->scopeIDX, -1,
-                                 localScope, parentScope, -1);
-          localBindingsVec.push_back(bindingSEXP);
+          if (pool.iris->hasBinding(ibs.getNAME(), localScope)) {
+            if (ibs.getNAME() == str_arguments || ibs.getNAME() == str_closure) {
+              pool.update_arg_inplace(bbID, i, pool.NOP_SEXP);
+            } else {
+              throw std::runtime_error("unexpected conflict when declaring implicit bindings");
+            }
+            continue;
+          }
+
+          auto & resolved =  pool.iris->declareLBinding(localScope, ibs.getNAME(), KIND);
+          IRID lval = resolved.ID;
+          IRID rval;
+
+          double OPID = ibs.getOPID();
+          if (OPID == 10) {
+            rval = JSNUBDSEXP::create(pool);
+          } else if (OPID == 11) {
+            rval = IRI_HELPERS::createUnsafeEnvReadSEXP(pool, str_undefined);
+          } else if (OPID == 12) {
+            resolved.isIMPLICITOVERRIDEABLE = true;
+            rval = JSCTXSEXP::create(pool, 2);
+            pool.set_args(rval, pool.get_args(ibs.getArg_Args()));
+          } else {
+            if (OPID < 2) {
+              resolved.isIMPLICITOVERRIDEABLE = true;
+            }
+            rval = JSCTXSEXP::create(pool, ibs.getOPID());
+            pool.set_args(rval, pool.get_args(ibs.getArg_Args()));
+          }
+
+          IRID target = LWriteSEXP::create(pool, lval, rval, true, false, false);
+          pool.update_arg_inplace(bbID, i, target);
         }
       }
     }
-
-    pool.add_args_to_end(localBindingsID, localBindingsVec);
   }
 }
 } // namespace IRI_CORE_PASSES
