@@ -1,5 +1,6 @@
 
 #pragma once
+#include "Generated/IridiumEnums.h"
 #include "Generated/IridiumTypes.h"
 #include "Parser/IridiumBuildContext.h"
 #include "Storage/BindingsPool.h"
@@ -7,6 +8,8 @@
 #include "Storage/StringPool.h"
 #include <cstddef>
 #include <memory>
+#include <stdexcept>
+#include <tuple>
 #include <unordered_map>
 #include <vector>
 
@@ -23,9 +26,40 @@ public:
            &,
        IRI_GEN::IRID);
 
-  bool isGlobal(StringID, double);
+  // Scope Related
+  double getTopLevelScope() { return topLevelScope; }
 
-  IRI_STORAGE::IRID resolve(StringID, double);
+  // Binding Declaration
+  IRI_STORAGE::BindingMeta & declareScriptBinding(double, StringID, IRI_GEN::IRI_FLAG);
+  IRI_STORAGE::BindingMeta & declareLBinding(double, StringID, IRI_GEN::IRI_FLAG);
+  IRI_STORAGE::BindingMeta & declareRBinding(double, StringID, IRI_GEN::IRI_FLAG, IRI_GEN::IRI_FLAG);
+  void addClosureAtScope(double, IRI_STORAGE::IRID);
+
+  bool isGlobal(StringID sid, double startScopeIDX);
+
+  IRI_STORAGE::BindingMeta &operator[](IRI_STORAGE::IRID bID) {
+    return bindingsPool->getMetaFromIRID(pool, bID);
+  }
+
+  const IRI_STORAGE::BindingMeta &operator[](IRI_STORAGE::IRID bID) const {
+    return bindingsPool->getMetaFromIRID(pool, bID);
+  }
+
+  IRI_STORAGE::BindingMeta &getBindingMetaFromLINK(double LINK) {
+    return (*bindingsPool)[LINK];
+  }
+
+  const IRI_STORAGE::BindingMeta &getBindingMetaFromLINK(double LINK) const {
+    return (*bindingsPool)[LINK];
+  }
+
+  bool hasBinding(StringID, double);
+  void removeBinding(StringID, double);
+
+  double getLexicalScope(double);
+  IRI_STORAGE::BindingMeta & resolve(StringID, double);
+
+  void registerDirectEval(IRI_STORAGE::IRID, double, double);
 
   void commit();
 
@@ -49,50 +83,43 @@ public:
 
   size_t computePoolCapacity();
 
-  void initializeBindingsPool();
-
   std::vector<IRI_STORAGE::IRID> getBindingsToMoveToHeap(double startScope, double endScope);
 
-  const IRI_STORAGE::BindingMeta & getBindingsMetaView(IRI_STORAGE::IRID id) const;
 
 private:
   // Node Storage Pool
   IRI_STORAGE::IridiumPool &pool;
+  // Bindings Metadata Pool
+  std::unique_ptr<IRI_STORAGE::BindingsPool> bindingsPool = std::make_unique<IRI_STORAGE::BindingsPool>();
 
-  std::unique_ptr<IRI_STORAGE::BindingsPool> bindingsPool = nullptr;
   // Graph
   // In a scope tree, each node has atmost one outgoing edges, with -1 denoting
   // end of top level scope
   std::unordered_map<double, double> outEdges;
+  std::unordered_map<double, std::set<double>> inEdges;
   std::set<double> nodes;
 
-  // Globals lookup fastcase, if a StringID is never encountered, it never
-  // existed.
+  std::vector<std::tuple<IRI_STORAGE::IRID, double, double>> directEvals;
+
+  double topLevelScope = -1;
+
   std::set<StringID> allNames;
 
-  // Scopes tainted by direct eval
-  std::set<double> taintedScopes;
-
-  // Scopes representing a try context
-  std::set<double> tryScopes;
-
-  // Scopes representing a argInitContext
-  std::set<double> argInitScopes;
-
-  // Scopes representing a argInitContext
-  std::set<double> propInitScopes;
-
-  // Scopes belonging to a BBContainer
+  // Special Nodes
   std::unordered_map<double, IRI_GEN::IRID> scopeHead;
+  std::set<double> argInitScopes;
+  std::set<double> propInitScopes;
+  std::set<double> taintedScopes;
+  std::set<double> tryScopes;
+  std::unordered_map<double, std::vector<IRI_STORAGE::IRID>> argsAtScope;
 
   // At a given scope O(1) check if a StringID exists
   std::unordered_map<double, std::unordered_map<StringID, IRI_STORAGE::IRID>>
       scopeBindings;
 
-  // Commit list
-  // For a given scope, commit newly created remote bindings at the very end
-  // to avoid repeated resizing of the pool
-  std::unordered_map<double, std::vector<IRI_STORAGE::IRID>> commitList;
+  std::unordered_map<StringID, IRI_STORAGE::IRID> scriptBindings;
+  std::unordered_map<StringID, IRI_STORAGE::IRID> globalBindings;
+  std::unordered_map<double, std::vector<IRI_STORAGE::IRID>> closuresAtScope;
 
   void printNode(
       std::ostream &oss, double node, std::string prefix, bool isLast,
@@ -102,8 +129,5 @@ public:
   void dumpFlat(std::ostream &oss, int indentLevel = 0) const;
   void dumpScopeTree(std::ostream &oss, int indentLevel = 0) const;
   void dumpBindingsAtScope(std::ostream &oss, double node) const;
-  void dumpCommitList(std::ostream &oss) const;
-  void dumpAllNames(std::ostream &oss) const;
-  void dumpFullState(std::ostream &oss) const;
 };
 } // namespace IRI_STRUCTURAL
