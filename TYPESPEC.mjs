@@ -100,6 +100,16 @@ export default [
     }
   },
   {
+    "tag": "JSExplicitBindingDeclarationX",
+    "args": ["LValTarget", "RVal"],
+    "flags": {
+      "string": [],
+      "void": ["JSLET", "JSCONST", "JSVAR", "SLOPPY"],
+      "bool": ["SAFE", "THISINIT"],
+      "double": [],
+    }
+  },
+  {
     "tag": "CallSite",
     "args": [],
     "flags": {
@@ -236,7 +246,7 @@ export default [
       "string": [],
       "void": [],
       "bool": [],
-      "double": ["ParentScope"],
+      "double": [],
     }
   },
   {
@@ -273,7 +283,7 @@ export default [
     "tag": "NamedReexport",
     "args": [],
     "flags": {
-      "string": ["EXPORTNAME"],
+      "string": ["LOCALNAME", "EXPORTNAME"],
       "void": [],
       "bool": [],
       "double": ["MODULEREQIDX"],
@@ -294,9 +304,9 @@ export default [
     "args": [],
     "flags": {
       "string": ["NAME"],
-      "void": ["ASW", "JSARG", "JSRESTARG", "JSLET", "JSCONST", "JSVAR", "LINK"],
+      "void": ["JSARG", "JSRESTARG", "JSLET", "JSCONST", "JSVAR"],
       "bool": [],
-      "double": ["IDX", "REFIDX", "Scope", "ParentScope", "NEXT"],
+      "double": ["REFIDX", "SCOPE", "NEXT", "LINK"],
     }
   },
   {
@@ -304,9 +314,9 @@ export default [
     "args": ["ParentReference"],
     "flags": {
       "string": [],
-      "void": ["NSIMPORT", "LINK", "MODULETOPLEVELBINDING"],
+      "void": ["MODULE", "MODULEI", "MODULENSI"],
       "bool": [],
-      "double": ["REFIDX"],
+      "double": ["REFIDX", "LINK"],
     }
   },
   {
@@ -314,9 +324,19 @@ export default [
     "args": [],
     "flags": {
       "string": ["NAME"],
-      "void": ["SLOPPYDECL"],
+      "void": [],
       "bool": [],
-      "double": [],
+      "double": ["LINK"],
+    }
+  },
+  {
+    "tag": "ScriptBinding",
+    "args": [],
+    "flags": {
+      "string": ["NAME"],
+      "void": ["JSLET", "JSCONST", "JSVAR"],
+      "bool": [],
+      "double": ["LINK"],
     }
   },
   {
@@ -881,7 +901,7 @@ export default [
   },
   {
     "tag": "Yield",
-    "args": ["Obj", "DoneTarget", "NextValue"],
+    "args": ["Obj"],
     "flags": {
       "string": [],
       "void": [],
@@ -974,7 +994,7 @@ export default [
     "args": ["LValTarget", "RVal"],
     "flags": {
       "string": [],
-      "void": ["SLOPPY", "TAINTED", "SAFE"],
+      "void": ["INIT", "SAFE", "DECLVAR", "DECLFUN"],
       "bool": [],
       "double": [],
     }
@@ -984,7 +1004,7 @@ export default [
     "args": ["LValTarget", "RVal"],
     "flags": {
       "string": [],
-      "void": ["SLOPPY", "SAFE", "THISINIT"],
+      "void": ["INIT", "SAFE", "THISINIT"],
       "bool": [],
       "double": [],
     }
@@ -994,7 +1014,17 @@ export default [
     "args": ["LValTarget", "RVal"],
     "flags": {
       "string": [],
-      "void": ["SLOPPY", "TAINTED", "SAFE", "THISINIT"],
+      "void": ["INIT", "SAFE", "THISINIT"],
+      "bool": [],
+      "double": [],
+    }
+  },
+  {
+    "tag": "MWrite",
+    "args": ["LValTarget", "RVal"],
+    "flags": {
+      "string": [],
+      "void": ["INIT", "SAFE"],
       "bool": [],
       "double": [],
     }
@@ -1027,6 +1057,16 @@ export default [
       "void": [],
       "bool": [],
       "double": [],
+    }
+  },
+  {
+    "tag": "JSCTX",
+    "args": [],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": [],
+      "double": ["OPID"],
     }
   },
 ];

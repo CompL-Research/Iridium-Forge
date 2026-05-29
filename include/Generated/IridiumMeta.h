@@ -1,4 +1,4 @@
-// Generated: 2026-05-19 23:15:32
+// Generated: 2026-05-29 08:38:53
 #pragma once
 #include "IridiumEnums.h"
 #include <cstdint>
@@ -20,6 +20,7 @@ public:
       case IRI_GEN::FieldRead: return 0;
       case IRI_GEN::JSExplicitBindingDeclaration: return 6;
       case IRI_GEN::JSExplicitBindingDeclarationN: return 6;
+      case IRI_GEN::JSExplicitBindingDeclarationX: return 6;
       case IRI_GEN::CallSite: return 8;
       case IRI_GEN::Apply: return 3;
       case IRI_GEN::ReturnAsync: return 0;
@@ -33,15 +34,16 @@ public:
       case IRI_GEN::Lambda: return 4;
       case IRI_GEN::NOP: return 0;
       case IRI_GEN::BBContainer: return 16;
-      case IRI_GEN::Bindings: return 1;
+      case IRI_GEN::Bindings: return 0;
       case IRI_GEN::StarExport: return 1;
       case IRI_GEN::StaticImport: return 3;
       case IRI_GEN::LocalStaticExport: return 2;
-      case IRI_GEN::NamedReexport: return 2;
+      case IRI_GEN::NamedReexport: return 3;
       case IRI_GEN::ModuleRequest: return 2;
-      case IRI_GEN::EnvBinding: return 13;
-      case IRI_GEN::RemoteEnvBinding: return 4;
+      case IRI_GEN::EnvBinding: return 10;
+      case IRI_GEN::RemoteEnvBinding: return 5;
       case IRI_GEN::GlobalBinding: return 2;
+      case IRI_GEN::ScriptBinding: return 5;
       case IRI_GEN::EnvWrite: return 3;
       case IRI_GEN::SiblingSpecialWrite: return 4;
       case IRI_GEN::JSNUBD: return 0;
@@ -107,12 +109,14 @@ public:
       case IRI_GEN::JSSetHome: return 0;
       case IRI_GEN::JSSetName: return 0;
       case IRI_GEN::JSSetPrototypeOf: return 0;
-      case IRI_GEN::GWrite: return 3;
+      case IRI_GEN::GWrite: return 4;
       case IRI_GEN::LWrite: return 3;
-      case IRI_GEN::RWrite: return 4;
+      case IRI_GEN::RWrite: return 3;
+      case IRI_GEN::MWrite: return 2;
       case IRI_GEN::DCTRRet: return 0;
       case IRI_GEN::NIPCatchCTX: return 0;
       case IRI_GEN::ToNumeric: return 0;
+      case IRI_GEN::JSCTX: return 1;
       default: return 0;
     }
   }
@@ -186,6 +190,17 @@ public:
         }
         break;
       case IRI_GEN::JSExplicitBindingDeclarationN:
+        switch(flag) {
+        case IRI_GEN::JSLET: return 0;
+        case IRI_GEN::JSCONST: return 1;
+        case IRI_GEN::JSVAR: return 2;
+        case IRI_GEN::SLOPPY: return 3;
+        case IRI_GEN::SAFE: return 4;
+        case IRI_GEN::THISINIT: return 5;
+          default: return -1;
+        }
+        break;
+      case IRI_GEN::JSExplicitBindingDeclarationX:
         switch(flag) {
         case IRI_GEN::JSLET: return 0;
         case IRI_GEN::JSCONST: return 1;
@@ -297,12 +312,6 @@ public:
           default: return -1;
         }
         break;
-      case IRI_GEN::Bindings:
-        switch(flag) {
-        case IRI_GEN::ParentScope: return 0;
-          default: return -1;
-        }
-        break;
       case IRI_GEN::StarExport:
         switch(flag) {
         case IRI_GEN::MODULEREQIDX: return 0;
@@ -326,8 +335,9 @@ public:
         break;
       case IRI_GEN::NamedReexport:
         switch(flag) {
-        case IRI_GEN::EXPORTNAME: return 0;
-        case IRI_GEN::MODULEREQIDX: return 1;
+        case IRI_GEN::LOCALNAME: return 0;
+        case IRI_GEN::EXPORTNAME: return 1;
+        case IRI_GEN::MODULEREQIDX: return 2;
           default: return -1;
         }
         break;
@@ -341,34 +351,42 @@ public:
       case IRI_GEN::EnvBinding:
         switch(flag) {
         case IRI_GEN::NAME: return 0;
-        case IRI_GEN::ASW: return 1;
-        case IRI_GEN::JSARG: return 2;
-        case IRI_GEN::JSRESTARG: return 3;
-        case IRI_GEN::JSLET: return 4;
-        case IRI_GEN::JSCONST: return 5;
-        case IRI_GEN::JSVAR: return 6;
-        case IRI_GEN::LINK: return 7;
-        case IRI_GEN::IDX: return 8;
-        case IRI_GEN::REFIDX: return 9;
-        case IRI_GEN::Scope: return 10;
-        case IRI_GEN::ParentScope: return 11;
-        case IRI_GEN::NEXT: return 12;
+        case IRI_GEN::JSARG: return 1;
+        case IRI_GEN::JSRESTARG: return 2;
+        case IRI_GEN::JSLET: return 3;
+        case IRI_GEN::JSCONST: return 4;
+        case IRI_GEN::JSVAR: return 5;
+        case IRI_GEN::REFIDX: return 6;
+        case IRI_GEN::SCOPE: return 7;
+        case IRI_GEN::NEXT: return 8;
+        case IRI_GEN::LINK: return 9;
           default: return -1;
         }
         break;
       case IRI_GEN::RemoteEnvBinding:
         switch(flag) {
-        case IRI_GEN::NSIMPORT: return 0;
-        case IRI_GEN::LINK: return 1;
-        case IRI_GEN::MODULETOPLEVELBINDING: return 2;
+        case IRI_GEN::MODULE: return 0;
+        case IRI_GEN::MODULEI: return 1;
+        case IRI_GEN::MODULENSI: return 2;
         case IRI_GEN::REFIDX: return 3;
+        case IRI_GEN::LINK: return 4;
           default: return -1;
         }
         break;
       case IRI_GEN::GlobalBinding:
         switch(flag) {
         case IRI_GEN::NAME: return 0;
-        case IRI_GEN::SLOPPYDECL: return 1;
+        case IRI_GEN::LINK: return 1;
+          default: return -1;
+        }
+        break;
+      case IRI_GEN::ScriptBinding:
+        switch(flag) {
+        case IRI_GEN::NAME: return 0;
+        case IRI_GEN::JSLET: return 1;
+        case IRI_GEN::JSCONST: return 2;
+        case IRI_GEN::JSVAR: return 3;
+        case IRI_GEN::LINK: return 4;
           default: return -1;
         }
         break;
@@ -592,15 +610,16 @@ public:
         break;
       case IRI_GEN::GWrite:
         switch(flag) {
-        case IRI_GEN::SLOPPY: return 0;
-        case IRI_GEN::TAINTED: return 1;
-        case IRI_GEN::SAFE: return 2;
+        case IRI_GEN::INIT: return 0;
+        case IRI_GEN::SAFE: return 1;
+        case IRI_GEN::DECLVAR: return 2;
+        case IRI_GEN::DECLFUN: return 3;
           default: return -1;
         }
         break;
       case IRI_GEN::LWrite:
         switch(flag) {
-        case IRI_GEN::SLOPPY: return 0;
+        case IRI_GEN::INIT: return 0;
         case IRI_GEN::SAFE: return 1;
         case IRI_GEN::THISINIT: return 2;
           default: return -1;
@@ -608,10 +627,22 @@ public:
         break;
       case IRI_GEN::RWrite:
         switch(flag) {
-        case IRI_GEN::SLOPPY: return 0;
-        case IRI_GEN::TAINTED: return 1;
-        case IRI_GEN::SAFE: return 2;
-        case IRI_GEN::THISINIT: return 3;
+        case IRI_GEN::INIT: return 0;
+        case IRI_GEN::SAFE: return 1;
+        case IRI_GEN::THISINIT: return 2;
+          default: return -1;
+        }
+        break;
+      case IRI_GEN::MWrite:
+        switch(flag) {
+        case IRI_GEN::INIT: return 0;
+        case IRI_GEN::SAFE: return 1;
+          default: return -1;
+        }
+        break;
+      case IRI_GEN::JSCTX:
+        switch(flag) {
+        case IRI_GEN::OPID: return 0;
           default: return -1;
         }
         break;
@@ -688,6 +719,17 @@ public:
         }
         break;
       case IRI_GEN::JSExplicitBindingDeclarationN:
+        switch(index) {
+        case 0: return IRI_GEN::JSLET;
+        case 1: return IRI_GEN::JSCONST;
+        case 2: return IRI_GEN::JSVAR;
+        case 3: return IRI_GEN::SLOPPY;
+        case 4: return IRI_GEN::SAFE;
+        case 5: return IRI_GEN::THISINIT;
+          default: throw std::runtime_error("Invalid flag index");
+        }
+        break;
+      case IRI_GEN::JSExplicitBindingDeclarationX:
         switch(index) {
         case 0: return IRI_GEN::JSLET;
         case 1: return IRI_GEN::JSCONST;
@@ -799,12 +841,6 @@ public:
           default: throw std::runtime_error("Invalid flag index");
         }
         break;
-      case IRI_GEN::Bindings:
-        switch(index) {
-        case 0: return IRI_GEN::ParentScope;
-          default: throw std::runtime_error("Invalid flag index");
-        }
-        break;
       case IRI_GEN::StarExport:
         switch(index) {
         case 0: return IRI_GEN::MODULEREQIDX;
@@ -828,8 +864,9 @@ public:
         break;
       case IRI_GEN::NamedReexport:
         switch(index) {
-        case 0: return IRI_GEN::EXPORTNAME;
-        case 1: return IRI_GEN::MODULEREQIDX;
+        case 0: return IRI_GEN::LOCALNAME;
+        case 1: return IRI_GEN::EXPORTNAME;
+        case 2: return IRI_GEN::MODULEREQIDX;
           default: throw std::runtime_error("Invalid flag index");
         }
         break;
@@ -843,34 +880,42 @@ public:
       case IRI_GEN::EnvBinding:
         switch(index) {
         case 0: return IRI_GEN::NAME;
-        case 1: return IRI_GEN::ASW;
-        case 2: return IRI_GEN::JSARG;
-        case 3: return IRI_GEN::JSRESTARG;
-        case 4: return IRI_GEN::JSLET;
-        case 5: return IRI_GEN::JSCONST;
-        case 6: return IRI_GEN::JSVAR;
-        case 7: return IRI_GEN::LINK;
-        case 8: return IRI_GEN::IDX;
-        case 9: return IRI_GEN::REFIDX;
-        case 10: return IRI_GEN::Scope;
-        case 11: return IRI_GEN::ParentScope;
-        case 12: return IRI_GEN::NEXT;
+        case 1: return IRI_GEN::JSARG;
+        case 2: return IRI_GEN::JSRESTARG;
+        case 3: return IRI_GEN::JSLET;
+        case 4: return IRI_GEN::JSCONST;
+        case 5: return IRI_GEN::JSVAR;
+        case 6: return IRI_GEN::REFIDX;
+        case 7: return IRI_GEN::SCOPE;
+        case 8: return IRI_GEN::NEXT;
+        case 9: return IRI_GEN::LINK;
           default: throw std::runtime_error("Invalid flag index");
         }
         break;
       case IRI_GEN::RemoteEnvBinding:
         switch(index) {
-        case 0: return IRI_GEN::NSIMPORT;
-        case 1: return IRI_GEN::LINK;
-        case 2: return IRI_GEN::MODULETOPLEVELBINDING;
+        case 0: return IRI_GEN::MODULE;
+        case 1: return IRI_GEN::MODULEI;
+        case 2: return IRI_GEN::MODULENSI;
         case 3: return IRI_GEN::REFIDX;
+        case 4: return IRI_GEN::LINK;
           default: throw std::runtime_error("Invalid flag index");
         }
         break;
       case IRI_GEN::GlobalBinding:
         switch(index) {
         case 0: return IRI_GEN::NAME;
-        case 1: return IRI_GEN::SLOPPYDECL;
+        case 1: return IRI_GEN::LINK;
+          default: throw std::runtime_error("Invalid flag index");
+        }
+        break;
+      case IRI_GEN::ScriptBinding:
+        switch(index) {
+        case 0: return IRI_GEN::NAME;
+        case 1: return IRI_GEN::JSLET;
+        case 2: return IRI_GEN::JSCONST;
+        case 3: return IRI_GEN::JSVAR;
+        case 4: return IRI_GEN::LINK;
           default: throw std::runtime_error("Invalid flag index");
         }
         break;
@@ -1094,15 +1139,16 @@ public:
         break;
       case IRI_GEN::GWrite:
         switch(index) {
-        case 0: return IRI_GEN::SLOPPY;
-        case 1: return IRI_GEN::TAINTED;
-        case 2: return IRI_GEN::SAFE;
+        case 0: return IRI_GEN::INIT;
+        case 1: return IRI_GEN::SAFE;
+        case 2: return IRI_GEN::DECLVAR;
+        case 3: return IRI_GEN::DECLFUN;
           default: throw std::runtime_error("Invalid flag index");
         }
         break;
       case IRI_GEN::LWrite:
         switch(index) {
-        case 0: return IRI_GEN::SLOPPY;
+        case 0: return IRI_GEN::INIT;
         case 1: return IRI_GEN::SAFE;
         case 2: return IRI_GEN::THISINIT;
           default: throw std::runtime_error("Invalid flag index");
@@ -1110,10 +1156,22 @@ public:
         break;
       case IRI_GEN::RWrite:
         switch(index) {
-        case 0: return IRI_GEN::SLOPPY;
-        case 1: return IRI_GEN::TAINTED;
-        case 2: return IRI_GEN::SAFE;
-        case 3: return IRI_GEN::THISINIT;
+        case 0: return IRI_GEN::INIT;
+        case 1: return IRI_GEN::SAFE;
+        case 2: return IRI_GEN::THISINIT;
+          default: throw std::runtime_error("Invalid flag index");
+        }
+        break;
+      case IRI_GEN::MWrite:
+        switch(index) {
+        case 0: return IRI_GEN::INIT;
+        case 1: return IRI_GEN::SAFE;
+          default: throw std::runtime_error("Invalid flag index");
+        }
+        break;
+      case IRI_GEN::JSCTX:
+        switch(index) {
+        case 0: return IRI_GEN::OPID;
           default: throw std::runtime_error("Invalid flag index");
         }
         break;

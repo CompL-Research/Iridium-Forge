@@ -1,4 +1,4 @@
-// Generated: 2026-05-19 23:15:32
+// Generated: 2026-05-29 08:38:53
 #pragma once
 #include <string>
 
@@ -14,6 +14,7 @@ namespace IRI_GEN {
     FieldRead,
     JSExplicitBindingDeclaration,
     JSExplicitBindingDeclarationN,
+    JSExplicitBindingDeclarationX,
     CallSite,
     Apply,
     ReturnAsync,
@@ -36,6 +37,7 @@ namespace IRI_GEN {
     EnvBinding,
     RemoteEnvBinding,
     GlobalBinding,
+    ScriptBinding,
     EnvWrite,
     SiblingSpecialWrite,
     JSNUBD,
@@ -104,9 +106,11 @@ namespace IRI_GEN {
     GWrite,
     LWrite,
     RWrite,
+    MWrite,
     DCTRRet,
     NIPCatchCTX,
-    ToNumeric
+    ToNumeric,
+    JSCTX
   };
 
   inline std::string dump_tag(IRI_TAG value) {
@@ -121,6 +125,7 @@ namespace IRI_GEN {
       case FieldRead: return "FieldRead";
       case JSExplicitBindingDeclaration: return "JSExplicitBindingDeclaration";
       case JSExplicitBindingDeclarationN: return "JSExplicitBindingDeclarationN";
+      case JSExplicitBindingDeclarationX: return "JSExplicitBindingDeclarationX";
       case CallSite: return "CallSite";
       case Apply: return "Apply";
       case ReturnAsync: return "ReturnAsync";
@@ -143,6 +148,7 @@ namespace IRI_GEN {
       case EnvBinding: return "EnvBinding";
       case RemoteEnvBinding: return "RemoteEnvBinding";
       case GlobalBinding: return "GlobalBinding";
+      case ScriptBinding: return "ScriptBinding";
       case EnvWrite: return "EnvWrite";
       case SiblingSpecialWrite: return "SiblingSpecialWrite";
       case JSNUBD: return "JSNUBD";
@@ -211,9 +217,11 @@ namespace IRI_GEN {
       case GWrite: return "GWrite";
       case LWrite: return "LWrite";
       case RWrite: return "RWrite";
+      case MWrite: return "MWrite";
       case DCTRRet: return "DCTRRet";
       case NIPCatchCTX: return "NIPCatchCTX";
       case ToNumeric: return "ToNumeric";
+      case JSCTX: return "JSCTX";
       default: return "unknown_tag";
     }
   }
@@ -269,7 +277,6 @@ namespace IRI_GEN {
     DERIVED,
     ECMAArgs,
     ContainerFlagID,
-    ParentScope,
     MODULEREQIDX,
     FIELD,
     NSIMPORT,
@@ -279,12 +286,13 @@ namespace IRI_GEN {
     REQIDX,
     JSARG,
     JSRESTARG,
-    LINK,
     REFIDX,
-    Scope,
+    SCOPE,
     NEXT,
-    MODULETOPLEVELBINDING,
-    SLOPPYDECL,
+    LINK,
+    MODULE,
+    MODULEI,
+    MODULENSI,
     NVAL,
     FULLY_RESOLVE,
     SYMBOL,
@@ -300,7 +308,10 @@ namespace IRI_GEN {
     EXP,
     FLAGS,
     PREFIX,
-    INCREMENT
+    INCREMENT,
+    INIT,
+    DECLVAR,
+    DECLFUN
   };
 
   inline std::string dump_flag(IRI_FLAG value) {
@@ -355,7 +366,6 @@ namespace IRI_GEN {
       case DERIVED: return "DERIVED";
       case ECMAArgs: return "ECMAArgs";
       case ContainerFlagID: return "ContainerFlagID";
-      case ParentScope: return "ParentScope";
       case MODULEREQIDX: return "MODULEREQIDX";
       case FIELD: return "FIELD";
       case NSIMPORT: return "NSIMPORT";
@@ -365,12 +375,13 @@ namespace IRI_GEN {
       case REQIDX: return "REQIDX";
       case JSARG: return "JSARG";
       case JSRESTARG: return "JSRESTARG";
-      case LINK: return "LINK";
       case REFIDX: return "REFIDX";
-      case Scope: return "Scope";
+      case SCOPE: return "SCOPE";
       case NEXT: return "NEXT";
-      case MODULETOPLEVELBINDING: return "MODULETOPLEVELBINDING";
-      case SLOPPYDECL: return "SLOPPYDECL";
+      case LINK: return "LINK";
+      case MODULE: return "MODULE";
+      case MODULEI: return "MODULEI";
+      case MODULENSI: return "MODULENSI";
       case NVAL: return "NVAL";
       case FULLY_RESOLVE: return "FULLY_RESOLVE";
       case SYMBOL: return "SYMBOL";
@@ -387,6 +398,9 @@ namespace IRI_GEN {
       case FLAGS: return "FLAGS";
       case PREFIX: return "PREFIX";
       case INCREMENT: return "INCREMENT";
+      case INIT: return "INIT";
+      case DECLVAR: return "DECLVAR";
+      case DECLFUN: return "DECLFUN";
       default: return "unknown_flag";
     }
   }
