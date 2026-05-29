@@ -4,11 +4,11 @@
 #include "Generated/IridiumTypes.h"
 #include "Helpers.h"
 #include "Parser/IridiumBuildContext.h"
+#include "Storage/Config.h"
 #include "Storage/IridiumPool.h"
 #include "Storage/StringPool.h"
 #include "Support/BBContainerSupport.hpp"
 #include "Support/BBSupport.hpp"
-#include "Support/BindingsSupport.hpp"
 #include "Support/FileSupport.hpp"
 #include <functional>
 #include <vector>
@@ -102,17 +102,27 @@ void _6_PHCSC(IridiumPool &pool, IRID fileSEXP,
 
         while (true) {
           if (buildContext->kind == CF_DERIVED_CTR) {
-            EnvWriteSEXP envWrite(scallHolder, pool);
+            IRI_STORAGE::StringID lvalString;
+            if (pool[scallHolder].tag == IRI_GEN::EnvWrite) {
+              EnvWriteSEXP envWrite(scallHolder, pool);
 
-            auto lValHolder = envWrite.getArg_LValTarget();
-            ResolveEnvBindingSEXP resolveEnv(lValHolder, pool);
-
+              auto lValHolder = envWrite.getArg_LValTarget();
+              ResolveEnvBindingSEXP resolveEnv(lValHolder, pool);
+              lvalString = resolveEnv.getNAME();
+            } else if (pool[scallHolder].tag == IRI_GEN::LWrite) {
+              LWriteSEXP lw(scallHolder, pool);
+              auto lValHolder = lw.getArg_LValTarget();
+              EnvBindingSEXP eb(lValHolder, pool);
+              lvalString = eb.getNAME();
+            } else {
+              throw std::runtime_error("Unexpected target for scallHolder");
+            }
             if (!buildContext->propInitClos)
               throw std::runtime_error("Constructors with heritage are "
                                        "expected to have propInitClos");
 
             // Computed chunk
-            chunks.push_back(heritageThisInit(pool, resolveEnv.getNAME(), pool.strings.intern(buildContext->propInitClos.value())));
+            chunks.push_back(heritageThisInit(pool, lvalString, pool.strings.intern(buildContext->propInitClos.value())));
             break;
           } else {
             if (iridiumBuildContext.find(buildContext->parent) !=
