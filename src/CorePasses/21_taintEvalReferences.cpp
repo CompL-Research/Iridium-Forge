@@ -14,8 +14,6 @@
 #include <memory>
 #include <stdexcept>
 
-#define LENIENT_UNDEFINED_IDENTIFIER_TREATMENT
-
 namespace IRI_CORE_PASSES {
 using namespace IRI_PARSE;
 using namespace IRI_GEN;
@@ -39,15 +37,18 @@ inline void patchNode(IridiumPool &pool, IRID node) {
   if (pool[node].tag == IRI_GEN::EnvRead) {
     EnvReadSEXP ev(node, pool);
     IRID obj = ev.getArg_Obj();
-    #ifdef LENIENT_UNDEFINED_IDENTIFIER_TREATMENT
-    if (obj == pool.getGlobalBindingSEXP("undefined")) {
-      return;
-    }
-    #endif
-    if (pool[obj].tag == IRI_GEN::RemoteEnvBinding ||
-        pool[obj].tag == IRI_GEN::GlobalBinding) {
+    if (pool[obj].tag == IRI_GEN::RemoteEnvBinding) {
       ev.setTAINTED();
       pool[obj].dumpFlat(std::cerr, &pool);
+      throw std::runtime_error("IRI build failed ::TODO:: Eval Unstable EnvRead: ");
+    }
+
+    if (pool[obj].tag == IRI_GEN::GlobalBinding) {
+      GlobalBindingSEXP gb(obj, pool);
+      throw std::runtime_error("IRI build failed ::TODO:: Eval Unstable EnvRead: ");
+    }
+
+    if (pool[obj].tag == IRI_GEN::ScriptBinding) {
       throw std::runtime_error("IRI build failed ::TODO:: Eval Unstable EnvRead: ");
     }
     return;
