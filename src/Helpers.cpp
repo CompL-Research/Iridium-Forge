@@ -132,33 +132,4 @@ IRI_STORAGE::IRID createUnsafeEnvReadSEXP(IRI_STORAGE::IridiumPool &pool,
       pool, createNoASWResolveEnvBindingSEXP(pool, s), false, false);
 }
 
-namespace {
-    // 1. Shared Cache Key
-    struct BindingKey {
-        StringID name;
-        double startScope;
-        IRI_GEN::IRID bindingsID; // The unique ID of the bindings object in the pool
-
-        bool operator==(const BindingKey& other) const {
-            return name == other.name &&
-                   startScope == other.startScope &&
-                   bindingsID == other.bindingsID;
-        }
-    };
-
-    // 2. Shared Hasher
-    struct BindingKeyHash {
-        std::size_t operator()(const BindingKey& k) const {
-            std::size_t h = std::hash<int>{}(k.name);
-            h ^= std::hash<double>{}(k.startScope) + 0x9e3779b9 + (h << 6) + (h >> 2);
-            h ^= std::hash<int>{}(k.bindingsID) + 0x9e3779b9 + (h << 6) + (h >> 2);
-            return h;
-        }
-    };
-
-    // 3. The Caches
-    std::unordered_map<BindingKey, bool, BindingKeyHash> g_isGlobalCache;
-    std::unordered_map<BindingKey, IRI_GEN::IRID, BindingKeyHash> g_resolveLookupCache;
-}
-
 } // namespace IRI_HELPERS
