@@ -370,26 +370,6 @@ export default [
     }
   },
   {
-    "tag": "JSSloppyDecl",
-    "args": [],
-    "flags": {
-      "string": ["NAME"],
-      "void": ["JSLET", "JSCONST", "JSVAR"],
-      "bool": [],
-      "double": [],
-    }
-  },
-  {
-    "tag": "JSSloppyFuncDecl",
-    "args": ["LValTarget", "RVal"],
-    "flags": {
-      "string": [],
-      "void": [],
-      "bool": [],
-      "double": [],
-    }
-  },
-  {
     "tag": "Number",
     "args": [],
     "flags": {

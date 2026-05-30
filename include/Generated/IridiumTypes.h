@@ -1,4 +1,4 @@
-// Generated: 2026-05-29 08:38:53
+// Generated: 2026-05-29 23:53:39
 #pragma once
 #include "Storage/Config.h"
 #include "Storage/IridiumSEXP.h"
@@ -1963,98 +1963,6 @@ using IRI_STORAGE::FlagValue;
 
     // --- Arguments ---
 
-
-    // --- Flags ---
-
-  };
-
-  struct JSSloppyDeclSEXP {
-    IRID id;
-    IridiumPool* pool;
-
-    explicit JSSloppyDeclSEXP(IRID n, IridiumPool& p) : id(n), pool(&p) {
-      if (pool->operator[](n).tag != IRI_GEN::JSSloppyDecl) {
-        throw std::runtime_error("Schema Cast Error: Expected JSSloppyDecl, but got " + IRI_GEN::dump_tag(pool->operator[](n).tag));
-      }
-    }
-
-    static IRID create(IridiumPool& p, StringID NAME, bool JSLET, bool JSCONST, bool JSVAR) {
-      return p.add_node(IRI_GEN::IRI_TAG::JSSloppyDecl, {}, {FlagValue(NAME), JSLET ? FlagValue(JSLET) : FlagValue(std::monostate()), JSCONST ? FlagValue(JSCONST) : FlagValue(std::monostate()), JSVAR ? FlagValue(JSVAR) : FlagValue(std::monostate())});
-    }
-
-    static constexpr uint32_t TOTAL_ARGS = 0;
-    static constexpr uint32_t TOTAL_FLAGS = 4;
-
-    static constexpr uint32_t FLAG_IDX_NAME = 0;
-    static constexpr uint32_t FLAG_IDX_JSLET = 1;
-    static constexpr uint32_t FLAG_IDX_JSCONST = 2;
-    static constexpr uint32_t FLAG_IDX_JSVAR = 3;
-
-    // --- Helpers ---
-    inline FlagValue& mutate_flag(uint32_t idx) {
-        return pool->get_flags_m(id)[idx];
-    }
-    inline const FlagValue& get_flag(uint32_t idx) const {
-        return pool->get_flags(id)[idx];
-    }
-
-    // --- Arguments ---
-
-
-    // --- Flags ---
-    StringID getNAME() const { return std::get<StringID>(get_flag(FLAG_IDX_NAME)); }
-    void setNAME(StringID val) { mutate_flag(FLAG_IDX_NAME) = val; }
-    bool hasNAME() const { return std::holds_alternative<StringID>(get_flag(FLAG_IDX_NAME)); }
-    void clearNAME() { mutate_flag(FLAG_IDX_NAME) = std::monostate{}; }
-
-    bool hasJSLET() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_JSLET)); }
-    void setJSLET() { mutate_flag(FLAG_IDX_JSLET) = std::nullptr_t{}; }
-    void clearJSLET() { mutate_flag(FLAG_IDX_JSLET) = std::monostate{}; }
-
-    bool hasJSCONST() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_JSCONST)); }
-    void setJSCONST() { mutate_flag(FLAG_IDX_JSCONST) = std::nullptr_t{}; }
-    void clearJSCONST() { mutate_flag(FLAG_IDX_JSCONST) = std::monostate{}; }
-
-    bool hasJSVAR() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_JSVAR)); }
-    void setJSVAR() { mutate_flag(FLAG_IDX_JSVAR) = std::nullptr_t{}; }
-    void clearJSVAR() { mutate_flag(FLAG_IDX_JSVAR) = std::monostate{}; }
-  };
-
-  struct JSSloppyFuncDeclSEXP {
-    IRID id;
-    IridiumPool* pool;
-
-    explicit JSSloppyFuncDeclSEXP(IRID n, IridiumPool& p) : id(n), pool(&p) {
-      if (pool->operator[](n).tag != IRI_GEN::JSSloppyFuncDecl) {
-        throw std::runtime_error("Schema Cast Error: Expected JSSloppyFuncDecl, but got " + IRI_GEN::dump_tag(pool->operator[](n).tag));
-      }
-    }
-
-    static IRID create(IridiumPool& p, IRID LValTarget, IRID RVal) {
-      return p.add_node(IRI_GEN::IRI_TAG::JSSloppyFuncDecl, {LValTarget, RVal}, {});
-    }
-
-    static constexpr uint32_t TOTAL_ARGS = 2;
-    static constexpr uint32_t TOTAL_FLAGS = 0;
-
-
-
-    // --- Helpers ---
-    inline FlagValue& mutate_flag(uint32_t idx) {
-        return pool->get_flags_m(id)[idx];
-    }
-    inline const FlagValue& get_flag(uint32_t idx) const {
-        return pool->get_flags(id)[idx];
-    }
-
-    // --- Arguments ---
-    IRID getArg_LValTarget() const { return pool->get_args(id)[0]; }
-    bool hasArg_LValTarget() const { return 0 < pool->get_args(id).size(); }
-    void setArg_LValTarget(IRID val) { assert(hasArg_LValTarget() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
-
-    IRID getArg_RVal() const { return pool->get_args(id)[1]; }
-    bool hasArg_RVal() const { return 1 < pool->get_args(id).size(); }
-    void setArg_RVal(IRID val) { assert(hasArg_RVal() && "Tried to set missing ARG"); pool->update_arg_inplace(id,1,val); }
 
     // --- Flags ---
 

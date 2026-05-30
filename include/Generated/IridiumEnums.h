@@ -1,4 +1,4 @@
-// Generated: 2026-05-29 08:38:53
+// Generated: 2026-05-29 23:53:39
 #pragma once
 #include <string>
 
@@ -41,8 +41,6 @@ namespace IRI_GEN {
     EnvWrite,
     SiblingSpecialWrite,
     JSNUBD,
-    JSSloppyDecl,
-    JSSloppyFuncDecl,
     Number,
     JSClass,
     JSCheckConstructor,
@@ -152,8 +150,6 @@ namespace IRI_GEN {
       case EnvWrite: return "EnvWrite";
       case SiblingSpecialWrite: return "SiblingSpecialWrite";
       case JSNUBD: return "JSNUBD";
-      case JSSloppyDecl: return "JSSloppyDecl";
-      case JSSloppyFuncDecl: return "JSSloppyFuncDecl";
       case Number: return "Number";
       case JSClass: return "JSClass";
       case JSCheckConstructor: return "JSCheckConstructor";

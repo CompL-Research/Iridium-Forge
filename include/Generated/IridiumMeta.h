@@ -1,4 +1,4 @@
-// Generated: 2026-05-29 08:38:53
+// Generated: 2026-05-29 23:53:39
 #pragma once
 #include "IridiumEnums.h"
 #include <cstdint>
@@ -47,8 +47,6 @@ public:
       case IRI_GEN::EnvWrite: return 3;
       case IRI_GEN::SiblingSpecialWrite: return 4;
       case IRI_GEN::JSNUBD: return 0;
-      case IRI_GEN::JSSloppyDecl: return 4;
-      case IRI_GEN::JSSloppyFuncDecl: return 0;
       case IRI_GEN::Number: return 1;
       case IRI_GEN::JSClass: return 2;
       case IRI_GEN::JSCheckConstructor: return 0;
@@ -404,15 +402,6 @@ public:
         case IRI_GEN::SAFE: return 1;
         case IRI_GEN::THISINIT: return 2;
         case IRI_GEN::ScopeIDX: return 3;
-          default: return -1;
-        }
-        break;
-      case IRI_GEN::JSSloppyDecl:
-        switch(flag) {
-        case IRI_GEN::NAME: return 0;
-        case IRI_GEN::JSLET: return 1;
-        case IRI_GEN::JSCONST: return 2;
-        case IRI_GEN::JSVAR: return 3;
           default: return -1;
         }
         break;
@@ -933,15 +922,6 @@ public:
         case 1: return IRI_GEN::SAFE;
         case 2: return IRI_GEN::THISINIT;
         case 3: return IRI_GEN::ScopeIDX;
-          default: throw std::runtime_error("Invalid flag index");
-        }
-        break;
-      case IRI_GEN::JSSloppyDecl:
-        switch(index) {
-        case 0: return IRI_GEN::NAME;
-        case 1: return IRI_GEN::JSLET;
-        case 2: return IRI_GEN::JSCONST;
-        case 3: return IRI_GEN::JSVAR;
           default: throw std::runtime_error("Invalid flag index");
         }
         break;
