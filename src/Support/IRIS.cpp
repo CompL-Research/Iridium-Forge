@@ -517,7 +517,10 @@ bool IRIS::isTopLevelScope(double startScope) {
 
 bool IRIS::mayReadFromATaintedScope(double startScope) {
   for (auto &ts : taintedScopes) {
-    // std::cout << "Check: " << startScope << " --> " << ts << std::endl;
+    //
+    // Does not cause a problem if the only reachable tainted scope is the global scope itself
+    //
+    if (topLevelScope == ts) continue;
     if (hasScopePath(startScope, ts))
       return true;
   }
