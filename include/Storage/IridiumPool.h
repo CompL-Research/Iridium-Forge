@@ -22,7 +22,6 @@ class IridiumPool {
 public:
   IRID NULL_SEXP;
   IRID NOP_SEXP;
-  IRID UNDEF_READ;
   IRID NUBD_SEXP;
   IRID TRUE_SEXP;
   IRID FALSE_SEXP;
@@ -33,9 +32,6 @@ public:
 
   std::optional<IRID> topLevelBBContainer;
   std::optional<double> topLevelScope;
-
-  IRID getGlobalBindingSEXP(std::string);
-  IRID getGlobalBindingSEXP(StringID);
 
   // Must be empty after stack->heap pass
   // added here as creating a new flag just for this is very memory
