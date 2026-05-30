@@ -12,15 +12,6 @@
 #endif
 namespace IRI_STORAGE {
 
-IRID IridiumPool::getGlobalBindingSEXP(std::string s) {
-  return getGlobalBindingSEXP(strings.intern(s));
-}
-IRID IridiumPool::getGlobalBindingSEXP(StringID s) {
-  if (!globalBindingSEXPs.contains(s))
-    globalBindingSEXPs[s] = IRI_GEN::GlobalBindingSEXP::create(*this, s, false);
-  return globalBindingSEXPs[s];
-}
-
 StringID IridiumPool::getTemp() {
   return strings.intern("<iritemp-" + std::to_string(tempIDX++) + ">");
 }
