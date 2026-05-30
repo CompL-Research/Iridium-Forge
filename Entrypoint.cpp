@@ -66,7 +66,7 @@ inline void normalizeIRIDIUM(
   // runPass("_23_RIB", IRI_CORE_PASSES::_23_RIB);
   runPass("_CLEANUP_", IRI_CORE_PASSES::_FNOPS);
   pool.iris->commit();
-  pool.iris->dumpFlat(std::cout);
+  // pool.iris->dumpFlat(std::cout);
   dump("AFTER_CORE_PASSES");
 }
 
