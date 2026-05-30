@@ -1,7 +1,9 @@
-File -> List[TYPE=ModuleRequest]
-        List[TYPE=StaticImport]
-        List[TYPE=]
-        List[TYPE=StarExport]
+::Structural Setup::
+
+File -> List[TYPE=ModuleRequest]  -> ModuleRequest
+        List[TYPE=StaticImport]   -> StaticImport
+        List[TYPE=]               -> NamedReexport | LocalStaticExport
+        List[TYPE=StarExport]     -> StarExport
         (BBContainer)+
       | (BB)+
 
@@ -14,26 +16,106 @@ Bindings -> List[TYPE=EnvBinding]
 
 BB -> (STMT)+
 
-EnvBinding
-  - string : NAME
-  - bool   : ASW                           <- Probably Useless
-    - bool   : JSARG
-    - bool   : JSRESTARG
-    - bool   : JSLET
-    - bool   : JSCONST
-    - bool   : JSVAR
-  - bool*  : LINK
-  - double : IDX                           <- Probably Useless
-  - double : REFIDX
-  - double : Scope
-  - double : ParentScope                   <- Probably Useless
-  - double : NEXT
+::Transitional Node::
 
-RemoteEnvBinding : [EnvBinding]
-  - bool   : NSIMPORT
-  - bool   : LINK
-  - bool   : MODULETOPLEVELBINDING                   <- Probably Useless
-  - double : REFIDX
+  -> ResolveEnvBinding: A not yet resolved binding reference. Eventually resolves into EnvBinding, RemoteEnvBinding,
+     GlobalBinding, ScriptBinding.
+
+  -> JSImplicitBindingDeclaration: A declaration for context specific bindings such as `arguments`, `this`...etc
+     Resolves into an LWrite statement with the INIT flag set.
+
+  -> TDZRead: Before any write statement such as `a = b = c`, TDZ checks must be inserted in the L to R order
+     (opposite of the effect order). In order to accomplish this, this node was introduced. It adds explicit read
+     operations before the statements to mimmic TDZ checks (L-R ordering).
+     Under certain circumstances, this is incorrect hence the transitional nature. More specifically in case of
+     sloppy-mode---script-level code, writes to GlobalBinding (i.e. bindings not declared anywhere in the script
+     a.k.a. ScriptBinding) must write directly to the global environment.
+
+  -> JSExplicitBindingDeclaration: Declares the binding in scope, sets TDZ zone at the relavant scope start and
+     sets up default TDZ exit init. If not initial value is provided, it defaults to undefined.
+
+  -> JSExplicitBindingDeclarationN: Declares the binding in scope, no TDZ zone is set and initialization is generally
+     known to be safe (temporaries introduced during codegen). If not initial value is provided, it becomes a NOP inst.
+
+  -> JSExplicitBindingDeclarationX: Same as JSExplicitBindingDeclarationN, but additionally marks the declared binding
+     as ArgX. This basically guarantees that any subsequent write to this binding will be safe, but reading it before
+     it is written to atleast once will result in a TDZ read error. This was needed to implement the default argument
+     initialization functionality.
+
+  -> UnresolvedReturn: Turns out it is not correct to replace `return` with `return undefined`. In case of derived class
+     constructors, we must always return the `this` object if nothing is specified.
+
+  -> JSFuncDecl: Hoisting rules for function declarations is complex and heavily context dependent, this means we cannot
+     trivially lower these nodes into the form `a = function a() {}` always. This provides a placeholder intermediate.
+
+  -> EnvWrite: Until LVAL targets are resolved, this acts as a placeholder generic write. Once resolved, it transitions to
+     a more specialized LWrite, GWrite, RWrite.
+
+  -> SiblingSpecialWrite: This is the same as EnvWrite with the exception that the LVAL is resolved in a specific (possibly
+     sibling) scope. This was needed to model the semantics default argument initializations.
+
+  ->
+
+::Primitives::
+
+  -> String
+
+  -> JSNUBD: A special binding that stands for No-Use Before Def semantics. All EnvReads that reference this value will fail.
+     All EnvWrites which have an LVAL having this value will fail (unless marked as INIT or SAFE).
+
+  -> Number
+
+  -> JSClass
+
+
+::INNER-RVALS::
+
+  -> EnvBinding
+
+  -> RemoteEnvBinding
+
+  -> GlobalBinding
+
+  -> ScriptBinding
+
+::RVALS::
+
+  -> EnvRead: Reads one of four bindings (EnvBinding, RemoteEnvBinding, ScriptBinding, GlobalBinding)
+
+  -> FieldRead: `a.f`
+
+  -> CallSite
+
+  -> Apply
+
+  -> Pool:Lambda
+
+  -> JSNUBD
+
+
+
+::STMTS::
+
+  -- CFLOW --
+    -> ReturnAsync
+
+    -> Return
+
+    -> IfJump
+
+    -> IfElseJump
+
+    -> Goto
+
+  -- ENVOP --
+
+  -- CHECKS --
+    -> JSCheckConstructor: Ensures that the current function ctx was called using the `new` keyword, basically checks if the
+       new.target was set.
+
+  -- SKTOPS --
+    -> StackReject
+
 
 STMT := JSExplicitBindingDeclarationN     {Transitional}
       | JSExplicitBindingDeclaration      {Transitional}
