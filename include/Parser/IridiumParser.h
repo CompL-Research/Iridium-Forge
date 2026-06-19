@@ -196,6 +196,12 @@ public:
         tc.imCatchIDX = tcObj.Get("imCatchIDX").As<Napi::Number>().Int32Value();
         tc.finalizerIDX =
             tcObj.Get("finalizerIDX").As<Napi::Number>().Int32Value();
+        tc.tryScopeIDX =
+            tcObj.Get("tryScopeIDX").As<Napi::Number>().Int32Value();
+        tc.udCatchScopeIDX =
+            tcObj.Get("udCatchScopeIDX").As<Napi::Number>().Int32Value();
+        tc.finalizerRetIDX =
+            tcObj.Get("finalizerRetIDX").As<Napi::Number>().Int32Value();
         res->tryContext = tc;
       }
 
@@ -214,7 +220,8 @@ public:
       res->isModule = ctxObj.Get("isModule").As<Napi::Boolean>().Value();
       res->ecmaArgs = ctxObj.Get("ecmaArgs").As<Napi::Number>().Int32Value();
       res->name = ctxObj.Get("name").As<Napi::String>().Utf8Value();
-      res->sourceLine = ctxObj.Get("sourceLine").As<Napi::Number>().DoubleValue();
+      res->sourceLine =
+          ctxObj.Get("sourceLine").As<Napi::Number>().DoubleValue();
 
       // Private Mapping
       Napi::Value pmVal = ctxObj.Get("privateMapping");

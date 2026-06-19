@@ -27,6 +27,9 @@ struct TryContext {
   int udCatchIDX;
   int imCatchIDX;
   int finalizerIDX;
+  int tryScopeIDX;
+  int udCatchScopeIDX;
+  int finalizerRetIDX;
 };
 
 class IridiumBuildContext {
