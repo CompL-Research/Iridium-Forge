@@ -154,7 +154,7 @@ export default [
     "args": ["Obj"],
     "flags": {
       "string": [],
-      "void": ["ModuleEarlyReturn"],
+      "void": [],
       "bool": [],
       "double": [],
     }
@@ -1011,7 +1011,7 @@ export default [
   },
   {
     "tag": "DCTRRet",
-    "args": ["userObj"],
+    "args": ["userObj", "thisObj"],
     "flags": {
       "string": [],
       "void": [],
@@ -1049,4 +1049,15 @@ export default [
       "double": ["OPID"],
     }
   },
+  {
+    "tag": "QJSModuleInit",
+    "args": [],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
+  },
+
 ];
