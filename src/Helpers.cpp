@@ -64,15 +64,12 @@ auto getLexicalScope(
 
 IRI_STORAGE::IRID getTopLevelContainer(IRI_STORAGE::IridiumPool &pool,
                                        IRI_STORAGE::IRID fileSEXP) {
-  if (pool.topLevelBBContainer.has_value())
-    return pool.topLevelBBContainer.value();
   for (auto &bbcIDX : pool.get_args(fileSEXP)) {
     if (pool[bbcIDX].tag != IRI_GEN::BBContainer)
       continue;
 
     auto container = IRI_GEN::BBContainerSEXP(bbcIDX, pool);
     if (container.hasTopLevel()) {
-      pool.topLevelBBContainer = bbcIDX;
       return bbcIDX;
     }
   }
