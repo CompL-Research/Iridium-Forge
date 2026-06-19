@@ -1,4 +1,4 @@
-// Generated: 2026-05-29 23:53:39
+// Generated: 2026-06-02 16:23:10
 #pragma once
 #include <string>
 
@@ -108,7 +108,8 @@ namespace IRI_GEN {
     DCTRRet,
     NIPCatchCTX,
     ToNumeric,
-    JSCTX
+    JSCTX,
+    QJSModuleInit
   };
 
   inline std::string dump_tag(IRI_TAG value) {
@@ -218,6 +219,7 @@ namespace IRI_GEN {
       case NIPCatchCTX: return "NIPCatchCTX";
       case ToNumeric: return "ToNumeric";
       case JSCTX: return "JSCTX";
+      case QJSModuleInit: return "QJSModuleInit";
       default: return "unknown_tag";
     }
   }
@@ -254,7 +256,6 @@ namespace IRI_GEN {
     TryBB,
     IDX,
     ScopeIDX,
-    ModuleEarlyReturn,
     NOT,
     TRUE,
     FALSE,
@@ -343,7 +344,6 @@ namespace IRI_GEN {
       case TryBB: return "TryBB";
       case IDX: return "IDX";
       case ScopeIDX: return "ScopeIDX";
-      case ModuleEarlyReturn: return "ModuleEarlyReturn";
       case NOT: return "NOT";
       case TRUE: return "TRUE";
       case FALSE: return "FALSE";

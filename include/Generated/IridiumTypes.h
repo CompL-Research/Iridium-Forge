@@ -1,4 +1,4 @@
-// Generated: 2026-05-29 23:53:39
+// Generated: 2026-06-02 16:23:10
 #pragma once
 #include "Storage/Config.h"
 #include "Storage/IridiumSEXP.h"
@@ -832,14 +832,14 @@ using IRI_STORAGE::FlagValue;
       }
     }
 
-    static IRID create(IridiumPool& p, IRID Obj, bool ModuleEarlyReturn) {
-      return p.add_node(IRI_GEN::IRI_TAG::Return, {Obj}, {ModuleEarlyReturn ? FlagValue(ModuleEarlyReturn) : FlagValue(std::monostate())});
+    static IRID create(IridiumPool& p, IRID Obj) {
+      return p.add_node(IRI_GEN::IRI_TAG::Return, {Obj}, {});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 1;
-    static constexpr uint32_t TOTAL_FLAGS = 1;
+    static constexpr uint32_t TOTAL_FLAGS = 0;
 
-    static constexpr uint32_t FLAG_IDX_ModuleEarlyReturn = 0;
+
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
@@ -855,9 +855,7 @@ using IRI_STORAGE::FlagValue;
     void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
 
     // --- Flags ---
-    bool hasModuleEarlyReturn() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_ModuleEarlyReturn)); }
-    void setModuleEarlyReturn() { mutate_flag(FLAG_IDX_ModuleEarlyReturn) = std::nullptr_t{}; }
-    void clearModuleEarlyReturn() { mutate_flag(FLAG_IDX_ModuleEarlyReturn) = std::monostate{}; }
+
   };
 
   struct UnresolvedReturnSEXP {
@@ -4555,11 +4553,11 @@ using IRI_STORAGE::FlagValue;
       }
     }
 
-    static IRID create(IridiumPool& p, IRID userObj) {
-      return p.add_node(IRI_GEN::IRI_TAG::DCTRRet, {userObj}, {});
+    static IRID create(IridiumPool& p, IRID userObj, IRID thisObj) {
+      return p.add_node(IRI_GEN::IRI_TAG::DCTRRet, {userObj, thisObj}, {});
     }
 
-    static constexpr uint32_t TOTAL_ARGS = 1;
+    static constexpr uint32_t TOTAL_ARGS = 2;
     static constexpr uint32_t TOTAL_FLAGS = 0;
 
 
@@ -4576,6 +4574,10 @@ using IRI_STORAGE::FlagValue;
     IRID getArg_userObj() const { return pool->get_args(id)[0]; }
     bool hasArg_userObj() const { return 0 < pool->get_args(id).size(); }
     void setArg_userObj(IRID val) { assert(hasArg_userObj() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
+
+    IRID getArg_thisObj() const { return pool->get_args(id)[1]; }
+    bool hasArg_thisObj() const { return 1 < pool->get_args(id).size(); }
+    void setArg_thisObj(IRID val) { assert(hasArg_thisObj() && "Tried to set missing ARG"); pool->update_arg_inplace(id,1,val); }
 
     // --- Flags ---
 
@@ -4686,6 +4688,40 @@ using IRI_STORAGE::FlagValue;
     void setOPID(double val) { mutate_flag(FLAG_IDX_OPID) = val; }
     bool hasOPID() const { return std::holds_alternative<double>(get_flag(FLAG_IDX_OPID)); }
     void clearOPID() { mutate_flag(FLAG_IDX_OPID) = std::monostate{}; }
+  };
+
+  struct QJSModuleInitSEXP {
+    IRID id;
+    IridiumPool* pool;
+
+    explicit QJSModuleInitSEXP(IRID n, IridiumPool& p) : id(n), pool(&p) {
+      if (pool->operator[](n).tag != IRI_GEN::QJSModuleInit) {
+        throw std::runtime_error("Schema Cast Error: Expected QJSModuleInit, but got " + IRI_GEN::dump_tag(pool->operator[](n).tag));
+      }
+    }
+
+    static IRID create(IridiumPool& p) {
+      return p.add_node(IRI_GEN::IRI_TAG::QJSModuleInit, {}, {});
+    }
+
+    static constexpr uint32_t TOTAL_ARGS = 0;
+    static constexpr uint32_t TOTAL_FLAGS = 0;
+
+
+
+    // --- Helpers ---
+    inline FlagValue& mutate_flag(uint32_t idx) {
+        return pool->get_flags_m(id)[idx];
+    }
+    inline const FlagValue& get_flag(uint32_t idx) const {
+        return pool->get_flags(id)[idx];
+    }
+
+    // --- Arguments ---
+
+
+    // --- Flags ---
+
   };
 
 } // namespace IRI_GEN
