@@ -1,7 +1,10 @@
 #include "Entrypoint.h"
 #include "CorePasses.h"
+#include "Helpers.h"
 #include "Storage/IridiumPool.h"
+#include "Support/FileSupport.hpp"
 #include "Support/IRIS.hpp"
+#include "Support/ClosureTree.hpp"
 #include "IRIPerf.h"
 #include "Storage/Config.h"
 #if DUMP_CORE_PASSES == 1
@@ -11,10 +14,13 @@
 #include <unordered_map>
 
 namespace IRI_ENTRY {
+using namespace IRI_STORAGE;
+using namespace IRI_PARSE;
+using namespace IRI_STRUCTURAL;
 
 inline void normalizeIRIDIUM(
-    IRI_STORAGE::IridiumPool &pool, IRI_STORAGE::IRID sexp,
-    std::unordered_map<int, std::shared_ptr<IRI_PARSE::IridiumBuildContext>>
+    IridiumPool &pool, IRID sexp,
+    std::unordered_map<int, std::shared_ptr<IridiumBuildContext>>
         &iridiumBuildContext,
     IRIPerf &iriPerf) {
   // Helper to dump state
@@ -65,17 +71,42 @@ inline void normalizeIRIDIUM(
   runPass("_22_ESTKTHM", IRI_CORE_PASSES::_22_ESTKTHM);
   // runPass("_23_RIB", IRI_CORE_PASSES::_23_RIB);
   runPass("_CLEANUP_", IRI_CORE_PASSES::_FNOPS);
+
+  // Initialize closure tree and create CFGs
+  IRID treeRoot = IRI_HELPERS::getTopLevelContainer(pool, sexp);
+  pool.closureTree = std::make_unique<ClosureTree>(pool, treeRoot);
+  FileSupport fs(sexp, pool);
+
+  for (auto [bbcID, _] : fs.containers()) {
+    if (bbcID == treeRoot) continue;
+    pool.closureTree->addClosure(bbcID);
+  }
+
+  // Must happen after the tree is created and all closures have already been added
+  pool.iris->populateCClosuresInTree();
+
+  // Commit closure level bindings
+  pool.closureTree->commit();
   pool.iris->commit();
-  // pool.iris->dumpFlat(std::cout);
+
+  pool.closureTree->dumpFlat(std::cout);
+  pool.iris->dumpFlat(std::cout);
   dump("AFTER_CORE_PASSES");
 }
 
-IRI_STORAGE::IRID sharedEntrypoint(
-    IRI_STORAGE::IridiumPool &pool, IRI_STORAGE::IRID file,
-    std::unordered_map<int, std::shared_ptr<IRI_PARSE::IridiumBuildContext>>
+// inline void voidPrepareForAnalysis(IridiumPool &pool) {
+//   pool.closureTree->preorderTraversal([&](IRICFG * cfgCTX) {
+
+//   });
+// }
+
+IRID sharedEntrypoint(
+    IridiumPool &pool, IRID file,
+    std::unordered_map<int, std::shared_ptr<IridiumBuildContext>>
         &iridiumBuildContext,
     IRIPerf &iriPerf) {
   normalizeIRIDIUM(pool, file, iridiumBuildContext, iriPerf);
+
   return file;
 }
 
