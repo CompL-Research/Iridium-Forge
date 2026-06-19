@@ -106,8 +106,6 @@ void _11_12_DAPRT(
           ReturnSEXP rTarget(stmtID, pool);
           if (bbSEXP.hasTopLevel())
             continue;
-          if (rTarget.hasModuleEarlyReturn())
-            continue;
 
           auto retID = stmtID;
           std::vector<std::variant<LoopConfig, TryContext>>
