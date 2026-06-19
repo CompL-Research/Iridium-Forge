@@ -107,14 +107,16 @@ void append_escaped_json_string(std::ostream &oss, std::string_view s) {
 
 // --- Implementations for IridiumSEXP ---
 
-void IridiumSEXP::dump(std::ostream &oss, IridiumPool *pool,
-                       bool compressed, int indent) const {
+void IridiumSEXP::dump(std::ostream &oss, IridiumPool *pool, bool compressed,
+                       int indent) const {
   std::string pad = compressed ? "" : std::string(indent, ' ');
   std::string pad1 = compressed ? "" : std::string(indent + 2, ' ');
   std::string nl = compressed ? "" : "\n";
 
   oss << pad << "[" << nl;
-  oss << pad1 << "\"" << IRI_GEN::dump_tag(tag == IRI_GEN::ScriptBinding ? GlobalBinding : tag) << "\"," << nl;
+  oss << pad1 << "\""
+      << IRI_GEN::dump_tag(tag == IRI_GEN::ScriptBinding ? GlobalBinding : tag)
+      << "\"," << nl;
 
   // Serialize args
   if (num_args == 0) {
@@ -143,7 +145,8 @@ void IridiumSEXP::dump(std::ostream &oss, IridiumPool *pool,
     const auto &v = flags_span[i];
 
     IRI_GEN::IRI_FLAG flagEnum = IRI_GEN::IridiumMeta::get_flag_enum(tag, i);
-    if (flagEnum == IRI_GEN::IRI_FLAG::LINK || std::holds_alternative<std::monostate>(v))
+    if (flagEnum == IRI_GEN::IRI_FLAG::LINK ||
+        std::holds_alternative<std::monostate>(v))
       continue;
 
     if (!first_flag)
@@ -169,8 +172,8 @@ void IridiumSEXP::dump(std::ostream &oss, IridiumPool *pool,
   oss << "]" << nl << pad << "]";
 }
 
-void IridiumSEXP::dumpFlat(std::ostream &oss, IridiumPool *pool,
-                           int depth, bool full) const {
+void IridiumSEXP::dumpFlat(std::ostream &oss, IridiumPool *pool, int depth,
+                           bool full) const {
   // 1. Setup Indentation
   std::string indent(depth, ' ');
 
@@ -212,9 +215,9 @@ void IridiumSEXP::dumpFlat(std::ostream &oss, IridiumPool *pool,
   for (uint32_t i = 0; i < num_flag_slots; ++i) {
     const auto &v = flags_span[i];
 
-
     IRI_GEN::IRI_FLAG flagEnum = IRI_GEN::IridiumMeta::get_flag_enum(tag, i);
-    if (flagEnum == IRI_GEN::IRI_FLAG::LINK || std::holds_alternative<std::monostate>(v))
+    if (flagEnum == IRI_GEN::IRI_FLAG::LINK ||
+        std::holds_alternative<std::monostate>(v))
       continue;
 
     if (first_flag) {
@@ -250,7 +253,8 @@ void IridiumSEXP::dumpFlat(std::ostream &oss, IridiumPool *pool,
   auto args_span = pool->get_args_view(this);
   for (uint32_t i = 0; i < num_args; ++i) {
     IRID child_id = args_span[i];
-    pool->operator[](child_id).dumpFlat(oss, pool, depth + 2, tag == IRI_GEN::BB ? false : full);
+    pool->operator[](child_id).dumpFlat(oss, pool, depth + 2,
+                                        tag == IRI_GEN::BB ? false : full);
   }
 }
 
