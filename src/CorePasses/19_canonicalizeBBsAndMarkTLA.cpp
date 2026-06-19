@@ -51,9 +51,7 @@ inline static size_t CBB(IRI_STORAGE::IridiumPool &pool, std::vector<IRID> &v) {
 
 void _19_CBBAMTLA(IRI_STORAGE::IridiumPool &pool, IRI_STORAGE::IRID fileSEXP,
              BUILD_CTX &iridiumBuildContext) {
-  assert(pool.topLevelBBContainer.has_value() &&
-         "Expected that the pool is aware about the top level container...");
-  IRID topLevelContainer = pool.topLevelBBContainer.value();
+  IRID topLevelContainer = IRI_HELPERS::getTopLevelContainer(pool, fileSEXP);
   FileSupport file(fileSEXP, pool);
   for (auto [bbcID, _] : file.containers()) {
     BBContainerSupport bbc(bbcID, pool);
