@@ -9,6 +9,7 @@
 #include "Storage/StringPool.h"
 #include "Support/BBContainerSupport.hpp"
 #include "Support/BBSupport.hpp"
+#include "Support/ClosureTree.hpp"
 #include "Support/FileSupport.hpp"
 #include <cassert>
 #include <memory>
@@ -48,6 +49,30 @@ IRIS::IRIS(
     auto &currScope = e.first;
     auto &bcon = e.second;
     auto parentScope = bcon->parent;
+
+    if (bcon->tryContext.has_value()) {
+      auto lCon = bcon->tryContext.value();
+      if (lCon.tryScopeIDX > -1) {
+        double redirectBBIDX = -1;
+        if (lCon.udCatchIDX > -1) {
+          redirectBBIDX = lCon.udCatchIDX;
+        } else {
+          redirectBBIDX = lCon.imCatchIDX;
+        }
+        assert(redirectBBIDX != -1);
+        exceptionEdgeRedirect[lCon.tryScopeIDX] = redirectBBIDX;
+      }
+
+      if (lCon.udCatchScopeIDX > -1) {
+        assert(lCon.imCatchIDX != -1);
+        exceptionEdgeRedirect[lCon.udCatchScopeIDX] = lCon.imCatchIDX;
+      }
+
+      if (lCon.finalizerIDX > -1) {
+        assert(lCon.finalizerRetIDX != -1);
+        finalizerRetMap[lCon.finalizerIDX] = lCon.finalizerRetIDX;
+      }
+    }
 
     // Populate Tree
     outEdges[currScope] = parentScope;
@@ -145,7 +170,7 @@ IRI_STORAGE::BindingMeta &IRIS::declareLBinding(double scope, StringID name,
         return meta;
       } else {
         throw std::runtime_error("Duplicate binding declaration at scope: " +
-                                std::string(pool.strings.get(name)));
+                                 std::string(pool.strings.get(name)));
       }
     }
     meta.tombstone = true;
@@ -372,6 +397,22 @@ static std::vector<IRI_STORAGE::IRID> getRemoteEnvBindings(
   return matchedBindings;
 }
 
+void IRIS::populateCClosuresInTree() {
+  if (!pool.closureTree)
+    throw std::runtime_error(
+        "Expected closure Tree to exist before populating CClosures");
+
+  for (auto &[currHead, bbcID] : scopeHead) {
+    std::vector<IRID> cBindings = closuresAtScope.contains(currHead)
+                                      ? closuresAtScope[currHead]
+                                      : std::vector<IRID>();
+    for (auto &b : cBindings) {
+      PoolBindingSEXP pb(b, pool);
+      pool.closureTree->addEdgeFromScopeToBBIDX(currHead, pb.getStartBBIDX());
+    }
+  }
+}
+
 void IRIS::commit() {
   // For each
   for (auto &[currHead, bbcID] : scopeHead) {
@@ -479,9 +520,12 @@ void IRIS::commit() {
   }
 }
 
-bool IRIS::hasScopePath(double startScope, double targetScope) {
+bool IRIS::hasScopePath(double startScope, double targetScope,
+                        bool breakAtClosureBoundary) {
   double currScope = startScope;
   while (currScope != -1) {
+    if (breakAtClosureBoundary && scopeHead.contains(currScope))
+      return false;
     if (currScope == targetScope) {
       return true;
     }
@@ -507,6 +551,30 @@ bool IRIS::isEnclosedInAPropInitScope(double currScope) {
   return false;
 }
 
+double IRIS::getExceptionTargetForScope(double startScope) {
+  double currScope = startScope;
+  while (currScope != -1) {
+    if (exceptionEdgeRedirect.contains(currScope)) {
+      return exceptionEdgeRedirect[currScope];
+    }
+
+    if (scopeHead.contains(currScope))
+      return -1;
+
+    auto edgeIt = outEdges.find(currScope);
+    if (edgeIt == outEdges.end()) {
+      assert(false && "Parent scope not found, error");
+    }
+    currScope = edgeIt->second;
+  }
+  return -1;
+}
+
+double IRIS::getFinalizerRetBBIDX(double finalizerIDX) {
+  assert(finalizerRetMap.contains(finalizerIDX));
+  return finalizerRetMap[finalizerIDX];
+}
+
 bool IRIS::isTopLevelScope(double startScope) {
   auto edgeIt = outEdges.find(startScope);
   if (edgeIt == outEdges.end()) {
@@ -518,9 +586,11 @@ bool IRIS::isTopLevelScope(double startScope) {
 bool IRIS::mayReadFromATaintedScope(double startScope) {
   for (auto &ts : taintedScopes) {
     //
-    // Does not cause a problem if the only reachable tainted scope is the global scope itself
+    // Does not cause a problem if the only reachable tainted scope is the
+    // global scope itself
     //
-    if (topLevelScope == ts) continue;
+    if (topLevelScope == ts)
+      continue;
     if (hasScopePath(startScope, ts))
       return true;
   }

@@ -63,7 +63,7 @@ public:
 
   void commit();
 
-  bool hasScopePath(double, double);
+  bool hasScopePath(double, double,  bool breakAtClosureBoundary = false);
 
   bool isTopLevelScope(double);
 
@@ -81,10 +81,15 @@ public:
 
   bool isEnclosedInAPropInitScope(double);
 
+  double getExceptionTargetForScope(double);
+
+  double getFinalizerRetBBIDX(double);
+
   size_t computePoolCapacity();
 
-  std::vector<IRI_STORAGE::IRID> getBindingsToMoveToHeap(double startScope, double endScope);
+  void populateCClosuresInTree();
 
+  std::vector<IRI_STORAGE::IRID> getBindingsToMoveToHeap(double startScope, double endScope);
 
 private:
   // Node Storage Pool
@@ -120,6 +125,9 @@ private:
   std::unordered_map<StringID, IRI_STORAGE::IRID> scriptBindings;
   std::unordered_map<StringID, IRI_STORAGE::IRID> globalBindings;
   std::unordered_map<double, std::vector<IRI_STORAGE::IRID>> closuresAtScope;
+
+  std::unordered_map<double, double> exceptionEdgeRedirect;
+  std::unordered_map<double, double> finalizerRetMap;
 
   void printNode(
       std::ostream &oss, double node, std::string prefix, bool isLast,
