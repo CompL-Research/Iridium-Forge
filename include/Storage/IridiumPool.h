@@ -14,6 +14,7 @@
 
 namespace IRI_STRUCTURAL {
   class IRIS;
+  class ClosureTree;
 }
 
 namespace IRI_STORAGE {
@@ -28,11 +29,6 @@ public:
 
   double lastBBIDX = 0;
 
-  std::unordered_map<StringID, IRID> globalBindingSEXPs;
-
-  std::optional<IRID> topLevelBBContainer;
-  std::optional<double> topLevelScope;
-
   // Must be empty after stack->heap pass
   // added here as creating a new flag just for this is very memory
   // hungry
@@ -41,6 +37,7 @@ public:
   StringID getTemp();
 
   std::shared_ptr<IRI_STRUCTURAL::IRIS> iris = nullptr;
+  std::shared_ptr<IRI_STRUCTURAL::ClosureTree> closureTree = nullptr;
 
   //
   // String interning
