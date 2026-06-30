@@ -68,10 +68,43 @@ void _8_RREBS(IridiumPool &pool, IRID fileSEXP,
 
           pool.update_arg_inplace(bbID, stmtIDX, writeStmt);
           patchNode(file, pool, rval, bbScopeIDX);
-        } else if (currStmtTag == IRI_GEN::EnvWrite) {
+        } else if (currStmtTag == IRI_GEN::CompoundAssn) {
+         CompoundAssnSEXP compoundAssn(stmtID, pool);
+         auto args = pool.get_args(stmtID);
+         assert(args.size() > 1);
+         IRID rval = args[0];
+         for (size_t i = 1; i < args.size(); i++) {
+           IRID currWriteID = args[i];
+           assert(pool[currWriteID].tag == IRI_GEN::EnvWrite);
+
+           EnvWriteSEXP ew(currWriteID, pool);
+           ResolveEnvBindingSEXP unresolvedBinding(ew.getArg_LValTarget(), pool);
+
+           auto & resolved =  pool.iris->resolve(unresolvedBinding.getNAME(), bbScopeIDX);
+           IRID lval = resolved.ID;
+           IRID rval = ew.getArg_RVal();
+           bool hasASW = resolved.isARGX;
+           IRID target;
+           if (pool[lval].tag == IRI_GEN::GlobalBinding || pool[lval].tag == IRI_GEN::ScriptBinding) {
+             assert(ew.getTHISINIT() == false);
+             target = GWriteSEXP::create(pool, lval, rval, ew.getSAFE(), false, false, false);
+           } else if (pool[lval].tag == IRI_GEN::EnvBinding) {
+             target = LWriteSEXP::create(pool, lval, rval, hasASW || ew.getSAFE(), false, ew.getTHISINIT());
+           } else if (pool[lval].tag == IRI_GEN::RemoteEnvBinding) {
+             RemoteEnvBindingSEXP rb(lval, pool);
+             if (rb.hasMODULE() || rb.hasMODULEI() || rb.hasMODULENSI()) {
+               assert(ew.getTHISINIT() == false);
+               target = MWriteSEXP::create(pool, lval, rval, ew.getSAFE(), false);
+             } else {
+               target = RWriteSEXP::create(pool, lval, rval, ew.getSAFE(), false, ew.getTHISINIT());
+             }
+           }
+           pool.update_arg_inplace(stmtID, i, target);
+         }
+         patchNode(file, pool, rval, bbScopeIDX);
+       } else if (currStmtTag == IRI_GEN::EnvWrite) {
           EnvWriteSEXP ew(stmtID, pool);
           ResolveEnvBindingSEXP unresolvedBinding(ew.getArg_LValTarget(), pool);
-
 
           auto & resolved =  pool.iris->resolve(unresolvedBinding.getNAME(), bbScopeIDX);
           IRID lval = resolved.ID;
