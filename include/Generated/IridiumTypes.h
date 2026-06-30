@@ -1,4 +1,4 @@
-// Generated: 2026-06-30 23:10:49
+// Generated: 2026-07-01 01:50:08
 #pragma once
 #include "Storage/Config.h"
 #include "Storage/IridiumSEXP.h"
@@ -2703,49 +2703,6 @@ using IRI_STORAGE::FlagValue;
 
     // --- Flags ---
 
-  };
-
-  struct StackRetainSEXP {
-    IRID id;
-    IridiumPool* pool;
-
-    explicit StackRetainSEXP(IRID n, IridiumPool& p) : id(n), pool(&p) {
-      if (pool->operator[](n).tag != IRI_GEN::StackRetain) {
-        throw std::runtime_error("Schema Cast Error: Expected StackRetain, but got " + IRI_GEN::dump_tag(pool->operator[](n).tag));
-      }
-    }
-
-    static IRID create(IridiumPool& p, double NVAL, double NIP) {
-      return p.add_node(IRI_GEN::IRI_TAG::StackRetain, {}, {FlagValue(NVAL), FlagValue(NIP)});
-    }
-
-    static constexpr uint32_t TOTAL_ARGS = 0;
-    static constexpr uint32_t TOTAL_FLAGS = 2;
-
-    static constexpr uint32_t FLAG_IDX_NVAL = 0;
-    static constexpr uint32_t FLAG_IDX_NIP = 1;
-
-    // --- Helpers ---
-    inline FlagValue& mutate_flag(uint32_t idx) {
-        return pool->get_flags_m(id)[idx];
-    }
-    inline const FlagValue& get_flag(uint32_t idx) const {
-        return pool->get_flags(id)[idx];
-    }
-
-    // --- Arguments ---
-
-
-    // --- Flags ---
-    double getNVAL() const { return std::get<double>(get_flag(FLAG_IDX_NVAL)); }
-    void setNVAL(double val) { mutate_flag(FLAG_IDX_NVAL) = val; }
-    bool hasNVAL() const { return std::holds_alternative<double>(get_flag(FLAG_IDX_NVAL)); }
-    void clearNVAL() { mutate_flag(FLAG_IDX_NVAL) = std::monostate{}; }
-
-    double getNIP() const { return std::get<double>(get_flag(FLAG_IDX_NIP)); }
-    void setNIP(double val) { mutate_flag(FLAG_IDX_NIP) = val; }
-    bool hasNIP() const { return std::holds_alternative<double>(get_flag(FLAG_IDX_NIP)); }
-    void clearNIP() { mutate_flag(FLAG_IDX_NIP) = std::monostate{}; }
   };
 
   struct JSForOfStartSEXP {

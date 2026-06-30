@@ -1,4 +1,4 @@
-// Generated: 2026-06-30 23:10:49
+// Generated: 2026-07-01 01:50:08
 #pragma once
 #include <string>
 
@@ -60,7 +60,6 @@ namespace IRI_GEN {
     InvokeFinalizer,
     JSForInStart,
     JSForInNext,
-    StackRetain,
     JSForOfStart,
     JSForOfNext,
     PushCatchContext,
@@ -170,7 +169,6 @@ namespace IRI_GEN {
       case InvokeFinalizer: return "InvokeFinalizer";
       case JSForInStart: return "JSForInStart";
       case JSForInNext: return "JSForInNext";
-      case StackRetain: return "StackRetain";
       case JSForOfStart: return "JSForOfStart";
       case JSForOfNext: return "JSForOfNext";
       case PushCatchContext: return "PushCatchContext";
@@ -296,7 +294,6 @@ namespace IRI_GEN {
     METHOD,
     DECL,
     Label,
-    NIP,
     AWAIT,
     OP,
     NOENUM,
@@ -384,7 +381,6 @@ namespace IRI_GEN {
       case METHOD: return "METHOD";
       case DECL: return "DECL";
       case Label: return "Label";
-      case NIP: return "NIP";
       case AWAIT: return "AWAIT";
       case OP: return "OP";
       case NOENUM: return "NOENUM";

@@ -560,16 +560,6 @@ export default [
     }
   },
   {
-    "tag": "StackRetain",
-    "args": [],
-    "flags": {
-      "string": [],
-      "void": [],
-      "bool": [],
-      "double": ["NVAL", "NIP"],
-    }
-  },
-  {
     "tag": "JSForOfStart",
     "args": ["Obj"],
     "flags": {
