@@ -570,16 +570,6 @@ export default [
     }
   },
   {
-    "tag": "StackPop",
-    "args": [],
-    "flags": {
-      "string": [],
-      "void": [],
-      "bool": [],
-      "double": [],
-    }
-  },
-  {
     "tag": "JSForOfStart",
     "args": ["Obj"],
     "flags": {
@@ -1059,5 +1049,14 @@ export default [
       "double": [],
     }
   },
-
+  {
+    "tag": "CompoundAssn",
+    "args": [],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
+  },
 ];

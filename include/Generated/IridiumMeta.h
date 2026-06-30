@@ -1,4 +1,4 @@
-// Generated: 2026-06-02 16:23:10
+// Generated: 2026-06-30 23:10:49
 #pragma once
 #include "IridiumEnums.h"
 #include <cstdint>
@@ -67,7 +67,6 @@ public:
       case IRI_GEN::JSForInStart: return 0;
       case IRI_GEN::JSForInNext: return 0;
       case IRI_GEN::StackRetain: return 2;
-      case IRI_GEN::StackPop: return 0;
       case IRI_GEN::JSForOfStart: return 1;
       case IRI_GEN::JSForOfNext: return 1;
       case IRI_GEN::PushCatchContext: return 1;
@@ -116,6 +115,7 @@ public:
       case IRI_GEN::ToNumeric: return 0;
       case IRI_GEN::JSCTX: return 1;
       case IRI_GEN::QJSModuleInit: return 0;
+      case IRI_GEN::CompoundAssn: return 0;
       default: return 0;
     }
   }

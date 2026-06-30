@@ -1,4 +1,4 @@
-// Generated: 2026-06-02 16:23:10
+// Generated: 2026-06-30 23:10:49
 #pragma once
 #include "Storage/Config.h"
 #include "Storage/IridiumSEXP.h"
@@ -2748,40 +2748,6 @@ using IRI_STORAGE::FlagValue;
     void clearNIP() { mutate_flag(FLAG_IDX_NIP) = std::monostate{}; }
   };
 
-  struct StackPopSEXP {
-    IRID id;
-    IridiumPool* pool;
-
-    explicit StackPopSEXP(IRID n, IridiumPool& p) : id(n), pool(&p) {
-      if (pool->operator[](n).tag != IRI_GEN::StackPop) {
-        throw std::runtime_error("Schema Cast Error: Expected StackPop, but got " + IRI_GEN::dump_tag(pool->operator[](n).tag));
-      }
-    }
-
-    static IRID create(IridiumPool& p) {
-      return p.add_node(IRI_GEN::IRI_TAG::StackPop, {}, {});
-    }
-
-    static constexpr uint32_t TOTAL_ARGS = 0;
-    static constexpr uint32_t TOTAL_FLAGS = 0;
-
-
-
-    // --- Helpers ---
-    inline FlagValue& mutate_flag(uint32_t idx) {
-        return pool->get_flags_m(id)[idx];
-    }
-    inline const FlagValue& get_flag(uint32_t idx) const {
-        return pool->get_flags(id)[idx];
-    }
-
-    // --- Arguments ---
-
-
-    // --- Flags ---
-
-  };
-
   struct JSForOfStartSEXP {
     IRID id;
     IridiumPool* pool;
@@ -4702,6 +4668,40 @@ using IRI_STORAGE::FlagValue;
 
     static IRID create(IridiumPool& p) {
       return p.add_node(IRI_GEN::IRI_TAG::QJSModuleInit, {}, {});
+    }
+
+    static constexpr uint32_t TOTAL_ARGS = 0;
+    static constexpr uint32_t TOTAL_FLAGS = 0;
+
+
+
+    // --- Helpers ---
+    inline FlagValue& mutate_flag(uint32_t idx) {
+        return pool->get_flags_m(id)[idx];
+    }
+    inline const FlagValue& get_flag(uint32_t idx) const {
+        return pool->get_flags(id)[idx];
+    }
+
+    // --- Arguments ---
+
+
+    // --- Flags ---
+
+  };
+
+  struct CompoundAssnSEXP {
+    IRID id;
+    IridiumPool* pool;
+
+    explicit CompoundAssnSEXP(IRID n, IridiumPool& p) : id(n), pool(&p) {
+      if (pool->operator[](n).tag != IRI_GEN::CompoundAssn) {
+        throw std::runtime_error("Schema Cast Error: Expected CompoundAssn, but got " + IRI_GEN::dump_tag(pool->operator[](n).tag));
+      }
+    }
+
+    static IRID create(IridiumPool& p) {
+      return p.add_node(IRI_GEN::IRI_TAG::CompoundAssn, {}, {});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;

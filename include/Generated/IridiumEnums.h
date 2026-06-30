@@ -1,4 +1,4 @@
-// Generated: 2026-06-02 16:23:10
+// Generated: 2026-06-30 23:10:49
 #pragma once
 #include <string>
 
@@ -61,7 +61,6 @@ namespace IRI_GEN {
     JSForInStart,
     JSForInNext,
     StackRetain,
-    StackPop,
     JSForOfStart,
     JSForOfNext,
     PushCatchContext,
@@ -109,7 +108,8 @@ namespace IRI_GEN {
     NIPCatchCTX,
     ToNumeric,
     JSCTX,
-    QJSModuleInit
+    QJSModuleInit,
+    CompoundAssn
   };
 
   inline std::string dump_tag(IRI_TAG value) {
@@ -171,7 +171,6 @@ namespace IRI_GEN {
       case JSForInStart: return "JSForInStart";
       case JSForInNext: return "JSForInNext";
       case StackRetain: return "StackRetain";
-      case StackPop: return "StackPop";
       case JSForOfStart: return "JSForOfStart";
       case JSForOfNext: return "JSForOfNext";
       case PushCatchContext: return "PushCatchContext";
@@ -220,6 +219,7 @@ namespace IRI_GEN {
       case ToNumeric: return "ToNumeric";
       case JSCTX: return "JSCTX";
       case QJSModuleInit: return "QJSModuleInit";
+      case CompoundAssn: return "CompoundAssn";
       default: return "unknown_tag";
     }
   }
