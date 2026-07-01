@@ -49,10 +49,7 @@ inline std::vector<IRID> heritageThisInit(IridiumPool & pool, StringID thisValHo
   );
   pool.set_args(callSite, callSiteArgs);
 
-  IRID stackRej = StackRejectSEXP::create(pool, 1);
-  pool.set_args(stackRej, {callSite});
-
-  res.push_back(stackRej);
+  res.push_back(callSite);
   return res;
 }
 

@@ -1,4 +1,4 @@
-// Generated: 2026-07-01 01:50:08
+// Generated: 2026-07-01 02:33:26
 #pragma once
 #include <string>
 
@@ -44,7 +44,6 @@ namespace IRI_GEN {
     Number,
     JSClass,
     JSCheckConstructor,
-    StackReject,
     ResolvePrivateEnvBinding,
     PVTEnvRead,
     JSPrivate,
@@ -153,7 +152,6 @@ namespace IRI_GEN {
       case Number: return "Number";
       case JSClass: return "JSClass";
       case JSCheckConstructor: return "JSCheckConstructor";
-      case StackReject: return "StackReject";
       case ResolvePrivateEnvBinding: return "ResolvePrivateEnvBinding";
       case PVTEnvRead: return "PVTEnvRead";
       case JSPrivate: return "JSPrivate";
@@ -288,7 +286,6 @@ namespace IRI_GEN {
     MODULE,
     MODULEI,
     MODULENSI,
-    NVAL,
     FULLY_RESOLVE,
     SYMBOL,
     METHOD,
@@ -375,7 +372,6 @@ namespace IRI_GEN {
       case MODULE: return "MODULE";
       case MODULEI: return "MODULEI";
       case MODULENSI: return "MODULENSI";
-      case NVAL: return "NVAL";
       case FULLY_RESOLVE: return "FULLY_RESOLVE";
       case SYMBOL: return "SYMBOL";
       case METHOD: return "METHOD";

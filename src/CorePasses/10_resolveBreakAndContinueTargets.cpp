@@ -200,10 +200,8 @@ void _10_RBACT(
             DEC_LOG_IDX("continueTarget", loopConfig->continueTarget);
 
             if (loopConfig->kind == LoopConfig::Kind::ForOf) {
-              IRID stackReject = StackRejectSEXP::create(pool, 0);
               IRID forOfIteratorClose = JSForOfIteratorCloseSEXP::create(pool);
-              pool.set_args(stackReject, {forOfIteratorClose});
-              BBSupport::insert_before(newStmtList, element, stackReject);
+              BBSupport::insert_before(newStmtList, element, forOfIteratorClose);
             }
           } else if (auto tryContext =
                          std::get_if<TryContext>(&intermediateContext)) {
@@ -260,12 +258,8 @@ void _10_RBACT(
         if (isBreakTarget.contains(element)) {
           auto &finalLoopConfig = isBreakTarget[element];
           if (finalLoopConfig.kind == LoopConfig::Kind::ForOf) {
-            auto stackReject = StackRejectSEXP::create(pool, 0);
-
             auto forOfIteratorClose = JSForOfIteratorCloseSEXP::create(pool);
-
-            pool.set_args(stackReject, {forOfIteratorClose});
-            BBSupport::insert_before(newStmtList, element, stackReject);
+            BBSupport::insert_before(newStmtList, element, forOfIteratorClose);
           }
         }
       }

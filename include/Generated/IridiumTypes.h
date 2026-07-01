@@ -1,4 +1,4 @@
-// Generated: 2026-07-01 01:50:08
+// Generated: 2026-07-01 02:33:26
 #pragma once
 #include "Storage/Config.h"
 #include "Storage/IridiumSEXP.h"
@@ -2083,43 +2083,6 @@ using IRI_STORAGE::FlagValue;
 
     // --- Flags ---
 
-  };
-
-  struct StackRejectSEXP {
-    IRID id;
-    IridiumPool* pool;
-
-    explicit StackRejectSEXP(IRID n, IridiumPool& p) : id(n), pool(&p) {
-      if (pool->operator[](n).tag != IRI_GEN::StackReject) {
-        throw std::runtime_error("Schema Cast Error: Expected StackReject, but got " + IRI_GEN::dump_tag(pool->operator[](n).tag));
-      }
-    }
-
-    static IRID create(IridiumPool& p, double NVAL) {
-      return p.add_node(IRI_GEN::IRI_TAG::StackReject, {}, {FlagValue(NVAL)});
-    }
-
-    static constexpr uint32_t TOTAL_ARGS = 0;
-    static constexpr uint32_t TOTAL_FLAGS = 1;
-
-    static constexpr uint32_t FLAG_IDX_NVAL = 0;
-
-    // --- Helpers ---
-    inline FlagValue& mutate_flag(uint32_t idx) {
-        return pool->get_flags_m(id)[idx];
-    }
-    inline const FlagValue& get_flag(uint32_t idx) const {
-        return pool->get_flags(id)[idx];
-    }
-
-    // --- Arguments ---
-
-
-    // --- Flags ---
-    double getNVAL() const { return std::get<double>(get_flag(FLAG_IDX_NVAL)); }
-    void setNVAL(double val) { mutate_flag(FLAG_IDX_NVAL) = val; }
-    bool hasNVAL() const { return std::holds_alternative<double>(get_flag(FLAG_IDX_NVAL)); }
-    void clearNVAL() { mutate_flag(FLAG_IDX_NVAL) = std::monostate{}; }
   };
 
   struct ResolvePrivateEnvBindingSEXP {

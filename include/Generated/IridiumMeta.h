@@ -1,4 +1,4 @@
-// Generated: 2026-07-01 01:50:08
+// Generated: 2026-07-01 02:33:26
 #pragma once
 #include "IridiumEnums.h"
 #include <cstdint>
@@ -50,7 +50,6 @@ public:
       case IRI_GEN::Number: return 1;
       case IRI_GEN::JSClass: return 2;
       case IRI_GEN::JSCheckConstructor: return 0;
-      case IRI_GEN::StackReject: return 1;
       case IRI_GEN::ResolvePrivateEnvBinding: return 2;
       case IRI_GEN::PVTEnvRead: return 3;
       case IRI_GEN::JSPrivate: return 1;
@@ -409,12 +408,6 @@ public:
         switch(flag) {
         case IRI_GEN::NAME: return 0;
         case IRI_GEN::DERIVED: return 1;
-          default: return -1;
-        }
-        break;
-      case IRI_GEN::StackReject:
-        switch(flag) {
-        case IRI_GEN::NVAL: return 0;
           default: return -1;
         }
         break;
@@ -916,12 +909,6 @@ public:
         switch(index) {
         case 0: return IRI_GEN::NAME;
         case 1: return IRI_GEN::DERIVED;
-          default: throw std::runtime_error("Invalid flag index");
-        }
-        break;
-      case IRI_GEN::StackReject:
-        switch(index) {
-        case 0: return IRI_GEN::NVAL;
           default: throw std::runtime_error("Invalid flag index");
         }
         break;

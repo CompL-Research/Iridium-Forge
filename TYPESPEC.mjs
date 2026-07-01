@@ -400,16 +400,6 @@ export default [
     }
   },
   {
-    "tag": "StackReject",
-    "args": [],
-    "flags": {
-      "string": [],
-      "void": [],
-      "bool": [],
-      "double": ["NVAL"],
-    }
-  },
-  {
     "tag": "ResolvePrivateEnvBinding",
     "args": [],
     "flags": {

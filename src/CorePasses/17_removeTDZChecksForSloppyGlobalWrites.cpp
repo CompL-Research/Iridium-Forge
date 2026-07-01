@@ -35,25 +35,16 @@ void _17_RTDZ(IRI_STORAGE::IridiumPool &pool, IRI_STORAGE::IRID fileSEXP,
 
       for (auto [stmtID, stmtOffset] : bb.stmts()) {
         auto stmtTag = pool[stmtID].tag;
-        if (stmtTag == IRI_GEN::StackReject) {
-          IRID tdzReadID = pool.get_args_view(stmtID)[0];
-          if (pool[tdzReadID].tag == IRI_GEN::TDZRead) {
-            TDZReadSEXP tdzRead(tdzReadID, pool);
-
-            // Strict mode, let the check be there, reduce to a normal read
-            if (bbc.hasSTRICT()) {
-              IRID srej = StackRejectSEXP::create(pool, 1);
-              pool.set_args(srej, { EnvReadSEXP::create(pool, tdzRead.getArg_Obj(), tdzRead.hasSAFE(), false) });
-              pool.update_arg_inplace(bbID, stmtOffset, srej);
+        if (stmtTag == IRI_GEN::TDZRead) {
+          TDZReadSEXP tdzRead(stmtID, pool);
+          if (bbc.hasSTRICT()) {
+            pool.update_arg_inplace(bbID, stmtOffset, EnvReadSEXP::create(pool, tdzRead.getArg_Obj(), tdzRead.hasSAFE(), false));
+          } else {
+            IRID obj = tdzRead.getArg_Obj();
+            if (pool[obj].tag == IRI_GEN::GlobalBinding) {
+              pool.update_arg_inplace(bbID, stmtOffset, pool.NOP_SEXP);
             } else {
-              IRID obj = tdzRead.getArg_Obj();
-              if (pool[obj].tag == IRI_GEN::GlobalBinding) {
-                pool.update_arg_inplace(bbID, stmtOffset, pool.NOP_SEXP);
-              } else {
-                IRID srej = StackRejectSEXP::create(pool, 1);
-                pool.set_args(srej, { EnvReadSEXP::create(pool, tdzRead.getArg_Obj(), tdzRead.hasSAFE(), false) });
-                pool.update_arg_inplace(bbID, stmtOffset, srej);
-              }
+              pool.update_arg_inplace(bbID, stmtOffset, EnvReadSEXP::create(pool, tdzRead.getArg_Obj(), tdzRead.hasSAFE(), false));
             }
           }
         }

@@ -114,7 +114,7 @@ BB -> (STMT)+
        new.target was set.
 
   -- SKTOPS --
-    -> StackReject
+    -> StackReject [ CallSite ]
 
 
 STMT := JSExplicitBindingDeclarationN     {Transitional}

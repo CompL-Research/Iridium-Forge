@@ -1,8 +1,5 @@
 
 ::Integrity Assertions::
-JSImplicitBindingsSEXP
-  -- Exclusive Flags JSLET/JSCONST/JSVAR
-
 Ensure each BBs ScopeIDX exists in the build context
 
 clearJSDirectEval at calls sites is messy, make the it more rigid
