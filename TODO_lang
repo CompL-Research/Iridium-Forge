@@ -6,8 +6,6 @@ clearJSDirectEval at calls sites is messy, make the it more rigid
 
 JSImplicitBindingsSEXP does not need SLOPPY, when will this write ever write to a Global?
 
-early assert EnvWriteSEXP only occurs directly or as a RVAL of another EnvWrite
-
 Assert all call sites have valid callees i.e. >1 args
 
 Assert no transitional nodes like ResolveEnvBinding are part of final program
@@ -16,10 +14,6 @@ Create a pass for checking stack consistency.
   - missing catch arg, makes stack inconsistant.
 
 If a catch arg can capture the arg init environment then use the special routine.
-
-Direct eval in arrow function arg init scope can currently end up injecting vars into the global scope.
-
-Increment Decrement is treated as an unop now, because a = a + 1 rewrite for a++ is invalid when a is a BigInt.
 
 Rename JSIDOP and IDOP, to be more meaningful like FieldIncDecOP and ComputedFieldIncDecOP.
 
