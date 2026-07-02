@@ -602,6 +602,8 @@ void IRIS::addEvalRemoteBindingsToParentClosure(double startScope) {
   if (taintedScopes.contains(startScope))
     return;
 
+  bool IRI_TEMPS_INVISIBLE_TO_EVAL = true;
+
   taintedScopes.insert(startScope);
 
   //
@@ -620,7 +622,9 @@ void IRIS::addEvalRemoteBindingsToParentClosure(double startScope) {
     if (scopeBindings.contains(currScope)) {
       for (auto &[sID, bID] : scopeBindings.at(currScope)) {
         if (pool[bID].tag == IRI_GEN::EnvBinding) {
-          if (crossedClosureScope) {
+          if (IRI_TEMPS_INVISIBLE_TO_EVAL && pool.strings.get(sID).starts_with("~$")) {
+            // Completely ignore temps
+          } else if (crossedClosureScope) {
             pollutedReads.insert(sID);
           } else {
             shadowedReads.insert(sID);

@@ -91,6 +91,14 @@ public:
 
   std::vector<IRI_STORAGE::IRID> getBindingsToMoveToHeap(double startScope, double endScope);
 
+  void ensureExportedBindingIsModuleBinding(StringID id) {
+    exportedModuleBindings.insert(id);
+  }
+
+  bool isExportedBinding(StringID id) {
+    return exportedModuleBindings.contains(id);
+  }
+
 private:
   // Node Storage Pool
   IRI_STORAGE::IridiumPool &pool;
@@ -128,6 +136,8 @@ private:
 
   std::unordered_map<double, double> exceptionEdgeRedirect;
   std::unordered_map<double, double> finalizerRetMap;
+
+  std::set<StringID> exportedModuleBindings;
 
   void printNode(
       std::ostream &oss, double node, std::string prefix, bool isLast,

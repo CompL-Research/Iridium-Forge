@@ -33,6 +33,8 @@ void _4_5_PEB(IridiumPool &pool, IRID fileID, BUILD_CTX &iridiumBuildContext) {
 
   auto args = pool.get_args(fileID);
 
+  bool IRI_TEMPS_ALWAYS_ON_STACK = true;
+
   for (auto &bbcID : args) {
     if (pool[bbcID].tag != IRI_GEN::BBContainer)
       continue;
@@ -92,7 +94,9 @@ void _4_5_PEB(IridiumPool &pool, IRID fileID, BUILD_CTX &iridiumBuildContext) {
           StringID currBindingName = binding.getNAME();
 
           if (scopeToHoistTo == topLevelScope) {
-            if (isModule) {
+            if (IRI_TEMPS_ALWAYS_ON_STACK && pool.strings.get(currBindingName).starts_with("~$") && !pool.iris->isExportedBinding(currBindingName)) {
+              loc = LOC::FRAME;
+            } else if (isModule) {
               loc = LOC::MODULE;
             } else {
               loc = LOC::SCRIPT;

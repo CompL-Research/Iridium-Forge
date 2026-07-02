@@ -88,6 +88,10 @@ void _4_2_PMB(IridiumPool &pool, IRID fileSEXP,
         LocalStaticExportSEXP localStaticExportStmt(stmtID, pool);
         ResolveEnvBindingSEXP localBinding(
             localStaticExportStmt.getArg_StorageLocation(), pool);
+
+        assert(localScope == pool.iris->getTopLevelScope());
+        pool.iris->ensureExportedBindingIsModuleBinding(localBinding.getNAME());
+
         staticExportsVec.push_back(stmtID);
         pool.update_arg_inplace(bbIDX, i, pool.NOP_SEXP);
       }
