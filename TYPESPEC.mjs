@@ -561,7 +561,7 @@ export default [
   },
   {
     "tag": "JSForOfNext",
-    "args": [],
+    "args": ["Obj"],
     "flags": {
       "string": [],
       "void": [],

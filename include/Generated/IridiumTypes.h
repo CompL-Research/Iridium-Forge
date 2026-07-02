@@ -1,4 +1,4 @@
-// Generated: 2026-07-01 02:33:26
+// Generated: 2026-07-02 15:27:11
 #pragma once
 #include "Storage/Config.h"
 #include "Storage/IridiumSEXP.h"
@@ -2717,11 +2717,11 @@ using IRI_STORAGE::FlagValue;
       }
     }
 
-    static IRID create(IridiumPool& p, bool AWAIT) {
-      return p.add_node(IRI_GEN::IRI_TAG::JSForOfNext, {}, {FlagValue(AWAIT)});
+    static IRID create(IridiumPool& p, IRID Obj, bool AWAIT) {
+      return p.add_node(IRI_GEN::IRI_TAG::JSForOfNext, {Obj}, {FlagValue(AWAIT)});
     }
 
-    static constexpr uint32_t TOTAL_ARGS = 0;
+    static constexpr uint32_t TOTAL_ARGS = 1;
     static constexpr uint32_t TOTAL_FLAGS = 1;
 
     static constexpr uint32_t FLAG_IDX_AWAIT = 0;
@@ -2735,7 +2735,9 @@ using IRI_STORAGE::FlagValue;
     }
 
     // --- Arguments ---
-
+    IRID getArg_Obj() const { return pool->get_args(id)[0]; }
+    bool hasArg_Obj() const { return 0 < pool->get_args(id).size(); }
+    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
 
     // --- Flags ---
     bool getAWAIT() const { return std::get<bool>(get_flag(FLAG_IDX_AWAIT)); }
