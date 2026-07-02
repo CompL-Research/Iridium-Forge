@@ -452,7 +452,7 @@ export default [
   },
   {
     "tag": "PVTEnvRead",
-    "meta": "AMP",
+    "meta": "RVAL",
     "args": ["Obj"],
     "flags": {
       "string": [],

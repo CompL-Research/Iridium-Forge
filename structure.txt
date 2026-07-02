@@ -96,7 +96,7 @@ Note 1: * represents a transitional nodes.
 
 40. ResolvePrivateEnvBinding       -> *RVAL
 
-41. PVTEnvRead                     -> AMP
+41. PVTEnvRead                     -> RVAL
 
 42. JSPrivate                      -> RVAL
 
