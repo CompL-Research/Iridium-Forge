@@ -1,3 +1,227 @@
+IRI nodes are classified into four broad categories, described as follows:
+
+1. STRUCTURAL: These kinds of node provide structure to the IR.
+
+2. STMT: These nodes are restricted to only appear as immediate children of BBs.
+
+3. RVAL: These nodes are restricted to only appear as direct/indirect children of STMT nodes.
+
+4. AMP (a.k.a. Amphibious): These nodes may appear as either immediate children of BBs or as direct/indirect children of STMT.
+
+This classification, will allow IRI to get its first basic type checking making the structure a bit more rigid and predictable.
+
+In the following list, we only care about nodes which might appear inside a Basic Block i.e. STMT.
+
+Note 1: * represents a transitional nodes.
+
+1.  File                           ->
+
+2.  ResolveEnvBinding              -> *RVAL
+
+3.  List                           ->
+
+4.  JSImplicitBindingDeclaration   -> *STMT
+
+5.  EnvRead                        -> AMP
+  ~ Possible TDZ Effect
+6.  TDZRead                        -> *STMT
+
+7.  String                         -> RVAL
+
+8.  FieldRead                      -> AMP
+  ~ Possible set/get Effect
+9.  JSExplicitBindingDeclaration   -> *STMT
+
+10. JSExplicitBindingDeclarationN  -> *STMT
+
+11. JSExplicitBindingDeclarationX  -> *STMT
+
+12. CallSite                       -> AMP
+  ~ Obvious
+13. Apply                          -> AMP
+  ~ Obvious
+14. ReturnAsync                    -> STMT
+
+15. BB                             ->
+
+16. Return                         -> STMT
+
+17. UnresolvedReturn               -> *STMT
+
+18. IfJump                         -> STMT
+
+19. IfElseJump                     -> STMT
+
+20. Goto                           -> STMT
+
+21. JSFuncDecl                     -> *STMT
+
+22. Lambda                         -> RVAL
+
+22. NOP                            -> STMT
+
+23. BBContainer                    ->
+
+24. Bindings                       ->
+
+25. StarExport                     ->
+
+26. StaticImport                   ->
+
+27. LocalStaticExport              ->
+
+28. NamedReexport                  ->
+
+29. ModuleRequest                  ->
+
+30. EnvBinding                     -> RVAL
+
+31. RemoteEnvBinding               -> RVAL
+
+32. GlobalBinding                  -> RVAL
+
+33. ScriptBinding                  -> RVAL
+
+34. EnvWrite                       -> *STMT
+
+35. SiblingSpecialWrite            -> *STMT
+
+36. JSNUBD                         -> RVAL
+
+37. Number                         -> RVAL
+
+38. JSClass                        -> RVAL
+
+39. JSCheckConstructor             -> STMT
+
+40. ResolvePrivateEnvBinding       -> *RVAL
+
+41. PVTEnvRead                     -> AMP
+
+42. JSPrivate                      -> RVAL
+
+43. JSPrivateFieldWrite            -> STMT
+
+44. JSADDBRAND                     -> STMT
+
+45. JSPrivateFieldRead             -> AMP
+  ~ Possible set/get Effect
+46. PoolBinding                    -> RVAL
+
+47. ResolveContinueTarget          -> *STMT
+
+48. ResolveBreakTarget             -> *STMT
+
+49. JSForOfIteratorClose           -> STMT
+
+50. PopCatchContext                -> STMT
+
+51. PopFinalizerReturnTarget       -> STMT
+
+52. InvokeFinalizer                -> STMT
+
+53. JSForInStart                   -> RVAL
+
+54. JSForInNext                    -> RVAL
+
+55. JSForOfStart                   -> STMT
+
+56. JSForOfNext                    -> RVAL
+
+57. PushCatchContext               -> STMT
+
+58. JSCatchContext                 -> AMP
+
+59. Throw                          -> STMT
+
+60. Ret                            -> STMT
+
+61. JSBinop                        -> RVAL
+
+62. FieldWrite                     -> STMT
+
+63. JSUnop                         -> RVAL
+
+64. Unop                           -> RVAL
+
+65. JSObject                       -> RVAL
+
+66. Boolean                        -> RVAL
+
+67. JSDefineObjProp                -> STMT
+
+68. JSArray                        -> RVAL
+
+69. Binop                          -> RVAL
+
+70. Null                           -> RVAL
+
+71. JSComputedFieldRead            -> RVAL
+
+72. JSComputedFieldWrite           -> STMT
+
+73. JSSuperFieldRead               -> RVAL
+
+74. JSSuperFieldWrite              -> STMT
+
+75. JSToObject                     -> RVAL
+
+76. JSAppend                       -> RVAL
+
+77. JSDefineObjMethod              -> STMT
+
+78. JSCopyDataProperties           -> RVAL
+
+79. RegExp                         -> RVAL
+
+80. UNOPDelMemberExpr              -> RVAL
+
+81. UNOPDelVar                     -> RVAL
+
+82. JSTemplate                     -> RVAL
+
+83. JSBigInt                       -> RVAL
+
+84. Await                          -> RVAL
+
+85. Yield                          -> RVAL
+
+86. JSInitialYield                 -> STMT
+
+87. IDOP                           -> RVAL
+
+88. JSIDOP                         -> RVAL
+
+89. StackToHeap                    -> STMT
+
+90. *LoopInitPreludeEnd            -> STMT
+
+91. JSSetHome                      -> STMT
+
+92. JSSetName                      -> STMT
+
+93. JSSetPrototypeOf               -> STMT
+
+94. GWrite                         -> STMT
+
+95. LWrite                         -> STMT
+
+96. RWrite                         -> STMT
+
+97. MWrite                         -> STMT
+
+98. DCTRRet                        -> RVAL
+
+99. ToNumeric                      -> RVAL
+
+100. JSCTX                         -> RVAL
+
+101. QJSModuleInit                 -> STMT
+
+102. CompoundAssn                  -> STMT
+
+
+
 ::Structural Setup::
 
 File -> List[TYPE=ModuleRequest]  -> ModuleRequest

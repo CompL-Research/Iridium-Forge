@@ -16,3 +16,5 @@ Create a pass for checking stack consistency.
 If a catch arg can capture the arg init environment then use the special routine.
 
 Rename JSIDOP and IDOP, to be more meaningful like FieldIncDecOP and ComputedFieldIncDecOP.
+
+EnvRead TAINTED Flag is currently useless

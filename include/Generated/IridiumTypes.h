@@ -1,4 +1,4 @@
-// Generated: 2026-07-02 17:01:33
+// Generated: 2026-07-03 00:01:43
 #pragma once
 #include "Storage/Config.h"
 #include "Storage/IridiumSEXP.h"
@@ -2348,15 +2348,14 @@ using IRI_STORAGE::FlagValue;
       }
     }
 
-    static IRID create(IridiumPool& p, IRID Lambda, double StartBBIDX, double REFIDX) {
-      return p.add_node(IRI_GEN::IRI_TAG::PoolBinding, {Lambda}, {FlagValue(StartBBIDX), FlagValue(REFIDX)});
+    static IRID create(IridiumPool& p, IRID Lambda, double REFIDX) {
+      return p.add_node(IRI_GEN::IRI_TAG::PoolBinding, {Lambda}, {FlagValue(REFIDX)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 1;
-    static constexpr uint32_t TOTAL_FLAGS = 2;
+    static constexpr uint32_t TOTAL_FLAGS = 1;
 
-    static constexpr uint32_t FLAG_IDX_StartBBIDX = 0;
-    static constexpr uint32_t FLAG_IDX_REFIDX = 1;
+    static constexpr uint32_t FLAG_IDX_REFIDX = 0;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
@@ -2372,11 +2371,6 @@ using IRI_STORAGE::FlagValue;
     void setArg_Lambda(IRID val) { assert(hasArg_Lambda() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
 
     // --- Flags ---
-    double getStartBBIDX() const { return std::get<double>(get_flag(FLAG_IDX_StartBBIDX)); }
-    void setStartBBIDX(double val) { mutate_flag(FLAG_IDX_StartBBIDX) = val; }
-    bool hasStartBBIDX() const { return std::holds_alternative<double>(get_flag(FLAG_IDX_StartBBIDX)); }
-    void clearStartBBIDX() { mutate_flag(FLAG_IDX_StartBBIDX) = std::monostate{}; }
-
     double getREFIDX() const { return std::get<double>(get_flag(FLAG_IDX_REFIDX)); }
     void setREFIDX(double val) { mutate_flag(FLAG_IDX_REFIDX) = val; }
     bool hasREFIDX() const { return std::holds_alternative<double>(get_flag(FLAG_IDX_REFIDX)); }
@@ -3802,18 +3796,18 @@ using IRI_STORAGE::FlagValue;
 
   };
 
-  struct BitIntSEXP {
+  struct JSBigIntSEXP {
     IRID id;
     IridiumPool* pool;
 
-    explicit BitIntSEXP(IRID n, IridiumPool& p) : id(n), pool(&p) {
-      if (pool->operator[](n).tag != IRI_GEN::BitInt) {
-        throw std::runtime_error("Schema Cast Error: Expected BitInt, but got " + IRI_GEN::dump_tag(pool->operator[](n).tag));
+    explicit JSBigIntSEXP(IRID n, IridiumPool& p) : id(n), pool(&p) {
+      if (pool->operator[](n).tag != IRI_GEN::JSBigInt) {
+        throw std::runtime_error("Schema Cast Error: Expected JSBigInt, but got " + IRI_GEN::dump_tag(pool->operator[](n).tag));
       }
     }
 
     static IRID create(IridiumPool& p, StringID IridiumPrimitive) {
-      return p.add_node(IRI_GEN::IRI_TAG::BitInt, {}, {FlagValue(IridiumPrimitive)});
+      return p.add_node(IRI_GEN::IRI_TAG::JSBigInt, {}, {FlagValue(IridiumPrimitive)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;

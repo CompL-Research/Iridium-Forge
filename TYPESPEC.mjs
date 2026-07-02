@@ -1,6 +1,7 @@
 export default [
   {
     "tag": "File",
+    "meta": "",
     "args": [],
     "flags": {
       "string": [],
@@ -11,6 +12,7 @@ export default [
   },
   {
     "tag": "ResolveEnvBinding",
+    "meta": "*RVAL",
     "args": [],
     "flags": {
       "string": ["NAME"],
@@ -21,6 +23,7 @@ export default [
   },
   {
     "tag": "List",
+    "meta": "",
     "args": [],
     "flags": {
       "string": ["TYPE"],
@@ -31,6 +34,7 @@ export default [
   },
   {
     "tag": "JSImplicitBindingDeclaration",
+    "meta": "*STMT",
     "args": ["Store", "Args"],
     "flags": {
       "string": ["NAME"],
@@ -41,6 +45,7 @@ export default [
   },
   {
     "tag": "EnvRead",
+    "meta": "AMP",
     "args": ["Obj"],
     "flags": {
       "string": [],
@@ -51,6 +56,7 @@ export default [
   },
   {
     "tag": "TDZRead",
+    "meta": "*STMT",
     "args": ["Obj"],
     "flags": {
       "string": [],
@@ -61,6 +67,7 @@ export default [
   },
   {
     "tag": "String",
+    "meta": "RVAL",
     "args": [],
     "flags": {
       "string": ["IridiumPrimitive"],
@@ -71,6 +78,7 @@ export default [
   },
   {
     "tag": "FieldRead",
+    "meta": "AMP",
     "args": ["Obj", "Field"],
     "flags": {
       "string": [],
@@ -81,6 +89,7 @@ export default [
   },
   {
     "tag": "JSExplicitBindingDeclaration",
+    "meta": "*STMT",
     "args": ["LValTarget", "RVal"],
     "flags": {
       "string": [],
@@ -91,6 +100,7 @@ export default [
   },
   {
     "tag": "JSExplicitBindingDeclarationN",
+    "meta": "*STMT",
     "args": ["LValTarget", "RVal"],
     "flags": {
       "string": [],
@@ -101,6 +111,7 @@ export default [
   },
   {
     "tag": "JSExplicitBindingDeclarationX",
+    "meta": "*STMT",
     "args": ["LValTarget", "RVal"],
     "flags": {
       "string": [],
@@ -111,6 +122,7 @@ export default [
   },
   {
     "tag": "CallSite",
+    "meta": "AMP",
     "args": [],
     "flags": {
       "string": [],
@@ -121,6 +133,7 @@ export default [
   },
   {
     "tag": "Apply",
+    "meta": "AMP",
     "args": ["Callee", "Context", "ArgList"],
     "flags": {
       "string": [],
@@ -131,6 +144,7 @@ export default [
   },
   {
     "tag": "ReturnAsync",
+    "meta": "STMT",
     "args": ["RetVal"],
     "flags": {
       "string": [],
@@ -141,6 +155,7 @@ export default [
   },
   {
     "tag": "BB",
+    "meta": "",
     "args": [],
     "flags": {
       "string": [],
@@ -151,6 +166,7 @@ export default [
   },
   {
     "tag": "Return",
+    "meta": "STMT",
     "args": ["Obj"],
     "flags": {
       "string": [],
@@ -161,6 +177,7 @@ export default [
   },
   {
     "tag": "UnresolvedReturn",
+    "meta": "*STMT",
     "args": [],
     "flags": {
       "string": [],
@@ -171,6 +188,7 @@ export default [
   },
   {
     "tag": "IfJump",
+    "meta": "STMT",
     "args": ["Test"],
     "flags": {
       "string": [],
@@ -181,6 +199,7 @@ export default [
   },
   {
     "tag": "IfElseJump",
+    "meta": "STMT",
     "args": ["Test"],
     "flags": {
       "string": [],
@@ -191,6 +210,7 @@ export default [
   },
   {
     "tag": "Goto",
+    "meta": "STMT",
     "args": [],
     "flags": {
       "string": [],
@@ -201,6 +221,7 @@ export default [
   },
   {
     "tag": "JSFuncDecl",
+    "meta": "*STMT",
     "args": ["LValTarget", "RVal"],
     "flags": {
       "string": [],
@@ -211,6 +232,7 @@ export default [
   },
   {
     "tag": "Lambda",
+    "meta": "RVAL",
     "args": [],
     "flags": {
       "string": ["NAME"],
@@ -221,6 +243,7 @@ export default [
   },
   {
     "tag": "NOP",
+    "meta": "STMT",
     "args": [],
     "flags": {
       "string": [],
@@ -231,6 +254,7 @@ export default [
   },
   {
     "tag": "BBContainer",
+    "meta": "",
     "args": ["Bindings", "BB"],
     "flags": {
       "string": ["NAME"],
@@ -241,6 +265,7 @@ export default [
   },
   {
     "tag": "Bindings",
+    "meta": "",
     "args": ["LocalBindings", "RemoteBindings", "Lambdas"],
     "flags": {
       "string": [],
@@ -251,6 +276,7 @@ export default [
   },
   {
     "tag": "StarExport",
+    "meta": "",
     "args": [],
     "flags": {
       "string": [],
@@ -261,6 +287,7 @@ export default [
   },
   {
     "tag": "StaticImport",
+    "meta": "",
     "args": ["StorageLocation"],
     "flags": {
       "string": ["FIELD"],
@@ -271,6 +298,7 @@ export default [
   },
   {
     "tag": "LocalStaticExport",
+    "meta": "",
     "args": ["StorageLocation"],
     "flags": {
       "string": ["LOCALNAME", "EXPORTNAME"],
@@ -281,6 +309,7 @@ export default [
   },
   {
     "tag": "NamedReexport",
+    "meta": "",
     "args": [],
     "flags": {
       "string": ["LOCALNAME", "EXPORTNAME"],
@@ -291,6 +320,7 @@ export default [
   },
   {
     "tag": "ModuleRequest",
+    "meta": "",
     "args": [],
     "flags": {
       "string": ["SOURCE"],
@@ -301,6 +331,7 @@ export default [
   },
   {
     "tag": "EnvBinding",
+    "meta": "RVAL",
     "args": [],
     "flags": {
       "string": ["NAME"],
@@ -311,6 +342,7 @@ export default [
   },
   {
     "tag": "RemoteEnvBinding",
+    "meta": "RVAL",
     "args": ["ParentReference"],
     "flags": {
       "string": [],
@@ -321,6 +353,7 @@ export default [
   },
   {
     "tag": "GlobalBinding",
+    "meta": "RVAL",
     "args": [],
     "flags": {
       "string": ["NAME"],
@@ -331,6 +364,7 @@ export default [
   },
   {
     "tag": "ScriptBinding",
+    "meta": "RVAL",
     "args": [],
     "flags": {
       "string": ["NAME"],
@@ -341,6 +375,7 @@ export default [
   },
   {
     "tag": "EnvWrite",
+    "meta": "*STMT",
     "args": ["LValTarget", "RVal"],
     "flags": {
       "string": [],
@@ -351,6 +386,7 @@ export default [
   },
   {
     "tag": "SiblingSpecialWrite",
+    "meta": "*STMT",
     "args": ["LValTarget", "RVal"],
     "flags": {
       "string": [],
@@ -361,6 +397,7 @@ export default [
   },
   {
     "tag": "JSNUBD",
+    "meta": "RVAL",
     "args": [],
     "flags": {
       "string": [],
@@ -371,6 +408,7 @@ export default [
   },
   {
     "tag": "Number",
+    "meta": "RVAL",
     "args": [],
     "flags": {
       "string": [],
@@ -381,6 +419,7 @@ export default [
   },
   {
     "tag": "JSClass",
+    "meta": "RVAL",
     "args": ["Parent", "Constructor"],
     "flags": {
       "string": ["NAME"],
@@ -391,6 +430,7 @@ export default [
   },
   {
     "tag": "JSCheckConstructor",
+    "meta": "STMT",
     "args": [],
     "flags": {
       "string": [],
@@ -401,6 +441,7 @@ export default [
   },
   {
     "tag": "ResolvePrivateEnvBinding",
+    "meta": "*RVAL",
     "args": [],
     "flags": {
       "string": ["NAME"],
@@ -411,6 +452,7 @@ export default [
   },
   {
     "tag": "PVTEnvRead",
+    "meta": "AMP",
     "args": ["Obj"],
     "flags": {
       "string": [],
@@ -421,6 +463,7 @@ export default [
   },
   {
     "tag": "JSPrivate",
+    "meta": "RVAL",
     "args": [],
     "flags": {
       "string": ["IridiumPrimitive"],
@@ -431,6 +474,7 @@ export default [
   },
   {
     "tag": "JSPrivateFieldWrite",
+    "meta": "STMT",
     "args": ["Obj", "Field", "Value"],
     "flags": {
       "string": [],
@@ -441,6 +485,7 @@ export default [
   },
   {
     "tag": "JSADDBRAND",
+    "meta": "STMT",
     "args": ["Obj", "HomeObj"],
     "flags": {
       "string": [],
@@ -451,6 +496,7 @@ export default [
   },
   {
     "tag": "JSPrivateFieldRead",
+    "meta": "AMP",
     "args": ["Obj", "Field"],
     "flags": {
       "string": [],
@@ -461,16 +507,18 @@ export default [
   },
   {
     "tag": "PoolBinding",
+    "meta": "RVAL",
     "args": ["Lambda"],
     "flags": {
       "string": [],
       "void": [],
       "bool": [],
-      "double": ["StartBBIDX", "REFIDX"],
+      "double": ["REFIDX"],
     }
   },
   {
     "tag": "ResolveContinueTarget",
+    "meta": "*STMT",
     "args": [],
     "flags": {
       "string": ["Label"],
@@ -481,6 +529,7 @@ export default [
   },
   {
     "tag": "ResolveBreakTarget",
+    "meta": "*STMT",
     "args": [],
     "flags": {
       "string": ["Label"],
@@ -491,6 +540,7 @@ export default [
   },
   {
     "tag": "JSForOfIteratorClose",
+    "meta": "STMT",
     "args": [],
     "flags": {
       "string": [],
@@ -501,6 +551,7 @@ export default [
   },
   {
     "tag": "PopCatchContext",
+    "meta": "STMT",
     "args": [],
     "flags": {
       "string": [],
@@ -830,7 +881,7 @@ export default [
     }
   },
   {
-    "tag": "BitInt",
+    "tag": "JSBigInt",
     "args": [],
     "flags": {
       "string": ["IridiumPrimitive"],

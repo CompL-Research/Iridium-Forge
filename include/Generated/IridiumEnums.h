@@ -1,4 +1,4 @@
-// Generated: 2026-07-02 17:01:33
+// Generated: 2026-07-03 00:01:43
 #pragma once
 #include <string>
 
@@ -87,7 +87,7 @@ namespace IRI_GEN {
     UNOPDelMemberExpr,
     UNOPDelVar,
     JSTemplate,
-    BitInt,
+    JSBigInt,
     Await,
     Yield,
     JSInitialYield,
@@ -194,7 +194,7 @@ namespace IRI_GEN {
       case UNOPDelMemberExpr: return "UNOPDelMemberExpr";
       case UNOPDelVar: return "UNOPDelVar";
       case JSTemplate: return "JSTemplate";
-      case BitInt: return "BitInt";
+      case JSBigInt: return "JSBigInt";
       case Await: return "Await";
       case Yield: return "Yield";
       case JSInitialYield: return "JSInitialYield";

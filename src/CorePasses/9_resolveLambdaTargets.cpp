@@ -29,9 +29,8 @@ inline void patchNode(FileSupport file, IridiumPool &pool, IRID node,
     auto currTag = pool[currID].tag;
 
     if (currTag == IRI_GEN::Lambda) {
-      LambdaSEXP lSexp(currID, pool);
       IRID pb =
-          PoolBindingSEXP::create(pool, currID, lSexp.getStartBBIDX(), -1);
+          PoolBindingSEXP::create(pool, currID, -1);
       res.push_back(pb);
       pool.update_arg_inplace(node, i, pb);
       unresolvedReferences--;

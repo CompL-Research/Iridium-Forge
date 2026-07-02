@@ -408,7 +408,8 @@ void IRIS::populateCClosuresInTree() {
                                       : std::vector<IRID>();
     for (auto &b : cBindings) {
       PoolBindingSEXP pb(b, pool);
-      pool.closureTree->addEdgeFromScopeToBBIDX(currHead, pb.getStartBBIDX());
+      LambdaSEXP lbSEXP(pb.getArg_Lambda(), pool);
+      pool.closureTree->addEdgeFromScopeToBBIDX(currHead, lbSEXP.getStartBBIDX());
     }
   }
 }

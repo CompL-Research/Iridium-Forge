@@ -1,4 +1,4 @@
-// Generated: 2026-07-02 17:01:33
+// Generated: 2026-07-03 00:01:43
 #pragma once
 #include "IridiumEnums.h"
 #include <cstdint>
@@ -56,7 +56,7 @@ public:
       case IRI_GEN::JSPrivateFieldWrite: return 1;
       case IRI_GEN::JSADDBRAND: return 0;
       case IRI_GEN::JSPrivateFieldRead: return 0;
-      case IRI_GEN::PoolBinding: return 2;
+      case IRI_GEN::PoolBinding: return 1;
       case IRI_GEN::ResolveContinueTarget: return 1;
       case IRI_GEN::ResolveBreakTarget: return 1;
       case IRI_GEN::JSForOfIteratorClose: return 0;
@@ -93,7 +93,7 @@ public:
       case IRI_GEN::UNOPDelMemberExpr: return 0;
       case IRI_GEN::UNOPDelVar: return 1;
       case IRI_GEN::JSTemplate: return 0;
-      case IRI_GEN::BitInt: return 1;
+      case IRI_GEN::JSBigInt: return 1;
       case IRI_GEN::Await: return 0;
       case IRI_GEN::Yield: return 0;
       case IRI_GEN::JSInitialYield: return 0;
@@ -439,8 +439,7 @@ public:
         break;
       case IRI_GEN::PoolBinding:
         switch(flag) {
-        case IRI_GEN::StartBBIDX: return 0;
-        case IRI_GEN::REFIDX: return 1;
+        case IRI_GEN::REFIDX: return 0;
           default: return -1;
         }
         break;
@@ -556,7 +555,7 @@ public:
           default: return -1;
         }
         break;
-      case IRI_GEN::BitInt:
+      case IRI_GEN::JSBigInt:
         switch(flag) {
         case IRI_GEN::IridiumPrimitive: return 0;
           default: return -1;
@@ -940,8 +939,7 @@ public:
         break;
       case IRI_GEN::PoolBinding:
         switch(index) {
-        case 0: return IRI_GEN::StartBBIDX;
-        case 1: return IRI_GEN::REFIDX;
+        case 0: return IRI_GEN::REFIDX;
           default: throw std::runtime_error("Invalid flag index");
         }
         break;
@@ -1057,7 +1055,7 @@ public:
           default: throw std::runtime_error("Invalid flag index");
         }
         break;
-      case IRI_GEN::BitInt:
+      case IRI_GEN::JSBigInt:
         switch(index) {
         case 0: return IRI_GEN::IridiumPrimitive;
           default: throw std::runtime_error("Invalid flag index");
