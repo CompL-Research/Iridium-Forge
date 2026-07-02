@@ -1,4 +1,4 @@
-// Generated: 2026-07-02 15:27:11
+// Generated: 2026-07-02 17:01:33
 #pragma once
 #include "Storage/Config.h"
 #include "Storage/IridiumSEXP.h"
@@ -4466,40 +4466,6 @@ using IRI_STORAGE::FlagValue;
     IRID getArg_thisObj() const { return pool->get_args(id)[1]; }
     bool hasArg_thisObj() const { return 1 < pool->get_args(id).size(); }
     void setArg_thisObj(IRID val) { assert(hasArg_thisObj() && "Tried to set missing ARG"); pool->update_arg_inplace(id,1,val); }
-
-    // --- Flags ---
-
-  };
-
-  struct NIPCatchCTXSEXP {
-    IRID id;
-    IridiumPool* pool;
-
-    explicit NIPCatchCTXSEXP(IRID n, IridiumPool& p) : id(n), pool(&p) {
-      if (pool->operator[](n).tag != IRI_GEN::NIPCatchCTX) {
-        throw std::runtime_error("Schema Cast Error: Expected NIPCatchCTX, but got " + IRI_GEN::dump_tag(pool->operator[](n).tag));
-      }
-    }
-
-    static IRID create(IridiumPool& p) {
-      return p.add_node(IRI_GEN::IRI_TAG::NIPCatchCTX, {}, {});
-    }
-
-    static constexpr uint32_t TOTAL_ARGS = 0;
-    static constexpr uint32_t TOTAL_FLAGS = 0;
-
-
-
-    // --- Helpers ---
-    inline FlagValue& mutate_flag(uint32_t idx) {
-        return pool->get_flags_m(id)[idx];
-    }
-    inline const FlagValue& get_flag(uint32_t idx) const {
-        return pool->get_flags(id)[idx];
-    }
-
-    // --- Arguments ---
-
 
     // --- Flags ---
 

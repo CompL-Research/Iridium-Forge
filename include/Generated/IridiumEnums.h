@@ -1,4 +1,4 @@
-// Generated: 2026-07-02 15:27:11
+// Generated: 2026-07-02 17:01:33
 #pragma once
 #include <string>
 
@@ -103,7 +103,6 @@ namespace IRI_GEN {
     RWrite,
     MWrite,
     DCTRRet,
-    NIPCatchCTX,
     ToNumeric,
     JSCTX,
     QJSModuleInit,
@@ -211,7 +210,6 @@ namespace IRI_GEN {
       case RWrite: return "RWrite";
       case MWrite: return "MWrite";
       case DCTRRet: return "DCTRRet";
-      case NIPCatchCTX: return "NIPCatchCTX";
       case ToNumeric: return "ToNumeric";
       case JSCTX: return "JSCTX";
       case QJSModuleInit: return "QJSModuleInit";

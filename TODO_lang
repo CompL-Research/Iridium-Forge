@@ -16,5 +16,3 @@ Create a pass for checking stack consistency.
 If a catch arg can capture the arg init environment then use the special routine.
 
 Rename JSIDOP and IDOP, to be more meaningful like FieldIncDecOP and ComputedFieldIncDecOP.
-
-Need for NIPCatchCTX may not be needed in Iridium, we just need to ensure all catch ctx's are nipped before the ctr check happens. What about finalizers? need to check

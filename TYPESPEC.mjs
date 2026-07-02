@@ -990,16 +990,6 @@ export default [
     }
   },
   {
-    "tag": "NIPCatchCTX",
-    "args": [],
-    "flags": {
-      "string": [],
-      "void": [],
-      "bool": [],
-      "double": [],
-    }
-  },
-  {
     "tag": "ToNumeric",
     "args": ["Obj"],
     "flags": {

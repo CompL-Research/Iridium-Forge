@@ -1,4 +1,4 @@
-// Generated: 2026-07-02 15:27:11
+// Generated: 2026-07-02 17:01:33
 #pragma once
 #include "IridiumEnums.h"
 #include <cstdint>
@@ -109,7 +109,6 @@ public:
       case IRI_GEN::RWrite: return 3;
       case IRI_GEN::MWrite: return 2;
       case IRI_GEN::DCTRRet: return 0;
-      case IRI_GEN::NIPCatchCTX: return 0;
       case IRI_GEN::ToNumeric: return 0;
       case IRI_GEN::JSCTX: return 1;
       case IRI_GEN::QJSModuleInit: return 0;
