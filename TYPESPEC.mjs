@@ -562,6 +562,7 @@ export default [
   },
   {
     "tag": "PopFinalizerReturnTarget",
+    "meta": "STMT",
     "args": [],
     "flags": {
       "string": [],
@@ -572,6 +573,7 @@ export default [
   },
   {
     "tag": "InvokeFinalizer",
+    "meta": "STMT",
     "args": [],
     "flags": {
       "string": [],
@@ -582,6 +584,7 @@ export default [
   },
   {
     "tag": "JSForInStart",
+    "meta": "RVAL",
     "args": ["Obj"],
     "flags": {
       "string": [],
@@ -592,6 +595,7 @@ export default [
   },
   {
     "tag": "JSForInNext",
+    "meta": "RVAL",
     "args": ["IteratorObj"],
     "flags": {
       "string": [],
@@ -602,6 +606,7 @@ export default [
   },
   {
     "tag": "JSForOfStart",
+    "meta": "STMT",
     "args": ["Obj"],
     "flags": {
       "string": [],
@@ -612,6 +617,7 @@ export default [
   },
   {
     "tag": "JSForOfNext",
+    "meta": "RVAL",
     "args": ["Obj"],
     "flags": {
       "string": [],
@@ -622,6 +628,7 @@ export default [
   },
   {
     "tag": "PushCatchContext",
+    "meta": "STMT",
     "args": [],
     "flags": {
       "string": [],
@@ -632,6 +639,7 @@ export default [
   },
   {
     "tag": "JSCatchContext",
+    "meta": "AMP",
     "args": [],
     "flags": {
       "string": ["NAME"],
@@ -642,6 +650,7 @@ export default [
   },
   {
     "tag": "Throw",
+    "meta": "STMT",
     "args": ["ThrowVal"],
     "flags": {
       "string": [],
@@ -652,6 +661,7 @@ export default [
   },
   {
     "tag": "Ret",
+    "meta": "STMT",
     "args": [],
     "flags": {
       "string": [],
@@ -662,6 +672,7 @@ export default [
   },
   {
     "tag": "JSBinop",
+    "meta": "RVAL",
     "args": ["LBinop", "RBinop"],
     "flags": {
       "string": ["OP"],
@@ -672,6 +683,7 @@ export default [
   },
   {
     "tag": "FieldWrite",
+    "meta": "STMT",
     "args": ["Obj", "Field", "Value"],
     "flags": {
       "string": [],
@@ -682,6 +694,7 @@ export default [
   },
   {
     "tag": "JSUnop",
+    "meta": "RVAL",
     "args": ["Val"],
     "flags": {
       "string": ["OP"],
@@ -692,6 +705,7 @@ export default [
   },
   {
     "tag": "Unop",
+    "meta": "RVAL",
     "args": ["Val"],
     "flags": {
       "string": ["OP"],
@@ -702,6 +716,7 @@ export default [
   },
   {
     "tag": "JSObject",
+    "meta": "RVAL",
     "args": [],
     "flags": {
       "string": [],
@@ -712,6 +727,7 @@ export default [
   },
   {
     "tag": "Boolean",
+    "meta": "RVAL",
     "args": [],
     "flags": {
       "string": [],
@@ -722,6 +738,7 @@ export default [
   },
   {
     "tag": "JSDefineObjProp",
+    "meta": "STMT",
     "args": ["TargetObj", "Key", "Value"],
     "flags": {
       "string": [],
@@ -732,6 +749,7 @@ export default [
   },
   {
     "tag": "JSArray",
+    "meta": "RVAL",
     "args": [],
     "flags": {
       "string": [],
@@ -742,6 +760,7 @@ export default [
   },
   {
     "tag": "Binop",
+    "meta": "RVAL",
     "args": ["LBinop", "RBinop"],
     "flags": {
       "string": ["OP"],
@@ -752,6 +771,7 @@ export default [
   },
   {
     "tag": "Null",
+    "meta": "RVAL",
     "args": [],
     "flags": {
       "string": [],
@@ -762,6 +782,7 @@ export default [
   },
   {
     "tag": "JSComputedFieldRead",
+    "meta": "RVAL",
     "args": ["Obj", "Field"],
     "flags": {
       "string": [],
@@ -772,6 +793,7 @@ export default [
   },
   {
     "tag": "JSComputedFieldWrite",
+    "meta": "STMT",
     "args": ["Obj", "Field", "Value"],
     "flags": {
       "string": [],
@@ -782,6 +804,7 @@ export default [
   },
   {
     "tag": "JSSuperFieldRead",
+    "meta": "RVAL",
     "args": ["This", "Super", "Field"],
     "flags": {
       "string": [],
@@ -792,6 +815,7 @@ export default [
   },
   {
     "tag": "JSSuperFieldWrite",
+    "meta": "STMT",
     "args": ["This", "Super", "Field", "Value"],
     "flags": {
       "string": [],
@@ -802,6 +826,7 @@ export default [
   },
   {
     "tag": "JSToObject",
+    "meta": "RVAL",
     "args": ["TargetObj"],
     "flags": {
       "string": [],
@@ -812,6 +837,7 @@ export default [
   },
   {
     "tag": "JSAppend",
+    "meta": "RVAL",
     "args": ["TargetObj", "InsertionIdx", "SpreadObj"],
     "flags": {
       "string": [],
@@ -822,6 +848,7 @@ export default [
   },
   {
     "tag": "JSDefineObjMethod",
+    "meta": "STMT",
     "args": ["TargetObj", "Key", "Value"],
     "flags": {
       "string": [],
@@ -832,6 +859,7 @@ export default [
   },
   {
     "tag": "JSCopyDataProperties",
+    "meta": "RVAL",
     "args": ["ExclusionObj", "SourceObj", "TargetObj"],
     "flags": {
       "string": [],
@@ -842,6 +870,7 @@ export default [
   },
   {
     "tag": "RegExp",
+    "meta": "RVAL",
     "args": [],
     "flags": {
       "string": ["EXP", "FLAGS"],
@@ -852,6 +881,7 @@ export default [
   },
   {
     "tag": "UNOPDelMemberExpr",
+    "meta": "RVAL",
     "args": ["Receiver", "Field"],
     "flags": {
       "string": [],
@@ -862,6 +892,7 @@ export default [
   },
   {
     "tag": "UNOPDelVar",
+    "meta": "RVAL",
     "args": [],
     "flags": {
       "string": ["NAME"],
@@ -872,6 +903,7 @@ export default [
   },
   {
     "tag": "JSTemplate",
+    "meta": "RVAL",
     "args": [],
     "flags": {
       "string": [],
@@ -882,6 +914,7 @@ export default [
   },
   {
     "tag": "JSBigInt",
+    "meta": "RVAL",
     "args": [],
     "flags": {
       "string": ["IridiumPrimitive"],
@@ -892,6 +925,7 @@ export default [
   },
   {
     "tag": "Await",
+    "meta": "RVAL",
     "args": ["Obj"],
     "flags": {
       "string": [],
@@ -902,6 +936,7 @@ export default [
   },
   {
     "tag": "Yield",
+    "meta": "RVAL",
     "args": ["Obj"],
     "flags": {
       "string": [],
@@ -912,6 +947,7 @@ export default [
   },
   {
     "tag": "JSInitialYield",
+    "meta": "STMT",
     "args": [],
     "flags": {
       "string": [],
@@ -922,6 +958,7 @@ export default [
   },
   {
     "tag": "IDOP",
+    "meta": "RVAL",
     "args": ["Obj"],
     "flags": {
       "string": [],
@@ -932,6 +969,7 @@ export default [
   },
   {
     "tag": "JSIDOP",
+    "meta": "RVAL",
     "args": ["Obj"],
     "flags": {
       "string": [],
@@ -942,6 +980,7 @@ export default [
   },
   {
     "tag": "StackToHeap",
+    "meta": "STMT",
     "args": [],
     "flags": {
       "string": [],
@@ -952,6 +991,7 @@ export default [
   },
   {
     "tag": "LoopInitPreludeEnd",
+    "meta": "*STMT",
     "args": [],
     "flags": {
       "string": [],
@@ -962,6 +1002,7 @@ export default [
   },
   {
     "tag": "JSSetHome",
+    "meta": "STMT",
     "args": ["HomeObj", "FuncObj"],
     "flags": {
       "string": [],
@@ -972,6 +1013,7 @@ export default [
   },
   {
     "tag": "JSSetName",
+    "meta": "STMT",
     "args": ["obj", "name"],
     "flags": {
       "string": [],
@@ -982,6 +1024,7 @@ export default [
   },
   {
     "tag": "JSSetPrototypeOf",
+    "meta": "STMT",
     "args": ["TargetObj", "ProtoValue"],
     "flags": {
       "string": [],
@@ -992,6 +1035,7 @@ export default [
   },
   {
     "tag": "GWrite",
+    "meta": "STMT",
     "args": ["LValTarget", "RVal"],
     "flags": {
       "string": [],
@@ -1002,6 +1046,7 @@ export default [
   },
   {
     "tag": "LWrite",
+    "meta": "STMT",
     "args": ["LValTarget", "RVal"],
     "flags": {
       "string": [],
@@ -1012,6 +1057,7 @@ export default [
   },
   {
     "tag": "RWrite",
+    "meta": "STMT",
     "args": ["LValTarget", "RVal"],
     "flags": {
       "string": [],
@@ -1022,6 +1068,7 @@ export default [
   },
   {
     "tag": "MWrite",
+    "meta": "STMT",
     "args": ["LValTarget", "RVal"],
     "flags": {
       "string": [],
@@ -1032,6 +1079,7 @@ export default [
   },
   {
     "tag": "DCTRRet",
+    "meta": "RVAL",
     "args": ["userObj", "thisObj"],
     "flags": {
       "string": [],
@@ -1042,6 +1090,7 @@ export default [
   },
   {
     "tag": "ToNumeric",
+    "meta": "RVAL",
     "args": ["Obj"],
     "flags": {
       "string": [],
@@ -1052,6 +1101,7 @@ export default [
   },
   {
     "tag": "JSCTX",
+    "meta": "RVAL",
     "args": [],
     "flags": {
       "string": [],
@@ -1062,6 +1112,7 @@ export default [
   },
   {
     "tag": "QJSModuleInit",
+    "meta": "STMT",
     "args": [],
     "flags": {
       "string": [],
@@ -1072,6 +1123,7 @@ export default [
   },
   {
     "tag": "CompoundAssn",
+    "meta": "STMT",
     "args": [],
     "flags": {
       "string": [],
