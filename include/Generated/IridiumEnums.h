@@ -1,8 +1,9 @@
-// Generated: 2026-07-03 00:01:43
+// Generated: 2026-07-07 00:52:30
 #pragma once
 #include <string>
 
 namespace IRI_GEN {
+
   enum IRI_TAG {
     File,
     ResolveEnvBinding,
@@ -390,4 +391,124 @@ namespace IRI_GEN {
       default: return "unknown_flag";
     }
   }
+
+  enum IRI_META {
+    ERROR,
+    UKN,
+    STAR_RVAL,
+    STAR_STMT,
+    AMP,
+    RVAL,
+    STMT,
+  };
+
+  inline IRI_META get_meta(IRI_TAG value) {
+    switch(value) {
+      case File: return IRI_META::UKN;
+      case ResolveEnvBinding: return IRI_META::STAR_RVAL;
+      case List: return IRI_META::UKN;
+      case JSImplicitBindingDeclaration: return IRI_META::STAR_STMT;
+      case EnvRead: return IRI_META::AMP;
+      case TDZRead: return IRI_META::STAR_STMT;
+      case String: return IRI_META::RVAL;
+      case FieldRead: return IRI_META::AMP;
+      case JSExplicitBindingDeclaration: return IRI_META::STAR_STMT;
+      case JSExplicitBindingDeclarationN: return IRI_META::STAR_STMT;
+      case JSExplicitBindingDeclarationX: return IRI_META::STAR_STMT;
+      case CallSite: return IRI_META::AMP;
+      case Apply: return IRI_META::AMP;
+      case ReturnAsync: return IRI_META::STMT;
+      case BB: return IRI_META::UKN;
+      case Return: return IRI_META::STMT;
+      case UnresolvedReturn: return IRI_META::STAR_STMT;
+      case IfJump: return IRI_META::STMT;
+      case IfElseJump: return IRI_META::STMT;
+      case Goto: return IRI_META::STMT;
+      case JSFuncDecl: return IRI_META::STAR_STMT;
+      case Lambda: return IRI_META::RVAL;
+      case NOP: return IRI_META::STMT;
+      case BBContainer: return IRI_META::UKN;
+      case Bindings: return IRI_META::UKN;
+      case StarExport: return IRI_META::UKN;
+      case StaticImport: return IRI_META::UKN;
+      case LocalStaticExport: return IRI_META::UKN;
+      case NamedReexport: return IRI_META::UKN;
+      case ModuleRequest: return IRI_META::UKN;
+      case EnvBinding: return IRI_META::RVAL;
+      case RemoteEnvBinding: return IRI_META::RVAL;
+      case GlobalBinding: return IRI_META::RVAL;
+      case ScriptBinding: return IRI_META::RVAL;
+      case EnvWrite: return IRI_META::STAR_STMT;
+      case SiblingSpecialWrite: return IRI_META::STAR_STMT;
+      case JSNUBD: return IRI_META::RVAL;
+      case Number: return IRI_META::RVAL;
+      case JSClass: return IRI_META::RVAL;
+      case JSCheckConstructor: return IRI_META::STMT;
+      case ResolvePrivateEnvBinding: return IRI_META::STAR_RVAL;
+      case PVTEnvRead: return IRI_META::RVAL;
+      case JSPrivate: return IRI_META::RVAL;
+      case JSPrivateFieldWrite: return IRI_META::STMT;
+      case JSADDBRAND: return IRI_META::STMT;
+      case JSPrivateFieldRead: return IRI_META::AMP;
+      case PoolBinding: return IRI_META::RVAL;
+      case ResolveContinueTarget: return IRI_META::STAR_STMT;
+      case ResolveBreakTarget: return IRI_META::STAR_STMT;
+      case JSForOfIteratorClose: return IRI_META::STMT;
+      case PopCatchContext: return IRI_META::STMT;
+      case PopFinalizerReturnTarget: return IRI_META::STMT;
+      case InvokeFinalizer: return IRI_META::STMT;
+      case JSForInStart: return IRI_META::RVAL;
+      case JSForInNext: return IRI_META::RVAL;
+      case JSForOfStart: return IRI_META::STMT;
+      case JSForOfNext: return IRI_META::RVAL;
+      case PushCatchContext: return IRI_META::STMT;
+      case JSCatchContext: return IRI_META::AMP;
+      case Throw: return IRI_META::STMT;
+      case Ret: return IRI_META::STMT;
+      case JSBinop: return IRI_META::RVAL;
+      case FieldWrite: return IRI_META::STMT;
+      case JSUnop: return IRI_META::RVAL;
+      case Unop: return IRI_META::RVAL;
+      case JSObject: return IRI_META::RVAL;
+      case Boolean: return IRI_META::RVAL;
+      case JSDefineObjProp: return IRI_META::STMT;
+      case JSArray: return IRI_META::RVAL;
+      case Binop: return IRI_META::RVAL;
+      case Null: return IRI_META::RVAL;
+      case JSComputedFieldRead: return IRI_META::RVAL;
+      case JSComputedFieldWrite: return IRI_META::STMT;
+      case JSSuperFieldRead: return IRI_META::RVAL;
+      case JSSuperFieldWrite: return IRI_META::STMT;
+      case JSToObject: return IRI_META::RVAL;
+      case JSAppend: return IRI_META::RVAL;
+      case JSDefineObjMethod: return IRI_META::STMT;
+      case JSCopyDataProperties: return IRI_META::RVAL;
+      case RegExp: return IRI_META::RVAL;
+      case UNOPDelMemberExpr: return IRI_META::RVAL;
+      case UNOPDelVar: return IRI_META::RVAL;
+      case JSTemplate: return IRI_META::RVAL;
+      case JSBigInt: return IRI_META::RVAL;
+      case Await: return IRI_META::RVAL;
+      case Yield: return IRI_META::RVAL;
+      case JSInitialYield: return IRI_META::STMT;
+      case IDOP: return IRI_META::RVAL;
+      case JSIDOP: return IRI_META::RVAL;
+      case StackToHeap: return IRI_META::STMT;
+      case LoopInitPreludeEnd: return IRI_META::STAR_STMT;
+      case JSSetHome: return IRI_META::STMT;
+      case JSSetName: return IRI_META::STMT;
+      case JSSetPrototypeOf: return IRI_META::STMT;
+      case GWrite: return IRI_META::STMT;
+      case LWrite: return IRI_META::STMT;
+      case RWrite: return IRI_META::STMT;
+      case MWrite: return IRI_META::STMT;
+      case DCTRRet: return IRI_META::RVAL;
+      case ToNumeric: return IRI_META::RVAL;
+      case JSCTX: return IRI_META::RVAL;
+      case QJSModuleInit: return IRI_META::STMT;
+      case CompoundAssn: return IRI_META::STMT;
+      default: return IRI_META::ERROR;
+    }
+  }
+
 } // namespace IRI_GEN
