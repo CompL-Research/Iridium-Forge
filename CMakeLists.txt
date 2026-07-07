@@ -19,6 +19,23 @@ if(NOT small_POPULATED)
     add_subdirectory(${small_SOURCE_DIR} ${small_BINARY_DIR} EXCLUDE_FROM_ALL)
 endif()
 
+FetchContent_Declare(immer
+    GIT_REPOSITORY https://github.com/arximboldi/immer.git
+    GIT_TAG v0.8.1
+)
+
+FetchContent_GetProperties(immer)
+if(NOT immer_POPULATED)
+    FetchContent_Populate(immer)
+    set(immer_BUILD_TESTS OFF CACHE BOOL "Build tests" FORCE)
+    set(immer_BUILD_EXAMPLES OFF CACHE BOOL "Build examples" FORCE)
+    set(immer_BUILD_DOCS OFF CACHE BOOL "Build docs" FORCE)
+    set(immer_BUILD_EXTRAS OFF CACHE BOOL "Build extras" FORCE)
+    add_subdirectory(${immer_SOURCE_DIR} ${immer_BINARY_DIR} EXCLUDE_FROM_ALL)
+endif()
+
+
+
 
 if(CCACHE_PROGRAM)
     # Set the launchers
@@ -91,5 +108,5 @@ target_compile_features(forge PRIVATE cxx_std_20)
 # ----------------------
 # Link "small"
 # ----------------------
-target_link_libraries(iridiumForge PUBLIC small::small)
-target_link_libraries(forge PUBLIC small::small)
+target_link_libraries(iridiumForge PUBLIC small::small immer)
+target_link_libraries(forge PUBLIC small::small immer)
