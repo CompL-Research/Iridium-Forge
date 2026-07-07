@@ -15,6 +15,8 @@
 #include <stdexcept> // For std::runtime_error
 #include <string>
 #include <vector>
+#include <algorithm>
+#include <set>
 
 namespace IRI_STRUCTURAL {
 using namespace IRI_STORAGE;
@@ -28,7 +30,7 @@ IRIBB::IRIBB(double ss, double i, IRICFG *c, IRI_STORAGE::IridiumPool &p)
 IRIBB::~IRIBB() {
   IRIStatement *curr = head;
   while (curr != nullptr) {
-    auto & next = curr->next;
+    IRIStatement *next = curr->next;
     delete curr;
     curr = next;
   }
@@ -270,7 +272,14 @@ IRICFG::IRICFG(IRI_STORAGE::IRID i, IRI_STORAGE::IridiumPool &p)
       IRIBB *postBB = nodeMap[postBBIDX].get();
       worklist.insert(postBB);
       postBB->head = curr->next;
-      postBB->tail = new IRIStatement(bb->tail->id, bb);
+      postBB->tail = new IRIStatement(bb->tail->id, postBB); // Pass postBB, not bb
+
+      if (postBB->head != nullptr) {
+        postBB->head->prev = nullptr;
+        for (IRIStatement *s = postBB->head; s != nullptr; s = s->next) {
+          s->bb = postBB;
+        }
+      }
 
       // Forward successors of the currentBB to PostBB
       for (auto & s : successors[bb->IDX]) {
@@ -291,7 +300,6 @@ IRICFG::IRICFG(IRI_STORAGE::IRID i, IRI_STORAGE::IridiumPool &p)
         curr->prev->next = nullptr;
       } else {
         bb->head = nullptr;
-        assert(bb->head == curr);
       }
 
       // Set the invoke finalizer as the terminal
@@ -440,4 +448,37 @@ void IRICFG::commit() {
 
   pool.set_args(newBBList, newBBS);
 }
+
+std::vector<BBIDX> IRICFG::getReversePostOrder(bool includeExceptions) const {
+  std::vector<BBIDX> postOrder;
+  std::set<BBIDX> visited;
+
+  std::function<void(BBIDX)> dfs = [&](BBIDX u) {
+    visited.insert(u);
+    auto it = successors.find(u);
+    if (it != successors.end()) {
+      for (BBIDX v : it->second) {
+        if (!visited.contains(v)) {
+          dfs(v);
+        }
+      }
+    }
+    if (includeExceptions) {
+      auto nodeIt = nodeMap.find(u);
+      if (nodeIt != nodeMap.end() && nodeIt->second->EXCEPTION > -1) {
+        BBIDX exc = nodeIt->second->EXCEPTION;
+        if (!visited.contains(exc)) {
+          dfs(exc);
+        }
+      }
+    }
+    postOrder.push_back(u);
+  };
+
+  dfs(entry_block);
+
+  std::reverse(postOrder.begin(), postOrder.end());
+  return postOrder;
+}
+
 } // namespace IRI_STRUCTURAL

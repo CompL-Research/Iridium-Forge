@@ -3,6 +3,9 @@
 #include "Storage/Config.h"
 #include "Storage/IridiumPool.h"
 #include <unordered_map>
+#include <vector>
+#include <set>
+
 
 namespace IRI_STRUCTURAL {
 
@@ -64,6 +67,10 @@ struct IRICFG {
 
   // Reconstruct the BB SEXP
   void commit();
+
+  // Compute Reverse Post-Order (RPO) of basic block indices
+  std::vector<BBIDX> getReversePostOrder(bool includeExceptions = false) const;
 };
+
 
 } // namespace IRI_STRUCTURAL
