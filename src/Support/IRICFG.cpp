@@ -13,6 +13,7 @@
 #include <iostream>
 #include <memory>
 #include <stdexcept> // For std::runtime_error
+#include <string>
 #include <vector>
 
 namespace IRI_STRUCTURAL {
@@ -303,6 +304,20 @@ IRICFG::IRICFG(IRI_STORAGE::IRID i, IRI_STORAGE::IridiumPool &p)
       delete curr;
       successors[bb->IDX].insert(finalizerEntryIDX);
       predecessors[finalizerEntryIDX].insert(bb->IDX);
+    }
+  }
+
+  for (auto & e : nodeMap) {
+    IRIStatement *curr = e.second->head;
+    while (curr != nullptr) {
+      IRI_GEN::IRI_META currMeta = IRI_GEN::get_meta(pool[curr->id].tag);
+      if (currMeta == IRI_GEN::IRI_META::STMT || currMeta == IRI_GEN::IRI_META::AMP) {
+        // TYPE OK
+      } else {
+        std::cerr << IRI_GEN::dump_tag(pool[curr->id].tag) << " expected STMT, found: " << std::to_string(currMeta) << std::endl;
+        throw new std::runtime_error("STMT err");
+      }
+      curr = curr->next;
     }
   }
 }
