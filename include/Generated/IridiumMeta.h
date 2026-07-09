@@ -1,4 +1,4 @@
-// Generated: 2026-07-07 00:52:30
+// Generated: 2026-07-08 22:31:52
 #pragma once
 #include "IridiumEnums.h"
 #include <cstdint>
@@ -44,8 +44,8 @@ public:
       case IRI_GEN::RemoteEnvBinding: return 5;
       case IRI_GEN::GlobalBinding: return 2;
       case IRI_GEN::ScriptBinding: return 5;
-      case IRI_GEN::EnvWrite: return 3;
-      case IRI_GEN::SiblingSpecialWrite: return 4;
+      case IRI_GEN::EnvWrite: return 4;
+      case IRI_GEN::SiblingSpecialWrite: return 5;
       case IRI_GEN::JSNUBD: return 0;
       case IRI_GEN::Number: return 1;
       case IRI_GEN::JSClass: return 2;
@@ -385,6 +385,7 @@ public:
         case IRI_GEN::SLOPPY: return 0;
         case IRI_GEN::SAFE: return 1;
         case IRI_GEN::THISINIT: return 2;
+        case IRI_GEN::CINIT: return 3;
           default: return -1;
         }
         break;
@@ -393,7 +394,8 @@ public:
         case IRI_GEN::SLOPPY: return 0;
         case IRI_GEN::SAFE: return 1;
         case IRI_GEN::THISINIT: return 2;
-        case IRI_GEN::ScopeIDX: return 3;
+        case IRI_GEN::CINIT: return 3;
+        case IRI_GEN::ScopeIDX: return 4;
           default: return -1;
         }
         break;
@@ -885,6 +887,7 @@ public:
         case 0: return IRI_GEN::SLOPPY;
         case 1: return IRI_GEN::SAFE;
         case 2: return IRI_GEN::THISINIT;
+        case 3: return IRI_GEN::CINIT;
           default: throw std::runtime_error("Invalid flag index");
         }
         break;
@@ -893,7 +896,8 @@ public:
         case 0: return IRI_GEN::SLOPPY;
         case 1: return IRI_GEN::SAFE;
         case 2: return IRI_GEN::THISINIT;
-        case 3: return IRI_GEN::ScopeIDX;
+        case 3: return IRI_GEN::CINIT;
+        case 4: return IRI_GEN::ScopeIDX;
           default: throw std::runtime_error("Invalid flag index");
         }
         break;

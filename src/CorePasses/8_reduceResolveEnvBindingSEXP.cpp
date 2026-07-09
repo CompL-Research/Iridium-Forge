@@ -87,16 +87,20 @@ void _8_RREBS(IridiumPool &pool, IRID fileSEXP,
            IRID target;
            if (pool[lval].tag == IRI_GEN::GlobalBinding || pool[lval].tag == IRI_GEN::ScriptBinding) {
              assert(ew.getTHISINIT() == false);
-             target = GWriteSEXP::create(pool, lval, rval, ew.getSAFE(), false, false, false);
+             target = GWriteSEXP::create(pool, lval, rval, ew.getCINIT(), ew.getSAFE(), false, false);
+             // target = GWriteSEXP::create(pool, lval, rval, ew.getSAFE(), false, false, false);
            } else if (pool[lval].tag == IRI_GEN::EnvBinding) {
-             target = LWriteSEXP::create(pool, lval, rval, hasASW || ew.getSAFE(), false, ew.getTHISINIT());
+             target = LWriteSEXP::create(pool, lval, rval, ew.getCINIT(), hasASW || ew.getSAFE(), ew.getTHISINIT());
+             // target = LWriteSEXP::create(pool, lval, rval, hasASW || ew.getSAFE(), false, ew.getTHISINIT());
            } else if (pool[lval].tag == IRI_GEN::RemoteEnvBinding) {
              RemoteEnvBindingSEXP rb(lval, pool);
              if (rb.hasMODULE() || rb.hasMODULEI() || rb.hasMODULENSI()) {
                assert(ew.getTHISINIT() == false);
-               target = MWriteSEXP::create(pool, lval, rval, ew.getSAFE(), false);
+               target = MWriteSEXP::create(pool, lval, rval, ew.getCINIT(), ew.getSAFE());
+               // target = MWriteSEXP::create(pool, lval, rval, ew.getSAFE(), false);
              } else {
-               target = RWriteSEXP::create(pool, lval, rval, ew.getSAFE(), false, ew.getTHISINIT());
+               target = RWriteSEXP::create(pool, lval, rval, ew.getCINIT(), ew.getSAFE(), ew.getTHISINIT());
+               // target = RWriteSEXP::create(pool, lval, rval, ew.getSAFE(), false, ew.getTHISINIT());
              }
            }
            pool.update_arg_inplace(stmtID, i, target);
@@ -113,16 +117,20 @@ void _8_RREBS(IridiumPool &pool, IRID fileSEXP,
           IRID target;
           if (pool[lval].tag == IRI_GEN::GlobalBinding || pool[lval].tag == IRI_GEN::ScriptBinding) {
             assert(ew.getTHISINIT() == false);
-            target = GWriteSEXP::create(pool, lval, rval, ew.getSAFE(), false, false, false);
+            target = GWriteSEXP::create(pool, lval, rval, ew.getCINIT(), ew.getSAFE(), false, false);
+            // target = GWriteSEXP::create(pool, lval, rval, ew.getSAFE(), false, false, false);
           } else if (pool[lval].tag == IRI_GEN::EnvBinding) {
-            target = LWriteSEXP::create(pool, lval, rval, hasASW || ew.getSAFE(), false, ew.getTHISINIT());
+            target = LWriteSEXP::create(pool, lval, rval, ew.getCINIT(), hasASW || ew.getSAFE(), ew.getTHISINIT());
+            // target = LWriteSEXP::create(pool, lval, rval, hasASW || ew.getSAFE(), false, ew.getTHISINIT());
           } else if (pool[lval].tag == IRI_GEN::RemoteEnvBinding) {
             RemoteEnvBindingSEXP rb(lval, pool);
             if (rb.hasMODULE() || rb.hasMODULEI() || rb.hasMODULENSI()) {
               assert(ew.getTHISINIT() == false);
-              target = MWriteSEXP::create(pool, lval, rval, ew.getSAFE(), false);
+              target = MWriteSEXP::create(pool, lval, rval, ew.getCINIT(), ew.getSAFE());
+              // target = MWriteSEXP::create(pool, lval, rval, ew.getSAFE(), false);
             } else {
-              target = RWriteSEXP::create(pool, lval, rval, ew.getSAFE(), false, ew.getTHISINIT());
+              target = RWriteSEXP::create(pool, lval, rval, ew.getCINIT(), ew.getSAFE(), ew.getTHISINIT());
+              // target = RWriteSEXP::create(pool, lval, rval, ew.getSAFE(), false, ew.getTHISINIT());
             }
           }
           pool.update_arg_inplace(bbID, stmtIDX, target);

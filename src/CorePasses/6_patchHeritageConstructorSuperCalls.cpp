@@ -31,7 +31,8 @@ inline std::vector<IRID> heritageThisInit(IridiumPool & pool, StringID thisValHo
       IRI_HELPERS::createUnsafeEnvReadSEXP(pool, thisValHolder),
       false,
       false,
-      true // <- This is about the only place where we set THISINIT flag to true
+      true, // <- This is about the only place where we set THISINIT flag to true
+      false
     )
   );
 

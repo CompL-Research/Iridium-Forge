@@ -1,4 +1,4 @@
-// Generated: 2026-07-07 00:52:30
+// Generated: 2026-07-08 22:31:52
 #pragma once
 #include "Storage/Config.h"
 #include "Storage/IridiumSEXP.h"
@@ -1828,16 +1828,17 @@ using IRI_STORAGE::FlagValue;
       }
     }
 
-    static IRID create(IridiumPool& p, IRID LValTarget, IRID RVal, bool SLOPPY, bool SAFE, bool THISINIT) {
-      return p.add_node(IRI_GEN::IRI_TAG::EnvWrite, {LValTarget, RVal}, {SLOPPY ? FlagValue(SLOPPY) : FlagValue(std::monostate()), FlagValue(SAFE), FlagValue(THISINIT)});
+    static IRID create(IridiumPool& p, IRID LValTarget, IRID RVal, bool SLOPPY, bool SAFE, bool THISINIT, bool CINIT) {
+      return p.add_node(IRI_GEN::IRI_TAG::EnvWrite, {LValTarget, RVal}, {SLOPPY ? FlagValue(SLOPPY) : FlagValue(std::monostate()), FlagValue(SAFE), FlagValue(THISINIT), FlagValue(CINIT)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 2;
-    static constexpr uint32_t TOTAL_FLAGS = 3;
+    static constexpr uint32_t TOTAL_FLAGS = 4;
 
     static constexpr uint32_t FLAG_IDX_SLOPPY = 0;
     static constexpr uint32_t FLAG_IDX_SAFE = 1;
     static constexpr uint32_t FLAG_IDX_THISINIT = 2;
+    static constexpr uint32_t FLAG_IDX_CINIT = 3;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
@@ -1870,6 +1871,11 @@ using IRI_STORAGE::FlagValue;
     void setTHISINIT(bool val) { mutate_flag(FLAG_IDX_THISINIT) = val; }
     bool hasTHISINIT() const { return std::holds_alternative<bool>(get_flag(FLAG_IDX_THISINIT)); }
     void clearTHISINIT() { mutate_flag(FLAG_IDX_THISINIT) = std::monostate{}; }
+
+    bool getCINIT() const { return std::get<bool>(get_flag(FLAG_IDX_CINIT)); }
+    void setCINIT(bool val) { mutate_flag(FLAG_IDX_CINIT) = val; }
+    bool hasCINIT() const { return std::holds_alternative<bool>(get_flag(FLAG_IDX_CINIT)); }
+    void clearCINIT() { mutate_flag(FLAG_IDX_CINIT) = std::monostate{}; }
   };
 
   struct SiblingSpecialWriteSEXP {
@@ -1882,17 +1888,18 @@ using IRI_STORAGE::FlagValue;
       }
     }
 
-    static IRID create(IridiumPool& p, IRID LValTarget, IRID RVal, bool SLOPPY, bool SAFE, bool THISINIT, double ScopeIDX) {
-      return p.add_node(IRI_GEN::IRI_TAG::SiblingSpecialWrite, {LValTarget, RVal}, {SLOPPY ? FlagValue(SLOPPY) : FlagValue(std::monostate()), FlagValue(SAFE), FlagValue(THISINIT), FlagValue(ScopeIDX)});
+    static IRID create(IridiumPool& p, IRID LValTarget, IRID RVal, bool SLOPPY, bool SAFE, bool THISINIT, bool CINIT, double ScopeIDX) {
+      return p.add_node(IRI_GEN::IRI_TAG::SiblingSpecialWrite, {LValTarget, RVal}, {SLOPPY ? FlagValue(SLOPPY) : FlagValue(std::monostate()), FlagValue(SAFE), FlagValue(THISINIT), FlagValue(CINIT), FlagValue(ScopeIDX)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 2;
-    static constexpr uint32_t TOTAL_FLAGS = 4;
+    static constexpr uint32_t TOTAL_FLAGS = 5;
 
     static constexpr uint32_t FLAG_IDX_SLOPPY = 0;
     static constexpr uint32_t FLAG_IDX_SAFE = 1;
     static constexpr uint32_t FLAG_IDX_THISINIT = 2;
-    static constexpr uint32_t FLAG_IDX_ScopeIDX = 3;
+    static constexpr uint32_t FLAG_IDX_CINIT = 3;
+    static constexpr uint32_t FLAG_IDX_ScopeIDX = 4;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
@@ -1925,6 +1932,11 @@ using IRI_STORAGE::FlagValue;
     void setTHISINIT(bool val) { mutate_flag(FLAG_IDX_THISINIT) = val; }
     bool hasTHISINIT() const { return std::holds_alternative<bool>(get_flag(FLAG_IDX_THISINIT)); }
     void clearTHISINIT() { mutate_flag(FLAG_IDX_THISINIT) = std::monostate{}; }
+
+    bool getCINIT() const { return std::get<bool>(get_flag(FLAG_IDX_CINIT)); }
+    void setCINIT(bool val) { mutate_flag(FLAG_IDX_CINIT) = val; }
+    bool hasCINIT() const { return std::holds_alternative<bool>(get_flag(FLAG_IDX_CINIT)); }
+    void clearCINIT() { mutate_flag(FLAG_IDX_CINIT) = std::monostate{}; }
 
     double getScopeIDX() const { return std::get<double>(get_flag(FLAG_IDX_ScopeIDX)); }
     void setScopeIDX(double val) { mutate_flag(FLAG_IDX_ScopeIDX) = val; }

@@ -1,4 +1,4 @@
-// Generated: 2026-07-07 00:52:30
+// Generated: 2026-07-08 22:31:52
 #pragma once
 #include <string>
 
@@ -285,6 +285,7 @@ namespace IRI_GEN {
     MODULE,
     MODULEI,
     MODULENSI,
+    CINIT,
     FULLY_RESOLVE,
     SYMBOL,
     METHOD,
@@ -371,6 +372,7 @@ namespace IRI_GEN {
       case MODULE: return "MODULE";
       case MODULEI: return "MODULEI";
       case MODULENSI: return "MODULENSI";
+      case CINIT: return "CINIT";
       case FULLY_RESOLVE: return "FULLY_RESOLVE";
       case SYMBOL: return "SYMBOL";
       case METHOD: return "METHOD";

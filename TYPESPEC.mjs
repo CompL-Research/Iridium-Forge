@@ -380,7 +380,7 @@ export default [
     "flags": {
       "string": [],
       "void": ["SLOPPY"],
-      "bool": ["SAFE", "THISINIT"],
+      "bool": ["SAFE", "THISINIT", "CINIT"],
       "double": [],
     }
   },
@@ -391,7 +391,7 @@ export default [
     "flags": {
       "string": [],
       "void": ["SLOPPY"],
-      "bool": ["SAFE", "THISINIT"],
+      "bool": ["SAFE", "THISINIT", "CINIT"],
       "double": ["ScopeIDX"],
     }
   },
