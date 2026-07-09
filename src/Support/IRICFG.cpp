@@ -55,6 +55,81 @@ void IRIBB::append(IRIStatement *inst) {
   inst->prev = last;
 }
 
+void IRIBB::remove(IRIStatement *inst) {
+  if (inst == nullptr) return;
+  if (inst == tail) {
+    tail = nullptr;
+    delete inst;
+    return;
+  }
+  if (inst->prev != nullptr) {
+    inst->prev->next = inst->next;
+  } else {
+    head = inst->next;
+  }
+  if (inst->next != nullptr) {
+    inst->next->prev = inst->prev;
+  }
+  delete inst;
+}
+
+void IRIBB::insertBefore(IRIStatement *inst, IRIStatement *before) {
+  if (inst == nullptr) return;
+  if (before == nullptr) {
+    append(inst);
+    return;
+  }
+  inst->next = before;
+  inst->prev = before->prev;
+  if (before->prev != nullptr) {
+    before->prev->next = inst;
+  } else {
+    head = inst;
+  }
+  before->prev = inst;
+}
+
+void IRIBB::insertAfter(IRIStatement *inst, IRIStatement *after) {
+  if (inst == nullptr) return;
+  if (after == nullptr) {
+    inst->next = head;
+    inst->prev = nullptr;
+    if (head != nullptr) {
+      head->prev = inst;
+    }
+    head = inst;
+    return;
+  }
+  inst->prev = after;
+  inst->next = after->next;
+  if (after->next != nullptr) {
+    after->next->prev = inst;
+  }
+  after->next = inst;
+}
+
+void IRIBB::replace(IRIStatement *oldInst, IRIStatement *newInst) {
+  if (oldInst == nullptr || newInst == nullptr) return;
+  if (oldInst == tail) {
+    tail = newInst;
+    newInst->prev = nullptr;
+    newInst->next = nullptr;
+    delete oldInst;
+    return;
+  }
+  newInst->prev = oldInst->prev;
+  newInst->next = oldInst->next;
+  if (oldInst->prev != nullptr) {
+    oldInst->prev->next = newInst;
+  } else {
+    head = newInst;
+  }
+  if (oldInst->next != nullptr) {
+    oldInst->next->prev = newInst;
+  }
+  delete oldInst;
+}
+
 static bool isValidBBTerminal(IRI_GEN::IRI_TAG tag, IridiumPool &pool) {
   if (ReturnAsync == tag)
     return true;

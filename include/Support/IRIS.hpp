@@ -91,6 +91,14 @@ public:
 
   std::vector<IRI_STORAGE::IRID> getBindingsToMoveToHeap(double startScope, double endScope);
 
+  std::vector<IRI_STORAGE::IRID> getBindingsInClosure(double headScope);
+
+  std::vector<IRI_STORAGE::IRID> getEnvBindingsAtScope(double scope);
+  std::vector<IRI_STORAGE::IRID> getRemoteEnvBindingsAtScope(double scope);
+
+  std::vector<IRI_STORAGE::IRID> getEnvBindingsInClosure(double headScope);
+  std::vector<IRI_STORAGE::IRID> getRemoteEnvBindingsInClosure(double headScope);
+
   void ensureExportedBindingIsModuleBinding(StringID id) {
     exportedModuleBindings.insert(id);
   }

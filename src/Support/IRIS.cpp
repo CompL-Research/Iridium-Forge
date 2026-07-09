@@ -770,6 +770,61 @@ std::vector<IRI_STORAGE::IRID> IRIS::getBindingsToMoveToHeap(double startScope,
   return res;
 }
 
+std::vector<IRI_STORAGE::IRID> IRIS::getBindingsInClosure(double headScope) {
+  assert(scopeHead.contains(headScope));
+  std::vector<IRI_STORAGE::IRID> res;
+
+  std::function<void(double, bool)> traverse = [&](double currScope, bool isHead) {
+    if (!isHead && scopeHead.contains(currScope)) {
+      return;
+    }
+
+    auto scopeIt = scopeBindings.find(currScope);
+    if (scopeIt != scopeBindings.end()) {
+      for (auto &[_, bID] : scopeIt->second) {
+        res.push_back(bID);
+      }
+    }
+
+    if (inEdges.contains(currScope)) {
+      for (double child : inEdges.at(currScope)) {
+        traverse(child, false);
+      }
+    }
+  };
+
+  traverse(headScope, true);
+  return res;
+}
+
+std::vector<IRI_STORAGE::IRID> IRIS::getEnvBindingsAtScope(double scope) {
+  return IRI_STRUCTURAL::getEnvBindings(scopeBindings, scope, pool);
+}
+
+std::vector<IRI_STORAGE::IRID> IRIS::getRemoteEnvBindingsAtScope(double scope) {
+  return IRI_STRUCTURAL::getRemoteEnvBindings(scopeBindings, scope, pool);
+}
+
+std::vector<IRI_STORAGE::IRID> IRIS::getEnvBindingsInClosure(double headScope) {
+  std::vector<IRI_STORAGE::IRID> res;
+  for (auto bID : getBindingsInClosure(headScope)) {
+    if (pool[bID].tag == IRI_GEN::EnvBinding) {
+      res.push_back(bID);
+    }
+  }
+  return res;
+}
+
+std::vector<IRI_STORAGE::IRID> IRIS::getRemoteEnvBindingsInClosure(double headScope) {
+  std::vector<IRI_STORAGE::IRID> res;
+  for (auto bID : getBindingsInClosure(headScope)) {
+    if (pool[bID].tag == IRI_GEN::RemoteEnvBinding) {
+      res.push_back(bID);
+    }
+  }
+  return res;
+}
+
 void IRIS::dumpBindingsAtScope(std::ostream &oss, double currScope) const {
   if (!scopeBindings.contains(currScope)) {
     oss << "[No bindings]";

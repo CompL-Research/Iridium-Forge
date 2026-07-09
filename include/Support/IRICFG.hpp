@@ -38,6 +38,10 @@ struct IRIBB {
 
   ~IRIBB();
   void append(IRIStatement *inst);
+  void remove(IRIStatement *inst);
+  void insertBefore(IRIStatement *inst, IRIStatement *before);
+  void insertAfter(IRIStatement *inst, IRIStatement *after);
+  void replace(IRIStatement *oldInst, IRIStatement *newInst);
   explicit IRIBB(double, double, IRICFG *, IRI_STORAGE::IridiumPool &);
 
   void setTerminal(IRID);
