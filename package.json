@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "forge.ts",
   "config": {
-    "info": "DEBUG_STORAGE;DEBUG_TIME_IRIS",
+    "info": "DEBUG_STORAGE;DEBUG_TIME_IRIS;DEBUG_TDZ",
     "dump": "DUMP_CORE_PASSES;DUMP_CFG_DOTS",
     "others": "DEBUG_DECORATOR_PASS;PRINT_TAINT_TREE;DUMP_CFG_DOTS"
   },

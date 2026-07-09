@@ -5,10 +5,12 @@
 #include "Support/FileSupport.hpp"
 #include "Support/IRIS.hpp"
 #include "Support/ClosureTree.hpp"
+#include "Analysis/MTDZS.h"
 #include "IRIPerf.h"
 #include "Storage/Config.h"
 #if DUMP_CORE_PASSES == 1
 #include <fstream>
+#include <sstream>
 #endif
 #include <memory>
 #include <unordered_map>
@@ -70,7 +72,7 @@ inline void normalizeIRIDIUM(
   runPass("_21_TER", IRI_CORE_PASSES::_21_TER);
   runPass("_22_ESTKTHM", IRI_CORE_PASSES::_22_ESTKTHM);
   // runPass("_23_RIB", IRI_CORE_PASSES::_23_RIB);
-  runPass("_CLEANUP_", IRI_CORE_PASSES::_FNOPS);
+  runPass("_AFTER_CORE_PASSES_", IRI_CORE_PASSES::_FNOPS);
 
   // Initialize closure tree and create CFGs
   IRID treeRoot = IRI_HELPERS::getTopLevelContainer(pool, sexp);
@@ -85,13 +87,76 @@ inline void normalizeIRIDIUM(
   // Must happen after the tree is created and all closures have already been added
   pool.iris->populateCClosuresInTree();
 
+  AnalysisManager am;
+  PassManager pm;
+  pm.addPass(MTDZSPass());
+
+  iriPerf.tick("_24_MTDZS");
+  pool.closureTree->preorderTraversal([&](IRICFG* cfgCTX) {
+    pm.run(*cfgCTX, am);
+  });
+  iriPerf.tock("_24_MTDZS");
+
   // Commit closure level bindings
   pool.closureTree->commit();
+  dump("AFTER_OPT_PASSES");
+
+#if DUMP_CORE_PASSES == 1
+  {
+    std::ofstream outFile("AFTER_OPT_PASSES.tdzadump");
+    TDZATransfer transfer;
+    pool.closureTree->preorderTraversal([&](IRICFG* cfgCTX) {
+      BBContainerSupport bbc(cfgCTX->id, cfgCTX->pool);
+      outFile << "Closure " << bbc.getStartBBIDX() << ":\n";
+      TDZAnalysis analysis;
+      TDZAnalysisResult tdzResult = analysis.run(*cfgCTX, am);
+      for (const auto& [idx, bb] : cfgCTX->nodeMap) {
+        outFile << "  BB" << idx << ":\n";
+        TDZState state = tdzResult.getBlockEntryState(idx);
+        IRIStatement *curr = bb->head;
+        while (curr != nullptr) {
+          outFile << "    [State: ";
+          state.dump(pool, outFile);
+          outFile << "]\n";
+          
+          std::stringstream ss;
+          pool[curr->id].dumpFlat(ss, &pool, 0, false);
+          std::string rawStr = ss.str();
+          std::stringstream statementLines(rawStr);
+          std::string line;
+          while (std::getline(statementLines, line)) {
+            outFile << "      " << line << "\n";
+          }
+          outFile << "\n";
+          
+          state = transfer.transferStatement(*curr, state);
+          curr = curr->next;
+        }
+        if (bb->tail != nullptr) {
+          outFile << "    [State: ";
+          state.dump(pool, outFile);
+          outFile << "]\n";
+          
+          std::stringstream ss;
+          pool[bb->tail->id].dumpFlat(ss, &pool, 0, false);
+          std::string rawStr = ss.str();
+          std::stringstream statementLines(rawStr);
+          std::string line;
+          while (std::getline(statementLines, line)) {
+            outFile << "      " << line << "\n";
+          }
+          outFile << "\n";
+        }
+      }
+      outFile << "\n";
+    });
+  }
+#endif
+
   pool.iris->commit();
 
   pool.closureTree->dumpFlat(std::cout);
   pool.iris->dumpFlat(std::cout);
-  dump("AFTER_CORE_PASSES");
 }
 
 // inline void voidPrepareForAnalysis(IridiumPool &pool) {
