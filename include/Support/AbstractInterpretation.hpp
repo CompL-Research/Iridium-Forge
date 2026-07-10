@@ -200,4 +200,155 @@ public:
   }
 };
 
+// ============================================================================
+// 4. Backward Worklist Dataflow Solver
+// ============================================================================
+// A generic solver to compute backward fixed-point dataflow analysis on the CFG.
+template <typename State>
+class BackwardDataflowSolver {
+private:
+  const IRICFG& cfg;
+  TransferFunction<State>& transferFn;
+  std::unordered_map<BBIDX, State> blockEntryStates;
+  std::unordered_map<BBIDX, State> blockExitStates;
+
+public:
+  BackwardDataflowSolver(const IRICFG& cfg, TransferFunction<State>& tf)
+      : cfg(cfg), transferFn(tf) {}
+
+  // Run the worklist solver backward to fixed-point convergence
+  void run(State exitState, bool includeExceptions = false) {
+    // 1. Get Reverse Post-Order and reverse it to get Post-Order (for backward analysis)
+    std::vector<BBIDX> rpo = cfg.getReversePostOrder(includeExceptions);
+    std::vector<BBIDX> po = rpo;
+    std::reverse(po.begin(), po.end());
+
+    // 2. Initialize block states to State::bottom()
+    for (BBIDX block : po) {
+      blockEntryStates[block] = State::bottom();
+      blockExitStates[block] = State::bottom();
+    }
+
+    // Build exceptional predecessors map
+    std::unordered_map<BBIDX, std::vector<BBIDX>> exceptionalPredecessors;
+    if (includeExceptions) {
+      for (const auto& [idx, bb] : cfg.nodeMap) {
+        if (bb->EXCEPTION > -1) {
+          exceptionalPredecessors[bb->EXCEPTION].push_back(idx);
+        }
+      }
+    }
+
+    // Seed the exit state of exit blocks (blocks with no successors)
+    for (BBIDX block : po) {
+      if (cfg.successors.find(block) == cfg.successors.end() || cfg.successors.at(block).empty()) {
+        blockExitStates[block] = exitState;
+      }
+    }
+
+    std::queue<BBIDX> worklist;
+    std::unordered_set<BBIDX> inWorklist;
+
+    // Seed the worklist with all blocks in Post-Order
+    for (BBIDX block : po) {
+      worklist.push(block);
+      inWorklist.insert(block);
+    }
+
+    // Helper to propagate state to a predecessor block (backward propagation)
+    auto propagateState = [&](BBIDX target, const State& state) {
+      State& oldExit = blockExitStates[target];
+      State joined = oldExit.joinWith(state);
+      if (!(joined == oldExit)) {
+        oldExit = std::move(joined);
+        if (!inWorklist.contains(target)) {
+          worklist.push(target);
+          inWorklist.insert(target);
+        }
+      }
+    };
+
+    // 3. Iteration loop
+    while (!worklist.empty()) {
+      BBIDX currIdx = worklist.front();
+      worklist.pop();
+      inWorklist.erase(currIdx);
+
+      const auto& bb = cfg.nodeMap.at(currIdx);
+      State oldEntryState = blockEntryStates[currIdx];
+      State currState = blockExitStates[currIdx];
+
+      // Sound exceptional control flow propagation
+      auto handleException = [&](State& stateBefore) {
+        if (includeExceptions && bb->EXCEPTION > -1) {
+          stateBefore = stateBefore.joinWith(getBlockEntryState(bb->EXCEPTION));
+        }
+      };
+
+      // Transfer backward through terminal statement
+      if (bb->tail) {
+        currState = transferFn.transferStatement(*bb->tail, currState);
+        handleException(currState);
+      }
+
+      // Transfer backward through non-terminal statements in reverse order (tail to head)
+      std::vector<IRIStatement*> stmts;
+      for (IRIStatement* s = bb->head; s != nullptr; s = s->next) {
+        stmts.push_back(s);
+      }
+      for (auto it = stmts.rbegin(); it != stmts.rend(); ++it) {
+        currState = transferFn.transferStatement(**it, currState);
+        handleException(currState);
+      }
+
+      blockEntryStates[currIdx] = currState;
+
+      // If the entry state of this block changed, propagate changes to predecessors
+      if (!(currState == oldEntryState)) {
+        // 1. Normal predecessors
+        auto predIt = cfg.predecessors.find(currIdx);
+        if (predIt != cfg.predecessors.end()) {
+          for (BBIDX pred : predIt->second) {
+            State edgeState = transferFn.transferEdge(currIdx, pred, currState);
+            propagateState(pred, edgeState);
+          }
+        }
+
+        // 2. Exceptional predecessors
+        if (includeExceptions) {
+          auto expIt = exceptionalPredecessors.find(currIdx);
+          if (expIt != exceptionalPredecessors.end()) {
+            for (BBIDX pred : expIt->second) {
+              if (!inWorklist.contains(pred)) {
+                worklist.push(pred);
+                inWorklist.insert(pred);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Returns the entry state (state before first statement) for a block
+  const State& getBlockEntryState(BBIDX block) const {
+    auto it = blockEntryStates.find(block);
+    if (it != blockEntryStates.end()) {
+      return it->second;
+    }
+    static const State bottomState = State::bottom();
+    return bottomState;
+  }
+
+  // Returns the exit state (state after last statement) for a block
+  const State& getBlockExitState(BBIDX block) const {
+    auto it = blockExitStates.find(block);
+    if (it != blockExitStates.end()) {
+      return it->second;
+    }
+    static const State bottomState = State::bottom();
+    return bottomState;
+  }
+};
+
 } // namespace IRI_STRUCTURAL
