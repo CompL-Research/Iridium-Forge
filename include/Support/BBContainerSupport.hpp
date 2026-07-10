@@ -1,4 +1,4 @@
-// #pragma once
+#pragma once
 #include "Generated/IridiumTypes.h"
 #include "Support/IndexedIterator.hpp"
 
