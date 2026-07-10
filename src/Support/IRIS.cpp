@@ -611,13 +611,14 @@ void IRIS::addEvalRemoteBindingsToParentClosure(double startScope) {
   //    to the current closure scope.
   // 2. Populate remote env reads in the closure frame
   //
-  double closureScope = getEnclosingClosureScope(startScope);
+  // double closureScope = getEnclosingClosureScope(startScope);
 
   std::set<StringID> shadowedReads;
   std::set<StringID> pollutedReads;
 
-  double currScope = closureScope;
+  double currScope = startScope;
   bool crossedClosureScope = false;
+  auto & iris = pool.iris;
   while (currScope != -1) {
     if (scopeBindings.contains(currScope)) {
       for (auto &[sID, bID] : scopeBindings.at(currScope)) {
@@ -628,6 +629,11 @@ void IRIS::addEvalRemoteBindingsToParentClosure(double startScope) {
             pollutedReads.insert(sID);
           } else {
             shadowedReads.insert(sID);
+
+            // In the current closure scope, this binding is reachable by eval
+            // we must mark the binding as eval captured...
+            // std::cout << "marking eval Tainted : " << pool.strings.get(sID) << " @ " << currScope << std::endl;
+            (*iris)[bID].markEvalTainted();
           }
         }
       }

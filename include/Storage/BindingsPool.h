@@ -16,6 +16,7 @@ struct BindingMeta {
   bool isARGX = false;
   bool isIMPLICITOVERRIDEABLE = false;
   bool tombstone = false;
+  bool evalTainted = false;
   uint32_t backOffset = 0;
 
   // SBO (Small Buffer Optimization) sizes tuned for your 3-def / N-use profile
@@ -43,6 +44,14 @@ struct BindingMeta {
 
   bool isCaptured() const {
     return forwardOffsets.size() > 0;
+  }
+
+  void markEvalTainted() {
+    evalTainted = true;
+  }
+
+  bool isEvalTainted() const {
+    return evalTainted;
   }
 
   bool isDead() {
