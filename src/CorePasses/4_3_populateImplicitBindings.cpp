@@ -87,7 +87,7 @@ void _4_3_PIB(IridiumPool &pool, IRID fileID, BUILD_CTX &iridiumBuildContext) {
             pool.set_args(rval, pool.get_args(ibs.getArg_Args()));
           }
 
-          IRID target = LWriteSEXP::create(pool, lval, rval, true, false, false);
+          IRID target = LWriteSEXP::create(pool, lval, rval, true, false, OPID == 10);
           pool.update_arg_inplace(bbID, i, target);
         }
       }
