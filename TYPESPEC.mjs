@@ -452,7 +452,7 @@ export default [
   },
   {
     "tag": "PVTEnvRead",
-    "meta": "RVAL",
+    "meta": "AMP",
     "args": ["Obj"],
     "flags": {
       "string": [],
@@ -672,7 +672,7 @@ export default [
   },
   {
     "tag": "JSBinop",
-    "meta": "RVAL",
+    "meta": "AMP",
     "args": ["LBinop", "RBinop"],
     "flags": {
       "string": ["OP"],
@@ -694,7 +694,7 @@ export default [
   },
   {
     "tag": "JSUnop",
-    "meta": "RVAL",
+    "meta": "AMP",
     "args": ["Val"],
     "flags": {
       "string": ["OP"],
@@ -705,7 +705,7 @@ export default [
   },
   {
     "tag": "Unop",
-    "meta": "RVAL",
+    "meta": "AMP",
     "args": ["Val"],
     "flags": {
       "string": ["OP"],
@@ -760,7 +760,7 @@ export default [
   },
   {
     "tag": "Binop",
-    "meta": "RVAL",
+    "meta": "AMP",
     "args": ["LBinop", "RBinop"],
     "flags": {
       "string": ["OP"],
@@ -782,7 +782,7 @@ export default [
   },
   {
     "tag": "JSComputedFieldRead",
-    "meta": "RVAL",
+    "meta": "AMP",
     "args": ["Obj", "Field"],
     "flags": {
       "string": [],
@@ -804,7 +804,7 @@ export default [
   },
   {
     "tag": "JSSuperFieldRead",
-    "meta": "RVAL",
+    "meta": "AMP",
     "args": ["This", "Super", "Field"],
     "flags": {
       "string": [],
@@ -826,7 +826,7 @@ export default [
   },
   {
     "tag": "JSToObject",
-    "meta": "RVAL",
+    "meta": "AMP",
     "args": ["TargetObj"],
     "flags": {
       "string": [],
@@ -837,7 +837,7 @@ export default [
   },
   {
     "tag": "JSAppend",
-    "meta": "RVAL",
+    "meta": "AMP",
     "args": ["TargetObj", "InsertionIdx", "SpreadObj"],
     "flags": {
       "string": [],
@@ -859,7 +859,7 @@ export default [
   },
   {
     "tag": "JSCopyDataProperties",
-    "meta": "RVAL",
+    "meta": "AMP",
     "args": ["ExclusionObj", "SourceObj", "TargetObj"],
     "flags": {
       "string": [],
@@ -881,7 +881,7 @@ export default [
   },
   {
     "tag": "UNOPDelMemberExpr",
-    "meta": "RVAL",
+    "meta": "AMP",
     "args": ["Receiver", "Field"],
     "flags": {
       "string": [],
@@ -892,7 +892,7 @@ export default [
   },
   {
     "tag": "UNOPDelVar",
-    "meta": "RVAL",
+    "meta": "AMP",
     "args": [],
     "flags": {
       "string": ["NAME"],
@@ -903,7 +903,7 @@ export default [
   },
   {
     "tag": "JSTemplate",
-    "meta": "RVAL",
+    "meta": "AMP",
     "args": [],
     "flags": {
       "string": [],
@@ -925,7 +925,7 @@ export default [
   },
   {
     "tag": "Await",
-    "meta": "RVAL",
+    "meta": "AMP",
     "args": ["Obj"],
     "flags": {
       "string": [],
@@ -936,7 +936,7 @@ export default [
   },
   {
     "tag": "Yield",
-    "meta": "RVAL",
+    "meta": "AMP",
     "args": ["Obj"],
     "flags": {
       "string": [],
@@ -958,7 +958,7 @@ export default [
   },
   {
     "tag": "IDOP",
-    "meta": "RVAL",
+    "meta": "AMP",
     "args": ["Obj"],
     "flags": {
       "string": [],
@@ -969,7 +969,7 @@ export default [
   },
   {
     "tag": "JSIDOP",
-    "meta": "RVAL",
+    "meta": "AMP",
     "args": ["Obj"],
     "flags": {
       "string": [],
@@ -1079,7 +1079,7 @@ export default [
   },
   {
     "tag": "DCTRRet",
-    "meta": "RVAL",
+    "meta": "AMP",
     "args": ["userObj", "thisObj"],
     "flags": {
       "string": [],
@@ -1090,7 +1090,7 @@ export default [
   },
   {
     "tag": "ToNumeric",
-    "meta": "RVAL",
+    "meta": "AMP",
     "args": ["Obj"],
     "flags": {
       "string": [],

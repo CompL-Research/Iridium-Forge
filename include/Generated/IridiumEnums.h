@@ -1,4 +1,4 @@
-// Generated: 2026-07-08 22:31:52
+// Generated: 2026-07-10 16:00:55
 #pragma once
 #include <string>
 
@@ -447,7 +447,7 @@ namespace IRI_GEN {
       case JSClass: return IRI_META::RVAL;
       case JSCheckConstructor: return IRI_META::STMT;
       case ResolvePrivateEnvBinding: return IRI_META::STAR_RVAL;
-      case PVTEnvRead: return IRI_META::RVAL;
+      case PVTEnvRead: return IRI_META::AMP;
       case JSPrivate: return IRI_META::RVAL;
       case JSPrivateFieldWrite: return IRI_META::STMT;
       case JSADDBRAND: return IRI_META::STMT;
@@ -467,34 +467,34 @@ namespace IRI_GEN {
       case JSCatchContext: return IRI_META::AMP;
       case Throw: return IRI_META::STMT;
       case Ret: return IRI_META::STMT;
-      case JSBinop: return IRI_META::RVAL;
+      case JSBinop: return IRI_META::AMP;
       case FieldWrite: return IRI_META::STMT;
-      case JSUnop: return IRI_META::RVAL;
-      case Unop: return IRI_META::RVAL;
+      case JSUnop: return IRI_META::AMP;
+      case Unop: return IRI_META::AMP;
       case JSObject: return IRI_META::RVAL;
       case Boolean: return IRI_META::RVAL;
       case JSDefineObjProp: return IRI_META::STMT;
       case JSArray: return IRI_META::RVAL;
-      case Binop: return IRI_META::RVAL;
+      case Binop: return IRI_META::AMP;
       case Null: return IRI_META::RVAL;
-      case JSComputedFieldRead: return IRI_META::RVAL;
+      case JSComputedFieldRead: return IRI_META::AMP;
       case JSComputedFieldWrite: return IRI_META::STMT;
-      case JSSuperFieldRead: return IRI_META::RVAL;
+      case JSSuperFieldRead: return IRI_META::AMP;
       case JSSuperFieldWrite: return IRI_META::STMT;
-      case JSToObject: return IRI_META::RVAL;
-      case JSAppend: return IRI_META::RVAL;
+      case JSToObject: return IRI_META::AMP;
+      case JSAppend: return IRI_META::AMP;
       case JSDefineObjMethod: return IRI_META::STMT;
-      case JSCopyDataProperties: return IRI_META::RVAL;
+      case JSCopyDataProperties: return IRI_META::AMP;
       case RegExp: return IRI_META::RVAL;
-      case UNOPDelMemberExpr: return IRI_META::RVAL;
-      case UNOPDelVar: return IRI_META::RVAL;
-      case JSTemplate: return IRI_META::RVAL;
+      case UNOPDelMemberExpr: return IRI_META::AMP;
+      case UNOPDelVar: return IRI_META::AMP;
+      case JSTemplate: return IRI_META::AMP;
       case JSBigInt: return IRI_META::RVAL;
-      case Await: return IRI_META::RVAL;
-      case Yield: return IRI_META::RVAL;
+      case Await: return IRI_META::AMP;
+      case Yield: return IRI_META::AMP;
       case JSInitialYield: return IRI_META::STMT;
-      case IDOP: return IRI_META::RVAL;
-      case JSIDOP: return IRI_META::RVAL;
+      case IDOP: return IRI_META::AMP;
+      case JSIDOP: return IRI_META::AMP;
       case StackToHeap: return IRI_META::STMT;
       case LoopInitPreludeEnd: return IRI_META::STAR_STMT;
       case JSSetHome: return IRI_META::STMT;
@@ -504,8 +504,8 @@ namespace IRI_GEN {
       case LWrite: return IRI_META::STMT;
       case RWrite: return IRI_META::STMT;
       case MWrite: return IRI_META::STMT;
-      case DCTRRet: return IRI_META::RVAL;
-      case ToNumeric: return IRI_META::RVAL;
+      case DCTRRet: return IRI_META::AMP;
+      case ToNumeric: return IRI_META::AMP;
       case JSCTX: return IRI_META::RVAL;
       case QJSModuleInit: return IRI_META::STMT;
       case CompoundAssn: return IRI_META::STMT;
