@@ -6,24 +6,47 @@
 #include <vector>
 #include <typeindex>
 #include <stdexcept>
+#include <type_traits>
+#include <sstream>
 
 namespace IRI_STRUCTURAL {
 
 class AnalysisManager;
 
 // ============================================================================
-// 1. Pass Manager Base Concepts
+// 1. Dataflow Result Concept
+// ============================================================================
+// Generic interface that dataflow analysis results must implement to support
+// unified debugging, visualization, and dumping.
+struct DataflowResultConcept {
+  virtual ~DataflowResultConcept() = default;
+  virtual std::string getAnalysisName() const = 0;
+  virtual void dumpStateAtStatement(const IRIStatement& stmt, IRI_STORAGE::IridiumPool& pool, std::ostream& os) const = 0;
+  virtual void dumpBlockEntryState(BBIDX block, IRI_STORAGE::IridiumPool& pool, std::ostream& os) const = 0;
+  virtual void dumpBlockExitState(BBIDX block, IRI_STORAGE::IridiumPool& pool, std::ostream& os) const = 0;
+};
+
+// ============================================================================
+// 2. Pass Manager Base Concepts
 // ============================================================================
 
 // Type-erased wrapper for analysis results
 struct AnalysisResultConcept {
   virtual ~AnalysisResultConcept() = default;
+  virtual const DataflowResultConcept* asDataflow() const { return nullptr; }
 };
 
 template <typename ResultT>
 struct AnalysisResultModel : public AnalysisResultConcept {
   ResultT result;
   explicit AnalysisResultModel(ResultT r) : result(std::move(r)) {}
+
+  const DataflowResultConcept* asDataflow() const override {
+    if constexpr (std::is_base_of_v<DataflowResultConcept, ResultT>) {
+      return &result;
+    }
+    return nullptr;
+  }
 };
 
 // ============================================================================
@@ -65,6 +88,65 @@ public:
   // Invalidate all cached analysis results (usually called after any IR transformation)
   void invalidateAll() {
     cache.clear();
+  }
+
+  // Dump all cached dataflow analyses statement-by-statement for debugging
+  void dumpDataflowStates(IRICFG& cfg, std::ostream& os) {
+    for (const auto& [idx, bb] : cfg.nodeMap) {
+      os << "  BB" << idx << ":\n";
+
+      // 1. Block Entry States
+      for (const auto& [passID, model] : cache) {
+        if (auto df = model->asDataflow()) {
+          os << "    [BlockEntry (" << df->getAnalysisName() << "): ";
+          df->dumpBlockEntryState(idx, cfg.pool, os);
+          os << "]\n";
+        }
+      }
+
+      // 2. Statements
+      IRIStatement* curr = bb->head;
+      while (curr != nullptr) {
+        for (const auto& [passID, model] : cache) {
+          if (auto df = model->asDataflow()) {
+            os << "    [State (" << df->getAnalysisName() << "): ";
+            df->dumpStateAtStatement(*curr, cfg.pool, os);
+            os << "]\n";
+          }
+        }
+
+        std::stringstream ss;
+        cfg.pool[curr->id].dumpFlat(ss, &cfg.pool, 0, false);
+        std::string rawStr = ss.str();
+        std::stringstream statementLines(rawStr);
+        std::string line;
+        while (std::getline(statementLines, line)) {
+          os << "      " << line << "\n";
+        }
+        os << "\n";
+        curr = curr->next;
+      }
+
+      // 3. Terminal Statement BlockExit States
+      if (bb->tail != nullptr) {
+        for (const auto& [passID, model] : cache) {
+          if (auto df = model->asDataflow()) {
+            os << "    [State (" << df->getAnalysisName() << "): ";
+            df->dumpStateAtStatement(*(bb->tail), cfg.pool, os);
+            os << "]\n";
+          }
+        }
+        std::stringstream ss;
+        cfg.pool[bb->tail->id].dumpFlat(ss, &cfg.pool, 0, false);
+        std::string rawStr = ss.str();
+        std::stringstream statementLines(rawStr);
+        std::string line;
+        while (std::getline(statementLines, line)) {
+          os << "      " << line << "\n";
+        }
+        os << "\n";
+      }
+    }
   }
 };
 

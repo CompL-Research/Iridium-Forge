@@ -203,7 +203,7 @@ public:
 // ============================================================================
 // 4. TDZ Analysis Result and Pass Definition
 // ============================================================================
-class TDZAnalysisResult {
+class TDZAnalysisResult : public DataflowResultConcept {
 private:
   std::shared_ptr<TDZATransfer> transfer;
   std::shared_ptr<DataflowSolver<TDZState>> solver;
@@ -212,6 +212,24 @@ public:
   TDZAnalysisResult() = default;
   TDZAnalysisResult(std::shared_ptr<TDZATransfer> t, std::shared_ptr<DataflowSolver<TDZState>> s)
       : transfer(std::move(t)), solver(std::move(s)) {}
+
+  std::string getAnalysisName() const override {
+    return "TDZ";
+  }
+
+  void dumpStateAtStatement(const IRIStatement& stmt, IRI_STORAGE::IridiumPool& pool, std::ostream& os) const override {
+    TDZState state = queryStateAtStatement(stmt);
+    state.dump(pool, os);
+  }
+
+  void dumpBlockEntryState(BBIDX block, IRI_STORAGE::IridiumPool& pool, std::ostream& os) const override {
+    const TDZState& state = getBlockEntryState(block);
+    state.dump(pool, os);
+  }
+
+  void dumpBlockExitState(BBIDX block, IRI_STORAGE::IridiumPool& pool, std::ostream& os) const override {
+    os << "<ExitStateNotTracked>";
+  }
 
   const TDZState& getBlockEntryState(BBIDX block) const {
     return solver->getBlockEntryState(block);
