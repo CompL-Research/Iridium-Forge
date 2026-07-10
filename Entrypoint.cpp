@@ -6,6 +6,7 @@
 #include "Support/IRIS.hpp"
 #include "Support/ClosureTree.hpp"
 #include "Analysis/MTDZS.h"
+#include "Analysis/DCE.h"
 #include "IRIPerf.h"
 #include "Storage/Config.h"
 #if DUMP_CORE_PASSES == 1
@@ -14,6 +15,8 @@
 #endif
 #include <memory>
 #include <unordered_map>
+
+#include <cstdlib>
 
 namespace IRI_ENTRY {
 using namespace IRI_STORAGE;
@@ -28,7 +31,7 @@ inline void normalizeIRIDIUM(
   // Helper to dump state
   auto dump = [&](const std::string &name) {
     #if DUMP_CORE_PASSES == 1
-    std::ofstream outFile(name + ".irdump");
+    std::ofstream outFile(name + ".iridump");
     pool[sexp].dumpFlat(outFile, &pool);
     #endif
   };
@@ -89,65 +92,42 @@ inline void normalizeIRIDIUM(
 
   AnalysisManager am;
   PassManager pm;
-  pm.addPass(MTDZSPass());
 
-  iriPerf.tick("_24_MTDZS");
+  if (std::getenv("NOTDZ")) {
+    // Skip Pass
+  } else {
+    pm.addPass(MTDZSPass());
+  }
+
+  if (std::getenv("NODCE")) {
+    // Skip Pass
+  } else {
+    pm.addPass(DCEPass());
+  }
+
+  iriPerf.tick("_23_OPT_MTDZS_DCE");
   pool.closureTree->preorderTraversal([&](IRICFG* cfgCTX) {
     pm.run(*cfgCTX, am);
   });
-  iriPerf.tock("_24_MTDZS");
+  iriPerf.tock("_23_OPT_MTDZS_DCE");
 
   // Commit closure level bindings
   pool.closureTree->commit();
   dump("AFTER_OPT_PASSES");
 
-#if DUMP_CORE_PASSES == 1
+#if DUMP_ANALYSIS_RESULTS == 1
   {
-    std::ofstream outFile("AFTER_OPT_PASSES.tdzadump");
-    TDZATransfer transfer;
+    std::ofstream outFile("ANALYSIS_DUMP.iridump");
     pool.closureTree->preorderTraversal([&](IRICFG* cfgCTX) {
       BBContainerSupport bbc(cfgCTX->id, cfgCTX->pool);
       outFile << "Closure " << bbc.getStartBBIDX() << ":\n";
-      TDZAnalysis analysis;
-      TDZAnalysisResult tdzResult = analysis.run(*cfgCTX, am);
-      for (const auto& [idx, bb] : cfgCTX->nodeMap) {
-        outFile << "  BB" << idx << ":\n";
-        TDZState state = tdzResult.getBlockEntryState(idx);
-        IRIStatement *curr = bb->head;
-        while (curr != nullptr) {
-          outFile << "    [State: ";
-          state.dump(pool, outFile);
-          outFile << "]\n";
-          
-          std::stringstream ss;
-          pool[curr->id].dumpFlat(ss, &pool, 0, false);
-          std::string rawStr = ss.str();
-          std::stringstream statementLines(rawStr);
-          std::string line;
-          while (std::getline(statementLines, line)) {
-            outFile << "      " << line << "\n";
-          }
-          outFile << "\n";
-          
-          state = transfer.transferStatement(*curr, state);
-          curr = curr->next;
-        }
-        if (bb->tail != nullptr) {
-          outFile << "    [State: ";
-          state.dump(pool, outFile);
-          outFile << "]\n";
-          
-          std::stringstream ss;
-          pool[bb->tail->id].dumpFlat(ss, &pool, 0, false);
-          std::string rawStr = ss.str();
-          std::stringstream statementLines(rawStr);
-          std::string line;
-          while (std::getline(statementLines, line)) {
-            outFile << "      " << line << "\n";
-          }
-          outFile << "\n";
-        }
-      }
+
+      // Query both analyses to populate them in the cache
+      am.getResult<TDZAnalysis>(*cfgCTX);
+      am.getResult<LivenessAnalysis>(*cfgCTX);
+
+      // Interleave and print all cached dataflow analyses dynamically
+      am.dumpDataflowStates(*cfgCTX, outFile);
       outFile << "\n";
     });
   }
