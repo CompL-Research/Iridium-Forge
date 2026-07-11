@@ -41,18 +41,7 @@ struct MTDZSPass {
           if (!isInit) {
             auto target = lw.getArg_LValTarget();
             bool willMarkSafe = !lw.hasSAFE() && !state.isUnreachable() && state.getLattice(target).kind == TDZLattice::SAFE;
-#if DEBUG_TDZ
-            std::cout << "    [MTDZS] LWrite stmt ID: " << stmtID << " target: ";
-            if (pool[target].tag == IRI_GEN::EnvBinding) {
-              IRI_GEN::EnvBindingSEXP eb(target, pool);
-              std::cout << pool.strings.get(eb.getNAME());
-            } else {
-              std::cout << "IRID(" << target << ")";
-            }
-            std::cout << " State: ";
-            state.dump(pool, std::cout);
-            std::cout << " -> " << (willMarkSafe ? "MARKING SAFE" : "KEEPING TDZ") << "\n";
-#endif
+
             if (willMarkSafe) {
               lw.setSAFE();
               changed = true;
@@ -62,18 +51,7 @@ struct MTDZSPass {
           IRI_GEN::EnvReadSEXP envRead(stmtID, pool);
           auto target = envRead.getArg_Obj();
           bool willRemove = !state.isUnreachable() && state.getLattice(target).kind == TDZLattice::SAFE;
-#if DEBUG_TDZ
-          std::cout << "    [MTDZS] EnvRead stmt ID: " << stmtID << " target: ";
-          if (pool[target].tag == IRI_GEN::EnvBinding) {
-            IRI_GEN::EnvBindingSEXP eb(target, pool);
-            std::cout << pool.strings.get(eb.getNAME());
-          } else {
-            std::cout << "IRID(" << target << ")";
-          }
-          std::cout << " State: ";
-          state.dump(pool, std::cout);
-          std::cout << " -> " << (willRemove ? "REMOVING" : "KEEPING") << "\n";
-#endif
+
           if (willRemove) {
             // Remove this instruction
             bb->remove(s);
@@ -88,18 +66,7 @@ struct MTDZSPass {
               IRI_GEN::EnvReadSEXP envRead(node, pool);
               auto target = envRead.getArg_Obj();
               bool nestedSafe = !state.isUnreachable() && state.getLattice(target).kind == TDZLattice::SAFE;
-#if DEBUG_TDZ
-              std::cout << "      [MTDZS-Nested] EnvRead ID: " << node << " target: ";
-              if (pool[target].tag == IRI_GEN::EnvBinding) {
-                IRI_GEN::EnvBindingSEXP eb(target, pool);
-                std::cout << pool.strings.get(eb.getNAME());
-              } else {
-                std::cout << "IRID(" << target << ")";
-              }
-              std::cout << " State: ";
-              state.dump(pool, std::cout);
-              std::cout << " -> " << (nestedSafe ? "MARKING SAFE" : "KEEPING TDZ") << "\n";
-#endif
+
               if (nestedSafe && !envRead.hasSAFE()) {
                 envRead.setSAFE();
                 changed = true;

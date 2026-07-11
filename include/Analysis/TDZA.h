@@ -125,7 +125,7 @@ public:
 };
 
 // ============================================================================
-// 3. TDZ Transfer Function (Boilerplate)
+// 3. TDZ Transfer Function
 // ============================================================================
 class TDZATransfer : public TransferFunction<TDZState> {
 public:
@@ -138,28 +138,32 @@ public:
 
     auto &pool = stmt.bb->pool;
     auto tag = pool[stmt.id].tag;
+    // Predicates can probably be much simpler,
+    // by construction setting a value to NUBD will
+    // be at scope boundaries anyway.
+    // So any write, which is not NUBD just transitions the state to SAFE.
+    // Even if its a write in TDZ zone, subsequent writes can be assumed as safe
+    // because the check would need to pass for the following code to be valid anyway.
     if (tag == IRI_GEN::LWrite) {
       IRI_GEN::LWriteSEXP lw(stmt.id, pool);
-      if (lw.hasINIT()) {
-        auto rval = lw.getArg_RVal();
-        auto lval = lw.getArg_LValTarget();
-        if (pool[rval].tag == IRI_GEN::JSNUBD) {
-          nextState = nextState.setLattice(lval, TDZLattice(TDZLattice::TDZ));
-        } else {
-          nextState = nextState.setLattice(lval, TDZLattice(TDZLattice::SAFE));
-        }
-#if DEBUG_TDZ
-        std::cout << "      [TDZA-Transfer] LWrite INIT stmt ID: " << stmt.id << " target: ";
-        if (pool[lval].tag == IRI_GEN::EnvBinding) {
-          IRI_GEN::EnvBindingSEXP eb(lval, pool);
-          std::cout << pool.strings.get(eb.getNAME());
-        } else {
-          std::cout << "IRID(" << lval << ")";
-        }
-        std::cout << ", RVal tag: " << IRI_GEN::dump_tag(pool[rval].tag) << " -> "
-                  << (pool[rval].tag == IRI_GEN::JSNUBD ? "TDZ" : "SAFE") << "\n";
-#endif
+
+      auto rval = lw.getArg_RVal();
+      auto lval = lw.getArg_LValTarget();
+      if (pool[rval].tag == IRI_GEN::JSNUBD) {
+        nextState = nextState.setLattice(lval, TDZLattice(TDZLattice::TDZ));
+      } else {
+        nextState = nextState.setLattice(lval, TDZLattice(TDZLattice::SAFE));
       }
+
+      // if (lw.hasINIT()) {
+      //   auto rval = lw.getArg_RVal();
+      //   auto lval = lw.getArg_LValTarget();
+      //   if (pool[rval].tag == IRI_GEN::JSNUBD) {
+      //     nextState = nextState.setLattice(lval, TDZLattice(TDZLattice::TDZ));
+      //   } else {
+      //     nextState = nextState.setLattice(lval, TDZLattice(TDZLattice::SAFE));
+      //   }
+      // }
     } else if (tag == IRI_GEN::CompoundAssn) {
       auto args = pool.get_args(stmt.id);
       assert(args.size() > 1);
@@ -168,25 +172,18 @@ public:
         IRID currWriteID = args[i];
         if (pool[currWriteID].tag == IRI_GEN::LWrite) {
           IRI_GEN::LWriteSEXP lw(currWriteID, pool);
-          if (lw.hasINIT()) {
-            auto lval = lw.getArg_LValTarget();
-            if (pool[rval].tag == IRI_GEN::JSNUBD) {
-              nextState = nextState.setLattice(lval, TDZLattice(TDZLattice::TDZ));
-            } else {
-              nextState = nextState.setLattice(lval, TDZLattice(TDZLattice::SAFE));
-            }
-#if DEBUG_TDZ
-            std::cout << "      [TDZA-Transfer] CompoundAssn LWrite INIT stmt ID: " << stmt.id << " target: ";
-            if (pool[lval].tag == IRI_GEN::EnvBinding) {
-              IRI_GEN::EnvBindingSEXP eb(lval, pool);
-              std::cout << pool.strings.get(eb.getNAME());
-            } else {
-              std::cout << "IRID(" << lval << ")";
-            }
-            std::cout << ", RVal tag: " << IRI_GEN::dump_tag(pool[rval].tag) << " -> "
-                      << (pool[rval].tag == IRI_GEN::JSNUBD ? "TDZ" : "SAFE") << "\n";
-#endif
-          }
+
+          auto lval = lw.getArg_LValTarget();
+          nextState = nextState.setLattice(lval, TDZLattice(TDZLattice::SAFE));
+
+          // if (lw.hasINIT()) {
+          //   auto lval = lw.getArg_LValTarget();
+          //   if (pool[rval].tag == IRI_GEN::JSNUBD) {
+          //     nextState = nextState.setLattice(lval, TDZLattice(TDZLattice::TDZ));
+          //   } else {
+          //     nextState = nextState.setLattice(lval, TDZLattice(TDZLattice::SAFE));
+          //   }
+          // }
         }
       }
     }
@@ -257,25 +254,7 @@ struct TDZAnalysis {
     }
 
     // Run the solver to fixed-point, including exceptional edges for soundness
-#if DEBUG_TDZ
-    BBContainerSupport bbc(cfg.id, cfg.pool);
-    std::cout << "  [TDZA-Analysis] Starting solver run on CFG of closure " << bbc.getStartBBIDX() << "\n";
-    std::cout << "    Entry block BB" << cfg.entry_block << " seed state: ";
-    entryState.dump(cfg.pool, std::cout);
-    std::cout << "\n";
-#endif
-
     solver->run(entryState, /*includeExceptions=*/true);
-
-#if DEBUG_TDZ
-    std::cout << "  [TDZA-Analysis] Finished running TDZ Analysis solver on CFG of closure " << bbc.getStartBBIDX() << "\n";
-    for (const auto& [idx, bb] : cfg.nodeMap) {
-      const TDZState& state = solver->getBlockEntryState(idx);
-      std::cout << "    BB" << idx << " entry state: ";
-      state.dump(cfg.pool, std::cout);
-      std::cout << "\n";
-    }
-#endif
 
     return TDZAnalysisResult(std::move(transfer), std::move(solver));
   }
