@@ -8,6 +8,24 @@
 #include <stdexcept>
 #include <type_traits>
 #include <sstream>
+#include <chrono>
+#include <cstdlib>
+#include <typeinfo>
+#include <iostream>
+
+#if defined(__GNUC__) || defined(__clang__)
+#include <cxxabi.h>
+inline std::string demangle(const char* name) {
+  int status = -1;
+  std::unique_ptr<char, void(*)(void*)> res {
+    abi::__cxa_demangle(name, NULL, NULL, &status),
+    std::free
+  };
+  return (status == 0) ? res.get() : name;
+}
+#else
+inline std::string demangle(const char* name) { return name; }
+#endif
 
 namespace IRI_STRUCTURAL {
 
@@ -57,10 +75,24 @@ class AnalysisManager {
 private:
   // Map of static pass ID pointers to cached type-erased results
   std::unordered_map<const void*, std::unique_ptr<AnalysisResultConcept>> cache;
+  bool enableLogging = false;
+  std::unordered_map<std::string, double> analysisPassDurations;
 
 public:
-  AnalysisManager() = default;
-  ~AnalysisManager() = default;
+  explicit AnalysisManager(bool log = false)
+      : enableLogging(log || std::getenv("LOG_PASS_PERF") != nullptr) {}
+
+  void setLogging(bool log) { enableLogging = log; }
+
+  ~AnalysisManager() {
+    if (enableLogging && !analysisPassDurations.empty()) {
+      std::cout << "\n=== Analysis Pass Performance Summary ===\n";
+      for (const auto& [name, duration] : analysisPassDurations) {
+        std::cout << "  " << name << ": " << duration << " ms\n";
+      }
+      std::cout << "=========================================\n";
+    }
+  }
 
   // Query an analysis. If it is already cached, returns it immediately.
   // Otherwise, runs it, caches the result, and returns it.
@@ -69,9 +101,19 @@ public:
     const void* passID = &AnalysisPass::ID;
     auto it = cache.find(passID);
     if (it == cache.end()) {
+      auto start = std::chrono::high_resolution_clock::now();
+
       // Lazy computation: instantiate the pass and run it
       AnalysisPass pass;
       typename AnalysisPass::Result res = pass.run(cfg, *this);
+
+      auto end = std::chrono::high_resolution_clock::now();
+      std::chrono::duration<double, std::milli> elapsed = end - start;
+
+      if (enableLogging) {
+        std::string name = demangle(typeid(AnalysisPass).name());
+        analysisPassDurations[name] += elapsed.count();
+      }
       
       auto model = std::make_unique<AnalysisResultModel<typename AnalysisPass::Result>>(std::move(res));
       it = cache.emplace(passID, std::move(model)).first;
@@ -158,7 +200,8 @@ class PassManager {
 private:
   struct PassConcept {
     virtual ~PassConcept() = default;
-    virtual void run(IRICFG& cfg, AnalysisManager& am) = 0;
+    virtual bool run(IRICFG& cfg, AnalysisManager& am) = 0;
+    virtual std::string getName() const = 0;
   };
 
   template <typename PassT>
@@ -166,16 +209,34 @@ private:
     PassT pass;
     explicit PassModel(PassT p) : pass(std::move(p)) {}
     
-    void run(IRICFG& cfg, AnalysisManager& am) override {
-      pass.run(cfg, am);
+    bool run(IRICFG& cfg, AnalysisManager& am) override {
+      return pass.run(cfg, am);
+    }
+
+    std::string getName() const override {
+      return demangle(typeid(PassT).name());
     }
   };
 
   std::vector<std::unique_ptr<PassConcept>> passes;
+  bool enableLogging = false;
+  std::unordered_map<std::string, double> optPassDurations;
 
 public:
-  PassManager() = default;
-  ~PassManager() = default;
+  explicit PassManager(bool log = false)
+      : enableLogging(log || std::getenv("LOG_PASS_PERF") != nullptr) {}
+
+  void setLogging(bool log) { enableLogging = log; }
+
+  ~PassManager() {
+    if (enableLogging && !optPassDurations.empty()) {
+      std::cout << "\n=== Optimization Pass Performance Summary ===\n";
+      for (const auto& [name, duration] : optPassDurations) {
+        std::cout << "  " << name << ": " << duration << " ms\n";
+      }
+      std::cout << "=============================================\n";
+    }
+  }
 
   // Add a pass to the pipeline
   template <typename PassT>
@@ -183,10 +244,28 @@ public:
     passes.push_back(std::make_unique<PassModel<PassT>>(std::move(pass)));
   }
 
-  // Run all passes in the pipeline sequentially over a CFG
+  // Run all passes in the pipeline sequentially over a CFG until fixed-point
   void run(IRICFG& cfg, AnalysisManager& am) {
-    for (auto& pass : passes) {
-      pass->run(cfg, am);
+    bool changed = true;
+    int iterations = 0;
+    const int maxIterations = 10;
+    while (changed && iterations < maxIterations) {
+      changed = false;
+      for (auto& pass : passes) {
+        auto start = std::chrono::high_resolution_clock::now();
+        bool passChanged = pass->run(cfg, am);
+        auto end = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double, std::milli> elapsed = end - start;
+
+        if (enableLogging) {
+          optPassDurations[pass->getName()] += elapsed.count();
+        }
+
+        if (passChanged) {
+          changed = true;
+        }
+      }
+      iterations++;
     }
   }
 
