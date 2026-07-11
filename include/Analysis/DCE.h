@@ -79,7 +79,9 @@ struct DCEPass {
             auto kind = state.getLattice(target).kind;
 
             bool lvalIsDead = kind == LivenessLattice::DEAD;
-            bool effectfulWrite = lw.hasTHISINIT() || (ebb.hasJSCONST() && !lw.hasINIT());
+            bool isThisInit = lw.hasTHISINIT();
+            bool isConstWrite = ebb.hasJSCONST() && !lw.hasINIT();
+            bool effectfulWrite = isThisInit || isConstWrite;
             if (lvalIsDead && !effectfulWrite) {
               auto rval = lw.getArg_RVal();
               bool safeToDelete = IRI_GEN::get_meta(pool[rval].tag) == IRI_GEN::RVAL;
