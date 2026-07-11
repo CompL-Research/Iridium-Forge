@@ -1,4 +1,4 @@
-// Generated: 2026-07-10 16:00:55
+// Generated: 2026-07-11 17:47:06
 #pragma once
 #include "IridiumEnums.h"
 #include <cstdint>
@@ -113,6 +113,7 @@ public:
       case IRI_GEN::JSCTX: return 1;
       case IRI_GEN::QJSModuleInit: return 0;
       case IRI_GEN::CompoundAssn: return 0;
+      case IRI_GEN::ThisINIT: return 0;
       default: return 0;
     }
   }

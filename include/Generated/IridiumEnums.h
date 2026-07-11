@@ -1,4 +1,4 @@
-// Generated: 2026-07-10 16:00:55
+// Generated: 2026-07-11 17:47:06
 #pragma once
 #include <string>
 
@@ -107,7 +107,8 @@ namespace IRI_GEN {
     ToNumeric,
     JSCTX,
     QJSModuleInit,
-    CompoundAssn
+    CompoundAssn,
+    ThisINIT
   };
 
   inline std::string dump_tag(IRI_TAG value) {
@@ -215,6 +216,7 @@ namespace IRI_GEN {
       case JSCTX: return "JSCTX";
       case QJSModuleInit: return "QJSModuleInit";
       case CompoundAssn: return "CompoundAssn";
+      case ThisINIT: return "ThisINIT";
       default: return "unknown_tag";
     }
   }
@@ -509,6 +511,7 @@ namespace IRI_GEN {
       case JSCTX: return IRI_META::RVAL;
       case QJSModuleInit: return IRI_META::STMT;
       case CompoundAssn: return IRI_META::STMT;
+      case ThisINIT: return IRI_META::RVAL;
       default: return IRI_META::ERROR;
     }
   }

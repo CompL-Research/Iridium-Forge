@@ -1,4 +1,4 @@
-// Generated: 2026-07-10 16:00:55
+// Generated: 2026-07-11 17:47:06
 #pragma once
 #include "Storage/Config.h"
 #include "Storage/IridiumSEXP.h"
@@ -4613,6 +4613,46 @@ using IRI_STORAGE::FlagValue;
 
     // --- Arguments ---
 
+
+    // --- Flags ---
+
+  };
+
+  struct ThisINITSEXP {
+    IRID id;
+    IridiumPool* pool;
+
+    explicit ThisINITSEXP(IRID n, IridiumPool& p) : id(n), pool(&p) {
+      if (pool->operator[](n).tag != IRI_GEN::ThisINIT) {
+        throw std::runtime_error("Schema Cast Error: Expected ThisINIT, but got " + IRI_GEN::dump_tag(pool->operator[](n).tag));
+      }
+    }
+
+    static IRID create(IridiumPool& p, IRID oldVal, IRID newVal) {
+      return p.add_node(IRI_GEN::IRI_TAG::ThisINIT, {oldVal, newVal}, {});
+    }
+
+    static constexpr uint32_t TOTAL_ARGS = 2;
+    static constexpr uint32_t TOTAL_FLAGS = 0;
+
+
+
+    // --- Helpers ---
+    inline FlagValue& mutate_flag(uint32_t idx) {
+        return pool->get_flags_m(id)[idx];
+    }
+    inline const FlagValue& get_flag(uint32_t idx) const {
+        return pool->get_flags(id)[idx];
+    }
+
+    // --- Arguments ---
+    IRID getArg_oldVal() const { return pool->get_args(id)[0]; }
+    bool hasArg_oldVal() const { return 0 < pool->get_args(id).size(); }
+    void setArg_oldVal(IRID val) { assert(hasArg_oldVal() && "Tried to set missing ARG"); pool->update_arg_inplace(id,0,val); }
+
+    IRID getArg_newVal() const { return pool->get_args(id)[1]; }
+    bool hasArg_newVal() const { return 1 < pool->get_args(id).size(); }
+    void setArg_newVal(IRID val) { assert(hasArg_newVal() && "Tried to set missing ARG"); pool->update_arg_inplace(id,1,val); }
 
     // --- Flags ---
 

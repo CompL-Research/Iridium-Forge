@@ -1132,4 +1132,15 @@ export default [
       "double": [],
     }
   },
+  {
+    "tag": "ThisINIT",
+    "meta": "RVAL",
+    "args": ["oldVal", "newVal"],
+    "flags": {
+      "string": [],
+      "void": [],
+      "bool": [],
+      "double": [],
+    }
+  }
 ];

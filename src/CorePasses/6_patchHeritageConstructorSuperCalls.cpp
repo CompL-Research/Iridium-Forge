@@ -28,7 +28,7 @@ inline std::vector<IRID> heritageThisInit(IridiumPool & pool, StringID thisValHo
   res.push_back(
     EnvWriteSEXP::create(pool,
       IRI_HELPERS::createNoASWResolveEnvBindingSEXP(pool, pool.strings.intern("this")),
-      IRI_HELPERS::createUnsafeEnvReadSEXP(pool, thisValHolder),
+      ThisINITSEXP::create(pool, IRI_HELPERS::createUnsafeEnvReadSEXP(pool, pool.strings.intern("this")), IRI_HELPERS::createUnsafeEnvReadSEXP(pool, thisValHolder)),
       false,
       false,
       true, // <- This is about the only place where we set THISINIT flag to true
