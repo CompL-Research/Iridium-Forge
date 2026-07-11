@@ -158,13 +158,18 @@ public:
     if (tag == IRI_GEN::LWrite) {
       LWriteSEXP lw(stmt.id, pool);
       auto target = lw.getArg_LValTarget();
+      //
+      // Deprecated -> ThisINITSEXP [RVAL], basically it takes two arguments (first is an EnvRead to 'this' and second is the new value for 'this') node makes this dependency explicit
+      //
       // If it is a THISINIT write, it checks the TDZ state of the target,
       // so it acts as a read (making the target LIVE) rather than a kill.
-      if (lw.hasTHISINIT()) {
-        if (pool[target].tag == IRI_GEN::EnvBinding) {
-          nextState = nextState.setLattice(target, LivenessLattice::LIVE);
-        }
-      } else if (lw.hasINIT() || lw.hasSAFE()) {
+      // if (lw.hasTHISINIT()) {
+      //   if (pool[target].tag == IRI_GEN::EnvBinding) {
+      //     nextState = nextState.setLattice(target, LivenessLattice::LIVE);
+      //   }
+      // } else
+
+      if (lw.hasTHISINIT() || lw.hasINIT() || lw.hasSAFE()) {
         if (pool[target].tag == IRI_GEN::EnvBinding) {
           EnvBindingSEXP eb(target, pool);
           bool isEvalTainted = (*iris)[target].isEvalTainted();
