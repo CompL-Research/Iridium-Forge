@@ -14,9 +14,9 @@ namespace IRI_STRUCTURAL {
 // DCE (Dead Code Elimination) Transformation Pass
 // ============================================================================
 struct DCEPass {
-  void run(IRICFG& cfg, AnalysisManager& am) {
+  bool run(IRICFG& cfg, AnalysisManager& am) {
+    bool changed = false;
     BBContainerSupport bbc(cfg.id, cfg.pool);
-    std::cout << "  Running DCEPass on CFG of closure " << bbc.getStartBBIDX() << ":\n";
 
     // Query the LivenessAnalysis result (triggers LivenessAnalysis if not cached)
     const LivenessAnalysisResult& livenessResult = am.getResult<LivenessAnalysis>(cfg);
@@ -86,9 +86,11 @@ struct DCEPass {
               if (safeToDelete) {
                 bb->remove(s);
                 removed = true;
+                changed = true;
               } else {
                 IRIStatement* newStmt = new IRIStatement(rval, bb.get());
                 bb->replace(s, newStmt);
+                changed = true;
                 // Note: removed is left as false here so that the active liveness state
                 // naturally falls through and updates to stateBefore, which correctly
                 // contains the gen set of the reduced RHS expression.
@@ -106,6 +108,7 @@ struct DCEPass {
 
     // Since a transformation pass modifies the IR/CFG, invalidate all cached analysis results
     am.invalidateAll();
+    return changed;
   }
 };
 

@@ -7,6 +7,8 @@
 #include "Support/ClosureTree.hpp"
 #include "Analysis/MTDZS.h"
 #include "Analysis/DCE.h"
+#include "Analysis/ConstantsAtStmt.h"
+#include "Analysis/ConstantProp.h"
 #include "IRIPerf.h"
 #include "Storage/Config.h"
 #if DUMP_CORE_PASSES == 1
@@ -93,6 +95,12 @@ inline void normalizeIRIDIUM(
   AnalysisManager am;
   PassManager pm;
 
+  if (std::getenv("NOCP")) {
+    // Skip Pass
+  } else {
+    pm.addPass(ConstantPropPass());
+  }
+
   if (std::getenv("NOTDZ")) {
     // Skip Pass
   } else {
@@ -125,6 +133,7 @@ inline void normalizeIRIDIUM(
       // Query both analyses to populate them in the cache
       am.getResult<TDZAnalysis>(*cfgCTX);
       am.getResult<LivenessAnalysis>(*cfgCTX);
+      am.getResult<ConstantsAtStmt>(*cfgCTX);
 
       // Interleave and print all cached dataflow analyses dynamically
       am.dumpDataflowStates(*cfgCTX, outFile);

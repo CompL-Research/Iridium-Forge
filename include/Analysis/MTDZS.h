@@ -11,9 +11,9 @@ namespace IRI_STRUCTURAL {
 // MTDZS (Mark TDZ Safe) Transformation Pass
 // ============================================================================
 struct MTDZSPass {
-  void run(IRICFG& cfg, AnalysisManager& am) {
+  bool run(IRICFG& cfg, AnalysisManager& am) {
+    bool changed = false;
     BBContainerSupport bbc(cfg.id, cfg.pool);
-    std::cout << "  Running MTDZSPass on CFG of closure " << bbc.getStartBBIDX() << ":\n";
 
     // Query the TDZAnalysis result (this triggers TDZAnalysis if not cached)
     const TDZAnalysisResult& tdzResult = am.getResult<TDZAnalysis>(cfg);
@@ -55,6 +55,7 @@ struct MTDZSPass {
 #endif
             if (willMarkSafe) {
               lw.setSAFE();
+              changed = true;
             }
           }
         } else if (stmtTag == IRI_GEN::EnvRead) {
@@ -77,6 +78,7 @@ struct MTDZSPass {
             // Remove this instruction
             bb->remove(s);
             removed = true;
+            changed = true;
           }
         }
 
@@ -98,8 +100,9 @@ struct MTDZSPass {
               state.dump(pool, std::cout);
               std::cout << " -> " << (nestedSafe ? "MARKING SAFE" : "KEEPING TDZ") << "\n";
 #endif
-              if (nestedSafe) {
+              if (nestedSafe && !envRead.hasSAFE()) {
                 envRead.setSAFE();
+                changed = true;
               }
             }
             for (auto child : pool.get_args_view(node)) {
@@ -114,10 +117,9 @@ struct MTDZSPass {
       }
     }
 
-
-
     // Since a transformation pass modifies the IR/CFG, invalidate all cached analysis results
     am.invalidateAll();
+    return changed;
   }
 };
 
