@@ -103,6 +103,7 @@ public:
   TDZState joinWith(const TDZState& other) const {
     if (is_unreachable) return other;
     if (other.is_unreachable) return *this;
+    if (*this == other) return *this;
 
     return TDZState(envBindings.joinWith(other.envBindings), false);
   }

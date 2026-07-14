@@ -85,6 +85,8 @@ public:
       return other;
     if (other.is_unreachable)
       return *this;
+    if (*this == other)
+      return *this;
 
     return LivenessState(liveBindings.joinWith(other.liveBindings), false);
   }

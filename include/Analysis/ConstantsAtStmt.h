@@ -197,6 +197,8 @@ public:
       return other;
     if (other.is_unreachable)
       return *this;
+    if (*this == other)
+      return *this;
 
     return CASState(envBindings.joinWith(other.envBindings), false);
   }
