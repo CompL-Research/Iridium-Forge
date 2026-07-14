@@ -9,6 +9,8 @@
 #include "Analysis/DCE.h"
 #include "Analysis/ConstantsAtStmt.h"
 #include "Analysis/ConstantProp.h"
+#include "Analysis/EffectAtStmt.h"
+#include "Analysis/EffectProp.h"
 #include "IRIPerf.h"
 #include "Storage/Config.h"
 #if DUMP_CORE_PASSES == 1
@@ -119,6 +121,31 @@ inline void normalizeIRIDIUM(
   });
   iriPerf.tock("_23_OPT_MTDZS_DCE");
 
+  if (std::getenv("NOEP")) {
+    // Skip Pass
+  } else {
+    iriPerf.tick("_24_OPT_EFFECT_PROP");
+    pool.closureTree->preorderTraversal([&](IRICFG* cfgCTX) {
+      EffectPropPass ep;
+      bool changed = true;
+      int iterations = 0;
+      const int maxIterations = 50;
+      BBContainerSupport bbc(cfgCTX->id, cfgCTX->pool);
+      // std::cout << "[EffectProp] Optimization starting for closure " << bbc.getStartBBIDX() << "...\n";
+      while (changed && iterations < maxIterations) {
+        // auto start = std::chrono::high_resolution_clock::now();
+        changed = ep.run(*cfgCTX, am);
+        // auto end = std::chrono::high_resolution_clock::now();
+        // std::chrono::duration<double, std::milli> elapsed = end - start;
+        // std::cout << "  - Iteration " << (iterations + 1) << ": "
+        //           << (changed ? "changed" : "no change")
+        //           << " (" << elapsed.count() << " ms)\n";
+        iterations++;
+      }
+    });
+    iriPerf.tock("_24_OPT_EFFECT_PROP");
+  }
+
   // Commit closure level bindings
   pool.closureTree->commit();
   dump("AFTER_OPT_PASSES");
@@ -134,6 +161,7 @@ inline void normalizeIRIDIUM(
       am.getResult<TDZAnalysis>(*cfgCTX);
       am.getResult<LivenessAnalysis>(*cfgCTX);
       am.getResult<ConstantsAtStmt>(*cfgCTX);
+      am.getResult<EffectAtStmtAnalysis>(*cfgCTX);
 
       // Interleave and print all cached dataflow analyses dynamically
       am.dumpDataflowStates(*cfgCTX, outFile);
@@ -144,8 +172,8 @@ inline void normalizeIRIDIUM(
 
   pool.iris->commit();
 
-  pool.closureTree->dumpFlat(std::cout);
-  pool.iris->dumpFlat(std::cout);
+  // pool.closureTree->dumpFlat(std::cout);
+  // pool.iris->dumpFlat(std::cout);
 }
 
 // inline void voidPrepareForAnalysis(IridiumPool &pool) {
