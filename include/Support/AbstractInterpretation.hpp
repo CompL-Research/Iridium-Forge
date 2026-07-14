@@ -2,6 +2,7 @@
 
 #include "IRICFG.hpp"
 #include <immer/map.hpp>
+#include <immer/map_transient.hpp>
 #include <vector>
 #include <set>
 #include <unordered_set>
@@ -52,17 +53,20 @@ public:
 
   // Lattice join: returns a merged map of this and other
   ImmutableDataMap joinWith(const ImmutableDataMap& other) const {
-    auto result = data;
+    if (data == other.data) {
+      return *this;
+    }
+    auto result = data.transient();
     for (const auto& [key, val] : other.data) {
       if (auto existing = result.find(key)) {
         LatticeElement merged = *existing;
         merged.joinWith(val); // In-place join on the lattice element
-        result = result.set(key, std::move(merged));
+        result.set(key, std::move(merged));
       } else {
-        result = result.set(key, val);
+        result.set(key, val);
       }
     }
-    return ImmutableDataMap(std::move(result));
+    return ImmutableDataMap(result.persistent());
   }
 
   // Expose the underlying raw immer map if needed
@@ -147,23 +151,33 @@ public:
       State currState = blockEntryStates[currIdx];
       double exceptionTarget = bb->EXCEPTION;
 
-      // Sound exceptional control flow propagation before each statement is executed
+      bool exceptionPropagatedForCurrentState = false;
       auto handleException = [&](const State& stateBefore) {
-        if (exceptionTarget > -1) {
+        if (exceptionTarget > -1 && !exceptionPropagatedForCurrentState) {
           propagateState(exceptionTarget, stateBefore);
+          exceptionPropagatedForCurrentState = true;
+        }
+      };
+
+      // Helper to transfer a statement
+      auto runTransfer = [&](IRIStatement* s) {
+        State nextState = transferFn.transferStatement(*s, currState);
+        if (!(nextState == currState)) {
+          currState = std::move(nextState);
+          exceptionPropagatedForCurrentState = false;
         }
       };
 
       // Transfer through non-terminal statements
       for (IRIStatement* s = bb->head; s != nullptr; s = s->next) {
         handleException(currState);
-        currState = transferFn.transferStatement(*s, currState);
+        runTransfer(s);
       }
 
       // Transfer through terminal statement
       if (bb->tail) {
         handleException(currState);
-        currState = transferFn.transferStatement(*bb->tail, currState);
+        runTransfer(bb->tail);
       }
 
       // Propagate exit state to normal successors
@@ -279,15 +293,21 @@ public:
       State currState = blockExitStates[currIdx];
 
       // Sound exceptional control flow propagation
+      bool exceptionJoinedForCurrentState = false;
       auto handleException = [&](State& stateBefore) {
-        if (includeExceptions && bb->EXCEPTION > -1) {
+        if (includeExceptions && bb->EXCEPTION > -1 && !exceptionJoinedForCurrentState) {
           stateBefore = stateBefore.joinWith(getBlockEntryState(bb->EXCEPTION));
+          exceptionJoinedForCurrentState = true;
         }
       };
 
       // Transfer backward through terminal statement
       if (bb->tail) {
-        currState = transferFn.transferStatement(*bb->tail, currState);
+        State nextState = transferFn.transferStatement(*bb->tail, currState);
+        if (!(nextState == currState)) {
+          currState = std::move(nextState);
+          exceptionJoinedForCurrentState = false;
+        }
         handleException(currState);
       }
 
@@ -297,7 +317,11 @@ public:
         stmts.push_back(s);
       }
       for (auto it = stmts.rbegin(); it != stmts.rend(); ++it) {
-        currState = transferFn.transferStatement(**it, currState);
+        State nextState = transferFn.transferStatement(**it, currState);
+        if (!(nextState == currState)) {
+          currState = std::move(nextState);
+          exceptionJoinedForCurrentState = false;
+        }
         handleException(currState);
       }
 

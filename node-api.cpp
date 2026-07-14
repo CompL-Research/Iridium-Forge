@@ -5,7 +5,6 @@
 #include "Storage/Config.h"
 #include "Storage/IridiumPool.h"
 #include <functional>
-#include <msgpack.hpp>
 #include <napi.h>
 #include <string>
 #include <zlib.h>

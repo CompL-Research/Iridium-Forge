@@ -4,7 +4,6 @@
 #include "Parser/IridiumBuildContext.h"
 #include "Storage/Config.h"
 #include "Storage/IridiumPool.h"
-#include <msgpack.hpp>
 #include <napi.h>
 #include <zlib.h>
 
