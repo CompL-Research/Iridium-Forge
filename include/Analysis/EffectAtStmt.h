@@ -5,7 +5,6 @@
 #include "Generated/IridiumTypes.h"
 #include "Support/IRIS.hpp"
 #include "Support/BBContainerSupport.hpp"
-#include <iostream>
 #include <memory>
 #include <set>
 
@@ -217,8 +216,10 @@ public:
         }
       }
 
-      // Overwrite/Update state after the kill checks so we don't kill ourselves immediately
-      if (pool[LVAL].tag == IRI_GEN::EnvBinding && !(*pool.iris)[LVAL].isCaptured()) {
+      // Overwrite/Update state after the kill checks so we don't kill ourselves immediately.
+      // Only track effect-free writes: if RVal has side effects, don't mark as valid.
+      if (pool[LVAL].tag == IRI_GEN::EnvBinding && !(*pool.iris)[LVAL].isCaptured() &&
+          !hasSideEffect(hasSideEffect, rval)) {
         nextState = EffectAtStmtState(false, true, LVAL, rval, stmt.id);
       } else {
         // Any write to a global, remote, or captured variable kills the currently tracked effect

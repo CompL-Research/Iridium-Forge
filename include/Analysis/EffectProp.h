@@ -5,7 +5,7 @@
 #include "Analysis/Liveness.h"
 #include "Generated/IridiumTypes.h"
 #include "Support/BBContainerSupport.hpp"
-#include <iostream>
+#include <unordered_map>
 #include <vector>
 #include <set>
 
@@ -14,73 +14,35 @@ namespace IRI_STRUCTURAL {
 struct EffectPropPass {
   bool run(IRICFG &cfg, AnalysisManager &am) {
     bool changed = false;
-    
+
     // 1. Query the analysis results
     const EffectAtStmtResult &effectResult = am.getResult<EffectAtStmtAnalysis>(cfg);
     const LivenessAnalysisResult &livenessResult = am.getResult<LivenessAnalysis>(cfg);
 
     auto &pool = cfg.pool;
-    
-    // Get strict mode flag
+
     BBContainerSupport bbc(cfg.id, pool);
     bool strict = bbc.hasSTRICT();
     LivenessTransfer livenessTransfer(strict);
 
-    // Helper to count occurrences of targetStore in expression node
-    auto countOccurrences = [&](auto &self, IRID node, IRID targetStore) -> size_t {
-      size_t count = 0;
-      auto tag = pool[node].tag;
-      if (tag == IRI_GEN::EnvRead) {
-        IRI_GEN::EnvReadSEXP er(node, pool);
-        if (er.getArg_Obj() == targetStore) {
-          count++;
-        }
-      }
-      for (auto child : pool.get_args_view(node)) {
-        count += self(self, child, targetStore);
-      }
-      return count;
-    };
-
-    // Helper to replace targetStore EnvRead with replacementEffect
-    auto patchNode = [&](auto &self, IRID node, IRID targetStore, IRID replacementEffect) -> bool {
-      bool replaced = false;
-      auto args = pool.get_args_view(node);
-      for (size_t i = 0; i < args.size(); ++i) {
-        IRID child = args[i];
-        auto tag = pool[child].tag;
-        if (tag == IRI_GEN::EnvRead) {
-          IRI_GEN::EnvReadSEXP er(child, pool);
-          if (er.getArg_Obj() == targetStore) {
-            pool.update_arg_inplace(node, i, replacementEffect);
-            replaced = true;
-            continue;
+    // Check if a value node is safe to duplicate (constant or cheap read)
+    auto isSafeToDup = [&](IRID node) -> bool {
+      switch (pool[node].tag) {
+        case IRI_GEN::Number: case IRI_GEN::Boolean: case IRI_GEN::Null:
+        case IRI_GEN::String: case IRI_GEN::JSBigInt: case IRI_GEN::JSNUBD:
+          return true;
+        case IRI_GEN::EnvRead: {
+          IRI_GEN::EnvReadSEXP er(node, pool);
+          if (er.hasSAFE()) {
+            IRID obj = er.getArg_Obj();
+            if (pool[obj].tag == IRI_GEN::GlobalBinding || pool[obj].tag == IRI_GEN::ScriptBinding)
+              return true;
           }
+          break;
         }
-        if (self(self, child, targetStore, replacementEffect)) {
-          replaced = true;
-        }
+        default: break;
       }
-      return replaced;
-    };
-
-    // Helper to calculate liveness state after statement stmt
-    auto getLivenessAfterStatement = [&](const IRIStatement &stmt) -> LivenessState {
-      LivenessState state = livenessResult.getBlockExitState(stmt.bb->IDX);
-      if (stmt.bb->tail && stmt.bb->tail != &stmt) {
-        state = livenessTransfer.transferStatement(*stmt.bb->tail, state);
-      }
-      std::vector<IRIStatement *> stmts;
-      for (IRIStatement *s = stmt.bb->head; s != nullptr; s = s->next) {
-        stmts.push_back(s);
-      }
-      for (auto it = stmts.rbegin(); it != stmts.rend(); ++it) {
-        if (*it == &stmt) {
-          return state;
-        }
-        state = livenessTransfer.transferStatement(**it, state);
-      }
-      return state;
+      return false;
     };
 
     // Perform optimization on each basic block
@@ -90,66 +52,106 @@ struct EffectPropPass {
         stmts.push_back(s);
       }
 
+      // Build ID -> statement map for O(1) defStmt lookup
+      std::unordered_map<IRID, IRIStatement*> idToStmt;
+      idToStmt.reserve(stmts.size());
+      for (auto *s : stmts) idToStmt[s->id] = s;
+
+      // Pre-compute per-statement liveness from a single backward pass
+      // (eliminates O(n²) getLivenessAfterStatement re-traversals)
+      std::vector<LivenessState> livenessAfter(stmts.size());
+      {
+        LivenessState state = livenessResult.getBlockExitState(bb->IDX);
+        if (bb->tail && !(stmts.size() > 0 && stmts.back() == bb->tail))
+          state = livenessTransfer.transferStatement(*bb->tail, state);
+        for (ssize_t i = static_cast<ssize_t>(stmts.size()) - 1; i >= 0; --i) {
+          livenessAfter[i] = state;
+          state = livenessTransfer.transferStatement(**(stmts.begin() + static_cast<size_t>(i)), state);
+        }
+      }
+
+      // Collect candidate indices upfront (skip if store liveness is TOP/unknown)
+      std::vector<size_t> candidates;
+      for (size_t i = 0; i < stmts.size(); ++i) {
+        auto es = effectResult.queryStateAtStatement(*stmts[i]);
+        if (!es.validEffect) continue;
+        if (livenessAfter[i].getLattice(es.store).kind == LivenessLattice::TOP)
+          continue; // unknown liveness → skip to avoid useless subtree walks
+        candidates.push_back(i);
+      }
+
       std::set<IRIStatement*> toRemove;
 
-      for (auto *s : stmts) {
-        // Skip statements already scheduled for removal
+      for (size_t ci : candidates) {
+        IRIStatement *s = stmts[ci];
         if (toRemove.count(s) > 0) continue;
 
         EffectAtStmtState state = effectResult.queryStateAtStatement(*s);
-        if (state.validEffect) {
-          IRID targetStore = state.store;
-          IRID replacementEffect = state.effect;
-          IRID definitionStmtId = state.stmt;
+        IRID targetStore       = state.store;
+        IRID replacementEffect = state.effect;
+        IRID definitionStmtId  = state.stmt;
 
-          // Check if the replacement effect is safe to duplicate
-          bool isSafeReadOrConstant = false;
-          auto repTag = pool[replacementEffect].tag;
-          if (repTag == IRI_GEN::Number || repTag == IRI_GEN::Boolean || repTag == IRI_GEN::Null ||
-              repTag == IRI_GEN::String || repTag == IRI_GEN::JSBigInt || repTag == IRI_GEN::JSNUBD) {
-            isSafeReadOrConstant = true;
-          } else if (repTag == IRI_GEN::EnvRead) {
-            IRI_GEN::EnvReadSEXP er(replacementEffect, pool);
-            if (er.hasSAFE()) {
-              isSafeReadOrConstant = true;
-            } else {
-              auto obj = er.getArg_Obj();
-              auto objTag = pool[obj].tag;
-              if (objTag == IRI_GEN::GlobalBinding || objTag == IRI_GEN::ScriptBinding) {
-                isSafeReadOrConstant = true;
+        // Liveness already cached — no re-traversal needed
+        bool isDeadAfter = (livenessAfter[ci].getLattice(targetStore).kind != LivenessLattice::LIVE);
+
+        // Cheap safety check before any subtree walk
+        bool isSafeReadOrConstant = isSafeToDup(replacementEffect);
+
+        // Count occurrences (only for candidates that passed the cheap checks)
+        size_t occurrences = 0;
+        {
+          std::vector<IRID> worklist;
+          worklist.push_back(s->id);
+          while (!worklist.empty()) {
+            IRID cur = worklist.back();
+            worklist.pop_back();
+            if (pool[cur].tag == IRI_GEN::EnvRead) {
+              IRI_GEN::EnvReadSEXP er(cur, pool);
+              if (er.getArg_Obj() == targetStore) ++occurrences;
+            }
+            for (auto child : pool.get_args_view(cur))
+              worklist.push_back(child);
+          }
+        }
+        if (occurrences == 0) continue;
+
+        bool shouldInline = (occurrences == 1 && isDeadAfter) || isSafeReadOrConstant;
+        if (!shouldInline) continue;
+
+        // O(1) defStmt lookup via hash map instead of linear scan
+        IRIStatement *defStmt = idToStmt.count(definitionStmtId) ? idToStmt[definitionStmtId] : nullptr;
+
+        // Iterative tree walker to replace EnvRead(targetStore) with replacementEffect
+        bool didPatch = false;
+        {
+          std::vector<std::pair<IRID, IRID>> path; // (parent, childToCheck)
+          path.push_back({ 0, s->id });
+          while (!path.empty()) {
+            auto [parent, cur] = path.back();
+            path.pop_back();
+            if (pool[cur].tag == IRI_GEN::EnvRead) {
+              IRI_GEN::EnvReadSEXP er(cur, pool);
+              if (er.getArg_Obj() == targetStore) {
+                // Replace in-place
+                auto parentArgs = pool.get_args_view(parent);
+                for (size_t ai = 0; ai < parentArgs.size(); ++ai) {
+                  if (parentArgs[ai] == cur) {
+                    pool.update_arg_inplace(parent, ai, replacementEffect);
+                    didPatch = true;
+                    break; // don't recurse into replaced node
+                  }
+                }
+                continue;
               }
             }
+            for (auto child : pool.get_args_view(cur))
+              path.push_back({ cur, child });
           }
+        }
 
-          LivenessState livenessAfter = getLivenessAfterStatement(*s);
-          bool isDeadAfter = (livenessAfter.getLattice(targetStore).kind != LivenessLattice::LIVE);
-
-          size_t occurrences = countOccurrences(countOccurrences, s->id, targetStore);
-          
-          bool shouldInline = false;
-          if (occurrences == 1 && isDeadAfter) {
-            shouldInline = true;
-          } else if (occurrences > 0 && isSafeReadOrConstant) {
-            shouldInline = true;
-          }
-
-          if (shouldInline) {
-            // Find definition statement
-            IRIStatement* defStmt = nullptr;
-            for (auto *stmtInBB : stmts) {
-              if (stmtInBB->id == definitionStmtId) {
-                defStmt = stmtInBB;
-                break;
-              }
-            }
-
-            if (patchNode(patchNode, s->id, targetStore, replacementEffect)) {
-              if (isDeadAfter && defStmt) {
-                toRemove.insert(defStmt);
-              }
-              changed = true;
-            }
-          }
+        if (didPatch) {
+          changed = true;
+          if (isDeadAfter && defStmt) toRemove.insert(defStmt);
         }
       }
 
