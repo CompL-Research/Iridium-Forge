@@ -18,6 +18,11 @@ namespace IRI_STRUCTURAL {
 }
 
 namespace IRI_STORAGE {
+struct ReachabilityResult {
+  std::vector<bool> visited;  // vector indexed by IRID for nodes
+  size_t reachable_count = 0;
+};
+
 class IridiumPool {
 
 public:
@@ -97,6 +102,12 @@ public:
   void remove_args_matching_tag(IRID id, IRI_GEN::IRI_TAG tag);
 
   void update_num_args(IRID id, uint32_t num_args);
+
+  // Reachability
+  ReachabilityResult mark_reachable(IRID root) const;
+
+  // print reachability
+  void print_reachability(const ReachabilityResult &r) const;
 
   ~IridiumPool();
   IridiumPool() = default;

@@ -261,6 +261,56 @@ void IridiumPool::update_num_args(IRID id, uint32_t num_args) {
   node.num_args = num_args;
 }
 
+ReachabilityResult IridiumPool::mark_reachable(IRID root) const {
+  ReachabilityResult result;
+  result.visited.assign(nodes.size(), false);
+
+  if (nodes.empty()) return result;
+
+  std::vector<IRID> worklist;
+  worklist.push_back(root);
+  result.visited[root] = true;
+
+  while (!worklist.empty()) {
+    IRID id = worklist.back();
+    worklist.pop_back();
+    result.reachable_count++;
+
+    const IridiumSEXP &node = nodes[id];
+    for (IRID child : get_args_view(&node)) {
+      if (!result.visited[child]) {
+        worklist.push_back(child);
+        result.visited[child] = true;
+      }
+    }
+  }
+
+  return result;
+}
+
+void IridiumPool::print_reachability(const ReachabilityResult &r) const {
+  size_t total = nodes.size();
+  size_t reachable = r.reachable_count;
+  size_t unreachable = total - reachable;
+  double garbage_pct = total > 0
+      ? (static_cast<double>(unreachable) / total) * 100.0
+      : 0.0;
+
+  std::cout << "\n------- IridiumPool Reachability --------\n";
+  std::cout << "Total nodes:      " << total << std::endl;
+  std::cout << "Reachable:        " << reachable << std::endl;
+  std::cout << "Unreachable:      " << unreachable << std::endl;
+  std::cout << "Garbage %:        " << garbage_pct << "%" << std::endl;
+
+  std::cout << "\n-------- Reachable nodes -------------\n";
+  for (size_t i = 0; i < r.visited.size(); i++) {
+    if (r.visited[i] == true) {
+      std::cout << "[" << i << "], ";
+    }
+  }
+  std::cout << std::endl;
+}
+
 IridiumPool::~IridiumPool() {
 #ifdef DEBUG_STORAGE
   if (nodes.empty())

@@ -36,6 +36,7 @@ inline void normalizeIRIDIUM(
   auto dump = [&](const std::string &name) {
     #if DUMP_CORE_PASSES == 1
     std::ofstream outFile(name + ".iridump");
+    // pool[sexp].dumpFlat(outFile, &pool);
     pool[sexp].dumpFlat(outFile, &pool);
     #endif
   };
@@ -80,6 +81,16 @@ inline void normalizeIRIDIUM(
   runPass("_22_ESTKTHM", IRI_CORE_PASSES::_22_ESTKTHM);
   // runPass("_23_RIB", IRI_CORE_PASSES::_23_RIB);
   runPass("_AFTER_CORE_PASSES_", IRI_CORE_PASSES::_FNOPS);
+
+#if DUMP_CORE_PASSES == 1
+  std::cout << "\nAfter Core Passes :\n";
+  auto reach = pool.mark_reachable(sexp);
+  pool.print_reachability(reach);
+  {
+    std::ofstream out("AFTER_CORE_PASSES_with_ids.iridump");
+    pool[sexp].dumpFlat(out, &pool, sexp);
+  }
+#endif
 
   // Initialize closure tree and create CFGs
   IRID treeRoot = IRI_HELPERS::getTopLevelContainer(pool, sexp);
@@ -187,7 +198,30 @@ IRID sharedEntrypoint(
     std::unordered_map<int, std::shared_ptr<IridiumBuildContext>>
         &iridiumBuildContext,
     IRIPerf &iriPerf) {
+
+  std::cout << "\nBefore Normalization :\n";
+  auto reach = pool.mark_reachable(file);
+  pool.print_reachability(reach);
+
+#if DUMP_CORE_PASSES == 1
+  {
+    std::ofstream out("BEFORE_NORMALIZATION_with_ids.iridump");
+    pool[file].dumpFlat(out, &pool, file);
+  }
+#endif
+  
   normalizeIRIDIUM(pool, file, iridiumBuildContext, iriPerf);
+  
+  std::cout << "\nAfter Iris Commit :\n";
+  reach = pool.mark_reachable(file);
+  pool.print_reachability(reach);
+
+#if DUMP_CORE_PASSES == 1
+  {
+    std::ofstream out("AFTER_IRIS_COMMIT_with_ids.iridump");
+    pool[file].dumpFlat(out, &pool, file);
+  }
+#endif
 
   return file;
 }

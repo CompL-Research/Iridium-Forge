@@ -1,4 +1,5 @@
 #pragma once
+#include "Storage/Config.h"
 #include "Generated/IridiumEnums.h"
 #include <cstdint>
 #include <sstream>
@@ -27,6 +28,9 @@ public:
             int indent = 0) const;
 
   void dumpFlat(std::ostream &oss, IridiumPool *pool,
+                int depth = 0, bool full = true) const;
+
+  void dumpFlat(std::ostream &oss, IridiumPool *pool, IRID id,
                 int depth = 0, bool full = true) const;
 };
 } // namespace IRI_STORAGE
