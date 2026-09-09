@@ -1,18 +1,21 @@
 #include "Entrypoint.h"
-#include "CorePasses.h"
-#include "Helpers.h"
-#include "Storage/IridiumPool.h"
-#include "Support/FileSupport.hpp"
-#include "Support/IRIS.hpp"
-#include "Support/ClosureTree.hpp"
-#include "Analysis/MTDZS.h"
-#include "Analysis/DCE.h"
-#include "Analysis/ConstantsAtStmt.h"
 #include "Analysis/ConstantProp.h"
+#include "Analysis/ConstantsAtStmt.h"
+#include "Analysis/DCE.h"
 #include "Analysis/EffectAtStmt.h"
 #include "Analysis/EffectProp.h"
+#include "Analysis/MTDZS.h"
+#include "CorePasses.h"
+#include "Helpers.h"
 #include "IRIPerf.h"
 #include "Storage/Config.h"
+#include "Storage/IridiumPool.h"
+#include "Support/ClosureTree.hpp"
+#include "Support/FileSupport.hpp"
+#include "Support/IRIS.hpp"
+#include "Support/PTA.hpp"
+#include <cstdint>
+#include <exception>
 #if DUMP_CORE_PASSES == 1
 #include <fstream>
 #include <sstream>
@@ -27,17 +30,18 @@ using namespace IRI_STORAGE;
 using namespace IRI_PARSE;
 using namespace IRI_STRUCTURAL;
 
-inline void normalizeIRIDIUM(
-    IridiumPool &pool, IRID sexp,
-    std::unordered_map<int, std::shared_ptr<IridiumBuildContext>>
-        &iridiumBuildContext,
-    IRIPerf &iriPerf) {
+inline void
+normalizeIRIDIUM(IridiumPool &pool, IRID sexp,
+                 std::unordered_map<int, std::shared_ptr<IridiumBuildContext>>
+                     &iridiumBuildContext,
+                 IRIPerf &iriPerf) {
+
   // Helper to dump state
   auto dump = [&](const std::string &name) {
-    #if DUMP_CORE_PASSES == 1
+#if DUMP_CORE_PASSES == 1
     std::ofstream outFile(name + ".iridump");
     pool[sexp].dumpFlat(outFile, &pool);
-    #endif
+#endif
   };
 
   // Helper to run a pass
@@ -87,11 +91,13 @@ inline void normalizeIRIDIUM(
   FileSupport fs(sexp, pool);
 
   for (auto [bbcID, _] : fs.containers()) {
-    if (bbcID == treeRoot) continue;
+    if (bbcID == treeRoot)
+      continue;
     pool.closureTree->addClosure(bbcID);
   }
 
-  // Must happen after the tree is created and all closures have already been added
+  // Must happen after the tree is created and all closures have already been
+  // added
   pool.iris->populateCClosuresInTree();
 
   AnalysisManager am;
@@ -116,22 +122,22 @@ inline void normalizeIRIDIUM(
   }
 
   iriPerf.tick("_23_OPT_MTDZS_DCE");
-  pool.closureTree->preorderTraversal([&](IRICFG* cfgCTX) {
-    pm.run(*cfgCTX, am);
-  });
+  pool.closureTree->preorderTraversal(
+      [&](IRICFG *cfgCTX) { pm.run(*cfgCTX, am); });
   iriPerf.tock("_23_OPT_MTDZS_DCE");
 
   if (std::getenv("NOEP")) {
     // Skip Pass
   } else {
     iriPerf.tick("_24_OPT_EFFECT_PROP");
-    pool.closureTree->preorderTraversal([&](IRICFG* cfgCTX) {
+    pool.closureTree->preorderTraversal([&](IRICFG *cfgCTX) {
       EffectPropPass ep;
       bool changed = true;
       int iterations = 0;
       const int maxIterations = 50;
       BBContainerSupport bbc(cfgCTX->id, cfgCTX->pool);
-      // std::cout << "[EffectProp] Optimization starting for closure " << bbc.getStartBBIDX() << "...\n";
+      // std::cout << "[EffectProp] Optimization starting for closure " <<
+      // bbc.getStartBBIDX() << "...\n";
       while (changed && iterations < maxIterations) {
         // auto start = std::chrono::high_resolution_clock::now();
         changed = ep.run(*cfgCTX, am);
@@ -146,14 +152,20 @@ inline void normalizeIRIDIUM(
     iriPerf.tock("_24_OPT_EFFECT_PROP");
   }
 
+  try {
+    // Perform PTA
+    PTASolver ptaSolver;
+    ptaSolver.solve(pool);
+  } catch (std::exception e) {
+    std::cout << "PTA failed" << std::endl;
+  }
   // Commit closure level bindings
   pool.closureTree->commit();
-  dump("AFTER_OPT_PASSES");
 
 #if DUMP_ANALYSIS_RESULTS == 1
   {
     std::ofstream outFile("ANALYSIS_DUMP.iridump");
-    pool.closureTree->preorderTraversal([&](IRICFG* cfgCTX) {
+    pool.closureTree->preorderTraversal([&](IRICFG *cfgCTX) {
       BBContainerSupport bbc(cfgCTX->id, cfgCTX->pool);
       outFile << "Closure " << bbc.getStartBBIDX() << ":\n";
 
@@ -172,8 +184,9 @@ inline void normalizeIRIDIUM(
 
   pool.iris->commit();
 
-  // pool.closureTree->dumpFlat(std::cout);
-  // pool.iris->dumpFlat(std::cout);
+  dump("AFTER_OPT_PASSES");
+  pool.closureTree->dumpFlat(std::cout);
+  pool.iris->dumpFlat(std::cout);
 }
 
 // inline void voidPrepareForAnalysis(IridiumPool &pool) {
