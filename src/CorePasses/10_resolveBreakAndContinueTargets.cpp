@@ -132,7 +132,7 @@ void _10_RBACT(
           LoopConfig target = findLoopControlTarget(pool, bbScopeIDX, bTarget,
                                                     iridiumBuildContext,
                                                     intermediateContextHolder);
-          auto gotoSEXPID = GotoSEXP::create(pool, target.breakTarget);
+          auto gotoSEXPID = GotoSEXP::create(pool, false, target.breakTarget);
           pool.update_arg_inplace(bbID, stmtOffset, gotoSEXPID);
           decoratorMap[gotoSEXPID] = intermediateContextHolder;
           isBreakTarget[gotoSEXPID] = target;
@@ -148,7 +148,7 @@ void _10_RBACT(
           // auto target = findLoopControlTarget(bbSEXP.getScopeIDX(), cTarget,
           //                                     iridiumBuildContext,
           //                                     intermediateContextHolder);
-          auto gotoSEXPID = GotoSEXP::create(pool, target.continueTarget);
+          auto gotoSEXPID = GotoSEXP::create(pool, false, target.continueTarget);
           GotoSEXP gotoSEXP(gotoSEXPID, pool);
 
           // Used to find stack->heap movement targets (breakTarget becomes

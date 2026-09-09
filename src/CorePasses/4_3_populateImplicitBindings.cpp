@@ -72,7 +72,7 @@ void _4_3_PIB(IridiumPool &pool, IRID fileID, BUILD_CTX &iridiumBuildContext) {
 
           double OPID = ibs.getOPID();
           if (OPID == 10) {
-            rval = JSNUBDSEXP::create(pool);
+            rval = pool.NUBD_SEXP;
           } else if (OPID == 11) {
             rval = IRI_HELPERS::createUnsafeEnvReadSEXP(pool, str_undefined);
           } else if (OPID == 12) {

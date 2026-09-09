@@ -30,7 +30,7 @@ inline void patchNode(IridiumPool &pool, IRID node, double startScope) {
       if (pool[val].tag == IRI_GEN::UNOPDelVar) {
         UNOPDelVarSEXP dv(val, pool);
         if (!pool.iris->isGlobal(dv.getNAME(), startScope)) {
-          pool.update_arg_inplace(node, i, pool.FALSE_SEXP);
+          pool.update_arg_inplace(node, i, BooleanSEXP::create(pool, false));
         }
       }
     }
