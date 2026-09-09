@@ -7,16 +7,16 @@
 #include "Support/BBContainerSupport.hpp"
 #include "Support/BBSupport.hpp"
 #include "Support/IRIS.hpp"
+#include <algorithm>
 #include <cassert> // For assert()
 #include <fstream>
 #include <functional>
 #include <iostream>
 #include <memory>
+#include <set>
 #include <stdexcept> // For std::runtime_error
 #include <string>
 #include <vector>
-#include <algorithm>
-#include <set>
 
 namespace IRI_STRUCTURAL {
 using namespace IRI_STORAGE;
@@ -56,7 +56,8 @@ void IRIBB::append(IRIStatement *inst) {
 }
 
 void IRIBB::remove(IRIStatement *inst) {
-  if (inst == nullptr) return;
+  if (inst == nullptr)
+    return;
   if (inst == tail) {
     tail = nullptr;
     delete inst;
@@ -74,7 +75,8 @@ void IRIBB::remove(IRIStatement *inst) {
 }
 
 void IRIBB::insertBefore(IRIStatement *inst, IRIStatement *before) {
-  if (inst == nullptr) return;
+  if (inst == nullptr)
+    return;
   if (before == nullptr) {
     append(inst);
     return;
@@ -90,7 +92,8 @@ void IRIBB::insertBefore(IRIStatement *inst, IRIStatement *before) {
 }
 
 void IRIBB::insertAfter(IRIStatement *inst, IRIStatement *after) {
-  if (inst == nullptr) return;
+  if (inst == nullptr)
+    return;
   if (after == nullptr) {
     inst->next = head;
     inst->prev = nullptr;
@@ -109,7 +112,8 @@ void IRIBB::insertAfter(IRIStatement *inst, IRIStatement *after) {
 }
 
 void IRIBB::replace(IRIStatement *oldInst, IRIStatement *newInst) {
-  if (oldInst == nullptr || newInst == nullptr) return;
+  if (oldInst == nullptr || newInst == nullptr)
+    return;
   if (oldInst == tail) {
     tail = newInst;
     newInst->prev = nullptr;
@@ -151,7 +155,7 @@ static bool isValidBBTerminal(IRI_GEN::IRI_TAG tag, IridiumPool &pool) {
 void IRIBB::setTerminal(IRID stmtID) {
   if (tail != nullptr) {
     // Clear existing edges
-    for (auto & e : closure->successors[IDX]) {
+    for (auto &e : closure->successors[IDX]) {
       closure->predecessors[e].erase(IDX);
     }
     closure->successors[IDX].clear();
@@ -177,7 +181,8 @@ void IRIBB::setTerminal(IRID stmtID) {
                                                rValTarget, false, true, false),
                             this));
 
-    tail = new IRIStatement(GotoSEXP::create(pool, closure->exit_block), this);
+    tail = new IRIStatement(GotoSEXP::create(pool, false, closure->exit_block),
+                            this);
 
     closure->successors[IDX].insert(closure->exit_block);
     closure->predecessors[closure->exit_block].insert(IDX);
@@ -313,7 +318,7 @@ IRICFG::IRICFG(IRI_STORAGE::IRID i, IRI_STORAGE::IridiumPool &p)
 
   // Split BBs at Finalizer Calls
   std::set<IRIBB *> worklist;
-  for (auto & e : nodeMap) {
+  for (auto &e : nodeMap) {
     worklist.insert(e.second.get());
   }
   while (!worklist.empty()) {
@@ -331,7 +336,8 @@ IRICFG::IRICFG(IRI_STORAGE::IRID i, IRI_STORAGE::IridiumPool &p)
     if (curr != nullptr) {
       InvokeFinalizerSEXP ivTarget(curr->id, pool);
       double finalizerEntryIDX = ivTarget.getIDX();
-      double finalizerExitIDX = pool.iris->getFinalizerRetBBIDX(finalizerEntryIDX);
+      double finalizerExitIDX =
+          pool.iris->getFinalizerRetBBIDX(finalizerEntryIDX);
       if (!nodeMap.contains(finalizerEntryIDX)) {
         throw std::runtime_error("finalizerEntryIDX missing");
       }
@@ -347,7 +353,8 @@ IRICFG::IRICFG(IRI_STORAGE::IRID i, IRI_STORAGE::IridiumPool &p)
       IRIBB *postBB = nodeMap[postBBIDX].get();
       worklist.insert(postBB);
       postBB->head = curr->next;
-      postBB->tail = new IRIStatement(bb->tail->id, postBB); // Pass postBB, not bb
+      postBB->tail =
+          new IRIStatement(bb->tail->id, postBB); // Pass postBB, not bb
 
       if (postBB->head != nullptr) {
         postBB->head->prev = nullptr;
@@ -357,12 +364,13 @@ IRICFG::IRICFG(IRI_STORAGE::IRID i, IRI_STORAGE::IridiumPool &p)
       }
 
       // Forward successors of the currentBB to PostBB
-      for (auto & s : successors[bb->IDX]) {
+      for (auto &s : successors[bb->IDX]) {
         successors[postBBIDX].insert(s);
         predecessors[s].insert(postBBIDX);
       }
 
-      bool finalizerDynamicRet = pool[nodeMap[finalizerExitIDX]->tail->id].tag == Ret;
+      bool finalizerDynamicRet =
+          pool[nodeMap[finalizerExitIDX]->tail->id].tag == Ret;
 
       // Create Edge from finalizer BB Exit to PostBB
       if (finalizerDynamicRet) {
@@ -390,14 +398,83 @@ IRICFG::IRICFG(IRI_STORAGE::IRID i, IRI_STORAGE::IridiumPool &p)
     }
   }
 
-  for (auto & e : nodeMap) {
+  // Split BBs at await points
+  std::set<IRIBB *> awaitWorklist;
+  for (auto &e : nodeMap) {
+    awaitWorklist.insert(e.second.get());
+  }
+
+  while (!awaitWorklist.empty()) {
+    IRIBB *bb = *awaitWorklist.begin();
+    awaitWorklist.erase(awaitWorklist.begin());
+
+    IRIStatement *currStmt = bb->head;
+    while (currStmt != nullptr) {
+      IRID stmtID = currStmt->id;
+      if (IRI_HELPERS::hasNodeWithPredicate(stmtID, &pool, [&](IRID id) {
+            return pool[id].tag == IRI_GEN::Await;
+          })) {
+        break;
+      }
+      currStmt = currStmt->next;
+    }
+
+    if (currStmt != nullptr) {
+      if (bb->tail == nullptr) {
+        throw std::runtime_error("bb tail cannot be null before split");
+      }
+      IRID origTailID = bb->tail->id;
+
+      // Create a new BB for remaining statements
+      auto postBBIDX = ++pool.lastBBIDX;
+      nodeMap[postBBIDX] =
+          std::make_unique<IRIBB>(bb->SCOPE, postBBIDX, this, pool);
+      IRIBB *postBB = nodeMap[postBBIDX].get();
+      awaitWorklist.insert(postBB);
+
+      IRIStatement *nextStmts = currStmt->next;
+      currStmt->next = nullptr;
+
+      postBB->head = nextStmts;
+      if (postBB->head == nullptr) {
+        throw std::runtime_error("postBB head cannot be null");
+      }
+      postBB->head->prev = nullptr;
+      for (IRIStatement *s = postBB->head; s != nullptr; s = s->next) {
+        s->bb = postBB;
+      }
+
+      postBB->setTerminal(origTailID);
+      if (postBB->tail == nullptr) {
+        throw std::runtime_error("postBB tail cannot be null");
+      }
+
+      postBB->EXCEPTION = bb->EXCEPTION;
+      postBB->FINTARGET = bb->FINTARGET;
+      bb->FINTARGET = -1;
+
+      // Set Goto terminal for the await stmt BB pointing to postBB
+      // Deferred -> true ; this represents a GOTO may act as a early return
+      // (useful in analysis that care about suspension points, otherwise its a
+      // normal goto)
+      bb->setTerminal(GotoSEXP::create(pool, true, postBBIDX));
+
+      // Record contBBIDX in continuationPoints
+      continuationPoints.insert(postBBIDX);
+    }
+  }
+
+  for (auto &e : nodeMap) {
     IRIStatement *curr = e.second->head;
     while (curr != nullptr) {
       IRI_GEN::IRI_META currMeta = IRI_GEN::get_meta(pool[curr->id].tag);
-      if (currMeta == IRI_GEN::IRI_META::STMT || currMeta == IRI_GEN::IRI_META::AMP) {
+      if (currMeta == IRI_GEN::IRI_META::STMT ||
+          currMeta == IRI_GEN::IRI_META::AMP) {
         // TYPE OK
       } else {
-        std::cerr << IRI_GEN::dump_tag(pool[curr->id].tag) << " expected STMT, found: " << std::to_string(currMeta) << std::endl;
+        std::cerr << IRI_GEN::dump_tag(pool[curr->id].tag)
+                  << " expected STMT, found: " << std::to_string(currMeta)
+                  << std::endl;
         throw new std::runtime_error("STMT err");
       }
       curr = curr->next;
@@ -446,8 +523,15 @@ void IRICFG::dumpDOT(const std::string &filePath) {
     std::stringstream ss;
     auto &bb = nodeMap[currentBBIDX];
     bb->dumpFlat(ss);
+
+    bool isCont = continuationPoints.contains(currentBBIDX);
+    std::string xlabel = "BB" + std::to_string((int)currentBBIDX) +
+                         (isCont ? " (Continuation)" : "");
+    std::string extraStyle =
+        isCont ? ", fillcolor=\"#e1f5fe\", color=\"#0288d1\"" : "";
+
     outFile << "  " << (int)currentBBIDX << " [label=\"" << ss.str()
-            << "\", xlabel=\"BB" << currentBBIDX << "\"];\n";
+            << "\", xlabel=\"" << xlabel << "\"" << extraStyle << "];\n";
 
     for (auto succ : successors[currentBBIDX]) {
       outFile << "  " << (int)currentBBIDX << " -> " << (int)succ << ";\n";
@@ -455,17 +539,23 @@ void IRICFG::dumpDOT(const std::string &filePath) {
     }
 
     if (bb->EXCEPTION > -1) {
-      outFile << "  " << (int)currentBBIDX << " -> " << (int)bb->EXCEPTION << " [style=\"dotted\", color=\"red\"];\n";
+      outFile << "  " << (int)currentBBIDX << " -> " << (int)bb->EXCEPTION
+              << " [style=\"dotted\", color=\"red\"];\n";
       dumpRecurse(bb->EXCEPTION);
     }
 
     if (bb->FINTARGET > -1) {
-      outFile << "  " << (int)currentBBIDX << " -> " << (int)bb->FINTARGET << " [style=\"dotted\"];\n";
+      outFile << "  " << (int)currentBBIDX << " -> " << (int)bb->FINTARGET
+              << " [style=\"dotted\"];\n";
     }
   };
   dumpRecurse(entry_block);
 
-  for (auto & wasteBB : nodesTODO) {
+  for (auto contIDX : continuationPoints) {
+    dumpRecurse(contIDX);
+  }
+
+  for (auto &wasteBB : nodesTODO) {
     std::cerr << "  DeadBB: " << wasteBB << std::endl;
   }
 
@@ -504,9 +594,10 @@ void IRICFG::commit() {
       stmtList.push_back(bb->tail->id);
     }
     if (bb->FINTARGET == -2) {
-      stmtList.push_back(ThrowSEXP::create(pool, StringSEXP::create(pool, pool.strings.intern("Unreachable"))));
+      stmtList.push_back(ThrowSEXP::create(
+          pool, StringSEXP::create(pool, pool.strings.intern("Unreachable"))));
     } else if (bb->FINTARGET > -1) {
-      stmtList.push_back(GotoSEXP::create(pool, bb->FINTARGET));
+      stmtList.push_back(GotoSEXP::create(pool, false, bb->FINTARGET));
     }
 
     pool.set_args(currBBID, stmtList);
@@ -524,7 +615,100 @@ void IRICFG::commit() {
   pool.set_args(newBBList, newBBS);
 }
 
+std::vector<IRID> IRICFG::ptaGenStack() {
+  BBContainerSupport bbc(id, pool);
+
+  // Local stack bindings
+  auto bindings = pool.iris->getEnvBindingsInClosure(bbc.getScopeIDX());
+  std::vector<IRID> res;
+  for (const auto b : bindings) {
+    if (!(*pool.iris)[b].isCaptured()) {
+      res.push_back(b);
+    }
+  }
+
+  // Module / Script level bindings
+  if (pool.iris->isTopLevelScope(bbc.getScopeIDX())) {
+    // Module has top level RemoteEnvBindings
+    auto rBindings =
+        pool.iris->getRemoteEnvBindingsInClosure(bbc.getScopeIDX());
+    for (const auto b : rBindings) {
+      res.push_back(b);
+    }
+
+    // Script has ScriptBindings
+    auto sBindings = pool.iris->getScriptBindings();
+    for (const auto b : sBindings) {
+      res.push_back(b);
+    }
+  }
+  return res;
+}
+
+std::vector<IRID> IRICFG::ptaGenTStack() {
+  BBContainerSupport bbc(id, pool);
+  auto bindings = pool.iris->getEnvBindingsInClosure(bbc.getScopeIDX());
+  std::vector<IRID> res;
+  for (const auto b : bindings) {
+    if ((*pool.iris)[b].isCaptured()) {
+      res.push_back(b);
+    }
+  }
+  return res;
+}
+
+std::vector<IRID> IRICFG::ptaAssertTransient() {
+  BBContainerSupport bbc(id, pool);
+  auto bindings = pool.iris->getRemoteEnvBindingsInClosure(bbc.getScopeIDX());
+  std::vector<IRID> res;
+  for (const auto rb : bindings) {
+    IRID b = IRI_HELPERS::resolveRemoteBinding(pool, rb);
+    res.push_back(b);
+  }
+  return res;
+}
+
+std::vector<IRID> IRICFG::ptaAssertGlobals() {
+  BBContainerSupport bbc(id, pool);
+  if (!pool.iris->isTopLevelScope(bbc.getScopeIDX()))
+    return {};
+
+  return pool.iris->getGlobalBindings();
+}
+
+std::string IRIBB::getDebugID() {
+  return closure->getDebugID() + "/bb" + std::to_string((int)IDX);
+}
+
+std::string IRIBB::getDebugName() {
+  if (IDX == closure->entry_block)
+    return "Entry";
+  else if (IDX == closure->exit_block)
+    return "Exit";
+  else
+    return getDebugID();
+}
+
+std::string IRIStatement::getDebugID() {
+  return bb->getDebugID() + "/i" + bb->getInstID(this);
+}
+
+std::string IRICFG::getDebugID() {
+  BBContainerSEXP bbc(id, pool);
+  return "c" + std::to_string((int)bbc.getStartBBIDX());
+}
+
+std::string IRICFG::getDebugName() {
+  BBContainerSEXP bbc(id, pool);
+  return std::string(pool.strings.get(bbc.getNAME()));
+}
+
 std::vector<BBIDX> IRICFG::getReversePostOrder(bool includeExceptions) const {
+  return getReversePostOrder(includeExceptions, entry_block);
+}
+
+std::vector<BBIDX> IRICFG::getReversePostOrder(bool includeExceptions,
+                                               double startBBIDX) const {
   std::vector<BBIDX> postOrder;
   std::set<BBIDX> visited;
 
@@ -550,7 +734,7 @@ std::vector<BBIDX> IRICFG::getReversePostOrder(bool includeExceptions) const {
     postOrder.push_back(u);
   };
 
-  dfs(entry_block);
+  dfs(startBBIDX);
 
   std::reverse(postOrder.begin(), postOrder.end());
   return postOrder;

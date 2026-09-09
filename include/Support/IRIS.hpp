@@ -7,6 +7,7 @@
 #include "Storage/Config.h"
 #include "Storage/StringPool.h"
 #include <cstddef>
+#include <iterator>
 #include <memory>
 #include <stdexcept>
 #include <tuple>
@@ -30,9 +31,12 @@ public:
   double getTopLevelScope() { return topLevelScope; }
 
   // Binding Declaration
-  IRI_STORAGE::BindingMeta & declareScriptBinding(double, StringID, IRI_GEN::IRI_FLAG);
-  IRI_STORAGE::BindingMeta & declareLBinding(double, StringID, IRI_GEN::IRI_FLAG);
-  IRI_STORAGE::BindingMeta & declareRBinding(double, StringID, IRI_GEN::IRI_FLAG, IRI_GEN::IRI_FLAG);
+  IRI_STORAGE::BindingMeta &declareScriptBinding(double, StringID,
+                                                 IRI_GEN::IRI_FLAG);
+  IRI_STORAGE::BindingMeta &declareLBinding(double, StringID,
+                                            IRI_GEN::IRI_FLAG);
+  IRI_STORAGE::BindingMeta &declareRBinding(double, StringID, IRI_GEN::IRI_FLAG,
+                                            IRI_GEN::IRI_FLAG);
   void addClosureAtScope(double, IRI_STORAGE::IRID);
 
   bool isGlobal(StringID sid, double startScopeIDX);
@@ -57,13 +61,13 @@ public:
   void removeBinding(StringID, double);
 
   double getLexicalScope(double);
-  IRI_STORAGE::BindingMeta & resolve(StringID, double);
+  IRI_STORAGE::BindingMeta &resolve(StringID, double);
 
   void registerDirectEval(IRI_STORAGE::IRID, double, double);
 
   void commit();
 
-  bool hasScopePath(double, double,  bool breakAtClosureBoundary = false);
+  bool hasScopePath(double, double, bool breakAtClosureBoundary = false);
 
   bool isTopLevelScope(double);
 
@@ -89,7 +93,8 @@ public:
 
   void populateCClosuresInTree();
 
-  std::vector<IRI_STORAGE::IRID> getBindingsToMoveToHeap(double startScope, double endScope);
+  std::vector<IRI_STORAGE::IRID> getBindingsToMoveToHeap(double startScope,
+                                                         double endScope);
 
   std::vector<IRI_STORAGE::IRID> getBindingsInClosure(double headScope);
 
@@ -97,7 +102,8 @@ public:
   std::vector<IRI_STORAGE::IRID> getRemoteEnvBindingsAtScope(double scope);
 
   std::vector<IRI_STORAGE::IRID> getEnvBindingsInClosure(double headScope);
-  std::vector<IRI_STORAGE::IRID> getRemoteEnvBindingsInClosure(double headScope);
+  std::vector<IRI_STORAGE::IRID>
+  getRemoteEnvBindingsInClosure(double headScope);
 
   void ensureExportedBindingIsModuleBinding(StringID id) {
     exportedModuleBindings.insert(id);
@@ -107,11 +113,30 @@ public:
     return exportedModuleBindings.contains(id);
   }
 
+  std::vector<IRI_STORAGE::IRID> getScriptBindings() {
+    std::vector<IRI_STORAGE::IRID> res;
+    res.reserve(scriptBindings.size());
+    std::transform(scriptBindings.begin(), scriptBindings.end(),
+                   std::back_inserter(res),
+                   [](const auto e) { return e.second; });
+    return res;
+  }
+
+  std::vector<IRI_STORAGE::IRID> getGlobalBindings() {
+    std::vector<IRI_STORAGE::IRID> res;
+    res.reserve(globalBindings.size());
+    std::transform(globalBindings.begin(), globalBindings.end(),
+                   std::back_inserter(res),
+                   [](const auto e) { return e.second; });
+    return res;
+  }
+
 private:
   // Node Storage Pool
   IRI_STORAGE::IridiumPool &pool;
   // Bindings Metadata Pool
-  std::unique_ptr<IRI_STORAGE::BindingsPool> bindingsPool = std::make_unique<IRI_STORAGE::BindingsPool>();
+  std::unique_ptr<IRI_STORAGE::BindingsPool> bindingsPool =
+      std::make_unique<IRI_STORAGE::BindingsPool>();
 
   // Graph
   // In a scope tree, each node has atmost one outgoing edges, with -1 denoting
