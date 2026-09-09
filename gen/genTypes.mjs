@@ -270,10 +270,24 @@ const enumsFileTS = [
   "}"
 ];
 
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 // Write outputs
-fs.writeFileSync("../include/Generated/IridiumTypes.h", typesFile.join("\n"));
-fs.writeFileSync("../include/Generated/IridiumMeta.h", metaFile.join("\n"));
-fs.writeFileSync("../include/Generated/IridiumEnums.h", enumsFile.join("\n"));
-fs.writeFileSync("../../../classes/builder/IridiumV2/Types/TSTypes.ts", enumsFileTS.join("\n"));
+const genIncludeDir = path.join(ROOT_DIR, "include", "Generated");
+fs.mkdirSync(genIncludeDir, { recursive: true });
+
+fs.writeFileSync(path.join(genIncludeDir, "IridiumTypes.h"), typesFile.join("\n"));
+fs.writeFileSync(path.join(genIncludeDir, "IridiumMeta.h"), metaFile.join("\n"));
+fs.writeFileSync(path.join(genIncludeDir, "IridiumEnums.h"), enumsFile.join("\n"));
+
+const tsTypesPath = path.resolve(ROOT_DIR, "../../../classes/builder/IridiumV2/Types/TSTypes.ts");
+if (fs.existsSync(path.dirname(tsTypesPath))) {
+  fs.writeFileSync(tsTypesPath, enumsFileTS.join("\n"));
+}
 
 console.log("Successfully generated Iridium AST Schema files.");
