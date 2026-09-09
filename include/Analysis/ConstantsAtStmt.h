@@ -69,29 +69,22 @@ struct CASLattice {
   }
 
   // Lattice join operator (Least Upper Bound ⊔)
-  void joinWith(const CASLattice &other) {
-    if (!pool && other.pool)
-      pool = other.pool;
+  [[nodiscard]] CASLattice joinWith(const CASLattice &other) const {
+    IRI_STORAGE::IridiumPool *p = pool ? pool : other.pool;
     if (kind == TOP) {
-      kind = other.kind;
-      value = other.value;
-      return;
+      return CASLattice(other.kind, other.value, p);
     }
     if (other.kind == TOP) {
-      return;
+      return CASLattice(kind, value, p);
     }
     if (kind == NAC || other.kind == NAC) {
-      kind = NAC;
-      value = 0;
-    } else {
-      // Both are CONST
-      if (constantsEqual(value, other.value)) {
-        kind = CONST;
-      } else {
-        kind = NAC;
-        value = 0;
-      }
+      return CASLattice(NAC, 0, p);
     }
+    // Both are CONST
+    if (constantsEqual(value, other.value)) {
+      return CASLattice(CONST, value, p);
+    }
+    return CASLattice(NAC, 0, p);
   }
 
   bool operator==(const CASLattice &other) const {
@@ -192,7 +185,7 @@ public:
   }
 
   // Lattice join for states
-  CASState joinWith(const CASState &other) const {
+  [[nodiscard]] CASState joinWith(const CASState &other) const {
     if (is_unreachable)
       return other;
     if (other.is_unreachable)

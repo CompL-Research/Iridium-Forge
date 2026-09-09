@@ -56,7 +56,7 @@ public:
     oss << "}";
   }
 
-  EffectAtStmtState joinWith(const EffectAtStmtState &other) const {
+  [[nodiscard]] EffectAtStmtState joinWith(const EffectAtStmtState &other) const {
     if (is_unreachable)
       return other;
     if (other.is_unreachable)

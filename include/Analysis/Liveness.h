@@ -32,21 +32,19 @@ struct LivenessLattice {
   static LivenessLattice top() { return LivenessLattice(TOP); }
 
   // Lattice join operator (Least Upper Bound ⊔)
-  void joinWith(const LivenessLattice &other) {
+  [[nodiscard]] LivenessLattice joinWith(const LivenessLattice &other) const {
     if (kind == TOP) {
-      kind = other.kind;
-      return;
+      return other;
     }
     if (other.kind == TOP) {
-      return;
+      return *this;
     }
     // If either path could be LIVE, the result must be LIVE
     // (conservative/bottom)
     if (kind == LIVE || other.kind == LIVE) {
-      kind = LIVE;
-    } else {
-      kind = DEAD;
+      return LivenessLattice(LIVE);
     }
+    return LivenessLattice(DEAD);
   }
 
   bool operator==(const LivenessLattice &other) const {
@@ -80,7 +78,7 @@ public:
   bool isUnreachable() const { return is_unreachable; }
 
   // Lattice join for liveness states
-  LivenessState joinWith(const LivenessState &other) const {
+  [[nodiscard]] LivenessState joinWith(const LivenessState &other) const {
     if (is_unreachable)
       return other;
     if (other.is_unreachable)
