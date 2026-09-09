@@ -1,4 +1,4 @@
-// Generated: 2026-07-11 17:47:06
+// Generated: 2026-09-09 23:40:37
 #pragma once
 #include "IridiumEnums.h"
 #include <cstdint>
@@ -29,7 +29,7 @@ public:
       case IRI_GEN::UnresolvedReturn: return 0;
       case IRI_GEN::IfJump: return 2;
       case IRI_GEN::IfElseJump: return 3;
-      case IRI_GEN::Goto: return 1;
+      case IRI_GEN::Goto: return 2;
       case IRI_GEN::JSFuncDecl: return 6;
       case IRI_GEN::Lambda: return 4;
       case IRI_GEN::NOP: return 0;
@@ -114,6 +114,7 @@ public:
       case IRI_GEN::QJSModuleInit: return 0;
       case IRI_GEN::CompoundAssn: return 0;
       case IRI_GEN::ThisINIT: return 0;
+      case IRI_GEN::PTAStub: return 0;
       default: return 0;
     }
   }
@@ -258,7 +259,8 @@ public:
         break;
       case IRI_GEN::Goto:
         switch(flag) {
-        case IRI_GEN::IDX: return 0;
+        case IRI_GEN::Deferred: return 0;
+        case IRI_GEN::IDX: return 1;
           default: return -1;
         }
         break;
@@ -760,7 +762,8 @@ public:
         break;
       case IRI_GEN::Goto:
         switch(index) {
-        case 0: return IRI_GEN::IDX;
+        case 0: return IRI_GEN::Deferred;
+        case 1: return IRI_GEN::IDX;
           default: throw std::runtime_error("Invalid flag index");
         }
         break;

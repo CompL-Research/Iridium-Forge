@@ -1,4 +1,4 @@
-// Generated: 2026-07-11 17:47:06
+// Generated: 2026-09-09 23:40:37
 #pragma once
 #include "Storage/Config.h"
 #include "Storage/IridiumSEXP.h"
@@ -996,14 +996,15 @@ using IRI_STORAGE::FlagValue;
       }
     }
 
-    static IRID create(IridiumPool& p, double IDX) {
-      return p.add_node(IRI_GEN::IRI_TAG::Goto, {}, {FlagValue(IDX)});
+    static IRID create(IridiumPool& p, bool Deferred, double IDX) {
+      return p.add_node(IRI_GEN::IRI_TAG::Goto, {}, {Deferred ? FlagValue(Deferred) : FlagValue(std::monostate()), FlagValue(IDX)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
-    static constexpr uint32_t TOTAL_FLAGS = 1;
+    static constexpr uint32_t TOTAL_FLAGS = 2;
 
-    static constexpr uint32_t FLAG_IDX_IDX = 0;
+    static constexpr uint32_t FLAG_IDX_Deferred = 0;
+    static constexpr uint32_t FLAG_IDX_IDX = 1;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
@@ -1017,6 +1018,10 @@ using IRI_STORAGE::FlagValue;
 
 
     // --- Flags ---
+    bool hasDeferred() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_Deferred)); }
+    void setDeferred() { mutate_flag(FLAG_IDX_Deferred) = std::nullptr_t{}; }
+    void clearDeferred() { mutate_flag(FLAG_IDX_Deferred) = std::monostate{}; }
+
     double getIDX() const { return std::get<double>(get_flag(FLAG_IDX_IDX)); }
     void setIDX(double val) { mutate_flag(FLAG_IDX_IDX) = val; }
     bool hasIDX() const { return std::holds_alternative<double>(get_flag(FLAG_IDX_IDX)); }
@@ -4653,6 +4658,40 @@ using IRI_STORAGE::FlagValue;
     IRID getArg_newVal() const { return pool->get_args(id)[1]; }
     bool hasArg_newVal() const { return 1 < pool->get_args(id).size(); }
     void setArg_newVal(IRID val) { assert(hasArg_newVal() && "Tried to set missing ARG"); pool->update_arg_inplace(id,1,val); }
+
+    // --- Flags ---
+
+  };
+
+  struct PTAStubSEXP {
+    IRID id;
+    IridiumPool* pool;
+
+    explicit PTAStubSEXP(IRID n, IridiumPool& p) : id(n), pool(&p) {
+      if (pool->operator[](n).tag != IRI_GEN::PTAStub) {
+        throw std::runtime_error("Schema Cast Error: Expected PTAStub, but got " + IRI_GEN::dump_tag(pool->operator[](n).tag));
+      }
+    }
+
+    static IRID create(IridiumPool& p) {
+      return p.add_node(IRI_GEN::IRI_TAG::PTAStub, {}, {});
+    }
+
+    static constexpr uint32_t TOTAL_ARGS = 0;
+    static constexpr uint32_t TOTAL_FLAGS = 0;
+
+
+
+    // --- Helpers ---
+    inline FlagValue& mutate_flag(uint32_t idx) {
+        return pool->get_flags_m(id)[idx];
+    }
+    inline const FlagValue& get_flag(uint32_t idx) const {
+        return pool->get_flags(id)[idx];
+    }
+
+    // --- Arguments ---
+
 
     // --- Flags ---
 
