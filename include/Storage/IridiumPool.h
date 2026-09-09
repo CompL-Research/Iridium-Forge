@@ -4,7 +4,11 @@
 #include "Generated/IridiumEnums.h"
 #include "IridiumSEXP.h"
 #include "StringPool.h"
+#include "external/Prakriti.hpp"
+#include "external/pta_trace.hpp"
+#include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <optional>
 #include <set>
@@ -13,9 +17,9 @@
 #include <vector>
 
 namespace IRI_STRUCTURAL {
-  class IRIS;
-  class ClosureTree;
-}
+class IRIS;
+class ClosureTree;
+} // namespace IRI_STRUCTURAL
 
 namespace IRI_STORAGE {
 class IridiumPool {
@@ -24,8 +28,6 @@ public:
   IRID NULL_SEXP;
   IRID NOP_SEXP;
   IRID NUBD_SEXP;
-  IRID TRUE_SEXP;
-  IRID FALSE_SEXP;
 
   double lastBBIDX = 0;
 
@@ -38,6 +40,10 @@ public:
 
   std::shared_ptr<IRI_STRUCTURAL::IRIS> iris = nullptr;
   std::shared_ptr<IRI_STRUCTURAL::ClosureTree> closureTree = nullptr;
+
+  std::shared_ptr<ptf::TraceWriter> traceWriter = nullptr;
+  std::function<std::unordered_map<std::string, std::string>(Prakriti::NodeUID)>
+      traceNodeMetaMapper = nullptr;
 
   //
   // String interning
@@ -67,7 +73,6 @@ public:
   // Safe when new args may be added/removed
   std::vector<IRID> get_args(const IridiumSEXP *n);
   std::vector<IRID> get_args(IRID id);
-
 
   // Given an IRID/IridiumSEXP return its flags (immutable)
   std::span<const FlagValue> get_flags(const IridiumSEXP *n) const;

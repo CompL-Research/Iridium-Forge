@@ -1,4 +1,5 @@
 #pragma once
+#include "Generated/IridiumEnums.h"
 #include "Generated/IridiumMeta.h"
 #include "Generated/IridiumTypes.h"
 #include "Parser/IridiumBuildContext.h"
@@ -20,6 +21,8 @@ class IridiumParser {
   uint32_t size = 0;
   uint32_t current_idx = 0;
   IRI_STORAGE::IridiumPool &pool;
+
+  std::unordered_map<IRI_GEN::IRI_TAG, IRI_STORAGE::IRID> internedTags;
 
 public:
   std::unordered_map<int, std::shared_ptr<IridiumBuildContext>>
@@ -104,7 +107,18 @@ public:
     }
 
     // 6. Commit to Pool!
-    IRI_STORAGE::IRID node_id = pool.add_node(tag, args, flags);
+    IRI_STORAGE::IRID node_id;
+
+    // Intern constant tags
+    if (tag == IRI_GEN::IRI_TAG::Null) {
+      node_id = pool.NULL_SEXP;
+    } else if (tag == IRI_GEN::IRI_TAG::NOP) {
+      node_id = pool.NOP_SEXP;
+    } else if (tag == IRI_GEN::IRI_TAG::JSNUBD) {
+      node_id = pool.NUBD_SEXP;
+    } else {
+      node_id = pool.add_node(tag, args, flags);
+    }
 
     // If this is a BBSEXP, populate it in the map
     if (tag == IRI_GEN::IRI_TAG::BB) {
