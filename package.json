@@ -4,10 +4,13 @@
   "main": "forge.ts",
   "config": {
     "info": "DEBUG_STORAGE;DEBUG_TIME_IRIS;DEBUG_TDZ",
-    "dump": "DUMP_CORE_PASSES",
+    "dump": "DUMP_CORE_PASSES;DUMP_CFG_DOTS",
     "others": "DEBUG_DECORATOR_PASS;PRINT_TAINT_TREE;DUMP_CFG_DOTS;DUMP_ANALYSIS_RESULTS"
   },
   "scripts": {
+    "gen:types": "node gen/genTypes.mjs",
+    "gen:pta": "node gen/genPTA.mjs",
+    "gen": "node gen/genTypes.mjs && node gen/genPTA.mjs",
     "clean": "cmake-js clean",
     "build": "cmake-js clean && cmake-js build && echo 'module.exports = require(\"./build/Release/iridiumForge.node\");' > forge.cjs",
     "dev"     : "cmake-js clean && cmake-js build --debug --CDDEBUG_FLAGS=\"$npm_package_config_info\" && echo 'module.exports = require(\"./build/Debug/iridiumForge.node\");' > forge.cjs",
