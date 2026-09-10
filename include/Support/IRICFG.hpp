@@ -14,6 +14,7 @@ namespace IRI_STRUCTURAL {
 using namespace IRI_STORAGE;
 
 using BBIDX = double;
+using ScopeIDX = double;
 
 class IRIBB;
 class IRICFG;
@@ -52,6 +53,10 @@ struct IRIBB {
 
   void setTerminal(IRID);
 
+  void clearEdges();
+  void addEdge(BBIDX succ);
+  void moveTerminalTo(IRIBB *dst);
+
   void dumpFlat(std::ostream &oss) const;
 
   std::string getInstID(IRIStatement *r) {
@@ -78,6 +83,12 @@ struct IRICFG {
   std::unordered_map<BBIDX, std::set<BBIDX>> successors;
   std::unordered_map<BBIDX, std::set<BBIDX>> predecessors;
   std::set<BBIDX> continuationPoints;
+
+  IRIBB *makeBB(ScopeIDX scope);
+  BBIDX finalizerRetOf(BBIDX entryIDX);
+  void retagFinalizerRet(BBIDX from, BBIDX to);
+  void verify();
+  std::map<BBIDX, BBIDX> finalizerRetBB;
 
   IRIBB *operator[](BBIDX idx) {
     auto it = nodeMap.find(idx);

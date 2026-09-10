@@ -152,15 +152,95 @@ static bool isValidBBTerminal(IRI_GEN::IRI_TAG tag, IridiumPool &pool) {
   return false;
 }
 
+void IRIBB::clearEdges() {
+  for (auto &e : closure->successors[IDX]) {
+    closure->predecessors[e].erase(IDX);
+  }
+  closure->successors[IDX].clear();
+}
+
+void IRIBB::addEdge(BBIDX succ) {
+  closure->successors[IDX].insert(succ);
+  closure->predecessors[succ].insert(IDX);
+}
+
+// Hands this BB's terminal to dst, along with everything that describes where
+// that terminal goes: out-edges and FINTARGET. Afterwards `this` has no
+// terminal and no successors, ready for setTerminal().
+//
+// This exists because two terminal kinds carry edges that cannot be recovered
+// from the statement alone:
+//   Ret              -> successors are the FINTARGETs of every invoke site
+//   InvokeFinalizer  -> target is recoverable, but FINTARGET is not
+// so a split can never be expressed as two independent setTerminal() calls.
+//
+// The statement node is REPARENTED, not copied. Copying leaves the original
+// tail's `bb` back-pointer stale and churns through delete/new for no reason.
+void IRIBB::moveTerminalTo(IRIBB *dst) {
+  if (tail == nullptr) {
+    throw std::runtime_error("moveTerminalTo: source has no terminal");
+  }
+  if (dst->tail != nullptr) {
+    throw std::runtime_error("moveTerminalTo: dst already has a terminal");
+  }
+
+  bool wasRet = pool[tail->id].tag == IRI_GEN::Ret;
+
+  dst->tail = tail;
+  dst->tail->bb = dst;
+  dst->tail->prev = nullptr;
+  dst->tail->next = nullptr;
+  tail = nullptr;
+
+  auto succs = closure->successors[IDX];
+  clearEdges();
+  for (auto s : succs) {
+    dst->addEdge(s);
+  }
+
+  dst->FINTARGET = FINTARGET;
+  FINTARGET = -1;
+
+  // A finalizer body's Ret may be pushed into a fresh BB by a later split;
+  // whoever asks for that body's exit must now be told about the new owner.
+  if (wasRet) {
+    closure->retagFinalizerRet(IDX, dst->IDX);
+  }
+}
+
+IRIBB *IRICFG::makeBB(ScopeIDX scope) {
+  auto idx = ++pool.lastBBIDX;
+  nodeMap[idx] = std::make_unique<IRIBB>(scope, idx, this, pool);
+  IRIBB *bb = nodeMap[idx].get();
+  // Was missing on finalizer-split post-blocks: they inherit the scope, so
+  // they must inherit the handler too.
+  bb->EXCEPTION = pool.iris->getExceptionTargetForScope(scope);
+  return bb;
+}
+
+BBIDX IRICFG::finalizerRetOf(BBIDX entryIDX) {
+  auto it = finalizerRetBB.find(entryIDX);
+  if (it != finalizerRetBB.end()) {
+    return it->second;
+  }
+  BBIDX ret = pool.iris->getFinalizerRetBBIDX(entryIDX);
+  finalizerRetBB[entryIDX] = ret;
+  return ret;
+}
+
+void IRICFG::retagFinalizerRet(BBIDX from, BBIDX to) {
+  for (auto &e : finalizerRetBB) {
+    if (e.second == from) {
+      e.second = to;
+    }
+  }
+}
+
 void IRIBB::setTerminal(IRID stmtID) {
   if (tail != nullptr) {
-    // Clear existing edges
-    for (auto &e : closure->successors[IDX]) {
-      closure->predecessors[e].erase(IDX);
-    }
-    closure->successors[IDX].clear();
-    // Updating a terminal deletes the existing
+    clearEdges();
     delete tail;
+    tail = nullptr;
   }
 
   IRI_TAG stmtTAG = pool[stmtID].tag;
@@ -177,43 +257,48 @@ void IRIBB::setTerminal(IRID stmtID) {
       rValTarget = rAsync.getArg_RetVal();
     }
 
+    // Hoisting the return value into the head chain is what lets the await
+    // split see an `await` that was written inside `return await f()`.
     append(new IRIStatement(LWriteSEXP::create(pool, closure->retCTX,
                                                rValTarget, false, true, false),
                             this));
 
     tail = new IRIStatement(GotoSEXP::create(pool, false, closure->exit_block),
                             this);
-
-    closure->successors[IDX].insert(closure->exit_block);
-    closure->predecessors[closure->exit_block].insert(IDX);
+    addEdge(closure->exit_block);
     break;
   }
   case IRI_GEN::Goto: {
     tail = new IRIStatement(stmtID, this);
     GotoSEXP gotoSEXP(stmtID, pool);
-    closure->successors[IDX].insert(gotoSEXP.getIDX());
-    closure->predecessors[gotoSEXP.getIDX()].insert(IDX);
+    addEdge(gotoSEXP.getIDX());
     break;
   }
   case IRI_GEN::IfElseJump: {
     tail = new IRIStatement(stmtID, this);
     IfElseJumpSEXP ieJump(stmtID, pool);
-    closure->successors[IDX].insert(ieJump.getTRUE());
-    closure->predecessors[ieJump.getTRUE()].insert(IDX);
-
-    closure->successors[IDX].insert(ieJump.getFALSE());
-    closure->predecessors[ieJump.getFALSE()].insert(IDX);
+    addEdge(ieJump.getTRUE());
+    addEdge(ieJump.getFALSE());
+    break;
+  }
+  case IRI_GEN::InvokeFinalizer: {
+    // The finalizer body IS the successor. FINTARGET records only which of the
+    // body's dynamic exits lands back here, and is the caller's business.
+    tail = new IRIStatement(stmtID, this);
+    InvokeFinalizerSEXP inv(stmtID, pool);
+    addEdge(inv.getIDX());
     break;
   }
   case IRI_GEN::Ret: {
+    // Dynamic return. Successors are the FINTARGETs of every invoke site and
+    // are NOT derivable here - they are installed by the finalizer split and
+    // carried across splits by moveTerminalTo. Leaving the set empty is
+    // deliberate; verify() catches it if a Ret ever ends up orphaned.
     tail = new IRIStatement(stmtID, this);
     break;
   }
   case IRI_GEN::Throw: {
-    tail = new IRIStatement(stmtID, this);
-    break;
-  }
-  case IRI_GEN::InvokeFinalizer: {
+    // Unwinds through EXCEPTION, no normal successors.
     tail = new IRIStatement(stmtID, this);
     break;
   }
@@ -221,6 +306,77 @@ void IRIBB::setTerminal(IRID stmtID) {
     throw std::runtime_error("Unexpected case for terminal stmt");
   }
 }
+// void IRIBB::setTerminal(IRID stmtID) {
+//   if (tail != nullptr) {
+//     // Clear existing edges
+//     for (auto &e : closure->successors[IDX]) {
+//       closure->predecessors[e].erase(IDX);
+//     }
+//     closure->successors[IDX].clear();
+//     // Updating a terminal deletes the existing
+//     delete tail;
+//   }
+//
+//   IRI_TAG stmtTAG = pool[stmtID].tag;
+//   assert(isValidBBTerminal(stmtTAG, pool));
+//   switch (stmtTAG) {
+//   case IRI_GEN::Return:
+//   case IRI_GEN::ReturnAsync: {
+//     IRID rValTarget;
+//     if (stmtTAG == Return) {
+//       ReturnSEXP r(stmtID, pool);
+//       rValTarget = r.getArg_Obj();
+//     } else {
+//       ReturnAsyncSEXP rAsync(stmtID, pool);
+//       rValTarget = rAsync.getArg_RetVal();
+//     }
+//
+//     append(new IRIStatement(LWriteSEXP::create(pool, closure->retCTX,
+//                                                rValTarget, false, true,
+//                                                false),
+//                             this));
+//
+//     tail = new IRIStatement(GotoSEXP::create(pool, false,
+//     closure->exit_block),
+//                             this);
+//
+//     closure->successors[IDX].insert(closure->exit_block);
+//     closure->predecessors[closure->exit_block].insert(IDX);
+//     break;
+//   }
+//   case IRI_GEN::Goto: {
+//     tail = new IRIStatement(stmtID, this);
+//     GotoSEXP gotoSEXP(stmtID, pool);
+//     closure->successors[IDX].insert(gotoSEXP.getIDX());
+//     closure->predecessors[gotoSEXP.getIDX()].insert(IDX);
+//     break;
+//   }
+//   case IRI_GEN::IfElseJump: {
+//     tail = new IRIStatement(stmtID, this);
+//     IfElseJumpSEXP ieJump(stmtID, pool);
+//     closure->successors[IDX].insert(ieJump.getTRUE());
+//     closure->predecessors[ieJump.getTRUE()].insert(IDX);
+//
+//     closure->successors[IDX].insert(ieJump.getFALSE());
+//     closure->predecessors[ieJump.getFALSE()].insert(IDX);
+//     break;
+//   }
+//   case IRI_GEN::Ret: {
+//     tail = new IRIStatement(stmtID, this);
+//     break;
+//   }
+//   case IRI_GEN::Throw: {
+//     tail = new IRIStatement(stmtID, this);
+//     break;
+//   }
+//   case IRI_GEN::InvokeFinalizer: {
+//     tail = new IRIStatement(stmtID, this);
+//     break;
+//   }
+//   default:
+//     throw std::runtime_error("Unexpected case for terminal stmt");
+//   }
+// }
 
 static std::string escapeDoubleQuotes(const std::string &input) {
   std::stringstream ss;
@@ -252,6 +408,56 @@ void IRIBB::dumpFlat(std::ostream &oss) const {
   }
 }
 
+void IRICFG::verify() {
+  for (auto &e : nodeMap) {
+    IRIBB *bb = e.second.get();
+
+    if (bb->tail == nullptr) {
+      throw std::runtime_error("BB has no terminal");
+    }
+
+    IRIStatement *curr = bb->head;
+    while (curr != nullptr) {
+      IRI_GEN::IRI_META currMeta = IRI_GEN::get_meta(pool[curr->id].tag);
+      if (currMeta != IRI_GEN::IRI_META::STMT &&
+          currMeta != IRI_GEN::IRI_META::AMP) {
+        std::cerr << IRI_GEN::dump_tag(pool[curr->id].tag)
+                  << " expected STMT, found: " << std::to_string(currMeta)
+                  << std::endl;
+        throw std::runtime_error("STMT err");
+      }
+      if (curr->bb != bb) {
+        throw std::runtime_error("statement bb back-pointer is stale");
+      }
+      curr = curr->next;
+    }
+    if (bb->tail->bb != bb) {
+      throw std::runtime_error("terminal bb back-pointer is stale");
+    }
+
+    // This is the invariant that broke: a Ret with no dispatch set means its
+    // invoke sites became unreachable and commit() will silently drop them.
+    if (pool[bb->tail->id].tag == IRI_GEN::Ret && successors[bb->IDX].empty()) {
+      throw std::runtime_error("Ret terminal with empty dispatch set");
+    }
+
+    for (auto s : successors[bb->IDX]) {
+      if (!nodeMap.contains(s)) {
+        throw std::runtime_error("successor missing from nodeMap");
+      }
+      if (!predecessors[s].contains(bb->IDX)) {
+        throw std::runtime_error("successor/predecessor asymmetry");
+      }
+    }
+    if (bb->FINTARGET > -1 && !nodeMap.contains(bb->FINTARGET)) {
+      throw std::runtime_error("FINTARGET missing from nodeMap");
+    }
+    if (bb->EXCEPTION > -1 && !nodeMap.contains(bb->EXCEPTION)) {
+      throw std::runtime_error("EXCEPTION missing from nodeMap");
+    }
+  }
+}
+
 IRICFG::IRICFG(IRI_STORAGE::IRID i, IRI_STORAGE::IridiumPool &p)
     : id(i), pool(p) {
   BBContainerSupport bbc(id, pool);
@@ -265,22 +471,19 @@ IRICFG::IRICFG(IRI_STORAGE::IRID i, IRI_STORAGE::IridiumPool &p)
                ->declareLBinding(bbc.getScopeIDX(), commonRet,
                                  IRI_GEN::IRI_FLAG::JSVAR)
                .ID;
-  exit_block = ++pool.lastBBIDX;
-  nodeMap[exit_block] =
-      std::make_unique<IRIBB>(bbc.getScopeIDX(), exit_block, this, pool);
+  IRIBB *exitBB = makeBB(bbc.getScopeIDX());
+  exit_block = exitBB->IDX;
 
   if (bbc.hasASYNC() || bbc.hasGENERATOR()) {
-    IRIStatement *retStmt = new IRIStatement(
+    exitBB->tail = new IRIStatement(
         ReturnAsyncSEXP::create(pool,
                                 EnvReadSEXP::create(pool, retCTX, true, false)),
-        nodeMap[exit_block].get());
-    nodeMap[exit_block]->tail = retStmt;
+        exitBB);
   } else {
-    IRIStatement *retStmt = new IRIStatement(
+    exitBB->tail = new IRIStatement(
         ReturnSEXP::create(pool,
                            EnvReadSEXP::create(pool, retCTX, true, false)),
-        nodeMap[exit_block].get());
-    nodeMap[exit_block]->tail = retStmt;
+        exitBB);
   }
 
   // Add all the basic blocks to the graph
@@ -307,7 +510,6 @@ IRICFG::IRICFG(IRI_STORAGE::IRID i, IRI_STORAGE::IridiumPool &p)
     auto stmts = bbSupp.stmtsVec();
     for (size_t i = 0; i < stmts.size(); i++) {
       IRID stmtID = stmts[i];
-      IRI_TAG stmtTAG = pool[stmtID].tag;
       if (i + 1 == stmts.size()) {
         bb->setTerminal(stmtID);
       } else {
@@ -317,13 +519,17 @@ IRICFG::IRICFG(IRI_STORAGE::IRID i, IRI_STORAGE::IridiumPool &p)
   }
 
   // Split BBs at Finalizer Calls
-  std::set<IRIBB *> worklist;
+  //
+  // Worklists are keyed on BBIDX, not IRIBB*: pointer ordering makes split
+  // order (and therefore every synthetic BBIDX) vary run to run.
+  std::set<BBIDX> worklist;
   for (auto &e : nodeMap) {
-    worklist.insert(e.second.get());
+    worklist.insert(e.first);
   }
   while (!worklist.empty()) {
-    IRIBB *bb = *worklist.begin();
+    BBIDX bbIDX = *worklist.begin();
     worklist.erase(worklist.begin());
+    IRIBB *bb = nodeMap[bbIDX].get();
 
     IRIStatement *curr = bb->head;
     while (curr != nullptr) {
@@ -335,48 +541,29 @@ IRICFG::IRICFG(IRI_STORAGE::IRID i, IRI_STORAGE::IridiumPool &p)
 
     if (curr != nullptr) {
       InvokeFinalizerSEXP ivTarget(curr->id, pool);
-      double finalizerEntryIDX = ivTarget.getIDX();
-      double finalizerExitIDX =
-          pool.iris->getFinalizerRetBBIDX(finalizerEntryIDX);
+      auto finalizerEntryIDX = ivTarget.getIDX();
+      auto finalizerExitIDX = finalizerRetOf(finalizerEntryIDX);
       if (!nodeMap.contains(finalizerEntryIDX)) {
         throw std::runtime_error("finalizerEntryIDX missing");
       }
-
       if (!nodeMap.contains(finalizerExitIDX)) {
         throw std::runtime_error("finalizerExitIDX missing");
       }
 
-      // Prep PostBB
-      auto postBBIDX = ++pool.lastBBIDX;
-      nodeMap[postBBIDX] =
-          std::make_unique<IRIBB>(bb->SCOPE, postBBIDX, this, pool);
-      IRIBB *postBB = nodeMap[postBBIDX].get();
-      worklist.insert(postBB);
-      postBB->head = curr->next;
-      postBB->tail =
-          new IRIStatement(bb->tail->id, postBB); // Pass postBB, not bb
+      IRIBB *postBB = makeBB(bb->SCOPE);
+      auto postBBIDX = postBB->IDX;
+      worklist.insert(postBBIDX);
 
+      // Everything after the invoke moves to postBB...
+      postBB->head = curr->next;
       if (postBB->head != nullptr) {
         postBB->head->prev = nullptr;
         for (IRIStatement *s = postBB->head; s != nullptr; s = s->next) {
           s->bb = postBB;
         }
       }
-
-      // Forward successors of the currentBB to PostBB
-      for (auto &s : successors[bb->IDX]) {
-        successors[postBBIDX].insert(s);
-        predecessors[s].insert(postBBIDX);
-      }
-
-      bool finalizerDynamicRet =
-          pool[nodeMap[finalizerExitIDX]->tail->id].tag == Ret;
-
-      // Create Edge from finalizer BB Exit to PostBB
-      if (finalizerDynamicRet) {
-        successors[finalizerExitIDX].insert(postBBIDX);
-        predecessors[postBBIDX].insert(finalizerExitIDX);
-      }
+      // ...including the terminal, its out-edges and its FINTARGET.
+      bb->moveTerminalTo(postBB);
 
       // Make the prev stmt the last
       if (curr->prev) {
@@ -385,102 +572,325 @@ IRICFG::IRICFG(IRI_STORAGE::IRID i, IRI_STORAGE::IridiumPool &p)
         bb->head = nullptr;
       }
 
-      // Set the invoke finalizer as the terminal
+      // Set the invoke finalizer as the terminal. The bb -> finalizerEntry
+      // edge is registered by setTerminal now, no manual fixup.
       bb->setTerminal(curr->id);
+      delete curr;
+
+      bool finalizerDynamicRet =
+          pool[nodeMap[finalizerExitIDX]->tail->id].tag == Ret;
       if (finalizerDynamicRet) {
         bb->FINTARGET = postBBIDX;
+        // Edge from the finalizer body's Ret back to this invoke's post block.
+        nodeMap[finalizerExitIDX]->addEdge(postBBIDX);
       } else {
         bb->FINTARGET = -2;
       }
-      delete curr;
-      successors[bb->IDX].insert(finalizerEntryIDX);
-      predecessors[finalizerEntryIDX].insert(bb->IDX);
     }
   }
 
   // Split BBs at await points
-  std::set<IRIBB *> awaitWorklist;
+  auto hasAwait = [&](IRID stmtID) {
+    return IRI_HELPERS::hasNodeWithPredicate(
+        stmtID, &pool, [&](IRID id) { return pool[id].tag == IRI_GEN::Await; });
+  };
+
+  std::set<BBIDX> awaitWorklist;
   for (auto &e : nodeMap) {
-    awaitWorklist.insert(e.second.get());
+    awaitWorklist.insert(e.first);
   }
 
   while (!awaitWorklist.empty()) {
-    IRIBB *bb = *awaitWorklist.begin();
+    BBIDX bbIDX = *awaitWorklist.begin();
     awaitWorklist.erase(awaitWorklist.begin());
+    IRIBB *bb = nodeMap[bbIDX].get();
+
+    if (bb->tail == nullptr) {
+      throw std::runtime_error("bb tail cannot be null before split");
+    }
 
     IRIStatement *currStmt = bb->head;
     while (currStmt != nullptr) {
-      IRID stmtID = currStmt->id;
-      if (IRI_HELPERS::hasNodeWithPredicate(stmtID, &pool, [&](IRID id) {
-            return pool[id].tag == IRI_GEN::Await;
-          })) {
+      if (hasAwait(currStmt->id)) {
         break;
       }
       currStmt = currStmt->next;
     }
 
-    if (currStmt != nullptr) {
-      if (bb->tail == nullptr) {
-        throw std::runtime_error("bb tail cannot be null before split");
+    if (currStmt == nullptr) {
+      // Nothing splittable in the head chain. An await buried in the terminal
+      // has no statement boundary to split at, so it would silently survive
+      // into codegen - Return/ReturnAsync are safe because setTerminal hoists
+      // the value out, but IfElseJump conditions and Throw operands are not.
+      if (hasAwait(bb->tail->id)) {
+        throw std::runtime_error(
+            "await inside terminal statement; hoist it during lowering");
       }
-      IRID origTailID = bb->tail->id;
+      continue;
+    }
 
-      // Create a new BB for remaining statements
-      auto postBBIDX = ++pool.lastBBIDX;
-      nodeMap[postBBIDX] =
-          std::make_unique<IRIBB>(bb->SCOPE, postBBIDX, this, pool);
-      IRIBB *postBB = nodeMap[postBBIDX].get();
-      awaitWorklist.insert(postBB);
+    IRIBB *postBB = makeBB(bb->SCOPE);
+    auto postBBIDX = postBB->IDX;
+    awaitWorklist.insert(postBBIDX);
 
-      IRIStatement *nextStmts = currStmt->next;
-      currStmt->next = nullptr;
+    IRIStatement *nextStmts = currStmt->next;
+    currStmt->next = nullptr;
 
-      postBB->head = nextStmts;
-      if (postBB->head == nullptr) {
-        throw std::runtime_error("postBB head cannot be null");
-      }
+    postBB->head = nextStmts;
+    if (postBB->head != nullptr) {
       postBB->head->prev = nullptr;
       for (IRIStatement *s = postBB->head; s != nullptr; s = s->next) {
         s->bb = postBB;
       }
-
-      postBB->setTerminal(origTailID);
-      if (postBB->tail == nullptr) {
-        throw std::runtime_error("postBB tail cannot be null");
-      }
-
-      postBB->EXCEPTION = bb->EXCEPTION;
-      postBB->FINTARGET = bb->FINTARGET;
-      bb->FINTARGET = -1;
-
-      // Set Goto terminal for the await stmt BB pointing to postBB
-      // Deferred -> true ; this represents a GOTO may act as a early return
-      // (useful in analysis that care about suspension points, otherwise its a
-      // normal goto)
-      bb->setTerminal(GotoSEXP::create(pool, true, postBBIDX));
-
-      // Record contBBIDX in continuationPoints
-      continuationPoints.insert(postBBIDX);
     }
+
+    // Terminal + out-edges + FINTARGET all belong to the resumed half.
+    bb->moveTerminalTo(postBB);
+    if (postBB->tail == nullptr) {
+      throw std::runtime_error("postBB tail cannot be null");
+    }
+
+    // Deferred -> true ; this represents a GOTO may act as a early return
+    // (useful in analysis that care about suspension points, otherwise its a
+    // normal goto)
+    bb->setTerminal(GotoSEXP::create(pool, true, postBBIDX));
+
+    continuationPoints.insert(postBBIDX);
   }
 
-  for (auto &e : nodeMap) {
-    IRIStatement *curr = e.second->head;
-    while (curr != nullptr) {
-      IRI_GEN::IRI_META currMeta = IRI_GEN::get_meta(pool[curr->id].tag);
-      if (currMeta == IRI_GEN::IRI_META::STMT ||
-          currMeta == IRI_GEN::IRI_META::AMP) {
-        // TYPE OK
-      } else {
-        std::cerr << IRI_GEN::dump_tag(pool[curr->id].tag)
-                  << " expected STMT, found: " << std::to_string(currMeta)
-                  << std::endl;
-        throw new std::runtime_error("STMT err");
-      }
-      curr = curr->next;
-    }
-  }
+  verify();
 }
+
+// IRICFG::IRICFG(IRI_STORAGE::IRID i, IRI_STORAGE::IridiumPool &p)
+//     : id(i), pool(p) {
+//   BBContainerSupport bbc(id, pool);
+//   // Entry BBIDX
+//   bool wasEntrySet = false;
+//   entry_block = bbc.getStartBBIDX();
+//
+//   // Common Return Path
+//   IRI_STORAGE::StringID commonRet = pool.strings.intern("<common-ret>");
+//   retCTX = pool.iris
+//                ->declareLBinding(bbc.getScopeIDX(), commonRet,
+//                                  IRI_GEN::IRI_FLAG::JSVAR)
+//                .ID;
+//   exit_block = ++pool.lastBBIDX;
+//   nodeMap[exit_block] =
+//       std::make_unique<IRIBB>(bbc.getScopeIDX(), exit_block, this, pool);
+//
+//   if (bbc.hasASYNC() || bbc.hasGENERATOR()) {
+//     IRIStatement *retStmt = new IRIStatement(
+//         ReturnAsyncSEXP::create(pool,
+//                                 EnvReadSEXP::create(pool, retCTX, true,
+//                                 false)),
+//         nodeMap[exit_block].get());
+//     nodeMap[exit_block]->tail = retStmt;
+//   } else {
+//     IRIStatement *retStmt = new IRIStatement(
+//         ReturnSEXP::create(pool,
+//                            EnvReadSEXP::create(pool, retCTX, true, false)),
+//         nodeMap[exit_block].get());
+//     nodeMap[exit_block]->tail = retStmt;
+//   }
+//
+//   // Add all the basic blocks to the graph
+//   for (auto [bbID, bbOffset] : bbc.bbs()) {
+//     BBSupport bb(bbID, pool);
+//     auto currBBIDX = bb.getIDX();
+//
+//     nodeMap[currBBIDX] =
+//         std::make_unique<IRIBB>(bb.getScopeIDX(), currBBIDX, this, pool);
+//     if (currBBIDX == entry_block) {
+//       assert(!wasEntrySet);
+//       wasEntrySet = true;
+//     }
+//   }
+//
+//   assert(wasEntrySet);
+//
+//   // Populate statements and establish edges
+//   for (auto [bbID, bbOffset] : bbc.bbs()) {
+//     BBSupport bbSupp(bbID, pool);
+//     auto currBBIDX = bbSupp.getIDX();
+//     IRIBB *bb = nodeMap[currBBIDX].get();
+//     bb->EXCEPTION = pool.iris->getExceptionTargetForScope(bb->SCOPE);
+//     auto stmts = bbSupp.stmtsVec();
+//     for (size_t i = 0; i < stmts.size(); i++) {
+//       IRID stmtID = stmts[i];
+//       IRI_TAG stmtTAG = pool[stmtID].tag;
+//       if (i + 1 == stmts.size()) {
+//         bb->setTerminal(stmtID);
+//       } else {
+//         bb->append(new IRIStatement(stmtID, bb));
+//       }
+//     }
+//   }
+//
+//   // Split BBs at Finalizer Calls
+//   std::set<IRIBB *> worklist;
+//   for (auto &e : nodeMap) {
+//     worklist.insert(e.second.get());
+//   }
+//   while (!worklist.empty()) {
+//     IRIBB *bb = *worklist.begin();
+//     worklist.erase(worklist.begin());
+//
+//     IRIStatement *curr = bb->head;
+//     while (curr != nullptr) {
+//       if (pool[curr->id].tag == IRI_GEN::InvokeFinalizer) {
+//         break;
+//       }
+//       curr = curr->next;
+//     }
+//
+//     if (curr != nullptr) {
+//       InvokeFinalizerSEXP ivTarget(curr->id, pool);
+//       double finalizerEntryIDX = ivTarget.getIDX();
+//       double finalizerExitIDX =
+//           pool.iris->getFinalizerRetBBIDX(finalizerEntryIDX);
+//       if (!nodeMap.contains(finalizerEntryIDX)) {
+//         throw std::runtime_error("finalizerEntryIDX missing");
+//       }
+//
+//       if (!nodeMap.contains(finalizerExitIDX)) {
+//         throw std::runtime_error("finalizerExitIDX missing");
+//       }
+//
+//       // Prep PostBB
+//       auto postBBIDX = ++pool.lastBBIDX;
+//       nodeMap[postBBIDX] =
+//           std::make_unique<IRIBB>(bb->SCOPE, postBBIDX, this, pool);
+//       IRIBB *postBB = nodeMap[postBBIDX].get();
+//       worklist.insert(postBB);
+//       postBB->head = curr->next;
+//       postBB->tail =
+//           new IRIStatement(bb->tail->id, postBB); // Pass postBB, not bb
+//
+//       if (postBB->head != nullptr) {
+//         postBB->head->prev = nullptr;
+//         for (IRIStatement *s = postBB->head; s != nullptr; s = s->next) {
+//           s->bb = postBB;
+//         }
+//       }
+//
+//       // Forward successors of the currentBB to PostBB
+//       for (auto &s : successors[bb->IDX]) {
+//         successors[postBBIDX].insert(s);
+//         predecessors[s].insert(postBBIDX);
+//       }
+//
+//       bool finalizerDynamicRet =
+//           pool[nodeMap[finalizerExitIDX]->tail->id].tag == Ret;
+//
+//       // Create Edge from finalizer BB Exit to PostBB
+//       if (finalizerDynamicRet) {
+//         successors[finalizerExitIDX].insert(postBBIDX);
+//         predecessors[postBBIDX].insert(finalizerExitIDX);
+//       }
+//
+//       // Make the prev stmt the last
+//       if (curr->prev) {
+//         curr->prev->next = nullptr;
+//       } else {
+//         bb->head = nullptr;
+//       }
+//
+//       // Set the invoke finalizer as the terminal
+//       bb->setTerminal(curr->id);
+//       if (finalizerDynamicRet) {
+//         bb->FINTARGET = postBBIDX;
+//       } else {
+//         bb->FINTARGET = -2;
+//       }
+//       delete curr;
+//       successors[bb->IDX].insert(finalizerEntryIDX);
+//       predecessors[finalizerEntryIDX].insert(bb->IDX);
+//     }
+//   }
+//
+//   // Split BBs at await points
+//   std::set<IRIBB *> awaitWorklist;
+//   for (auto &e : nodeMap) {
+//     awaitWorklist.insert(e.second.get());
+//   }
+//
+//   while (!awaitWorklist.empty()) {
+//     IRIBB *bb = *awaitWorklist.begin();
+//     awaitWorklist.erase(awaitWorklist.begin());
+//
+//     IRIStatement *currStmt = bb->head;
+//     while (currStmt != nullptr) {
+//       IRID stmtID = currStmt->id;
+//       if (IRI_HELPERS::hasNodeWithPredicate(stmtID, &pool, [&](IRID id) {
+//             return pool[id].tag == IRI_GEN::Await;
+//           })) {
+//         break;
+//       }
+//       currStmt = currStmt->next;
+//     }
+//
+//     if (currStmt != nullptr) {
+//       if (bb->tail == nullptr) {
+//         throw std::runtime_error("bb tail cannot be null before split");
+//       }
+//       IRID origTailID = bb->tail->id;
+//
+//       // Create a new BB for remaining statements
+//       auto postBBIDX = ++pool.lastBBIDX;
+//       nodeMap[postBBIDX] =
+//           std::make_unique<IRIBB>(bb->SCOPE, postBBIDX, this, pool);
+//       IRIBB *postBB = nodeMap[postBBIDX].get();
+//       awaitWorklist.insert(postBB);
+//
+//       IRIStatement *nextStmts = currStmt->next;
+//       currStmt->next = nullptr;
+//
+//       postBB->head = nextStmts;
+//       if (postBB->head != nullptr) {
+//         postBB->head->prev = nullptr;
+//       }
+//       for (IRIStatement *s = postBB->head; s != nullptr; s = s->next) {
+//         s->bb = postBB;
+//       }
+//
+//       postBB->setTerminal(origTailID);
+//       if (postBB->tail == nullptr) {
+//         throw std::runtime_error("postBB tail cannot be null");
+//       }
+//
+//       postBB->EXCEPTION = bb->EXCEPTION;
+//       postBB->FINTARGET = bb->FINTARGET;
+//       bb->FINTARGET = -1;
+//
+//       // Set Goto terminal for the await stmt BB pointing to postBB
+//       // Deferred -> true ; this represents a GOTO may act as a early return
+//       // (useful in analysis that care about suspension points, otherwise its
+//       a
+//       // normal goto)
+//       bb->setTerminal(GotoSEXP::create(pool, true, postBBIDX));
+//
+//       // Record contBBIDX in continuationPoints
+//       continuationPoints.insert(postBBIDX);
+//     }
+//   }
+//
+//   for (auto &e : nodeMap) {
+//     IRIStatement *curr = e.second->head;
+//     while (curr != nullptr) {
+//       IRI_GEN::IRI_META currMeta = IRI_GEN::get_meta(pool[curr->id].tag);
+//       if (currMeta == IRI_GEN::IRI_META::STMT ||
+//           currMeta == IRI_GEN::IRI_META::AMP) {
+//         // TYPE OK
+//       } else {
+//         std::cerr << IRI_GEN::dump_tag(pool[curr->id].tag)
+//                   << " expected STMT, found: " << std::to_string(currMeta)
+//                   << std::endl;
+//         throw new std::runtime_error("STMT err");
+//       }
+//       curr = curr->next;
+//     }
+//   }
+// }
 
 void IRICFG::dumpDOT(const std::string &filePath) {
   std::ofstream outFile(filePath);
