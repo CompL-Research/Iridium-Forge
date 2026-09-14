@@ -105,9 +105,9 @@ namespace IRI_STRUCTURAL {
 /**
 ${doc}
  */
-void handle${tag}(const PTAStatementContext &ctx) {
+void handle${tag}(const PTAStatementContext &ptactx) {
   throw std::runtime_error("PTA unhandled case ${tag}");
-  // IRI_GEN::${tag}SEXP sexp(ctx.stmt.id, ctx.pool);
+  // IRI_GEN::${tag}SEXP sexp(ptactx.stmt.id, ptactx.ctx);
 
   // === TODO : ${tag} ===
 ${sampleCalls.length > 0 ? sampleCalls.join("\n") + "\n" : ""}
@@ -146,7 +146,7 @@ for (const item of spec) {
 const ptaContextHpp = `// Generated: ${getISTDateTime()}
 #pragma once
 
-#include "Storage/IridiumPool.h"
+#include "Storage/IRIContext.h"
 #include "Storage/IridiumSEXP.h"
 #include "Generated/IridiumEnums.h"
 #include "Support/IRICFG.hpp"
@@ -161,16 +161,16 @@ namespace IRI_STRUCTURAL {
 struct PTAStatementContext {
   const IRIStatement &stmt;
   Prakriti::ECMAGraph *incomingState;
-  IRI_STORAGE::IridiumPool &pool;
+  IRI_STORAGE::IRIContext &ctx;
 
   PTAStatementContext(const IRIStatement &s,
                       Prakriti::ECMAGraph *st,
-                      IRI_STORAGE::IridiumPool &p)
-      : stmt(s), incomingState(st), pool(p) {}
+                      IRI_STORAGE::IRIContext &c)
+      : stmt(s), incomingState(st), ctx(c) {}
 
   // Convenient accessors
   inline IRID getId() const { return stmt.id; }
-  inline IRI_GEN::IRI_TAG getTag() const { return pool[stmt.id].tag; }
+  inline IRI_GEN::IRI_TAG getTag() const { return IRI_NODE(ctx, stmt.id).tag; }
   inline IRIBB* getBB() const { return stmt.bb; }
 };
 
@@ -189,12 +189,12 @@ console.log(`[GENERATE] include/Support/PTA/PTAContext.hpp`);
  * 3. Generate include/Support/PTA/PTAHandlers.hpp (Header declarations and Interface)
  */
 const headerDecls = spec.map(item => {
-  return `void handle${item.tag}(const PTAStatementContext &ctx);`;
+  return `void handle${item.tag}(const PTAStatementContext &ptactx);`;
 }).join("\n");
 
 const visitorMethods = spec.map(item => {
-  return `  virtual void visit_${item.tag}(const PTAStatementContext &ctx) {\n` +
-         `    return handle${item.tag}(ctx);\n` +
+  return `  virtual void visit_${item.tag}(const PTAStatementContext &ptactx) {\n` +
+         `    return handle${item.tag}(ptactx);\n` +
          `  }`;
 }).join("\n");
 
@@ -234,7 +234,7 @@ console.log(`[GENERATE] include/Support/PTA/PTAHandlers.hpp`);
  */
 const switchCases = spec.map(item => {
   return `    case IRI_GEN::IRI_TAG::${item.tag}:\n` +
-         `      return handle${item.tag}(ctx);`;
+         `      return handle${item.tag}(ptactx);`;
 }).join("\n");
 
 const ptaDispatchHpp = `// Generated: ${getISTDateTime()}
@@ -249,26 +249,26 @@ namespace IRI_STRUCTURAL {
 /**
  * Dispatches an IRIStatement transfer operation to its corresponding tag handler using PTAStatementContext.
  */
-inline void dispatchPTAStatement(const PTAStatementContext &ctx) {
-  auto currTAG = ctx.getTag();
+inline void dispatchPTAStatement(const PTAStatementContext &ptactx) {
+  auto currTAG = ptactx.getTag();
 
   switch (currTAG) {
 ${switchCases}
     default:
-      std::cerr << "[PTA Warning] Unhandled statement tag: " 
+      std::cerr << "[PTA Warning] Unhandled statement tag: "
                 << IRI_GEN::dump_tag(currTAG) << std::endl;
       return;
   }
 }
 
 /**
- * Convenience overload allowing direct dispatch from raw stmt, incomingState, and pool.
+ * Convenience overload allowing direct dispatch from raw stmt, incomingState, and ctx.
  */
 inline void dispatchPTAStatement(const IRIStatement &stmt,
                                                 Prakriti::ECMAGraph *incomingState,
-                                                IRI_STORAGE::IridiumPool &pool) {
-  PTAStatementContext ctx(stmt, incomingState, pool);
-  return dispatchPTAStatement(ctx);
+                                                IRI_STORAGE::IRIContext &ctx) {
+  PTAStatementContext ptactx(stmt, incomingState, ctx);
+  return dispatchPTAStatement(ptactx);
 }
 
 } // namespace IRI_STRUCTURAL

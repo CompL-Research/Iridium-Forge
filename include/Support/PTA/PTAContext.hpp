@@ -1,7 +1,7 @@
-// Generated: 2026-09-15 01:52:09
+// Generated: 2026-09-15 02:13:51
 #pragma once
 
-#include "Storage/IridiumPool.h"
+#include "Storage/IRIContext.h"
 #include "Storage/IridiumSEXP.h"
 #include "Generated/IridiumEnums.h"
 #include "Support/IRICFG.hpp"
@@ -16,16 +16,16 @@ namespace IRI_STRUCTURAL {
 struct PTAStatementContext {
   const IRIStatement &stmt;
   Prakriti::ECMAGraph *incomingState;
-  IRI_STORAGE::IridiumPool &pool;
+  IRI_STORAGE::IRIContext &ctx;
 
   PTAStatementContext(const IRIStatement &s,
                       Prakriti::ECMAGraph *st,
-                      IRI_STORAGE::IridiumPool &p)
-      : stmt(s), incomingState(st), pool(p) {}
+                      IRI_STORAGE::IRIContext &c)
+      : stmt(s), incomingState(st), ctx(c) {}
 
   // Convenient accessors
   inline IRID getId() const { return stmt.id; }
-  inline IRI_GEN::IRI_TAG getTag() const { return pool[stmt.id].tag; }
+  inline IRI_GEN::IRI_TAG getTag() const { return IRI_NODE(ctx, stmt.id).tag; }
   inline IRIBB* getBB() const { return stmt.bb; }
 };
 

@@ -1,4 +1,4 @@
-// Generated: 2026-09-15 01:52:09
+// Generated: 2026-09-15 02:13:51
 #pragma once
 
 #include "Support/PTA/PTAContext.hpp"
@@ -10,141 +10,141 @@ namespace IRI_STRUCTURAL {
 /**
  * Dispatches an IRIStatement transfer operation to its corresponding tag handler using PTAStatementContext.
  */
-inline void dispatchPTAStatement(const PTAStatementContext &ctx) {
-  auto currTAG = ctx.getTag();
+inline void dispatchPTAStatement(const PTAStatementContext &ptactx) {
+  auto currTAG = ptactx.getTag();
 
   switch (currTAG) {
     case IRI_GEN::IRI_TAG::EnvRead:
-      return handleEnvRead(ctx);
+      return handleEnvRead(ptactx);
     case IRI_GEN::IRI_TAG::FieldRead:
-      return handleFieldRead(ctx);
+      return handleFieldRead(ptactx);
     case IRI_GEN::IRI_TAG::CallSite:
-      return handleCallSite(ctx);
+      return handleCallSite(ptactx);
     case IRI_GEN::IRI_TAG::Apply:
-      return handleApply(ctx);
+      return handleApply(ptactx);
     case IRI_GEN::IRI_TAG::ReturnAsync:
-      return handleReturnAsync(ctx);
+      return handleReturnAsync(ptactx);
     case IRI_GEN::IRI_TAG::Return:
-      return handleReturn(ctx);
+      return handleReturn(ptactx);
     case IRI_GEN::IRI_TAG::IfJump:
-      return handleIfJump(ctx);
+      return handleIfJump(ptactx);
     case IRI_GEN::IRI_TAG::IfElseJump:
-      return handleIfElseJump(ctx);
+      return handleIfElseJump(ptactx);
     case IRI_GEN::IRI_TAG::Goto:
-      return handleGoto(ctx);
+      return handleGoto(ptactx);
     case IRI_GEN::IRI_TAG::NOP:
-      return handleNOP(ctx);
+      return handleNOP(ptactx);
     case IRI_GEN::IRI_TAG::JSCheckConstructor:
-      return handleJSCheckConstructor(ctx);
+      return handleJSCheckConstructor(ptactx);
     case IRI_GEN::IRI_TAG::PVTEnvRead:
-      return handlePVTEnvRead(ctx);
+      return handlePVTEnvRead(ptactx);
     case IRI_GEN::IRI_TAG::JSPrivateFieldWrite:
-      return handleJSPrivateFieldWrite(ctx);
+      return handleJSPrivateFieldWrite(ptactx);
     case IRI_GEN::IRI_TAG::JSADDBRAND:
-      return handleJSADDBRAND(ctx);
+      return handleJSADDBRAND(ptactx);
     case IRI_GEN::IRI_TAG::JSPrivateFieldRead:
-      return handleJSPrivateFieldRead(ctx);
+      return handleJSPrivateFieldRead(ptactx);
     case IRI_GEN::IRI_TAG::JSForOfIteratorClose:
-      return handleJSForOfIteratorClose(ctx);
+      return handleJSForOfIteratorClose(ptactx);
     case IRI_GEN::IRI_TAG::PopCatchContext:
-      return handlePopCatchContext(ctx);
+      return handlePopCatchContext(ptactx);
     case IRI_GEN::IRI_TAG::PopFinalizerReturnTarget:
-      return handlePopFinalizerReturnTarget(ctx);
+      return handlePopFinalizerReturnTarget(ptactx);
     case IRI_GEN::IRI_TAG::InvokeFinalizer:
-      return handleInvokeFinalizer(ctx);
+      return handleInvokeFinalizer(ptactx);
     case IRI_GEN::IRI_TAG::JSForOfStart:
-      return handleJSForOfStart(ctx);
+      return handleJSForOfStart(ptactx);
     case IRI_GEN::IRI_TAG::PushCatchContext:
-      return handlePushCatchContext(ctx);
+      return handlePushCatchContext(ptactx);
     case IRI_GEN::IRI_TAG::JSCatchContext:
-      return handleJSCatchContext(ctx);
+      return handleJSCatchContext(ptactx);
     case IRI_GEN::IRI_TAG::Throw:
-      return handleThrow(ctx);
+      return handleThrow(ptactx);
     case IRI_GEN::IRI_TAG::Ret:
-      return handleRet(ctx);
+      return handleRet(ptactx);
     case IRI_GEN::IRI_TAG::JSBinop:
-      return handleJSBinop(ctx);
+      return handleJSBinop(ptactx);
     case IRI_GEN::IRI_TAG::FieldWrite:
-      return handleFieldWrite(ctx);
+      return handleFieldWrite(ptactx);
     case IRI_GEN::IRI_TAG::JSUnop:
-      return handleJSUnop(ctx);
+      return handleJSUnop(ptactx);
     case IRI_GEN::IRI_TAG::Unop:
-      return handleUnop(ctx);
+      return handleUnop(ptactx);
     case IRI_GEN::IRI_TAG::JSDefineObjProp:
-      return handleJSDefineObjProp(ctx);
+      return handleJSDefineObjProp(ptactx);
     case IRI_GEN::IRI_TAG::Binop:
-      return handleBinop(ctx);
+      return handleBinop(ptactx);
     case IRI_GEN::IRI_TAG::JSComputedFieldRead:
-      return handleJSComputedFieldRead(ctx);
+      return handleJSComputedFieldRead(ptactx);
     case IRI_GEN::IRI_TAG::JSComputedFieldWrite:
-      return handleJSComputedFieldWrite(ctx);
+      return handleJSComputedFieldWrite(ptactx);
     case IRI_GEN::IRI_TAG::JSSuperFieldRead:
-      return handleJSSuperFieldRead(ctx);
+      return handleJSSuperFieldRead(ptactx);
     case IRI_GEN::IRI_TAG::JSSuperFieldWrite:
-      return handleJSSuperFieldWrite(ctx);
+      return handleJSSuperFieldWrite(ptactx);
     case IRI_GEN::IRI_TAG::JSToObject:
-      return handleJSToObject(ctx);
+      return handleJSToObject(ptactx);
     case IRI_GEN::IRI_TAG::JSAppend:
-      return handleJSAppend(ctx);
+      return handleJSAppend(ptactx);
     case IRI_GEN::IRI_TAG::JSDefineObjMethod:
-      return handleJSDefineObjMethod(ctx);
+      return handleJSDefineObjMethod(ptactx);
     case IRI_GEN::IRI_TAG::JSCopyDataProperties:
-      return handleJSCopyDataProperties(ctx);
+      return handleJSCopyDataProperties(ptactx);
     case IRI_GEN::IRI_TAG::UNOPDelMemberExpr:
-      return handleUNOPDelMemberExpr(ctx);
+      return handleUNOPDelMemberExpr(ptactx);
     case IRI_GEN::IRI_TAG::UNOPDelVar:
-      return handleUNOPDelVar(ctx);
+      return handleUNOPDelVar(ptactx);
     case IRI_GEN::IRI_TAG::JSTemplate:
-      return handleJSTemplate(ctx);
+      return handleJSTemplate(ptactx);
     case IRI_GEN::IRI_TAG::Await:
-      return handleAwait(ctx);
+      return handleAwait(ptactx);
     case IRI_GEN::IRI_TAG::Yield:
-      return handleYield(ctx);
+      return handleYield(ptactx);
     case IRI_GEN::IRI_TAG::JSInitialYield:
-      return handleJSInitialYield(ctx);
+      return handleJSInitialYield(ptactx);
     case IRI_GEN::IRI_TAG::IDOP:
-      return handleIDOP(ctx);
+      return handleIDOP(ptactx);
     case IRI_GEN::IRI_TAG::JSIDOP:
-      return handleJSIDOP(ctx);
+      return handleJSIDOP(ptactx);
     case IRI_GEN::IRI_TAG::StackToHeap:
-      return handleStackToHeap(ctx);
+      return handleStackToHeap(ptactx);
     case IRI_GEN::IRI_TAG::JSSetHome:
-      return handleJSSetHome(ctx);
+      return handleJSSetHome(ptactx);
     case IRI_GEN::IRI_TAG::JSSetName:
-      return handleJSSetName(ctx);
+      return handleJSSetName(ptactx);
     case IRI_GEN::IRI_TAG::JSSetPrototypeOf:
-      return handleJSSetPrototypeOf(ctx);
+      return handleJSSetPrototypeOf(ptactx);
     case IRI_GEN::IRI_TAG::GWrite:
-      return handleGWrite(ctx);
+      return handleGWrite(ptactx);
     case IRI_GEN::IRI_TAG::LWrite:
-      return handleLWrite(ctx);
+      return handleLWrite(ptactx);
     case IRI_GEN::IRI_TAG::RWrite:
-      return handleRWrite(ctx);
+      return handleRWrite(ptactx);
     case IRI_GEN::IRI_TAG::MWrite:
-      return handleMWrite(ctx);
+      return handleMWrite(ptactx);
     case IRI_GEN::IRI_TAG::DCTRRet:
-      return handleDCTRRet(ctx);
+      return handleDCTRRet(ptactx);
     case IRI_GEN::IRI_TAG::ToNumeric:
-      return handleToNumeric(ctx);
+      return handleToNumeric(ptactx);
     case IRI_GEN::IRI_TAG::QJSModuleInit:
-      return handleQJSModuleInit(ctx);
+      return handleQJSModuleInit(ptactx);
     case IRI_GEN::IRI_TAG::CompoundAssn:
-      return handleCompoundAssn(ctx);
+      return handleCompoundAssn(ptactx);
     default:
-      std::cerr << "[PTA Warning] Unhandled statement tag: " 
+      std::cerr << "[PTA Warning] Unhandled statement tag: "
                 << IRI_GEN::dump_tag(currTAG) << std::endl;
       return;
   }
 }
 
 /**
- * Convenience overload allowing direct dispatch from raw stmt, incomingState, and pool.
+ * Convenience overload allowing direct dispatch from raw stmt, incomingState, and ctx.
  */
 inline void dispatchPTAStatement(const IRIStatement &stmt,
                                                 Prakriti::ECMAGraph *incomingState,
-                                                IRI_STORAGE::IridiumPool &pool) {
-  PTAStatementContext ctx(stmt, incomingState, pool);
-  return dispatchPTAStatement(ctx);
+                                                IRI_STORAGE::IRIContext &ctx) {
+  PTAStatementContext ptactx(stmt, incomingState, ctx);
+  return dispatchPTAStatement(ptactx);
 }
 
 } // namespace IRI_STRUCTURAL
