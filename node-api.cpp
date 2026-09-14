@@ -1,20 +1,14 @@
 #include "Entrypoint.h"
+#include "Generated/IridiumPassFlags.h"
 #include "Generated/IridiumTypes.h"
-#include "IRIPerf.h"
 #include "Parser/IridiumParser.h"
 #include "Storage/Config.h"
-#include "Storage/IridiumPool.h"
+#include "Storage/IRIContext.h"
 #include <functional>
 #include <napi.h>
 #include <string>
 #include <zlib.h>
 
-//
-// Arg 0 (string)  : VERSION
-// Arg 1 (string)  : Path
-// Arg 2 (Array)   : IRIDIUM code
-// Arg 3 (Array)   : IRIDIUM build context
-//
 Napi::Value execute(const Napi::CallbackInfo &info) {
   Napi::Env env = info.Env();
 
@@ -54,8 +48,8 @@ Napi::Value execute(const Napi::CallbackInfo &info) {
     return Napi::String::New(env, "");
   }
 
-  if (!info[6].IsBoolean()) {
-    Napi::TypeError::New(env, "LegacyJSON flag not specified")
+  if (!info[6].IsObject()) {
+    Napi::TypeError::New(env, "Pass flags object expected")
         .ThrowAsJavaScriptException();
     return Napi::String::New(env, "");
   }
@@ -64,54 +58,51 @@ Napi::Value execute(const Napi::CallbackInfo &info) {
   Napi::Function NAPI_tick = info[4].As<Napi::Function>();
   Napi::Function NAPI_tock = info[5].As<Napi::Function>();
 
-  bool isLegacyJSON = info[6].As<Napi::Boolean>().ToBoolean();
-
-  if (isLegacyJSON == false) {
-    Napi::TypeError::New(
-        env, "LegacyJSON == false is not yet supported, please use --ljson")
-        .ThrowAsJavaScriptException();
-    return Napi::String::New(env, "");
-  }
-
-  IRIPerf perf;
-  perf.tick = [&](std::string msg) {
-    NAPI_tick.Call(env.Global(), {Napi::String::New(env, msg)});
-  };
-
-  perf.tock = [&](std::string msg) {
-    NAPI_tock.Call(env.Global(), {Napi::String::New(env, msg)});
-  };
-
   std::string VERSION = info[0].As<Napi::String>().Utf8Value();
   std::string PATH = info[1].As<Napi::String>().Utf8Value();
   Napi::Array IRIDIUM = info[2].As<Napi::Array>();
   Napi::Array BUILDCTX = info[3].As<Napi::Array>();
 
-  IRI_STORAGE::IridiumPool pool;
-  pool.NULL_SEXP = IRI_GEN::NullSEXP::create(pool, true);
-  pool.NOP_SEXP = IRI_GEN::NOPSEXP::create(pool);
-  pool.NUBD_SEXP = IRI_GEN::JSNUBDSEXP::create(pool);
+  IRI_STORAGE::IRIContext ctx;
+  ctx.debugger.tick = [&](std::string msg) {
+    NAPI_tick.Call(env.Global(), {Napi::String::New(env, msg)});
+  };
 
-  perf.tick("iri-forge-main");
+  ctx.debugger.tock = [&](std::string msg) {
+    NAPI_tock.Call(env.Global(), {Napi::String::New(env, msg)});
+  };
+  ctx.storage.nodes.NULL_SEXP = IRI_GEN::NullSEXP::create(ctx, true);
+  ctx.storage.nodes.NOP_SEXP = IRI_GEN::NOPSEXP::create(ctx);
+  ctx.storage.nodes.NUBD_SEXP = IRI_GEN::JSNUBDSEXP::create(ctx);
 
-  perf.tick("iri-forge-parse");
+  Napi::Object flagsObj = info[6].As<Napi::Object>();
+  IRI_GEN::forEachPassFlag(ctx.flags,
+                           [&](const std::string &name, bool &value) {
+                             Napi::Value v = flagsObj.Get(name);
+                             if (v.IsBoolean()) {
+                               value = v.As<Napi::Boolean>().ToBoolean();
+                             }
+                           });
 
-  IRI_PARSE::IridiumParser parser(pool);
-  perf.tick("iri-forge-parse-code");
+  ctx.debugger.tick("iri-forge-main");
+
+  ctx.debugger.tick("iri-forge-parse");
+
+  IRI_PARSE::IridiumParser parser(ctx);
+  ctx.debugger.tick("iri-forge-parse-code");
   parser.initParseCTX(IRIDIUM);
   IRI_STORAGE::IRID root = parser.parse();
-  perf.tock("iri-forge-parse-code");
+  ctx.debugger.tock("iri-forge-parse-code");
 
-  perf.tick("iri-forge-parse-buildContext");
+  ctx.debugger.tick("iri-forge-parse-buildContext");
   parser.parseBuildContexts(BUILDCTX);
-  perf.tock("iri-forge-parse-buildContext");
+  ctx.debugger.tock("iri-forge-parse-buildContext");
 
-  perf.tock("iri-forge-parse");
+  ctx.debugger.tock("iri-forge-parse");
 
-  perf.tick("iri-forge-entrypoint");
-  auto res =
-      IRI_ENTRY::sharedEntrypoint(pool, root, parser.iridiumBuildContext, perf);
-  perf.tock("iri-forge-entrypoint");
+  ctx.debugger.tick("iri-forge-entrypoint");
+  auto res = IRI_ENTRY::sharedEntrypoint(ctx, root, parser.iridiumBuildContext);
+  ctx.debugger.tock("iri-forge-entrypoint");
 
   std::ostringstream oss;
 
@@ -119,7 +110,7 @@ Napi::Value execute(const Napi::CallbackInfo &info) {
   oss << "\"version\":" << "\"" << VERSION << "\",";
   oss << "\"absoluteFilePath\":" << "\"" << PATH << "\",";
   oss << "\"iridium\":";
-  pool[res].dump(oss, &pool, true);
+  IRI_NODE(ctx, res).dump(oss, &ctx, true);
   oss << "}";
 
   std::string resultStr = oss.str();
