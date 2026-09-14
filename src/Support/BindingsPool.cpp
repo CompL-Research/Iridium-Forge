@@ -2,7 +2,7 @@
 #include "Generated/IridiumEnums.h"
 #include "Generated/IridiumTypes.h"
 #include "Helpers.h"
-#include "Storage/IridiumPool.h"
+#include "Storage/IRIContext.h"
 #include "Storage/IridiumSEXP.h"
 #include <cstdint>
 #include <stdexcept>
@@ -11,7 +11,7 @@ namespace IRI_STORAGE {
 using namespace IRI_STRUCTURAL;
 void BindingsPool::allocateStub() {
   uint32_t storedIDX;
-  // Store a empty stub in the pool
+  // Store a empty stub in the ctx
   // Ensure that this always occupies the 0th index
   if (!freeList.empty()) {
     uint32_t index = freeList.back();
@@ -26,51 +26,53 @@ void BindingsPool::allocateStub() {
   }
 
   if (storedIDX != 0)
-    throw std::runtime_error("Expected stub to be the first offset in the bindings pool!!");
+    throw std::runtime_error(
+        "Expected stub to be the first offset in the bindings ctx!!");
 }
 
-BindingMeta & BindingsPool::getMetaFromIRID(IridiumPool &pool, IRID bID) {
-  IRI_TAG tag = pool[bID].tag;
+BindingMeta &BindingsPool::getMetaFromIRID(IRIContext &ctx, IRID bID) {
+  IRI_TAG tag = IRI_NODE(ctx, bID).tag;
   if (tag == IRI_GEN::EnvBinding) {
-    EnvBindingSEXP eb(bID, pool);
-    return (*this)[eb.getLINK()];
+    EnvBindingSEXP eb(bID, ctx);
+    return get(eb.getLINK());
   } else if (tag == IRI_GEN::RemoteEnvBinding) {
-    RemoteEnvBindingSEXP rb(bID, pool);
-    return (*this)[rb.getLINK()];
+    RemoteEnvBindingSEXP rb(bID, ctx);
+    return get(rb.getLINK());
   } else if (tag == IRI_GEN::ScriptBinding) {
-    ScriptBindingSEXP sb(bID, pool);
-    return (*this)[sb.getLINK()];
+    ScriptBindingSEXP sb(bID, ctx);
+    return get(sb.getLINK());
   } else if (tag == IRI_GEN::GlobalBinding) {
-    GlobalBindingSEXP gb(bID, pool);
-    return (*this)[gb.getLINK()];
+    GlobalBindingSEXP gb(bID, ctx);
+    return get(gb.getLINK());
   } else {
     throw std::runtime_error("Failed to add to BindingsPool: " + dump_tag(tag));
   }
 }
-const BindingMeta & BindingsPool::getMetaFromIRID(IridiumPool &pool, IRID bID) const {
-  IRI_TAG tag = pool[bID].tag;
+const BindingMeta &BindingsPool::getMetaFromIRID(IRIContext &ctx,
+                                                 IRID bID) const {
+  IRI_TAG tag = IRI_NODE(ctx, bID).tag;
   if (tag == IRI_GEN::EnvBinding) {
-    EnvBindingSEXP eb(bID, pool);
-    return (*this)[eb.getLINK()];
+    EnvBindingSEXP eb(bID, ctx);
+    return get(eb.getLINK());
   } else if (tag == IRI_GEN::RemoteEnvBinding) {
-    RemoteEnvBindingSEXP rb(bID, pool);
-    return (*this)[rb.getLINK()];
+    RemoteEnvBindingSEXP rb(bID, ctx);
+    return get(rb.getLINK());
   } else if (tag == IRI_GEN::ScriptBinding) {
-    ScriptBindingSEXP sb(bID, pool);
-    return (*this)[sb.getLINK()];
+    ScriptBindingSEXP sb(bID, ctx);
+    return get(sb.getLINK());
   } else if (tag == IRI_GEN::GlobalBinding) {
-    GlobalBindingSEXP gb(bID, pool);
-    return (*this)[gb.getLINK()];
+    GlobalBindingSEXP gb(bID, ctx);
+    return get(gb.getLINK());
   } else {
     throw std::runtime_error("Failed to add to BindingsPool: " + dump_tag(tag));
   }
 }
 
-BindingMeta & BindingsPool::allocate(IridiumPool &pool, IRID bID) {
+BindingMeta &BindingsPool::allocate(IRIContext &ctx, IRID bID) {
   uint32_t storedIDX;
-  IRI_TAG tag = pool[bID].tag;
+  IRI_TAG tag = IRI_NODE(ctx, bID).tag;
 
-  // Store a BindingSEXP on the pool
+  // Store a BindingSEXP on the ctx
   if (!freeList.empty()) {
     uint32_t index = freeList.back();
     freeList.pop_back();
@@ -95,63 +97,61 @@ BindingMeta & BindingsPool::allocate(IridiumPool &pool, IRID bID) {
 
   // Create links inside the object
   if (tag == IRI_GEN::EnvBinding) {
-    EnvBindingSEXP eb(bID, pool);
+    EnvBindingSEXP eb(bID, ctx);
     eb.setLINK(storedIDX);
   } else if (tag == IRI_GEN::RemoteEnvBinding) {
-    RemoteEnvBindingSEXP rb(bID, pool);
+    RemoteEnvBindingSEXP rb(bID, ctx);
     rb.setLINK(storedIDX);
   } else if (tag == IRI_GEN::ScriptBinding) {
-    ScriptBindingSEXP sb(bID, pool);
+    ScriptBindingSEXP sb(bID, ctx);
     sb.setLINK(storedIDX);
   } else if (tag == IRI_GEN::GlobalBinding) {
-    GlobalBindingSEXP gb(bID, pool);
+    GlobalBindingSEXP gb(bID, ctx);
     gb.setLINK(storedIDX);
   } else {
     throw std::runtime_error("Failed to add to BindingsPool: " + dump_tag(tag));
   }
 
-  return (*this)[storedIDX];
+  return get(storedIDX);
 }
 
-static void printEnvBindingDetails(IridiumPool &pool, std::ostream &oss, IRID ID) {
-  EnvBindingSEXP eb(ID, pool);
+static void printEnvBindingDetails(IRIContext &ctx, std::ostream &oss,
+                                   IRID ID) {
+  EnvBindingSEXP eb(ID, ctx);
   oss << "["
-      << "REF: " << eb.getREFIDX()
-      << ", SCOPE: " << eb.getSCOPE()
-      << ", NEXT: " << eb.getNEXT()
-      << ", LINK: " << eb.getLINK()
-      << "]";
+      << "REF: " << eb.getREFIDX() << ", SCOPE: " << eb.getSCOPE()
+      << ", NEXT: " << eb.getNEXT() << ", LINK: " << eb.getLINK() << "]";
 }
 
-static void printRemoteEnvBindingDetails(IridiumPool &pool, std::ostream &oss, IRID ID) {
-  RemoteEnvBindingSEXP rb(ID, pool);
+static void printRemoteEnvBindingDetails(IRIContext &ctx, std::ostream &oss,
+                                         IRID ID) {
+  RemoteEnvBindingSEXP rb(ID, ctx);
 
   oss << "["
-      << "REF: " << rb.getREFIDX()
-      << ", LINK: " << rb.getLINK();
+      << "REF: " << rb.getREFIDX() << ", LINK: " << rb.getLINK();
   oss << (rb.hasMODULE() ? ",module" : "");
   oss << (rb.hasMODULEI() ? ",modulei" : "");
   oss << (rb.hasMODULENSI() ? ",modulensi" : "");
   oss << "]";
   IRID next = rb.getArg_ParentReference();
-  auto nextTAG = pool[next].tag;
+  auto nextTAG = IRI_NODE(ctx, next).tag;
   if (nextTAG == IRI_GEN::EnvBinding) {
     oss << "->";
-    printEnvBindingDetails(pool, oss, next);
+    printEnvBindingDetails(ctx, oss, next);
   } else if (nextTAG == IRI_GEN::RemoteEnvBinding) {
     oss << "-";
-    printRemoteEnvBindingDetails(pool, oss, next);
+    printRemoteEnvBindingDetails(ctx, oss, next);
   } else {
     throw std::runtime_error("RemoteEnvBinding wrapped incorrectly");
   }
 }
 
-void BindingMeta::dump(IridiumPool &pool, std::ostream &oss, bool full) const {
-  IRI_TAG tag = pool[ID].tag;
+void BindingMeta::dump(IRIContext &ctx, std::ostream &oss, bool full) const {
+  IRI_TAG tag = IRI_NODE(ctx, ID).tag;
   // oss << currOffset << "@";
   if (tag == IRI_GEN::EnvBinding) {
-    EnvBindingSEXP eb(ID, pool);
-    oss << "{" << pool.strings.get(eb.getNAME());
+    EnvBindingSEXP eb(ID, ctx);
+    oss << "{" << ctx.storage.strings.get(eb.getNAME());
     oss << ":";
     oss << (eb.hasJSARG() ? "arg" : "");
     oss << (eb.hasJSRESTARG() ? "*arg" : "");
@@ -162,27 +162,27 @@ void BindingMeta::dump(IridiumPool &pool, std::ostream &oss, bool full) const {
     oss << "}";
     if (full) {
       oss << "->";
-      printEnvBindingDetails(pool, oss, ID);
+      printEnvBindingDetails(ctx, oss, ID);
     }
   } else if (tag == IRI_GEN::RemoteEnvBinding) {
-    RemoteEnvBindingSEXP rb(ID, pool);
-    EnvBindingSEXP eb(IRI_HELPERS::resolveRemoteBinding(pool, ID), pool);
-    oss << "{^" << pool.strings.get(eb.getNAME()) << "}";
+    RemoteEnvBindingSEXP rb(ID, ctx);
+    EnvBindingSEXP eb(IRI_HELPERS::resolveRemoteBinding(ctx, ID), ctx);
+    oss << "{^" << ctx.storage.strings.get(eb.getNAME()) << "}";
     if (full) {
       oss << "-";
-      printRemoteEnvBindingDetails(pool, oss, ID);
+      printRemoteEnvBindingDetails(ctx, oss, ID);
     }
   } else if (tag == IRI_GEN::ScriptBinding) {
-    ScriptBindingSEXP sb(ID, pool);
-    oss << "{*" << pool.strings.get(sb.getNAME());
+    ScriptBindingSEXP sb(ID, ctx);
+    oss << "{*" << ctx.storage.strings.get(sb.getNAME());
     oss << ":";
     oss << (sb.hasJSLET() ? "let" : "");
     oss << (sb.hasJSCONST() ? "const" : "");
     oss << (sb.hasJSVAR() ? "var" : "");
     oss << "}";
   } else if (tag == IRI_GEN::GlobalBinding) {
-    GlobalBindingSEXP gb(ID, pool);
-    oss << "{" << pool.strings.get(gb.getNAME()) << "}";
+    GlobalBindingSEXP gb(ID, ctx);
+    oss << "{" << ctx.storage.strings.get(gb.getNAME()) << "}";
   } else {
     throw std::runtime_error("Invalid BindingMeta");
   }

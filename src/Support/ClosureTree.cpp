@@ -1,25 +1,25 @@
 #include "Support/ClosureTree.hpp"
 #include "Storage/Config.h"
 #include "Support/BBContainerSupport.hpp"
+#include <iostream>
 #include <memory>
 #include <stdexcept>
-#include <iostream>
 #include <string>
 
 namespace IRI_STRUCTURAL {
 using namespace IRI_STORAGE;
 
-ClosureTree::ClosureTree(IridiumPool &p, IRID rootNode) : pool(p) {
+ClosureTree::ClosureTree(IRIContext &p, IRID rootNode) : ctx(p) {
   addClosure(rootNode);
 }
 
 void ClosureTree::addClosure(IRID id) {
-  BBContainerSupport bbc(id, pool);
+  BBContainerSupport bbc(id, ctx);
   if (closures.contains(id)) {
     throw std::runtime_error("Tried to add a duplicate closure");
   }
 
-  closures[id] = std::make_unique<IRICFG>(id, pool);
+  closures[id] = std::make_unique<IRICFG>(id, ctx);
   scopeIDXtoClosure[bbc.getScopeIDX()] = closures[id].get();
   bbIDXtoClosure[bbc.getStartBBIDX()] = closures[id].get();
 
@@ -45,14 +45,23 @@ void ClosureTree::addEdge(IRID from, IRID to) {
 }
 
 void ClosureTree::addEdgeFromScopeToBBIDX(double fromScope, double toBBIDX) {
-  if (!scopeIDXtoClosure.contains(fromScope) || !bbIDXtoClosure.contains(toBBIDX)) {
+  if (!scopeIDXtoClosure.contains(fromScope) ||
+      !bbIDXtoClosure.contains(toBBIDX)) {
     throw std::runtime_error("Closure with startBBIDX does not exist");
   }
   addEdge(scopeIDXtoClosure[fromScope]->id, bbIDXtoClosure[toBBIDX]->id);
 }
 
+IRICFG *ClosureTree::getClosureByStartBBIDX(double startBBIDX) const {
+  auto it = bbIDXtoClosure.find(startBBIDX);
+  if (it == bbIDXtoClosure.end()) {
+    throw std::runtime_error("Tried to get a non-existant closure");
+  }
+  return it->second;
+}
+
 void ClosureTree::commit() {
-  for (auto & e : closures) {
+  for (auto &e : closures) {
     e.second->commit();
   }
 }
@@ -104,13 +113,14 @@ void ClosureTree::dumpFlat(std::ostream &oss) const {
   oss << "=============================================\n";
 
   IRI_STORAGE::IRID root = root_id.value();
-  BBContainerSupport bbc(root, pool);
+  BBContainerSupport bbc(root, ctx);
 
   oss << "Root [BB" << bbc.getStartBBIDX() << "@" << bbc.getScopeIDX() << "]\n";
 
-  #ifdef DUMP_CFG_DOTS
-  closures.at(root)->dumpDOT("BB" + std::to_string((int)bbc.getStartBBIDX()) + ".DOT");
-  #endif
+#ifdef DUMP_CFG_DOTS
+  closures.at(root)->dumpDOT("BB" + std::to_string((int)bbc.getStartBBIDX()) +
+                             ".DOT");
+#endif
 
   // Fetch children of the root
   auto it = outEdges.find(root);
@@ -124,20 +134,19 @@ void ClosureTree::dumpFlat(std::ostream &oss) const {
 }
 
 // Private recursive dumper
-void ClosureTree::dumpRecursive(std::ostream &oss,
-                                 IRI_STORAGE::IRID current_id,
-                                 const std::string &prefix,
-                                 bool is_last) const {
-  BBContainerSupport bbc(current_id, pool);
+void ClosureTree::dumpRecursive(std::ostream &oss, IRI_STORAGE::IRID current_id,
+                                const std::string &prefix, bool is_last) const {
+  BBContainerSupport bbc(current_id, ctx);
   // Print current node's branch character and ID
   oss << prefix << (is_last ? "└── " : "├── ") << "[BB" << bbc.getStartBBIDX()
       << "@" << bbc.getScopeIDX() << "]";
 
   oss << "\n";
 
-  #ifdef DUMP_CFG_DOTS
-  closures.at(current_id)->dumpDOT("BB" + std::to_string((int)bbc.getStartBBIDX()) + ".DOT");
-  #endif
+#ifdef DUMP_CFG_DOTS
+  closures.at(current_id)
+      ->dumpDOT("BB" + std::to_string((int)bbc.getStartBBIDX()) + ".DOT");
+#endif
 
   // Check if this node has children
   auto edges_it = outEdges.find(current_id);

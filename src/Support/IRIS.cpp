@@ -5,7 +5,7 @@
 #include "Helpers.h"
 #include "Storage/BindingsPool.h"
 #include "Storage/Config.h"
-#include "Storage/IridiumPool.h"
+#include "Storage/IRIContext.h"
 #include "Storage/StringPool.h"
 #include "Support/BBContainerSupport.hpp"
 #include "Support/BBSupport.hpp"
@@ -24,20 +24,20 @@
 namespace IRI_STRUCTURAL {
 using namespace IRI_STORAGE;
 IRIS::IRIS(
-    IRI_STORAGE::IridiumPool &pool,
+    IRI_STORAGE::IRIContext &ctx,
     std::unordered_map<int, std::shared_ptr<IRI_PARSE::IridiumBuildContext>>
         &iriBC,
     IRI_GEN::IRID file)
-    : pool(pool) {
+    : ctx(ctx) {
 
   //
   // Make BBContainer -> Scopes Map, also populate fastcase lookup for global
   // check
   //
-  FileSupport fileSupport(file, pool);
+  FileSupport fileSupport(file, ctx);
 
   for (auto [bbcID, _] : fileSupport.containers()) {
-    BBContainerSupport bbCont(bbcID, pool);
+    BBContainerSupport bbCont(bbcID, ctx);
     auto containerScope = bbCont.getScopeIDX();
     scopeHead[containerScope] = bbcID;
   }
@@ -80,7 +80,7 @@ IRIS::IRIS(
     nodes.insert(currScope);
     nodes.insert(parentScope);
 
-    BBSupport bb(bcon->BB[0], pool);
+    BBSupport bb(bcon->BB[0], ctx);
 
     if (bcon->isArgInitContext)
       argInitScopes.insert(currScope);
@@ -102,15 +102,15 @@ IRIS::IRIS(
         kind = JSRESTARG;
       }
 
-      IRI_STORAGE::StringID bName = pool.strings.intern(bcon->args[k]);
+      IRI_STORAGE::StringID bName = ctx.storage.strings.intern(bcon->args[k]);
 
       auto lb =
-          EnvBindingSEXP::create(pool, bName, kind == JSARG, kind == JSRESTARG,
+          EnvBindingSEXP::create(ctx, bName, kind == JSARG, kind == JSRESTARG,
                                  false, false, false, k, currScope, -1, -1);
 
       allNames.insert(bName);
       scopeBindings[currScope][bName] = lb;
-      bindingsPool->allocate(pool, lb);
+      ctx.storage.bindings.allocate(ctx, lb);
 
       argsAtScope[currScope].push_back(lb);
     }
@@ -133,16 +133,16 @@ IRI_STORAGE::BindingMeta &IRIS::declareScriptBinding(double scope,
   if (scope != topLevelScope) {
     throw std::runtime_error(
         "script binding declaration at non top level scope: " +
-        std::string(pool.strings.get(name)));
+        std::string(ctx.storage.strings.get(name)));
   }
   if (scriptBindings.contains(name)) {
     IRID existingBinding = scriptBindings[name];
-    ScriptBindingSEXP sb(existingBinding, pool);
+    ScriptBindingSEXP sb(existingBinding, ctx);
     if (!sb.hasJSVAR()) {
       throw std::runtime_error("Duplicate script binding declaration: " +
-                               std::string(pool.strings.get(name)));
+                               std::string(ctx.storage.strings.get(name)));
     }
-    return (*this)[existingBinding];
+    return get_binding(existingBinding);
   } else {
     bool JSLET = flag == IRI_FLAG::JSLET;
     bool JSCONST = flag == IRI_FLAG::JSCONST;
@@ -150,10 +150,10 @@ IRI_STORAGE::BindingMeta &IRIS::declareScriptBinding(double scope,
 
     assert(JSLET || JSCONST || JSVAR);
     IRID newBinding =
-        ScriptBindingSEXP::create(pool, name, JSLET, JSCONST, JSVAR, -1);
+        ScriptBindingSEXP::create(ctx, name, JSLET, JSCONST, JSVAR, -1);
     scriptBindings[name] = newBinding;
-    bindingsPool->allocate(pool, newBinding);
-    return (*this)[newBinding];
+    ctx.storage.bindings.allocate(ctx, newBinding);
+    return get_binding(newBinding);
   }
 }
 
@@ -162,15 +162,15 @@ IRI_STORAGE::BindingMeta &IRIS::declareLBinding(double scope, StringID name,
   auto &bindingsAtScope = scopeBindings[scope];
   if (bindingsAtScope.contains(name)) {
     IRID existingBinding = bindingsAtScope[name];
-    EnvBindingSEXP eb(existingBinding, pool);
-    auto &meta = (*this)[existingBinding];
+    EnvBindingSEXP eb(existingBinding, ctx);
+    auto &meta = get_binding(existingBinding);
 
     if (!meta.isIMPLICITOVERRIDEABLE) {
       if (eb.hasJSVAR() || eb.hasJSARG() || eb.hasJSRESTARG()) {
         return meta;
       } else {
         throw std::runtime_error("Duplicate binding declaration at scope: " +
-                                 std::string(pool.strings.get(name)));
+                                 std::string(ctx.storage.strings.get(name)));
       }
     }
     meta.tombstone = true;
@@ -187,12 +187,12 @@ IRI_STORAGE::BindingMeta &IRIS::declareLBinding(double scope, StringID name,
   double SCOPE = scope;
   double NEXT = -1;
   double LINK = -1;
-  IRID newBinding = IRI_GEN::EnvBindingSEXP::create(
-      pool, NAME, JSARG, JSRESTARG, JSLET, JSCONST, JSVAR, REFIDX, SCOPE, NEXT,
-      LINK);
+  IRID newBinding = IRI_GEN::EnvBindingSEXP::create(ctx, NAME, JSARG, JSRESTARG,
+                                                    JSLET, JSCONST, JSVAR,
+                                                    REFIDX, SCOPE, NEXT, LINK);
   bindingsAtScope[name] = newBinding;
-  bindingsPool->allocate(pool, newBinding);
-  return (*this)[newBinding];
+  ctx.storage.bindings.allocate(ctx, newBinding);
+  return get_binding(newBinding);
 }
 
 IRI_STORAGE::BindingMeta &IRIS::declareRBinding(double scope, StringID name,
@@ -202,18 +202,18 @@ IRI_STORAGE::BindingMeta &IRIS::declareRBinding(double scope, StringID name,
   if (scope != topLevelScope) {
     throw std::runtime_error(
         "Remote binding declaration at non top level scope: " +
-        std::string(pool.strings.get(name)));
+        std::string(ctx.storage.strings.get(name)));
   }
   if (bindingsAtScope.contains(name)) {
     IRID existingBinding = bindingsAtScope[name];
-    RemoteEnvBindingSEXP rb(existingBinding, pool);
-    EnvBindingSEXP eb(rb.getArg_ParentReference(), pool);
+    RemoteEnvBindingSEXP rb(existingBinding, ctx);
+    EnvBindingSEXP eb(rb.getArg_ParentReference(), ctx);
 
     if (eb.hasJSVAR()) {
-      return (*this)[existingBinding];
+      return get_binding(existingBinding);
     }
     throw std::runtime_error("Duplicate remote binding declaration at scope: " +
-                             std::string(pool.strings.get(name)));
+                             std::string(ctx.storage.strings.get(name)));
   } else {
     allNames.insert(name);
     StringID NAME = name;
@@ -226,20 +226,20 @@ IRI_STORAGE::BindingMeta &IRIS::declareRBinding(double scope, StringID name,
     double SCOPE = scope;
     double NEXT = -1;
     double LINK = -1;
-    IRID store = IRI_GEN::EnvBindingSEXP::create(pool, NAME, JSARG, JSRESTARG,
+    IRID store = IRI_GEN::EnvBindingSEXP::create(ctx, NAME, JSARG, JSRESTARG,
                                                  JSLET, JSCONST, JSVAR, REFIDX,
                                                  SCOPE, NEXT, LINK);
-    bindingsPool->allocate(pool, store);
+    ctx.storage.bindings.allocate(ctx, store);
 
     assert(moduleFlag == IRI_FLAG::MODULE || moduleFlag == IRI_FLAG::MODULEI ||
            moduleFlag == IRI_GEN::MODULENSI);
     IRID moduleBinding = RemoteEnvBindingSEXP::create(
-        pool, store, moduleFlag == MODULE, moduleFlag == MODULEI,
+        ctx, store, moduleFlag == MODULE, moduleFlag == MODULEI,
         moduleFlag == MODULENSI, -1, -1);
 
     bindingsAtScope[name] = moduleBinding;
-    bindingsPool->allocate(pool, moduleBinding);
-    return (*this)[moduleBinding];
+    ctx.storage.bindings.allocate(ctx, moduleBinding);
+    return get_binding(moduleBinding);
   }
 }
 
@@ -292,14 +292,14 @@ IRI_STORAGE::BindingMeta &IRIS::resolve(StringID sid, double startScopeIDX) {
     // If edgeIt->second == -1, we have reached a Global, declare and return
     if (edgeIt->second == -1) {
       if (scriptBindings.contains(sid)) {
-        return (*this)[scriptBindings[sid]];
+        return get_binding(scriptBindings[sid]);
       } else if (globalBindings.contains(sid)) {
-        return (*this)[globalBindings[sid]];
+        return get_binding(globalBindings[sid]);
       } else {
-        IRID newBinding = GlobalBindingSEXP::create(pool, sid, -1);
+        IRID newBinding = GlobalBindingSEXP::create(ctx, sid, -1);
         globalBindings[sid] = newBinding;
-        bindingsPool->allocate(pool, newBinding);
-        return (*this)[newBinding];
+        ctx.storage.bindings.allocate(ctx, newBinding);
+        return get_binding(newBinding);
       }
       break;
     } else {
@@ -312,15 +312,15 @@ IRI_STORAGE::BindingMeta &IRIS::resolve(StringID sid, double startScopeIDX) {
       auto currHead = headsCrossed.back();
       headsCrossed.pop_back();
       IRID parentID = found;
-      found = RemoteEnvBindingSEXP::create(pool, found, false, false, false, -1,
-                                           -1);
+      found =
+          RemoteEnvBindingSEXP::create(ctx, found, false, false, false, -1, -1);
       scopeBindings[currHead][sid] = found;
-      bindingsPool->allocate(pool, found);
-      BindingMeta::connect((*this)[found], (*this)[parentID]);
+      ctx.storage.bindings.allocate(ctx, found);
+      BindingMeta::connect(get_binding(found), get_binding(parentID));
     }
   }
 
-  return (*this)[found];
+  return get_binding(found);
 }
 
 void IRIS::registerDirectEval(IRI_STORAGE::IRID dEval, double startScope,
@@ -357,7 +357,7 @@ bool IRIS::isGlobal(StringID sid, double startScopeIDX) {
 static std::vector<IRI_STORAGE::IRID> getEnvBindings(
     const std::unordered_map<
         double, std::unordered_map<StringID, IRI_STORAGE::IRID>> &scopeBindings,
-    auto scope, auto &pool) {
+    auto scope, auto &ctx) {
   std::vector<IRI_STORAGE::IRID> matchedBindings;
 
   auto scopeIt = scopeBindings.find(scope);
@@ -367,7 +367,7 @@ static std::vector<IRI_STORAGE::IRID> getEnvBindings(
 
   const auto &innerMap = scopeIt->second;
   for (const auto &[stringId, irid] : innerMap) {
-    if (pool[irid].tag == EnvBinding) {
+    if (IRI_NODE(ctx, irid).tag == EnvBinding) {
       matchedBindings.push_back(irid);
     }
   }
@@ -379,7 +379,7 @@ static std::vector<IRI_STORAGE::IRID> getEnvBindings(
 static std::vector<IRI_STORAGE::IRID> getRemoteEnvBindings(
     const std::unordered_map<
         double, std::unordered_map<StringID, IRI_STORAGE::IRID>> &scopeBindings,
-    auto scope, auto &pool) {
+    auto scope, auto &ctx) {
   std::vector<IRI_STORAGE::IRID> matchedBindings;
 
   auto scopeIt = scopeBindings.find(scope);
@@ -389,7 +389,7 @@ static std::vector<IRI_STORAGE::IRID> getRemoteEnvBindings(
 
   const auto &innerMap = scopeIt->second;
   for (const auto &[stringId, irid] : innerMap) {
-    if (pool[irid].tag == RemoteEnvBinding) {
+    if (IRI_NODE(ctx, irid).tag == RemoteEnvBinding) {
       matchedBindings.push_back(irid);
     }
   }
@@ -398,7 +398,7 @@ static std::vector<IRI_STORAGE::IRID> getRemoteEnvBindings(
 }
 
 void IRIS::populateCClosuresInTree() {
-  if (!pool.closureTree)
+  if (!ctx.closureTree)
     throw std::runtime_error(
         "Expected closure Tree to exist before populating CClosures");
 
@@ -407,9 +407,10 @@ void IRIS::populateCClosuresInTree() {
                                       ? closuresAtScope[currHead]
                                       : std::vector<IRID>();
     for (auto &b : cBindings) {
-      PoolBindingSEXP pb(b, pool);
-      LambdaSEXP lbSEXP(pb.getArg_Lambda(), pool);
-      pool.closureTree->addEdgeFromScopeToBBIDX(currHead, lbSEXP.getStartBBIDX());
+      PoolBindingSEXP pb(b, ctx);
+      LambdaSEXP lbSEXP(pb.getArg_Lambda(), ctx);
+      ctx.closureTree->addEdgeFromScopeToBBIDX(currHead,
+                                               lbSEXP.getStartBBIDX());
     }
   }
 }
@@ -432,13 +433,13 @@ void IRIS::commit() {
         [&](double currScope, bool allowHead) {
           if (scopeHead.contains(currScope) && !allowHead)
             return;
-          std::vector<IRID> LB = getEnvBindings(scopeBindings, currScope, pool);
+          std::vector<IRID> LB = getEnvBindings(scopeBindings, currScope, ctx);
           std::vector<IRID> RB =
-              getRemoteEnvBindings(scopeBindings, currScope, pool);
+              getRemoteEnvBindings(scopeBindings, currScope, ctx);
 
           for (size_t i = 0; i < LB.size(); i++) {
             IRID lbID = LB[i];
-            EnvBindingSEXP lb(lbID, pool);
+            EnvBindingSEXP lb(lbID, ctx);
             if (lb.hasJSARG() || lb.hasJSRESTARG())
               continue;
             double NEXT;
@@ -476,13 +477,13 @@ void IRIS::commit() {
           }
 
           for (auto &rbID : RB) {
-            RemoteEnvBindingSEXP rb(rbID, pool);
+            RemoteEnvBindingSEXP rb(rbID, ctx);
             rb.setREFIDX(rIDX++);
             if (rb.hasMODULE()) {
-              EnvBindingSEXP eb(rb.getArg_ParentReference(), pool);
+              EnvBindingSEXP eb(rb.getArg_ParentReference(), ctx);
               eb.setREFIDX(rlIDX++);
             } else if (rb.hasMODULEI() || rb.hasMODULENSI()) {
-              EnvBindingSEXP eb(rb.getArg_ParentReference(), pool);
+              EnvBindingSEXP eb(rb.getArg_ParentReference(), ctx);
               eb.setREFIDX(riIDX++);
             }
             rBindings.push_back(rbID);
@@ -497,25 +498,25 @@ void IRIS::commit() {
         };
     handleFrameBindings(currHead, true);
 
-    BBContainerSupport bbc(bbcID, pool);
+    BBContainerSupport bbc(bbcID, ctx);
 
-    BindingsSEXP bindings(bbc.getArg_Bindings(), pool);
-    pool.set_args(bindings.getArg_LocalBindings(), lBindings);
-    pool.set_args(bindings.getArg_RemoteBindings(), rBindings);
+    BindingsSEXP bindings(bbc.getArg_Bindings(), ctx);
+    ctx.storage.nodes.set_args(bindings.getArg_LocalBindings(), lBindings);
+    ctx.storage.nodes.set_args(bindings.getArg_RemoteBindings(), rBindings);
     for (size_t i = 0; i < cBindings.size(); i++) {
-      PoolBindingSEXP pb(cBindings[i], pool);
+      PoolBindingSEXP pb(cBindings[i], ctx);
       pb.setREFIDX(i);
     }
-    pool.set_args(bindings.getArg_Lambdas(), cBindings);
+    ctx.storage.nodes.set_args(bindings.getArg_Lambdas(), cBindings);
   }
   // Resolve evals
   for (auto &[id, scopeToTaint, containerScope] : directEvals) {
     double evalREFIDX = getJSEvalLookupREFIDX(scopeToTaint, containerScope);
-    if (pool[id].tag == IRI_GEN::CallSite) {
-      CallSiteSEXP callSite(id, pool);
+    if (IRI_NODE(ctx, id).tag == IRI_GEN::CallSite) {
+      CallSiteSEXP callSite(id, ctx);
       callSite.setJSDirectEval(evalREFIDX);
     } else {
-      ApplySEXP callSite(id, pool);
+      ApplySEXP callSite(id, ctx);
       callSite.setJSDirectEval(evalREFIDX);
     }
   }
@@ -618,12 +619,13 @@ void IRIS::addEvalRemoteBindingsToParentClosure(double startScope) {
 
   double currScope = startScope;
   bool crossedClosureScope = false;
-  auto & iris = pool.iris;
+  auto &iris = ctx.iris;
   while (currScope != -1) {
     if (scopeBindings.contains(currScope)) {
       for (auto &[sID, bID] : scopeBindings.at(currScope)) {
-        if (pool[bID].tag == IRI_GEN::EnvBinding) {
-          if (IRI_TEMPS_INVISIBLE_TO_EVAL && pool.strings.get(sID).starts_with("~$")) {
+        if (IRI_NODE(ctx, bID).tag == IRI_GEN::EnvBinding) {
+          if (IRI_TEMPS_INVISIBLE_TO_EVAL &&
+              ctx.storage.strings.get(sID).starts_with("~$")) {
             // Completely ignore temps
           } else if (crossedClosureScope) {
             pollutedReads.insert(sID);
@@ -632,8 +634,9 @@ void IRIS::addEvalRemoteBindingsToParentClosure(double startScope) {
 
             // In the current closure scope, this binding is reachable by eval
             // we must mark the binding as eval captured...
-            // std::cout << "marking eval Tainted : " << pool.strings.get(sID) << " @ " << currScope << std::endl;
-            (*iris)[bID].markEvalTainted();
+            // std::cout << "marking eval Tainted : " <<
+            // ctx.storage.strings.get(sID) << " @ " << currScope << std::endl;
+            IRI_BINDING(iris, bID).markEvalTainted();
           }
         }
       }
@@ -676,8 +679,8 @@ double IRIS::getJSEvalLookupREFIDX(double scope, double parentScope) {
       // Found a scope with >1 bindings
       for (auto &b : scopeIt->second) {
         IRI_STORAGE::IRID bID = b.second;
-        if (pool[bID].tag == IRI_GEN::EnvBinding) {
-          IRI_GEN::EnvBindingSEXP ebSEXP(bID, pool);
+        if (IRI_NODE(ctx, bID).tag == IRI_GEN::EnvBinding) {
+          IRI_GEN::EnvBindingSEXP ebSEXP(bID, ctx);
           if (ebSEXP.getREFIDX() > largestREFIDX)
             largestREFIDX = ebSEXP.getREFIDX();
         }
@@ -757,7 +760,8 @@ std::vector<IRI_STORAGE::IRID> IRIS::getBindingsToMoveToHeap(double startScope,
       auto &bindingsMapAtScope = scopeIt->second;
       for (auto &b : bindingsMapAtScope) {
         auto bID = b.second;
-        if (pool[bID].tag == IRI_GEN::EnvBinding && (*this)[bID].isCaptured()) {
+        if (IRI_NODE(ctx, bID).tag == IRI_GEN::EnvBinding &&
+            get_binding(bID).isCaptured()) {
           res.push_back(bID);
         }
       }
@@ -780,7 +784,8 @@ std::vector<IRI_STORAGE::IRID> IRIS::getBindingsInClosure(double headScope) {
   assert(scopeHead.contains(headScope));
   std::vector<IRI_STORAGE::IRID> res;
 
-  std::function<void(double, bool)> traverse = [&](double currScope, bool isHead) {
+  std::function<void(double, bool)> traverse = [&](double currScope,
+                                                   bool isHead) {
     if (!isHead && scopeHead.contains(currScope)) {
       return;
     }
@@ -804,27 +809,28 @@ std::vector<IRI_STORAGE::IRID> IRIS::getBindingsInClosure(double headScope) {
 }
 
 std::vector<IRI_STORAGE::IRID> IRIS::getEnvBindingsAtScope(double scope) {
-  return IRI_STRUCTURAL::getEnvBindings(scopeBindings, scope, pool);
+  return IRI_STRUCTURAL::getEnvBindings(scopeBindings, scope, ctx);
 }
 
 std::vector<IRI_STORAGE::IRID> IRIS::getRemoteEnvBindingsAtScope(double scope) {
-  return IRI_STRUCTURAL::getRemoteEnvBindings(scopeBindings, scope, pool);
+  return IRI_STRUCTURAL::getRemoteEnvBindings(scopeBindings, scope, ctx);
 }
 
 std::vector<IRI_STORAGE::IRID> IRIS::getEnvBindingsInClosure(double headScope) {
   std::vector<IRI_STORAGE::IRID> res;
   for (auto bID : getBindingsInClosure(headScope)) {
-    if (pool[bID].tag == IRI_GEN::EnvBinding) {
+    if (IRI_NODE(ctx, bID).tag == IRI_GEN::EnvBinding) {
       res.push_back(bID);
     }
   }
   return res;
 }
 
-std::vector<IRI_STORAGE::IRID> IRIS::getRemoteEnvBindingsInClosure(double headScope) {
+std::vector<IRI_STORAGE::IRID>
+IRIS::getRemoteEnvBindingsInClosure(double headScope) {
   std::vector<IRI_STORAGE::IRID> res;
   for (auto bID : getBindingsInClosure(headScope)) {
-    if (pool[bID].tag == IRI_GEN::RemoteEnvBinding) {
+    if (IRI_NODE(ctx, bID).tag == IRI_GEN::RemoteEnvBinding) {
       res.push_back(bID);
     }
   }
@@ -838,8 +844,8 @@ void IRIS::dumpBindingsAtScope(std::ostream &oss, double currScope) const {
   }
 
   for (auto &[sID, bID] : scopeBindings.at(currScope)) {
-    auto &meta = (*this)[bID];
-    meta.dump(pool, oss, false);
+    auto &meta = get_binding(bID);
+    meta.dump(ctx, oss, false);
     oss << " | ";
   }
 }
@@ -910,7 +916,8 @@ void IRIS::dumpFlat(std::ostream &oss, int indentLevel) const {
   dumpScopeTree(oss, indentLevel);
   // std::cout << "All Declared Names" << std::endl;
   // for (auto & n : allNames) {
-  //   std::cout << "  " << n << " : " << pool.strings.get(n) << std::endl;
+  //   std::cout << "  " << n << " : " << ctx.storage.strings.get(n) <<
+  //   std::endl;
   // }
   oss << "=============================================\n\n";
 }
