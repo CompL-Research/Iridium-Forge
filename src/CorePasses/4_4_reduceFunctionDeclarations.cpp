@@ -4,7 +4,7 @@
 #include "Helpers.h"
 #include "Parser/IridiumBuildContext.h"
 #include "Storage/Config.h"
-#include "Storage/IridiumPool.h"
+#include "Storage/IRIContext.h"
 #include "Storage/StringPool.h"
 #include "Support/BBSupport.hpp"
 #include "Support/IRIS.hpp"
@@ -24,25 +24,25 @@ using BUILD_CTX = std::unordered_map<int, std::shared_ptr<IridiumBuildContext>>;
 
 enum class LOC { FRAME, MODULE, SCRIPT };
 
-void _4_4_RFD(IridiumPool &pool, IRID fileID, BUILD_CTX &iridiumBuildContext) {
-  StringID str_undefined = pool.strings.intern("undefined");
+void _4_4_RFD(IRIContext &ctx, IRID fileID, BUILD_CTX &iridiumBuildContext) {
+  StringID str_undefined = ctx.storage.strings.intern("undefined");
 
-  FileSEXP fileSEXP(fileID, pool);
+  FileSEXP fileSEXP(fileID, ctx);
 
   bool isModule = iridiumBuildContext[0]->isModule;
   bool isScript = !isModule;
-  double topLevelScope = pool.iris->getTopLevelScope();
+  double topLevelScope = ctx.iris->getTopLevelScope();
 
-  auto args = pool.get_args(fileID);
+  auto args = ctx.storage.nodes.get_args(fileID);
 
   for (auto &bbcID : args) {
-    if (pool[bbcID].tag != IRI_GEN::BBContainer)
+    if (IRI_NODE(ctx, bbcID).tag != IRI_GEN::BBContainer)
       continue;
 
     std::unordered_map<double, std::vector<IRID>> hoistedEnvWrites;
 
-    BBContainerSEXP container(bbcID, pool);
-    auto bbs = pool.get_args(container.getArg_BB());
+    BBContainerSEXP container(bbcID, ctx);
+    auto bbs = ctx.storage.nodes.get_args(container.getArg_BB());
     auto containerScope = container.getScopeIDX();
 
     bool isStrict = container.hasSTRICT();
@@ -51,63 +51,63 @@ void _4_4_RFD(IridiumPool &pool, IRID fileID, BUILD_CTX &iridiumBuildContext) {
     auto &containerBC = iridiumBuildContext[containerScope];
 
     for (auto &bbID : bbs) {
-      BBSupport bb(bbID, pool);
+      BBSupport bb(bbID, ctx);
       auto localScope = bb.getScopeIDX();
 
       bool isTopLevelClosureCTX = topLevelScope == containerScope;
       bool closureLevelDecl = localScope == containerScope;
 
       for (auto [stmtID, stmtOffset] : bb.stmts()) {
-        IRI_TAG currTag = pool[stmtID].tag;
+        IRI_TAG currTag = IRI_NODE(ctx, stmtID).tag;
         if (currTag == IRI_GEN::JSFuncDecl) {
-          pool.update_arg_inplace(bbID, stmtOffset, pool.NOP_SEXP);
+          ctx.storage.nodes.update_arg_inplace(bbID, stmtOffset, ctx.storage.nodes.NOP_SEXP);
 
-          JSFuncDeclSEXP jsfd(stmtID, pool);
-          ResolveEnvBindingSEXP renvB(jsfd.getArg_LValTarget(), pool);
+          JSFuncDeclSEXP jsfd(stmtID, ctx);
+          ResolveEnvBindingSEXP renvB(jsfd.getArg_LValTarget(), ctx);
           IRI_STORAGE::StringID funName = renvB.getNAME();
           IRID rval = jsfd.getArg_RVal();
 
           auto sloppyFuncDecl = [&]() {
-            IRID lval = pool.iris->declareScriptBinding(localScope, funName, IRI_GEN::JSVAR).ID;
-            hoistedEnvWrites[localScope].push_back(GWriteSEXP::create(pool, lval, rval, false, false, false, true));
+            IRID lval = ctx.iris->declareScriptBinding(localScope, funName, IRI_GEN::JSVAR).ID;
+            hoistedEnvWrites[localScope].push_back(GWriteSEXP::create(ctx, lval, rval, false, false, false, true));
           };
 
           auto moduleFuncDecl = [&]() {
-            IRID lval = pool.iris->declareRBinding(localScope, funName, IRI_GEN::JSLET, IRI_GEN::MODULE).ID;
-            hoistedEnvWrites[localScope].push_back(MWriteSEXP::create(pool, lval, rval, true, false));
+            IRID lval = ctx.iris->declareRBinding(localScope, funName, IRI_GEN::JSLET, IRI_GEN::MODULE).ID;
+            hoistedEnvWrites[localScope].push_back(MWriteSEXP::create(ctx, lval, rval, true, false));
           };
 
           auto lexicalLetDecl = [&]() {
-            IRID lval = pool.iris->declareLBinding(localScope, funName, IRI_GEN::JSLET).ID;
+            IRID lval = ctx.iris->declareLBinding(localScope, funName, IRI_GEN::JSLET).ID;
             hoistedEnvWrites[localScope].push_back(
-              LWriteSEXP::create(pool, lval, rval, true, false, false)
+              LWriteSEXP::create(ctx, lval, rval, true, false, false)
             );
           };
 
           auto scriptVarAndGWrite = [&]() {
-            IRID lval = pool.iris->declareScriptBinding(containerScope, funName, IRI_GEN::JSVAR).ID;
+            IRID lval = ctx.iris->declareScriptBinding(containerScope, funName, IRI_GEN::JSVAR).ID;
             hoistedEnvWrites[containerScope].push_back(
-              GWriteSEXP::create(pool, lval, pool.NOP_SEXP, false, false, true, false)
+              GWriteSEXP::create(ctx, lval, ctx.storage.nodes.NOP_SEXP, false, false, true, false)
             );
             hoistedEnvWrites[localScope].push_back(
-              GWriteSEXP::create(pool, lval, rval, true, false, false, false)
+              GWriteSEXP::create(ctx, lval, rval, true, false, false, false)
             );
           };
 
           auto funcVarDecl = [&]() {
-            IRID lval = pool.iris->declareLBinding(localScope, funName, IRI_GEN::JSVAR).ID;
+            IRID lval = ctx.iris->declareLBinding(localScope, funName, IRI_GEN::JSVAR).ID;
             hoistedEnvWrites[localScope].push_back(
-              LWriteSEXP::create(pool, lval, rval, true, false, false)
+              LWriteSEXP::create(ctx, lval, rval, true, false, false)
             );
           };
 
           auto funcVarAndGWrite = [&]() {
-            IRID lval = pool.iris->declareLBinding(localScope, funName, IRI_GEN::JSVAR).ID;
+            IRID lval = ctx.iris->declareLBinding(localScope, funName, IRI_GEN::JSVAR).ID;
             hoistedEnvWrites[containerScope].push_back(
-              LWriteSEXP::create(pool, lval, IRI_HELPERS::createUnsafeEnvReadSEXP(pool, str_undefined), true, false, false)
+              LWriteSEXP::create(ctx, lval, IRI_HELPERS::createUnsafeEnvReadSEXP(ctx, str_undefined), true, false, false)
             );
             hoistedEnvWrites[localScope].push_back(
-              LWriteSEXP::create(pool, lval, rval, true, false, false)
+              LWriteSEXP::create(ctx, lval, rval, true, false, false)
             );
           };
 
@@ -147,7 +147,7 @@ void _4_4_RFD(IridiumPool &pool, IRID fileID, BUILD_CTX &iridiumBuildContext) {
       double localScope = containerBC->scopeIDX;
       double parentScope = containerBC->parent;
       IRID startBBID = containerBC->BB[0];
-      pool.add_args_to_beginning(startBBID, e.second);
+      ctx.storage.nodes.add_args_to_beginning(startBBID, e.second);
     }
   }
 }

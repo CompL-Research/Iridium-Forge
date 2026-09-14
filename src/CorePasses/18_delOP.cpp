@@ -5,7 +5,7 @@
 #include "Generated/IridiumTypes.h"
 #include "Parser/IridiumBuildContext.h"
 #include "Storage/Config.h"
-#include "Storage/IridiumPool.h"
+#include "Storage/IRIContext.h"
 #include "Support/BBContainerSupport.hpp"
 #include "Support/BBSupport.hpp"
 #include "Support/FileSupport.hpp"
@@ -19,36 +19,36 @@ using namespace IRI_STRUCTURAL;
 
 using BUILD_CTX = std::unordered_map<int, std::shared_ptr<IridiumBuildContext>>;
 
-inline void patchNode(IridiumPool &pool, IRID node, double startScope) {
-  auto args = pool.get_args(node);
+inline void patchNode(IRIContext &ctx, IRID node, double startScope) {
+  auto args = ctx.storage.nodes.get_args(node);
 
   for (int i = 0; i < args.size(); i++) {
     auto currID = args[i];
-    if (pool[currID].tag == JSUnop) {
-      JSUnopSEXP unop(currID, pool);
+    if (IRI_NODE(ctx, currID).tag == JSUnop) {
+      JSUnopSEXP unop(currID, ctx);
       IRID val = unop.getArg_Val();
-      if (pool[val].tag == IRI_GEN::UNOPDelVar) {
-        UNOPDelVarSEXP dv(val, pool);
-        if (!pool.iris->isGlobal(dv.getNAME(), startScope)) {
-          pool.update_arg_inplace(node, i, BooleanSEXP::create(pool, false));
+      if (IRI_NODE(ctx, val).tag == IRI_GEN::UNOPDelVar) {
+        UNOPDelVarSEXP dv(val, ctx);
+        if (!ctx.iris->isGlobal(dv.getNAME(), startScope)) {
+          ctx.storage.nodes.update_arg_inplace(node, i, BooleanSEXP::create(ctx, false));
         }
       }
     }
-    patchNode(pool, args[i], startScope);
+    patchNode(ctx, args[i], startScope);
   }
 }
 
-void _18_DELOP(IRI_STORAGE::IridiumPool &pool, IRI_STORAGE::IRID fileSEXP,
+void _18_DELOP(IRI_STORAGE::IRIContext &ctx, IRI_STORAGE::IRID fileSEXP,
               BUILD_CTX &iridiumBuildContext) {
 
-  FileSupport file(fileSEXP, pool);
+  FileSupport file(fileSEXP, ctx);
   for (auto [bbcID, _] : file.containers()) {
-    BBContainerSupport bbc(bbcID, pool);
+    BBContainerSupport bbc(bbcID, ctx);
     for (auto [bbID, _] : bbc.bbs()) {
-      BBSupport bb(bbID, pool);
+      BBSupport bb(bbID, ctx);
       auto bbScope = bb.getScopeIDX();
       for (auto [stmtID, stmtOffset] : bb.stmts()) {
-        patchNode(pool, stmtID, bbScope);
+        patchNode(ctx, stmtID, bbScope);
       }
     }
   }

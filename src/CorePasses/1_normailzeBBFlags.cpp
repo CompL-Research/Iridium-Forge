@@ -12,7 +12,7 @@ using namespace IRI_GEN;
 using namespace IRI_STORAGE;
 using BUILD_CTX = std::unordered_map<int, std::shared_ptr<IridiumBuildContext>>;
 
-static inline bool mergeCTXWithAIScope(IridiumPool &pool, int curr,
+static inline bool mergeCTXWithAIScope(IRIContext &pool, int curr,
                                        BUILD_CTX &ctx) {
   auto &buildContext = ctx[curr];
   IRI_GEN::BBSEXP startBB(buildContext->BB.at(0), pool);
@@ -25,7 +25,7 @@ static inline bool mergeCTXWithAIScope(IridiumPool &pool, int curr,
 void collapseSubtree(int argInitNode, int parentNode, int currNode,
                      std::unordered_map<int, int> &outEdges,
                      std::unordered_map<int, std::vector<int>> &inEdges,
-                     BUILD_CTX &iridiumBuildContext, IridiumPool &pool) {
+                     BUILD_CTX &iridiumBuildContext, IRIContext &pool) {
 
   // 1. Copy the children to avoid iterator invalidation when modifying inEdges
   std::vector<int> children = inEdges[currNode];
@@ -167,7 +167,7 @@ void printTree(const std::unordered_map<int, int>& outEdges,
     }
 }
 
-void _1_NBBF(IridiumPool &pool, IRID sexp, BUILD_CTX &iridiumBuildContext) {
+void _1_NBBF(IRIContext &pool, IRID sexp, BUILD_CTX &iridiumBuildContext) {
   std::unordered_map<int, int> outEdges;
   std::unordered_map<int, std::vector<int>> inEdges;
   std::vector<int> argInitScopes;

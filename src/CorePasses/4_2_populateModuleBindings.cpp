@@ -16,103 +16,103 @@ using namespace IRI_STRUCTURAL;
 
 using BUILD_CTX = std::unordered_map<int, std::shared_ptr<IridiumBuildContext>>;
 
-void _4_2_PMB(IridiumPool &pool, IRID fileSEXP,
+void _4_2_PMB(IRIContext &ctx, IRID fileSEXP,
               BUILD_CTX &iridiumBuildContext) {
 
-  pool.iris = std::make_shared<IRIS>(pool, iridiumBuildContext, fileSEXP);
+  ctx.iris = std::make_shared<IRIS>(ctx, iridiumBuildContext, fileSEXP);
 
   // Vectors to allocate
-  FileSupport fileSupport(fileSEXP, pool);
+  FileSupport fileSupport(fileSEXP, ctx);
 
   // Other files referenced by this module
   std::vector<IRID> moduleRequestsVec;
-  auto moduleRequests = pool.get_args_view(fileSEXP)[0];
+  auto moduleRequests = ctx.storage.nodes.get_args_view(fileSEXP)[0];
 
   // Objects imported by this module
   std::vector<IRID> staticImportsVec;
-  auto staticImports = pool.get_args_view(fileSEXP)[1];
+  auto staticImports = ctx.storage.nodes.get_args_view(fileSEXP)[1];
 
   // Objects exported by this module
   std::vector<IRID> staticExportsVec;
-  auto staticExports = pool.get_args_view(fileSEXP)[2];
+  auto staticExports = ctx.storage.nodes.get_args_view(fileSEXP)[2];
 
   // Reexports by this module
   std::vector<IRID> staticStarExportsVec;
-  auto staticStarExports = pool.get_args_view(fileSEXP)[3];
+  auto staticStarExports = ctx.storage.nodes.get_args_view(fileSEXP)[3];
 
   //
   // Get top level container and Build Context
   //
   auto container =
-      BBContainerSEXP(IRI_HELPERS::getTopLevelContainer(pool, fileSEXP), pool);
+      BBContainerSEXP(IRI_HELPERS::getTopLevelContainer(ctx, fileSEXP), ctx);
   auto containerBC = iridiumBuildContext[container.getScopeIDX()];
 
   if (containerBC->moduleRequestMap) {
     auto &moduleRequestMap = containerBC->moduleRequestMap.value();
     for (auto &e : moduleRequestMap) {
-      ModuleRequestSEXP m(e.second, pool);
+      ModuleRequestSEXP m(e.second, ctx);
       moduleRequestsVec.push_back(e.second);
     }
   }
 
-  auto bbs = pool.get_args(container.getArg_BB());
+  auto bbs = ctx.storage.nodes.get_args(container.getArg_BB());
 
   for (auto &bbIDX : bbs) {
-    BBSEXP bb(bbIDX, pool);
+    BBSEXP bb(bbIDX, ctx);
     auto localScope = bb.getScopeIDX();
-    auto stmts = pool.get_args(bbIDX);
+    auto stmts = ctx.storage.nodes.get_args(bbIDX);
 
     for (size_t i = 0; i < stmts.size(); i++) {
       IRID stmtID = stmts[i];
-      IRI_TAG currTag = pool[stmtID].tag;
+      IRI_TAG currTag = IRI_NODE(ctx, stmtID).tag;
       // import "SOURCE";
       // import a from "SOURCE";
       // import {a} from "SOURCE";
       // import * as foo from "SOURCE";
       if (currTag == IRI_GEN::StaticImport) {
-        StaticImportSEXP staticImportStmt(stmtID, pool);
+        StaticImportSEXP staticImportStmt(stmtID, ctx);
         ResolveEnvBindingSEXP storageTarget(
-            staticImportStmt.getArg_StorageLocation(), pool);
+            staticImportStmt.getArg_StorageLocation(), ctx);
         StringID bindingName = storageTarget.getNAME();
 
-        assert(localScope == pool.iris->getTopLevelScope());
+        assert(localScope == ctx.iris->getTopLevelScope());
 
-        IRID store = pool.iris->declareRBinding(localScope, bindingName, IRI_GEN::JSCONST, staticImportStmt.hasNSIMPORT() ? MODULENSI : MODULEI).ID;
+        IRID store = ctx.iris->declareRBinding(localScope, bindingName, IRI_GEN::JSCONST, staticImportStmt.hasNSIMPORT() ? MODULENSI : MODULEI).ID;
         staticImportStmt.setArg_StorageLocation(store);
 
         staticImportsVec.push_back(stmtID);
-        pool.update_arg_inplace(bbIDX, i, pool.NOP_SEXP);
+        ctx.storage.nodes.update_arg_inplace(bbIDX, i, ctx.storage.nodes.NOP_SEXP);
       }
       // export { a as b };
       else if (currTag == IRI_GEN::LocalStaticExport) {
-        LocalStaticExportSEXP localStaticExportStmt(stmtID, pool);
+        LocalStaticExportSEXP localStaticExportStmt(stmtID, ctx);
         ResolveEnvBindingSEXP localBinding(
-            localStaticExportStmt.getArg_StorageLocation(), pool);
+            localStaticExportStmt.getArg_StorageLocation(), ctx);
 
-        assert(localScope == pool.iris->getTopLevelScope());
-        pool.iris->ensureExportedBindingIsModuleBinding(localBinding.getNAME());
+        assert(localScope == ctx.iris->getTopLevelScope());
+        ctx.iris->ensureExportedBindingIsModuleBinding(localBinding.getNAME());
 
         staticExportsVec.push_back(stmtID);
-        pool.update_arg_inplace(bbIDX, i, pool.NOP_SEXP);
+        ctx.storage.nodes.update_arg_inplace(bbIDX, i, ctx.storage.nodes.NOP_SEXP);
       }
       // export * as foo from "SOURCE"
       else if (currTag == IRI_GEN::NamedReexport) {
-        NamedReexportSEXP namedReexportStmt(stmtID, pool);
+        NamedReexportSEXP namedReexportStmt(stmtID, ctx);
         staticExportsVec.push_back(stmtID);
-        pool.update_arg_inplace(bbIDX, i, pool.NOP_SEXP);
+        ctx.storage.nodes.update_arg_inplace(bbIDX, i, ctx.storage.nodes.NOP_SEXP);
       }
       // export * from "SOURCE";
       else if (currTag == IRI_GEN::StarExport) {
-        StarExportSEXP starExportStmt(stmtID, pool);
+        StarExportSEXP starExportStmt(stmtID, ctx);
         staticStarExportsVec.push_back(stmtID);
-        pool.update_arg_inplace(bbIDX, i, pool.NOP_SEXP);
+        ctx.storage.nodes.update_arg_inplace(bbIDX, i, ctx.storage.nodes.NOP_SEXP);
       }
     }
   }
 
-  pool.set_args(moduleRequests, moduleRequestsVec);
-  pool.set_args(staticImports, staticImportsVec);
-  pool.set_args(staticExports, staticExportsVec);
-  pool.set_args(staticStarExports, staticStarExportsVec);
+  ctx.storage.nodes.set_args(moduleRequests, moduleRequestsVec);
+  ctx.storage.nodes.set_args(staticImports, staticImportsVec);
+  ctx.storage.nodes.set_args(staticExports, staticExportsVec);
+  ctx.storage.nodes.set_args(staticStarExports, staticStarExportsVec);
 }
 } // namespace IRI_CORE_PASSES

@@ -5,7 +5,7 @@
 #include "Helpers.h"
 #include "Parser/IridiumBuildContext.h"
 #include "Storage/Config.h"
-#include "Storage/IridiumPool.h"
+#include "Storage/IRIContext.h"
 #include "Storage/StringPool.h"
 #include "Support/BBContainerSupport.hpp"
 #include "Support/BBSupport.hpp"
@@ -21,14 +21,14 @@ using namespace IRI_STRUCTURAL;
 using BUILD_CTX = std::unordered_map<int, std::shared_ptr<IridiumBuildContext>>;
 
 
-inline std::vector<IRID> heritageThisInit(IridiumPool & pool, StringID thisValHolder, StringID propInitClos)
+inline std::vector<IRID> heritageThisInit(IRIContext & ctx, StringID thisValHolder, StringID propInitClos)
 {
   std::vector<IRID> res;
 
   res.push_back(
-    EnvWriteSEXP::create(pool,
-      IRI_HELPERS::createNoASWResolveEnvBindingSEXP(pool, pool.strings.intern("this")),
-      ThisINITSEXP::create(pool, IRI_HELPERS::createUnsafeEnvReadSEXP(pool, pool.strings.intern("this")), IRI_HELPERS::createUnsafeEnvReadSEXP(pool, thisValHolder)),
+    EnvWriteSEXP::create(ctx,
+      IRI_HELPERS::createNoASWResolveEnvBindingSEXP(ctx, ctx.storage.strings.intern("this")),
+      ThisINITSEXP::create(ctx, IRI_HELPERS::createUnsafeEnvReadSEXP(ctx, ctx.storage.strings.intern("this")), IRI_HELPERS::createUnsafeEnvReadSEXP(ctx, thisValHolder)),
       false,
       false,
       true, // <- This is about the only place where we set THISINIT flag to true
@@ -36,44 +36,44 @@ inline std::vector<IRID> heritageThisInit(IridiumPool & pool, StringID thisValHo
     )
   );
 
-  IRID callSite = CallSiteSEXP::create(pool, true, false, false, false, false, false, false, 0);
-  CallSiteSEXP callSEXP(callSite, pool);
+  IRID callSite = CallSiteSEXP::create(ctx, true, false, false, false, false, false, false, 0);
+  CallSiteSEXP callSEXP(callSite, ctx);
   callSEXP.clearJSDirectEval();
 
   std::vector<IRID> callSiteArgs;
   callSiteArgs.push_back(
-    IRI_HELPERS::createUnsafeEnvReadSEXP(pool, pool.strings.intern("this"))
+    IRI_HELPERS::createUnsafeEnvReadSEXP(ctx, ctx.storage.strings.intern("this"))
   );
 
   callSiteArgs.push_back(
-    IRI_HELPERS::createUnsafeEnvReadSEXP(pool, propInitClos)
+    IRI_HELPERS::createUnsafeEnvReadSEXP(ctx, propInitClos)
   );
-  pool.set_args(callSite, callSiteArgs);
+  ctx.storage.nodes.set_args(callSite, callSiteArgs);
 
   res.push_back(callSite);
   return res;
 }
 
-void _6_PHCSC(IridiumPool &pool, IRID fileSEXP,
+void _6_PHCSC(IRIContext &ctx, IRID fileSEXP,
               BUILD_CTX &iridiumBuildContext) {
 
   std::function<bool(IRID)> pred = [&](IRID id) {
-    if (pool[id].tag == IRI_GEN::CallSite) {
-      CallSiteSEXP cs(id, pool);
+    if (IRI_NODE(ctx, id).tag == IRI_GEN::CallSite) {
+      CallSiteSEXP cs(id, ctx);
       return cs.hasSuper();
     }
-    if (pool[id].tag == IRI_GEN::Apply) {
-      ApplySEXP cs(id, pool);
+    if (IRI_NODE(ctx, id).tag == IRI_GEN::Apply) {
+      ApplySEXP cs(id, ctx);
       return cs.hasSuper();
     }
     return false;
   };
-  FileSupport fileSupport(fileSEXP, pool);
+  FileSupport fileSupport(fileSEXP, ctx);
   for (auto [bbContID, _] : fileSupport.containers()) {
-    BBContainerSupport container(bbContID, pool);
+    BBContainerSupport container(bbContID, ctx);
 
     for (auto [bbID, _] : container.bbs()) {
-      BBSupport bb(bbID, pool);
+      BBSupport bb(bbID, ctx);
       std::vector<IRID> origStmtsListCopy = bb.stmtsVec();
       std::vector<IRID> stmtsContainingSuperCall;
       std::vector<size_t> stmtOffsetsContainingSuperCall;
@@ -81,7 +81,7 @@ void _6_PHCSC(IridiumPool &pool, IRID fileSEXP,
 
       // Find stmts that contain super calls
       for (auto [stmtID, offset] : bb.stmts()) {
-        if (IRI_HELPERS::hasNodeWithPredicate(stmtID, &pool, pred)) {
+        if (IRI_HELPERS::hasNodeWithPredicate(stmtID, &ctx, pred)) {
           stmtsContainingSuperCall.push_back(stmtID);
           stmtOffsetsContainingSuperCall.push_back(offset);
         }
@@ -101,16 +101,16 @@ void _6_PHCSC(IridiumPool &pool, IRID fileSEXP,
         while (true) {
           if (buildContext->kind == CF_DERIVED_CTR) {
             IRI_STORAGE::StringID lvalString;
-            if (pool[scallHolder].tag == IRI_GEN::EnvWrite) {
-              EnvWriteSEXP envWrite(scallHolder, pool);
+            if (IRI_NODE(ctx, scallHolder).tag == IRI_GEN::EnvWrite) {
+              EnvWriteSEXP envWrite(scallHolder, ctx);
 
               auto lValHolder = envWrite.getArg_LValTarget();
-              ResolveEnvBindingSEXP resolveEnv(lValHolder, pool);
+              ResolveEnvBindingSEXP resolveEnv(lValHolder, ctx);
               lvalString = resolveEnv.getNAME();
-            } else if (pool[scallHolder].tag == IRI_GEN::LWrite) {
-              LWriteSEXP lw(scallHolder, pool);
+            } else if (IRI_NODE(ctx, scallHolder).tag == IRI_GEN::LWrite) {
+              LWriteSEXP lw(scallHolder, ctx);
               auto lValHolder = lw.getArg_LValTarget();
-              EnvBindingSEXP eb(lValHolder, pool);
+              EnvBindingSEXP eb(lValHolder, ctx);
               lvalString = eb.getNAME();
             } else {
               throw std::runtime_error("Unexpected target for scallHolder");
@@ -120,7 +120,7 @@ void _6_PHCSC(IridiumPool &pool, IRID fileSEXP,
                                        "expected to have propInitClos");
 
             // Computed chunk
-            chunks.push_back(heritageThisInit(pool, lvalString, pool.strings.intern(buildContext->propInitClos.value())));
+            chunks.push_back(heritageThisInit(ctx, lvalString, ctx.storage.strings.intern(buildContext->propInitClos.value())));
             break;
           } else {
             if (iridiumBuildContext.find(buildContext->parent) !=
@@ -136,7 +136,7 @@ void _6_PHCSC(IridiumPool &pool, IRID fileSEXP,
 
       std::vector<IRID> updatedStmtList = BBSupport::insert_chunks_after_given_offsets(origStmtsListCopy, stmtOffsetsContainingSuperCall, chunks);
 
-      pool.set_args(bbID, updatedStmtList);
+      ctx.storage.nodes.set_args(bbID, updatedStmtList);
     }
   }
 }

@@ -2,7 +2,7 @@
 #include "Generated/IridiumEnums.h"
 #include "Generated/IridiumTypes.h"
 #include "Parser/IridiumBuildContext.h"
-#include "Storage/IridiumPool.h"
+#include "Storage/IRIContext.h"
 #include "Support/BBContainerSupport.hpp"
 #include "Support/BBSupport.hpp"
 #include "Support/FileSupport.hpp"
@@ -21,7 +21,7 @@
   do {                                                                         \
     if ((idx) > -1) {                                                          \
       std::cout << "    " << label << ": " << (idx) << "@"                     \
-                << BBSupport(bbc.getBBByIDX(idx), pool).getScopeIDX()          \
+                << BBSupport(bbc.getBBByIDX(idx), ctx).getScopeIDX()          \
                 << std::endl;                                                  \
     } else {                                                                   \
       std::cout << "    " << label << ": " << (idx) << std::endl;              \
@@ -41,7 +41,7 @@ using namespace IRI_STRUCTURAL;
 using BUILD_CTX = std::unordered_map<int, std::shared_ptr<IridiumBuildContext>>;
 
 static inline std::shared_ptr<IridiumBuildContext> findReturnTarget(
-    IridiumPool &pool, double localScope, BUILD_CTX &iridiumBuildContext,
+    IRIContext &ctx, double localScope, BUILD_CTX &iridiumBuildContext,
     std::vector<std::variant<LoopConfig, TryContext>> &intermediateContexts) {
   if (localScope == -1)
     throw std::runtime_error("Failed to find return target!!!");
@@ -58,7 +58,7 @@ static inline std::shared_ptr<IridiumBuildContext> findReturnTarget(
   }
 
   auto startBBID = buildContext->BB[0];
-  BBSEXP startBB(startBBID, pool);
+  BBSEXP startBB(startBBID, ctx);
 
   if (startBB.hasTopLevel()) {
     if (intermediateContexts.size() > 0)
@@ -73,27 +73,27 @@ static inline std::shared_ptr<IridiumBuildContext> findReturnTarget(
   if (startBB.hasClosureBoundary())
     return buildContext;
 
-  return findReturnTarget(pool, buildContext->parent, iridiumBuildContext,
+  return findReturnTarget(ctx, buildContext->parent, iridiumBuildContext,
                           intermediateContexts);
 }
 
 void _11_12_DAPRT(
-    IRI_STORAGE::IridiumPool &pool, IRI_STORAGE::IRID fileSEXP,
+    IRI_STORAGE::IRIContext &ctx, IRI_STORAGE::IRID fileSEXP,
     std::unordered_map<int, std::shared_ptr<IRI_PARSE::IridiumBuildContext>>
         &iridiumBuildContext) {
 #ifdef DEBUG_DECORATOR_PASS
   std::cout << "::_11_DAPRT::" << std::endl;
-  pool.iris->dumpFlat(std::cout);
+  ctx.iris->dumpFlat(std::cout);
 #endif
 
-  FileSupport fileSupport(fileSEXP, pool);
+  FileSupport fileSupport(fileSEXP, ctx);
   for (auto [bbContID, _] : fileSupport.containers()) {
-    BBContainerSupport bbc(bbContID, pool);
+    BBContainerSupport bbc(bbContID, ctx);
 
     std::vector<IRID> res;
 
     for (auto [bbID, _] : bbc.bbs()) {
-      BBSupport bbSEXP(bbID, pool);
+      BBSupport bbSEXP(bbID, ctx);
       auto bbScopeIDX = bbSEXP.getScopeIDX();
 
       std::unordered_map<IRID,
@@ -101,22 +101,22 @@ void _11_12_DAPRT(
           decoratorMap;
 
       for (auto [stmtID, stmtOffset] : bbSEXP.stmts()) {
-        auto stmtTag = pool[stmtID].tag;
+        auto stmtTag = IRI_NODE(ctx, stmtID).tag;
         if (stmtTag == IRI_GEN::Return) {
-          ReturnSEXP rTarget(stmtID, pool);
+          ReturnSEXP rTarget(stmtID, ctx);
           if (bbSEXP.hasTopLevel())
             continue;
 
           auto retID = stmtID;
           std::vector<std::variant<LoopConfig, TryContext>>
               intermediateContextHolder;
-          auto target = findReturnTarget(pool, bbScopeIDX, iridiumBuildContext,
+          auto target = findReturnTarget(ctx, bbScopeIDX, iridiumBuildContext,
                                          intermediateContextHolder);
 
           // Promote to Async return if the return matches an async context
           if (target->isAsync || target->isGenerator) {
-            retID = ReturnAsyncSEXP::create(pool, rTarget.getArg_Obj());
-            pool.update_arg_inplace(bbID, stmtOffset, retID);
+            retID = ReturnAsyncSEXP::create(ctx, rTarget.getArg_Obj());
+            ctx.storage.nodes.update_arg_inplace(bbID, stmtOffset, retID);
           }
 
           decoratorMap[retID] = intermediateContextHolder;
@@ -126,13 +126,13 @@ void _11_12_DAPRT(
 
           std::vector<std::variant<LoopConfig, TryContext>>
               intermediateContextHolder;
-          findReturnTarget(pool, bbScopeIDX, iridiumBuildContext,
+          findReturnTarget(ctx, bbScopeIDX, iridiumBuildContext,
                            intermediateContextHolder);
           decoratorMap[stmtID] = intermediateContextHolder;
         }
       }
 
-      std::vector<IRID> newStmtList = pool.get_args(bbID);
+      std::vector<IRID> newStmtList = ctx.storage.nodes.get_args(bbID);
       // Decorate emitted targets by handling requirements of the enclosing
       // contexts
 
@@ -144,7 +144,7 @@ void _11_12_DAPRT(
           std::cout << "::Decorator Map::\n"
                     << "BB: " << bbSEXP.getIDX() << "@" << bbScopeIDX << "\n"
                     << "Stmt: \n";
-          pool[element].dumpFlat(std::cout, &pool, 2);
+          IRI_NODE(ctx, element).dumpFlat(std::cout, &ctx, 2);
           std::cout << "\nIntermediate Contexts: \n";
         }
 #endif
@@ -168,7 +168,7 @@ void _11_12_DAPRT(
             DEC_LOG_IDX("continueTarget", loopConfig->continueTarget);
 
             if (loopConfig->kind == LoopConfig::Kind::ForOf) {
-              IRID forOfIteratorClose = JSForOfIteratorCloseSEXP::create(pool);
+              IRID forOfIteratorClose = JSForOfIteratorCloseSEXP::create(ctx);
               BBSupport::insert_before(newStmtList, element, forOfIteratorClose);
             }
           } else if (auto tryContext =
@@ -182,36 +182,36 @@ void _11_12_DAPRT(
 
             // If the context is reached via try or catch block, only then pop
             // the catch context and decorate to finalizer (if applicable)
-            if (pool.iris->hasScopePath(
+            if (ctx.iris->hasScopePath(
                     bbScopeIDX,
-                    BBSupport(bbc.getBBByIDX(tryContext->tryIDX), pool)
+                    BBSupport(bbc.getBBByIDX(tryContext->tryIDX), ctx)
                         .getScopeIDX()) ||
                 (tryContext->udCatchIDX > -1 &&
-                 pool.iris->hasScopePath(
+                 ctx.iris->hasScopePath(
                      bbScopeIDX,
-                     BBSupport(bbc.getBBByIDX(tryContext->udCatchIDX), pool)
+                     BBSupport(bbc.getBBByIDX(tryContext->udCatchIDX), ctx)
                          .getScopeIDX()))) {
               BBSupport::insert_before(newStmtList, element,
-                                       PopCatchContextSEXP::create(pool));
+                                       PopCatchContextSEXP::create(ctx));
 
               if (tryContext->finalizerIDX > -1) {
                 BBSupport::insert_before(newStmtList, element,
                                          InvokeFinalizerSEXP::create(
-                                             pool, tryContext->finalizerIDX));
+                                             ctx, tryContext->finalizerIDX));
               }
             } else {
               // This pops the finalizer return target from the stack, should be
               // renamed to prevent confusion
               BBSupport::insert_before(
                   newStmtList, element,
-                  PopFinalizerReturnTargetSEXP::create(pool));
+                  PopFinalizerReturnTargetSEXP::create(ctx));
               // This must be reached through a finalizer block, we dont
               // expect any nesting inside the implicit catch block as
               // its outside user
               // interference...
-              if (!pool.iris->hasScopePath(
+              if (!ctx.iris->hasScopePath(
                       bbSEXP.getScopeIDX(),
-                      BBSupport(bbc.getBBByIDX(tryContext->finalizerIDX), pool)
+                      BBSupport(bbc.getBBByIDX(tryContext->finalizerIDX), ctx)
                           .getScopeIDX())) {
                 throw std::runtime_error(
                     "Failed to match finalizer block when matching target!!");
@@ -221,7 +221,7 @@ void _11_12_DAPRT(
         }
       }
 
-      pool.set_args(bbID, newStmtList);
+      ctx.storage.nodes.set_args(bbID, newStmtList);
     }
   }
 }

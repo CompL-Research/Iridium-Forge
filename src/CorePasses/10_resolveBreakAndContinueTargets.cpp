@@ -2,7 +2,7 @@
 #include "Generated/IridiumEnums.h"
 #include "Generated/IridiumTypes.h"
 #include "Parser/IridiumBuildContext.h"
-#include "Storage/IridiumPool.h"
+#include "Storage/IRIContext.h"
 #include "Support/BBContainerSupport.hpp"
 #include "Support/BBSupport.hpp"
 #include "Support/FileSupport.hpp"
@@ -21,7 +21,7 @@
   do {                                                                         \
     if ((idx) > -1) {                                                          \
       std::cout << "    " << label << ": " << (idx) << "@"                     \
-                << BBSupport(bbc.getBBByIDX(idx), pool).getScopeIDX()          \
+                << BBSupport(bbc.getBBByIDX(idx), ctx).getScopeIDX()           \
                 << std::endl;                                                  \
     } else {                                                                   \
       std::cout << "    " << label << ": " << (idx) << std::endl;              \
@@ -41,7 +41,7 @@ using namespace IRI_STRUCTURAL;
 using BUILD_CTX = std::unordered_map<int, std::shared_ptr<IridiumBuildContext>>;
 
 static inline LoopConfig findLoopControlTarget(
-    IridiumPool &pool, double localScope,
+    IRIContext &ctx, double localScope,
     std::variant<ResolveBreakTargetSEXP, ResolveContinueTargetSEXP> node,
     BUILD_CTX &iridiumBuildContext,
     std::vector<std::variant<LoopConfig, TryContext>> &intermediateContexts) {
@@ -57,7 +57,7 @@ static inline LoopConfig findLoopControlTarget(
 
   // If not loop context, recurse
   if (!buildContext->loopConfig)
-    return findLoopControlTarget(pool, buildContext->parent, node,
+    return findLoopControlTarget(ctx, buildContext->parent, node,
                                  iridiumBuildContext, intermediateContexts);
 
   auto &loopConfig = buildContext->loopConfig;
@@ -68,19 +68,19 @@ static inline LoopConfig findLoopControlTarget(
   if (auto breakTarget = std::get_if<ResolveBreakTargetSEXP>(&node)) {
     hasLabel = breakTarget->hasLabel();
     if (hasLabel)
-      label = pool.strings.get(breakTarget->getLabel());
+      label = ctx.storage.strings.get(breakTarget->getLabel());
   } else if (auto continueTarget =
                  std::get_if<ResolveContinueTargetSEXP>(&node)) {
     hasLabel = continueTarget->hasLabel();
     if (hasLabel)
-      label = pool.strings.get(continueTarget->getLabel());
+      label = ctx.storage.strings.get(continueTarget->getLabel());
   }
 
   // Intermediate loop context, but not the one we are trying to flow to
   if (hasLabel) {
     if ((!loopConfig->label) || (label != loopConfig->label.value())) {
       intermediateContexts.push_back(loopConfig.value());
-      return findLoopControlTarget(pool, buildContext->parent, node,
+      return findLoopControlTarget(ctx, buildContext->parent, node,
                                    iridiumBuildContext, intermediateContexts);
     }
   }
@@ -90,30 +90,30 @@ static inline LoopConfig findLoopControlTarget(
   if (std::holds_alternative<ResolveContinueTargetSEXP>(node) &&
       loopConfig->continueTarget == -1) {
     intermediateContexts.push_back(loopConfig.value());
-    return findLoopControlTarget(pool, buildContext->parent, node,
+    return findLoopControlTarget(ctx, buildContext->parent, node,
                                  iridiumBuildContext, intermediateContexts);
   }
 
   return loopConfig.value();
 }
 
-void _10_RBACT(
-    IRI_STORAGE::IridiumPool &pool, IRI_STORAGE::IRID fileSEXP,
+std::unordered_map<IRID, double> _10_RBACT(
+    IRI_STORAGE::IRIContext &ctx, IRI_STORAGE::IRID fileSEXP,
     std::unordered_map<int, std::shared_ptr<IRI_PARSE::IridiumBuildContext>>
         &iridiumBuildContext) {
-
+  std::unordered_map<IRID, double> CONTINUE_TARGETS;
 #ifdef DEBUG_DECORATOR_PASS
   std::cout << "::_10_RBACT::" << std::endl;
-  pool.iris->dumpFlat(std::cout);
+  ctx.iris->dumpFlat(std::cout);
 #endif
-  FileSupport fileSupport(fileSEXP, pool);
+  FileSupport fileSupport(fileSEXP, ctx);
   for (auto [bbContID, _] : fileSupport.containers()) {
-    BBContainerSupport bbc(bbContID, pool);
+    BBContainerSupport bbc(bbContID, ctx);
 
     std::vector<IRID> res;
 
     for (auto [bbID, _] : bbc.bbs()) {
-      BBSupport bbSEXP(bbID, pool);
+      BBSupport bbSEXP(bbID, ctx);
       auto bbScopeIDX = bbSEXP.getScopeIDX();
 
       std::unordered_map<IRID,
@@ -122,46 +122,46 @@ void _10_RBACT(
       std::unordered_map<IRID, LoopConfig> isBreakTarget;
 
       for (auto [stmtID, stmtOffset] : bbSEXP.stmts()) {
-        auto stmtTag = pool[stmtID].tag;
+        auto stmtTag = IRI_NODE(ctx, stmtID).tag;
         if (stmtTag == IRI_GEN::ResolveBreakTarget) {
-          ResolveBreakTargetSEXP bTarget(stmtID, pool);
+          ResolveBreakTargetSEXP bTarget(stmtID, ctx);
 
           std::vector<std::variant<LoopConfig, TryContext>>
               intermediateContextHolder;
 
-          LoopConfig target = findLoopControlTarget(pool, bbScopeIDX, bTarget,
+          LoopConfig target = findLoopControlTarget(ctx, bbScopeIDX, bTarget,
                                                     iridiumBuildContext,
                                                     intermediateContextHolder);
-          auto gotoSEXPID = GotoSEXP::create(pool, false, target.breakTarget);
-          pool.update_arg_inplace(bbID, stmtOffset, gotoSEXPID);
+          auto gotoSEXPID = GotoSEXP::create(ctx, false, target.breakTarget);
+          ctx.storage.nodes.update_arg_inplace(bbID, stmtOffset, gotoSEXPID);
           decoratorMap[gotoSEXPID] = intermediateContextHolder;
           isBreakTarget[gotoSEXPID] = target;
         } else if (stmtTag == IRI_GEN::ResolveContinueTarget) {
-          ResolveContinueTargetSEXP cTarget(stmtID, pool);
+          ResolveContinueTargetSEXP cTarget(stmtID, ctx);
 
           std::vector<std::variant<LoopConfig, TryContext>>
               intermediateContextHolder;
-          LoopConfig target = findLoopControlTarget(pool, bbScopeIDX, cTarget,
+          LoopConfig target = findLoopControlTarget(ctx, bbScopeIDX, cTarget,
                                                     iridiumBuildContext,
                                                     intermediateContextHolder);
 
           // auto target = findLoopControlTarget(bbSEXP.getScopeIDX(), cTarget,
           //                                     iridiumBuildContext,
           //                                     intermediateContextHolder);
-          auto gotoSEXPID = GotoSEXP::create(pool, false, target.continueTarget);
-          GotoSEXP gotoSEXP(gotoSEXPID, pool);
+          auto gotoSEXPID = GotoSEXP::create(ctx, false, target.continueTarget);
+          GotoSEXP gotoSEXP(gotoSEXPID, ctx);
 
           // Used to find stack->heap movement targets (breakTarget becomes
           // intermediate CTX)
-          pool.CONTINUE_TARGETS[gotoSEXPID] = target.breakTarget;
+          CONTINUE_TARGETS[gotoSEXPID] = target.breakTarget;
 
-          pool.update_arg_inplace(bbID, stmtOffset, gotoSEXPID);
+          ctx.storage.nodes.update_arg_inplace(bbID, stmtOffset, gotoSEXPID);
 
           decoratorMap[gotoSEXPID] = intermediateContextHolder;
         }
       }
 
-      std::vector<IRID> newStmtList = pool.get_args(bbID);
+      std::vector<IRID> newStmtList = ctx.storage.nodes.get_args(bbID);
       // Decorate emitted targets by handling requirements of the enclosing
       // contexts
       for (auto &e : decoratorMap) {
@@ -174,7 +174,7 @@ void _10_RBACT(
           std::cout << "::Decorator Map::\n"
                     << "BB: " << bbSEXP.getIDX() << "@" << bbScopeIDX << "\n"
                     << "Stmt: \n";
-          pool[element].dumpFlat(std::cout, &pool, 2);
+          IRI_NODE(ctx, element).dumpFlat(std::cout, &ctx, 2);
           std::cout << "\nIntermediate Contexts: \n";
         }
 #endif
@@ -200,8 +200,9 @@ void _10_RBACT(
             DEC_LOG_IDX("continueTarget", loopConfig->continueTarget);
 
             if (loopConfig->kind == LoopConfig::Kind::ForOf) {
-              IRID forOfIteratorClose = JSForOfIteratorCloseSEXP::create(pool);
-              BBSupport::insert_before(newStmtList, element, forOfIteratorClose);
+              IRID forOfIteratorClose = JSForOfIteratorCloseSEXP::create(ctx);
+              BBSupport::insert_before(newStmtList, element,
+                                       forOfIteratorClose);
             }
           } else if (auto tryContext =
                          std::get_if<TryContext>(&intermediateContext)) {
@@ -214,23 +215,23 @@ void _10_RBACT(
 
             // If the context is reached via try or catch block, only then pop
             // the catch context and decorate to finalizer (if applicable)
-            if (pool.iris->hasScopePath(
+            if (ctx.iris->hasScopePath(
                     bbSEXP.getScopeIDX(),
-                    BBSupport(bbc.getBBByIDX(tryContext->tryIDX), pool)
+                    BBSupport(bbc.getBBByIDX(tryContext->tryIDX), ctx)
                         .getScopeIDX()) ||
                 (tryContext->udCatchIDX > -1 &&
-                 pool.iris->hasScopePath(
+                 ctx.iris->hasScopePath(
                      bbSEXP.getScopeIDX(),
-                     BBSupport(bbc.getBBByIDX(tryContext->udCatchIDX), pool)
+                     BBSupport(bbc.getBBByIDX(tryContext->udCatchIDX), ctx)
                          .getScopeIDX()))) {
 
               BBSupport::insert_before(newStmtList, element,
-                                       PopCatchContextSEXP::create(pool));
+                                       PopCatchContextSEXP::create(ctx));
 
               if (tryContext->finalizerIDX > -1) {
-                BBSupport::insert_before(newStmtList, element,
-                                         InvokeFinalizerSEXP::create(
-                                             pool, tryContext->finalizerIDX));
+                BBSupport::insert_before(
+                    newStmtList, element,
+                    InvokeFinalizerSEXP::create(ctx, tryContext->finalizerIDX));
               }
             } else {
 
@@ -238,15 +239,15 @@ void _10_RBACT(
               // renamed to prevent confusion
               BBSupport::insert_before(
                   newStmtList, element,
-                  PopFinalizerReturnTargetSEXP::create(pool));
+                  PopFinalizerReturnTargetSEXP::create(ctx));
 
               // This must be reached through a finalizer block, we dont
               // expect any nesting inside the implicit catch block as
               // its outside user
               // interference...
-              if (!pool.iris->hasScopePath(
+              if (!ctx.iris->hasScopePath(
                       bbSEXP.getScopeIDX(),
-                      BBSupport(bbc.getBBByIDX(tryContext->finalizerIDX), pool)
+                      BBSupport(bbc.getBBByIDX(tryContext->finalizerIDX), ctx)
                           .getScopeIDX())) {
                 throw std::runtime_error(
                     "Failed to match finalizer block when matching target!!");
@@ -258,14 +259,15 @@ void _10_RBACT(
         if (isBreakTarget.contains(element)) {
           auto &finalLoopConfig = isBreakTarget[element];
           if (finalLoopConfig.kind == LoopConfig::Kind::ForOf) {
-            auto forOfIteratorClose = JSForOfIteratorCloseSEXP::create(pool);
+            auto forOfIteratorClose = JSForOfIteratorCloseSEXP::create(ctx);
             BBSupport::insert_before(newStmtList, element, forOfIteratorClose);
           }
         }
       }
 
-      pool.set_args(bbID, newStmtList);
+      ctx.storage.nodes.set_args(bbID, newStmtList);
     }
   }
+  return CONTINUE_TARGETS;
 }
 } // namespace IRI_CORE_PASSES

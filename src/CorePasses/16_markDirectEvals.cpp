@@ -5,7 +5,7 @@
 #include "Generated/IridiumTypes.h"
 #include "Parser/IridiumBuildContext.h"
 #include "Storage/Config.h"
-#include "Storage/IridiumPool.h"
+#include "Storage/IRIContext.h"
 #include "Support/BBContainerSupport.hpp"
 #include "Support/BBSupport.hpp"
 #include "Support/FileSupport.hpp"
@@ -48,36 +48,36 @@ static inline bool isGenericCall(ApplySEXP &o) {
   return true;
 }
 
-inline void patchNode(IridiumPool &pool, IRID node, double scopeToTaint,
+inline void patchNode(IRIContext &ctx, IRID node, double scopeToTaint,
                       double containerScope) {
-  auto args = pool.get_args(node);
+  auto args = ctx.storage.nodes.get_args(node);
 
-  IRI_STORAGE::StringID EVAL = pool.strings.intern("eval");
+  IRI_STORAGE::StringID EVAL = ctx.storage.strings.intern("eval");
 
-  if (pool[node].tag == IRI_GEN::CallSite) {
-    CallSiteSEXP callSite(node, pool);
+  if (IRI_NODE(ctx, node).tag == IRI_GEN::CallSite) {
+    CallSiteSEXP callSite(node, ctx);
     if (isGenericCall(callSite)) {
-      if (pool.get_args(node).size() == 0) {
+      if (ctx.storage.nodes.get_args(node).size() == 0) {
         throw std::runtime_error("Call site with no callee!!");
       }
-      auto calleeID = pool.get_args(node)[0];
-      if (pool[calleeID].tag == IRI_GEN::EnvRead) {
-        EnvReadSEXP eRead(calleeID, pool);
+      auto calleeID = ctx.storage.nodes.get_args(node)[0];
+      if (IRI_NODE(ctx, calleeID).tag == IRI_GEN::EnvRead) {
+        EnvReadSEXP eRead(calleeID, ctx);
         auto calleeBindingID = eRead.getArg_Obj();
-        if (pool[calleeBindingID].tag == IRI_GEN::GlobalBinding) {
-          GlobalBindingSEXP gBinding(calleeBindingID, pool);
+        if (IRI_NODE(ctx, calleeBindingID).tag == IRI_GEN::GlobalBinding) {
+          GlobalBindingSEXP gBinding(calleeBindingID, ctx);
           if (gBinding.getNAME() == EVAL) {
-            if (pool.iris->isArgInitScope(scopeToTaint)) {
+            if (ctx.iris->isArgInitScope(scopeToTaint)) {
               throw std::runtime_error("IRI build failed ::TODO:: Eval in ArgInitScope");
             }
             // Direct eval enclosed in a prop init scope is unsupported
-            if (pool.iris->isEnclosedInAPropInitScope(scopeToTaint)) {
+            if (ctx.iris->isEnclosedInAPropInitScope(scopeToTaint)) {
               throw std::runtime_error("IRI build failed ::TODO:: Eval in arg init scopes is unsupported");
             }
-            pool.iris->addEvalRemoteBindingsToParentClosure(scopeToTaint);
-            pool.iris->registerDirectEval(node, scopeToTaint, containerScope);
+            ctx.iris->addEvalRemoteBindingsToParentClosure(scopeToTaint);
+            ctx.iris->registerDirectEval(node, scopeToTaint, containerScope);
             // double evalREFIDX =
-            //     pool.iris->getJSEvalLookupREFIDX(scopeToTaint, containerScope);
+            //     ctx.iris->getJSEvalLookupREFIDX(scopeToTaint, containerScope);
             callSite.setJSDirectEval(-3);
           }
         }
@@ -85,31 +85,31 @@ inline void patchNode(IridiumPool &pool, IRID node, double scopeToTaint,
     }
   }
 
-  if (pool[node].tag == IRI_GEN::Apply) {
-    ApplySEXP callSite(node, pool);
+  if (IRI_NODE(ctx, node).tag == IRI_GEN::Apply) {
+    ApplySEXP callSite(node, ctx);
     if (isGenericCall(callSite)) {
-      if (pool.get_args(node).size() == 0) {
+      if (ctx.storage.nodes.get_args(node).size() == 0) {
         throw std::runtime_error("Apply Call site with no callee!!");
       }
-      auto calleeID = pool.get_args(node)[0];
-      if (pool[calleeID].tag == IRI_GEN::EnvRead) {
-        EnvReadSEXP eRead(calleeID, pool);
+      auto calleeID = ctx.storage.nodes.get_args(node)[0];
+      if (IRI_NODE(ctx, calleeID).tag == IRI_GEN::EnvRead) {
+        EnvReadSEXP eRead(calleeID, ctx);
         auto calleeBindingID = eRead.getArg_Obj();
-        if (pool[calleeBindingID].tag == IRI_GEN::GlobalBinding) {
-          GlobalBindingSEXP gBinding(calleeBindingID, pool);
+        if (IRI_NODE(ctx, calleeBindingID).tag == IRI_GEN::GlobalBinding) {
+          GlobalBindingSEXP gBinding(calleeBindingID, ctx);
           if (gBinding.getNAME() == EVAL) {
-            if (pool.iris->isArgInitScope(scopeToTaint)) {
+            if (ctx.iris->isArgInitScope(scopeToTaint)) {
               throw std::runtime_error("IRI build failed ::TODO:: Eval in ArgInitScope");
             }
             // Direct eval enclosed in a prop init scope is unsupported
-            if (pool.iris->isEnclosedInAPropInitScope(scopeToTaint)) {
+            if (ctx.iris->isEnclosedInAPropInitScope(scopeToTaint)) {
               throw std::runtime_error("IRI build failed ::TODO:: Eval in arg init scopes is unsupported");
             }
-            pool.iris->addEvalRemoteBindingsToParentClosure(scopeToTaint);
-            pool.iris->registerDirectEval(node, scopeToTaint, containerScope);
+            ctx.iris->addEvalRemoteBindingsToParentClosure(scopeToTaint);
+            ctx.iris->registerDirectEval(node, scopeToTaint, containerScope);
 
             // double evalREFIDX =
-            //     pool.iris->getJSEvalLookupREFIDX(scopeToTaint, containerScope);
+            //     ctx.iris->getJSEvalLookupREFIDX(scopeToTaint, containerScope);
             callSite.setJSDirectEval(-3);
           }
         }
@@ -118,34 +118,34 @@ inline void patchNode(IridiumPool &pool, IRID node, double scopeToTaint,
   }
 
   for (int i = 0; i < args.size(); i++) {
-    patchNode(pool, args[i], scopeToTaint, containerScope);
+    patchNode(ctx, args[i], scopeToTaint, containerScope);
   }
 }
 
-void _16_MDE(IRI_STORAGE::IridiumPool &pool, IRI_STORAGE::IRID fileSEXP,
+void _16_MDE(IRI_STORAGE::IRIContext &ctx, IRI_STORAGE::IRID fileSEXP,
              BUILD_CTX &iridiumBuildContext) {
 
-  FileSupport file(fileSEXP, pool);
+  FileSupport file(fileSEXP, ctx);
   for (auto [bbcID, _] : file.containers()) {
-    BBContainerSupport bbc(bbcID, pool);
+    BBContainerSupport bbc(bbcID, ctx);
 
     auto containerScope = bbc.getScopeIDX();
 
     for (auto [bbID, _] : bbc.bbs()) {
-      BBSupport bb(bbID, pool);
+      BBSupport bb(bbID, ctx);
 
       auto bbScope = bb.getScopeIDX();
 
       for (auto [stmtID, _] : bb.stmts()) {
-        auto stmtTag = pool[stmtID].tag;
-        patchNode(pool, stmtID, bbScope, containerScope);
+        auto stmtTag = IRI_NODE(ctx, stmtID).tag;
+        patchNode(ctx, stmtID, bbScope, containerScope);
       }
     }
   }
 
 #ifdef PRINT_TAINT_TREE
   std::cout << "Scope tree after eval tainting (†)" << std::endl;
-  pool.iris->dumpFlat(std::cout);
+  ctx.iris->dumpFlat(std::cout);
 #endif
 }
 } // namespace IRI_CORE_PASSES

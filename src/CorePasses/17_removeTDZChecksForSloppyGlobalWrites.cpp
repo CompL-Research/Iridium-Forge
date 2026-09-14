@@ -5,7 +5,7 @@
 #include "Generated/IridiumTypes.h"
 #include "Parser/IridiumBuildContext.h"
 #include "Storage/Config.h"
-#include "Storage/IridiumPool.h"
+#include "Storage/IRIContext.h"
 #include "Support/BBContainerSupport.hpp"
 #include "Support/BBSupport.hpp"
 #include "Support/FileSupport.hpp"
@@ -19,32 +19,32 @@ using namespace IRI_STRUCTURAL;
 
 using BUILD_CTX = std::unordered_map<int, std::shared_ptr<IridiumBuildContext>>;
 
-void _17_RTDZ(IRI_STORAGE::IridiumPool &pool, IRI_STORAGE::IRID fileSEXP,
+void _17_RTDZ(IRI_STORAGE::IRIContext &ctx, IRI_STORAGE::IRID fileSEXP,
               BUILD_CTX &iridiumBuildContext) {
 
-  FileSupport file(fileSEXP, pool);
+  FileSupport file(fileSEXP, ctx);
   for (auto [bbcID, _] : file.containers()) {
-    BBContainerSupport bbc(bbcID, pool);
+    BBContainerSupport bbc(bbcID, ctx);
 
     auto containerScope = bbc.getScopeIDX();
 
     for (auto [bbID, _] : bbc.bbs()) {
-      BBSupport bb(bbID, pool);
+      BBSupport bb(bbID, ctx);
 
       auto bbScope = bb.getScopeIDX();
 
       for (auto [stmtID, stmtOffset] : bb.stmts()) {
-        auto stmtTag = pool[stmtID].tag;
+        auto stmtTag = IRI_NODE(ctx, stmtID).tag;
         if (stmtTag == IRI_GEN::TDZRead) {
-          TDZReadSEXP tdzRead(stmtID, pool);
+          TDZReadSEXP tdzRead(stmtID, ctx);
           if (bbc.hasSTRICT()) {
-            pool.update_arg_inplace(bbID, stmtOffset, EnvReadSEXP::create(pool, tdzRead.getArg_Obj(), tdzRead.hasSAFE(), false));
+            ctx.storage.nodes.update_arg_inplace(bbID, stmtOffset, EnvReadSEXP::create(ctx, tdzRead.getArg_Obj(), tdzRead.hasSAFE(), false));
           } else {
             IRID obj = tdzRead.getArg_Obj();
-            if (pool[obj].tag == IRI_GEN::GlobalBinding) {
-              pool.update_arg_inplace(bbID, stmtOffset, pool.NOP_SEXP);
+            if (IRI_NODE(ctx, obj).tag == IRI_GEN::GlobalBinding) {
+              ctx.storage.nodes.update_arg_inplace(bbID, stmtOffset, ctx.storage.nodes.NOP_SEXP);
             } else {
-              pool.update_arg_inplace(bbID, stmtOffset, EnvReadSEXP::create(pool, tdzRead.getArg_Obj(), tdzRead.hasSAFE(), false));
+              ctx.storage.nodes.update_arg_inplace(bbID, stmtOffset, EnvReadSEXP::create(ctx, tdzRead.getArg_Obj(), tdzRead.hasSAFE(), false));
             }
           }
         }

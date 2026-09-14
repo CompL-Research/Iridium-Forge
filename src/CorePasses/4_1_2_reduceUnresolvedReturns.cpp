@@ -4,7 +4,7 @@
 #include "Generated/IridiumTypes.h"
 #include "Helpers.h"
 #include "Parser/IridiumBuildContext.h"
-#include "Storage/IridiumPool.h"
+#include "Storage/IRIContext.h"
 #include "Support/BBContainerSupport.hpp"
 #include "Support/BBSupport.hpp"
 #include "Support/FileSupport.hpp"
@@ -18,42 +18,42 @@ using namespace IRI_STORAGE;
 using namespace IRI_STRUCTURAL;
 using BUILD_CTX = std::unordered_map<int, std::shared_ptr<IridiumBuildContext>>;
 
-void _4_1_2_RUR(IridiumPool &pool, IRID fileID,
+void _4_1_2_RUR(IRIContext &ctx, IRID fileID,
                 BUILD_CTX &iridiumBuildContext) {
-  StringID undefined_str = pool.strings.intern("undefined");
-  StringID this_str = pool.strings.intern("this");
-  FileSupport fileSupport(fileID, pool);
+  StringID undefined_str = ctx.storage.strings.intern("undefined");
+  StringID this_str = ctx.storage.strings.intern("this");
+  FileSupport fileSupport(fileID, ctx);
   for (auto [bbContID, _] : fileSupport.containers()) {
-    BBContainerSupport container(bbContID, pool);
+    BBContainerSupport container(bbContID, ctx);
 
     bool returnThis = container.getContainerFlagID() == CF_DERIVED_CTR;
 
     for (auto [bbID, _] : container.bbs()) {
-      BBSupport bb(bbID, pool);
+      BBSupport bb(bbID, ctx);
 
       for (auto [stmtID, stmtOffset] : bb.stmts()) {
-        IRI_TAG currTag = pool[stmtID].tag;
+        IRI_TAG currTag = IRI_NODE(ctx, stmtID).tag;
 
         if (currTag == IRI_GEN::UnresolvedReturn) {
           IRID patched;
           if (returnThis) {
             patched = ReturnSEXP::create(
-                pool, IRI_HELPERS::createUnsafeEnvReadSEXP(pool, this_str));
+                ctx, IRI_HELPERS::createUnsafeEnvReadSEXP(ctx, this_str));
           } else {
             patched = ReturnSEXP::create(
-                pool, IRI_HELPERS::createUnsafeEnvReadSEXP(pool, undefined_str));
+                ctx, IRI_HELPERS::createUnsafeEnvReadSEXP(ctx, undefined_str));
           }
-          pool.update_arg_inplace(bbID, stmtOffset, patched);
+          ctx.storage.nodes.update_arg_inplace(bbID, stmtOffset, patched);
         } else if (currTag == IRI_GEN::Return) {
           //
           // Decorate Return statements of derived class constructors
           //
           if (returnThis) {
-            ReturnSEXP rSEXP(stmtID, pool);
-            pool.update_arg_inplace(bbID, stmtOffset,
+            ReturnSEXP rSEXP(stmtID, ctx);
+            ctx.storage.nodes.update_arg_inplace(bbID, stmtOffset,
               ReturnSEXP::create(
-                  pool,
-                  DCTRRetSEXP::create(pool, rSEXP.getArg_Obj(), IRI_HELPERS::createUnsafeEnvReadSEXP(pool, this_str))
+                  ctx,
+                  DCTRRetSEXP::create(ctx, rSEXP.getArg_Obj(), IRI_HELPERS::createUnsafeEnvReadSEXP(ctx, this_str))
               )
             );
           }
