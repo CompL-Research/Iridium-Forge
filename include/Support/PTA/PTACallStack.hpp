@@ -18,7 +18,6 @@ namespace IRI_STRUCTURAL {
 //
 // ~Meetesh
 //
-//
 
 struct PTACallFrame {
   std::set<Prakriti::NodeUID> thisVals;
