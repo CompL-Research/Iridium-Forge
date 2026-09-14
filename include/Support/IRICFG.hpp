@@ -1,7 +1,7 @@
 #pragma once
 #include "Storage/BindingsPool.h"
 #include "Storage/Config.h"
-#include "Storage/IridiumPool.h"
+#include "Storage/IRIContext.h"
 #include "external/Prakriti.hpp"
 #include <set>
 #include <stdexcept>
@@ -36,7 +36,7 @@ struct IRIBB {
   double SCOPE;
   double EXCEPTION = -1;
   double FINTARGET = -1;
-  IRI_STORAGE::IridiumPool &pool;
+  IRI_STORAGE::IRIContext &ctx;
   IRIStatement *head = nullptr;
   IRIStatement *tail = nullptr;
   IRICFG *closure;
@@ -49,7 +49,7 @@ struct IRIBB {
   void insertBefore(IRIStatement *inst, IRIStatement *before);
   void insertAfter(IRIStatement *inst, IRIStatement *after);
   void replace(IRIStatement *oldInst, IRIStatement *newInst);
-  explicit IRIBB(double, double, IRICFG *, IRI_STORAGE::IridiumPool &);
+  explicit IRIBB(double, double, IRICFG *, IRI_STORAGE::IRIContext &);
 
   void setTerminal(IRID);
 
@@ -74,7 +74,7 @@ struct IRIBB {
 };
 
 struct IRICFG {
-  IRI_STORAGE::IridiumPool &pool;
+  IRI_STORAGE::IRIContext &ctx;
   IRI_STORAGE::IRID id;
   IRI_STORAGE::IRID retCTX;
 
@@ -90,7 +90,7 @@ struct IRICFG {
   void verify();
   std::map<BBIDX, BBIDX> finalizerRetBB;
 
-  IRIBB *operator[](BBIDX idx) {
+  IRIBB *get_bb(BBIDX idx) {
     auto it = nodeMap.find(idx);
     if (it == nodeMap.end())
       throw std::runtime_error("IRICFG could not find the BB");
@@ -116,7 +116,7 @@ struct IRICFG {
   std::vector<StringID> ptaAssertGlobals();
 
   // Constructor declaration
-  explicit IRICFG(IRI_STORAGE::IRID id, IRI_STORAGE::IridiumPool &);
+  explicit IRICFG(IRI_STORAGE::IRID id, IRI_STORAGE::IRIContext &);
 
   // Save the Closure's CFG as a DOT file at the given location
   void dumpDOT(const std::string &);
@@ -134,3 +134,7 @@ struct IRICFG {
 };
 
 } // namespace IRI_STRUCTURAL
+
+// Readability shorthand for IRICFG::get_bb, replacing the old (*cfg)[idx]
+// operator[] syntax.
+#define IRI_BB(cfg, idx) ((cfg)->get_bb(idx))

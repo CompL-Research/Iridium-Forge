@@ -69,7 +69,7 @@ public:
 
   bool isUnreachable() const { return is_unreachable; }
 
-  void dump(IRI_STORAGE::IridiumPool &pool, std::ostream &oss) const {
+  void dump(IRI_STORAGE::IRIContext &ctx, std::ostream &oss) const {
     if (is_unreachable) {
       oss << "<Unreachable>";
       return;
@@ -80,9 +80,9 @@ public:
       if (!first)
         oss << ", ";
       first = false;
-      if (pool[bID].tag == IRI_GEN::EnvBinding) {
-        IRI_GEN::EnvBindingSEXP eb(bID, pool);
-        oss << pool.strings.get(eb.getNAME());
+      if (IRI_NODE(ctx, bID).tag == IRI_GEN::EnvBinding) {
+        IRI_GEN::EnvBindingSEXP eb(bID, ctx);
+        oss << ctx.storage.strings.get(eb.getNAME());
       } else {
         oss << "IRID(" << bID << ")";
       }
@@ -141,8 +141,8 @@ public:
 
     TDZState nextState = incomingState;
 
-    auto &pool = stmt.bb->pool;
-    auto tag = pool[stmt.id].tag;
+    auto &ctx = stmt.bb->ctx;
+    auto tag = IRI_NODE(ctx, stmt.id).tag;
     // Predicates can probably be much simpler,
     // by construction setting a value to NUBD will
     // be at scope boundaries anyway.
@@ -151,11 +151,11 @@ public:
     // because the check would need to pass for the following code to be valid
     // anyway.
     if (tag == IRI_GEN::LWrite) {
-      IRI_GEN::LWriteSEXP lw(stmt.id, pool);
+      IRI_GEN::LWriteSEXP lw(stmt.id, ctx);
 
       auto rval = lw.getArg_RVal();
       auto lval = lw.getArg_LValTarget();
-      if (pool[rval].tag == IRI_GEN::JSNUBD) {
+      if (IRI_NODE(ctx, rval).tag == IRI_GEN::JSNUBD) {
         nextState = nextState.setLattice(lval, TDZLattice(TDZLattice::TDZ));
       } else {
         nextState = nextState.setLattice(lval, TDZLattice(TDZLattice::SAFE));
@@ -164,7 +164,7 @@ public:
       // if (lw.hasINIT()) {
       //   auto rval = lw.getArg_RVal();
       //   auto lval = lw.getArg_LValTarget();
-      //   if (pool[rval].tag == IRI_GEN::JSNUBD) {
+      //   if (IRI_NODE(ctx, rval).tag == IRI_GEN::JSNUBD) {
       //     nextState = nextState.setLattice(lval,
       //     TDZLattice(TDZLattice::TDZ));
       //   } else {
@@ -173,20 +173,20 @@ public:
       //   }
       // }
     } else if (tag == IRI_GEN::CompoundAssn) {
-      auto args = pool.get_args(stmt.id);
+      auto args = ctx.storage.nodes.get_args(stmt.id);
       assert(args.size() > 1);
       IRID rval = args[0];
       for (size_t i = 1; i < args.size(); i++) {
         IRID currWriteID = args[i];
-        if (pool[currWriteID].tag == IRI_GEN::LWrite) {
-          IRI_GEN::LWriteSEXP lw(currWriteID, pool);
+        if (IRI_NODE(ctx, currWriteID).tag == IRI_GEN::LWrite) {
+          IRI_GEN::LWriteSEXP lw(currWriteID, ctx);
 
           auto lval = lw.getArg_LValTarget();
           nextState = nextState.setLattice(lval, TDZLattice(TDZLattice::SAFE));
 
           // if (lw.hasINIT()) {
           //   auto lval = lw.getArg_LValTarget();
-          //   if (pool[rval].tag == IRI_GEN::JSNUBD) {
+          //   if (IRI_NODE(ctx, rval).tag == IRI_GEN::JSNUBD) {
           //     nextState = nextState.setLattice(lval,
           //     TDZLattice(TDZLattice::TDZ));
           //   } else {
@@ -225,19 +225,19 @@ public:
   std::string getAnalysisName() const override { return "TDZ"; }
 
   void dumpStateAtStatement(const IRIStatement &stmt,
-                            IRI_STORAGE::IridiumPool &pool,
+                            IRI_STORAGE::IRIContext &ctx,
                             std::ostream &os) const override {
     TDZState state = queryStateAtStatement(stmt);
-    state.dump(pool, os);
+    state.dump(ctx, os);
   }
 
-  void dumpBlockEntryState(BBIDX block, IRI_STORAGE::IridiumPool &pool,
+  void dumpBlockEntryState(BBIDX block, IRI_STORAGE::IRIContext &ctx,
                            std::ostream &os) const override {
     const TDZState &state = getBlockEntryState(block);
-    state.dump(pool, os);
+    state.dump(ctx, os);
   }
 
-  void dumpBlockExitState(BBIDX block, IRI_STORAGE::IridiumPool &pool,
+  void dumpBlockExitState(BBIDX block, IRI_STORAGE::IRIContext &ctx,
                           std::ostream &os) const override {
     os << "<ExitStateNotTracked>";
   }
@@ -261,7 +261,7 @@ struct TDZAnalysis {
 
     // Initial State
     double headScope = cfg.nodeMap.at(cfg.entry_block)->SCOPE;
-    auto bindings = cfg.pool.iris->getEnvBindingsInClosure(headScope);
+    auto bindings = cfg.ctx.iris->getEnvBindingsInClosure(headScope);
     TDZState entryState = TDZState::reachableEmpty();
     for (auto bID : bindings) {
       entryState = entryState.setLattice(bID, TDZLattice::top());

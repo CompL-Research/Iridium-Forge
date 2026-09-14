@@ -39,9 +39,9 @@ class AnalysisManager;
 struct DataflowResultConcept {
   virtual ~DataflowResultConcept() = default;
   virtual std::string getAnalysisName() const = 0;
-  virtual void dumpStateAtStatement(const IRIStatement& stmt, IRI_STORAGE::IridiumPool& pool, std::ostream& os) const = 0;
-  virtual void dumpBlockEntryState(BBIDX block, IRI_STORAGE::IridiumPool& pool, std::ostream& os) const = 0;
-  virtual void dumpBlockExitState(BBIDX block, IRI_STORAGE::IridiumPool& pool, std::ostream& os) const = 0;
+  virtual void dumpStateAtStatement(const IRIStatement& stmt, IRI_STORAGE::IRIContext& ctx, std::ostream& os) const = 0;
+  virtual void dumpBlockEntryState(BBIDX block, IRI_STORAGE::IRIContext& ctx, std::ostream& os) const = 0;
+  virtual void dumpBlockExitState(BBIDX block, IRI_STORAGE::IRIContext& ctx, std::ostream& os) const = 0;
 };
 
 // ============================================================================
@@ -141,7 +141,7 @@ public:
       for (const auto& [passID, model] : cache) {
         if (auto df = model->asDataflow()) {
           os << "    [BlockEntry (" << df->getAnalysisName() << "): ";
-          df->dumpBlockEntryState(idx, cfg.pool, os);
+          df->dumpBlockEntryState(idx, cfg.ctx, os);
           os << "]\n";
         }
       }
@@ -152,13 +152,13 @@ public:
         for (const auto& [passID, model] : cache) {
           if (auto df = model->asDataflow()) {
             os << "    [State (" << df->getAnalysisName() << "): ";
-            df->dumpStateAtStatement(*curr, cfg.pool, os);
+            df->dumpStateAtStatement(*curr, cfg.ctx, os);
             os << "]\n";
           }
         }
 
         std::stringstream ss;
-        cfg.pool[curr->id].dumpFlat(ss, &cfg.pool, 0, false);
+        IRI_NODE(cfg.ctx, curr->id).dumpFlat(ss, &cfg.ctx, 0, false);
         std::string rawStr = ss.str();
         std::stringstream statementLines(rawStr);
         std::string line;
@@ -174,12 +174,12 @@ public:
         for (const auto& [passID, model] : cache) {
           if (auto df = model->asDataflow()) {
             os << "    [State (" << df->getAnalysisName() << "): ";
-            df->dumpStateAtStatement(*(bb->tail), cfg.pool, os);
+            df->dumpStateAtStatement(*(bb->tail), cfg.ctx, os);
             os << "]\n";
           }
         }
         std::stringstream ss;
-        cfg.pool[bb->tail->id].dumpFlat(ss, &cfg.pool, 0, false);
+        IRI_NODE(cfg.ctx, bb->tail->id).dumpFlat(ss, &cfg.ctx, 0, false);
         std::string rawStr = ss.str();
         std::stringstream statementLines(rawStr);
         std::string line;

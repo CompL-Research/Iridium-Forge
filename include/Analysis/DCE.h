@@ -16,12 +16,12 @@ namespace IRI_STRUCTURAL {
 struct DCEPass {
   bool run(IRICFG& cfg, AnalysisManager& am) {
     bool changed = false;
-    BBContainerSupport bbc(cfg.id, cfg.pool);
+    BBContainerSupport bbc(cfg.id, cfg.ctx);
 
     // Query the LivenessAnalysis result (triggers LivenessAnalysis if not cached)
     const LivenessAnalysisResult& livenessResult = am.getResult<LivenessAnalysis>(cfg);
 
-    auto &pool = cfg.pool;
+    auto &ctx = cfg.ctx;
     LivenessTransfer transfer(bbc.hasSTRICT());
 
     // Perform transformation logic using the liveness facts
@@ -49,7 +49,7 @@ struct DCEPass {
       if (bb->tail) {
         IRIStatement* s = bb->tail;
         auto stmtID = s->id;
-        auto stmtTag = pool[stmtID].tag;
+        auto stmtTag = IRI_NODE(ctx, stmtID).tag;
 
         // Compute the state immediately before the terminal statement
         LivenessState stateBefore = transfer.transferStatement(*s, state);
@@ -64,7 +64,7 @@ struct DCEPass {
       for (auto it = stmts.rbegin(); it != stmts.rend(); ++it) {
         IRIStatement* s = *it;
         auto stmtID = s->id;
-        auto stmtTag = pool[stmtID].tag;
+        auto stmtTag = IRI_NODE(ctx, stmtID).tag;
 
         // Compute the state immediately before this statement
         LivenessState stateBefore = transfer.transferStatement(*s, state);
@@ -72,10 +72,10 @@ struct DCEPass {
 
         bool removed = false;
         if (stmtTag == IRI_GEN::LWrite) {
-          IRI_GEN::LWriteSEXP lw(stmtID, pool);
+          IRI_GEN::LWriteSEXP lw(stmtID, ctx);
           auto target = lw.getArg_LValTarget();
-          if (pool[target].tag == IRI_GEN::EnvBinding) {
-            EnvBindingSEXP ebb(target, pool);
+          if (IRI_NODE(ctx, target).tag == IRI_GEN::EnvBinding) {
+            EnvBindingSEXP ebb(target, ctx);
             auto kind = state.getLattice(target).kind;
 
             bool lvalIsDead = kind == LivenessLattice::DEAD;
@@ -84,7 +84,7 @@ struct DCEPass {
             bool effectfulWrite = isThisInit || isConstWrite;
             if (lvalIsDead && !effectfulWrite) {
               auto rval = lw.getArg_RVal();
-              bool safeToDelete = IRI_GEN::get_meta(pool[rval].tag) == IRI_GEN::RVAL;
+              bool safeToDelete = IRI_GEN::get_meta(IRI_NODE(ctx, rval).tag) == IRI_GEN::RVAL;
               if (safeToDelete) {
                 bb->remove(s);
                 removed = true;

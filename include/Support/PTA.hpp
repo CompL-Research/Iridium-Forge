@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Storage/IridiumPool.h"
+#include "Storage/IRIContext.h"
 #include "Support/AbstractInterpretation.hpp"
 #include "Support/IRICFG.hpp"
 #include "external/Prakriti.hpp"
@@ -37,7 +37,7 @@ private:
       progressTracker;
 
 public:
-  static void solve(IridiumPool &);
+  static void solve(IRIContext &);
 };
 
 } // namespace IRI_STRUCTURAL

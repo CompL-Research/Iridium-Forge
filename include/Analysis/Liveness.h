@@ -105,7 +105,7 @@ public:
     return LivenessState(liveBindings.set(binding, val), false);
   }
 
-  void dump(IRI_STORAGE::IridiumPool &pool, std::ostream &oss) const {
+  void dump(IRI_STORAGE::IRIContext &ctx, std::ostream &oss) const {
     if (is_unreachable) {
       oss << "<Unreachable>";
       return;
@@ -116,9 +116,9 @@ public:
       if (!first)
         oss << ", ";
       first = false;
-      if (pool[bID].tag == IRI_GEN::EnvBinding) {
-        IRI_GEN::EnvBindingSEXP eb(bID, pool);
-        oss << pool.strings.get(eb.getNAME());
+      if (IRI_NODE(ctx, bID).tag == IRI_GEN::EnvBinding) {
+        IRI_GEN::EnvBindingSEXP eb(bID, ctx);
+        oss << ctx.storage.strings.get(eb.getNAME());
       } else {
         oss << "IRID(" << bID << ")";
       }
@@ -150,13 +150,13 @@ public:
     }
 
     LivenessState nextState = incomingState;
-    auto &pool = stmt.bb->pool;
-    auto &iris = pool.iris;
-    auto tag = pool[stmt.id].tag;
+    auto &ctx = stmt.bb->ctx;
+    auto &iris = ctx.iris;
+    auto tag = IRI_NODE(ctx, stmt.id).tag;
 
     // Kill (if not captured, and not a non-strict formal parameter)
     if (tag == IRI_GEN::LWrite) {
-      LWriteSEXP lw(stmt.id, pool);
+      LWriteSEXP lw(stmt.id, ctx);
       auto target = lw.getArg_LValTarget();
       //
       // Deprecated -> ThisINITSEXP [RVAL], basically it takes two arguments (first is an EnvRead to 'this' and second is the new value for 'this') node makes this dependency explicit
@@ -164,16 +164,16 @@ public:
       // If it is a THISINIT write, it checks the TDZ state of the target,
       // so it acts as a read (making the target LIVE) rather than a kill.
       // if (lw.hasTHISINIT()) {
-      //   if (pool[target].tag == IRI_GEN::EnvBinding) {
+      //   if (IRI_NODE(ctx, target).tag == IRI_GEN::EnvBinding) {
       //     nextState = nextState.setLattice(target, LivenessLattice::LIVE);
       //   }
       // } else
 
       if (lw.hasTHISINIT() || lw.hasINIT() || lw.hasSAFE()) {
-        if (pool[target].tag == IRI_GEN::EnvBinding) {
-          EnvBindingSEXP eb(target, pool);
-          bool isEvalTainted = (*iris)[target].isEvalTainted();
-          bool isCap = (*iris)[target].isCaptured();
+        if (IRI_NODE(ctx, target).tag == IRI_GEN::EnvBinding) {
+          EnvBindingSEXP eb(target, ctx);
+          bool isEvalTainted = IRI_BINDING(iris, target).isEvalTainted();
+          bool isCap = IRI_BINDING(iris, target).isCaptured();
           bool isArg = eb.hasJSARG();
           bool alwaysLive = isEvalTainted || isCap || (!isStrict && isArg);
           if (!alwaysLive) {
@@ -185,16 +185,16 @@ public:
 
     // Gen
     auto processNestedEnvReads = [&](auto &self, IRID node) -> void {
-      if (pool[node].tag == IRI_GEN::EnvRead) {
-        IRI_GEN::EnvReadSEXP envRead(node, pool);
+      if (IRI_NODE(ctx, node).tag == IRI_GEN::EnvRead) {
+        IRI_GEN::EnvReadSEXP envRead(node, ctx);
         auto target = envRead.getArg_Obj();
 
         // Reading a local stack binding
-        if (pool[target].tag == IRI_GEN::EnvBinding) {
+        if (IRI_NODE(ctx, target).tag == IRI_GEN::EnvBinding) {
           nextState = nextState.setLattice(target, LivenessLattice::LIVE);
         }
       }
-      for (auto child : pool.get_args_view(node)) {
+      for (auto child : ctx.storage.nodes.get_args_view(node)) {
         self(self, child);
       }
     };
@@ -227,7 +227,7 @@ public:
   std::string getAnalysisName() const override { return "Liveness"; }
 
   void dumpStateAtStatement(const IRIStatement &stmt,
-                            IRI_STORAGE::IridiumPool &pool,
+                            IRI_STORAGE::IRIContext &ctx,
                             std::ostream &os) const override {
     LivenessState state = solver->getBlockExitState(stmt.bb->IDX);
     if (stmt.bb->tail) {
@@ -240,24 +240,24 @@ public:
     for (auto it = stmts.rbegin(); it != stmts.rend(); ++it) {
       if (*it == &stmt) {
         LivenessState stateBefore = transfer->transferStatement(**it, state);
-        stateBefore.dump(pool, os);
+        stateBefore.dump(ctx, os);
         return;
       }
       state = transfer->transferStatement(**it, state);
     }
-    state.dump(pool, os);
+    state.dump(ctx, os);
   }
 
-  void dumpBlockEntryState(BBIDX block, IRI_STORAGE::IridiumPool &pool,
+  void dumpBlockEntryState(BBIDX block, IRI_STORAGE::IRIContext &ctx,
                            std::ostream &os) const override {
     const LivenessState &state = getBlockEntryState(block);
-    state.dump(pool, os);
+    state.dump(ctx, os);
   }
 
-  void dumpBlockExitState(BBIDX block, IRI_STORAGE::IridiumPool &pool,
+  void dumpBlockExitState(BBIDX block, IRI_STORAGE::IRIContext &ctx,
                           std::ostream &os) const override {
     const LivenessState &state = getBlockExitState(block);
-    state.dump(pool, os);
+    state.dump(ctx, os);
   }
 
   const LivenessState &getBlockEntryState(BBIDX block) const {
@@ -274,9 +274,9 @@ struct LivenessAnalysis {
   using Result = LivenessAnalysisResult;
 
   LivenessAnalysisResult run(IRICFG &cfg, AnalysisManager &am) {
-    auto &pool = cfg.pool;
-    auto &iris = pool.iris;
-    BBContainerSupport bbc(cfg.id, pool);
+    auto &ctx = cfg.ctx;
+    auto &iris = ctx.iris;
+    BBContainerSupport bbc(cfg.id, ctx);
     bool strict = bbc.hasSTRICT();
 
     auto transfer = std::make_shared<LivenessTransfer>(strict);
@@ -288,9 +288,9 @@ struct LivenessAnalysis {
     auto bindings = iris->getEnvBindingsInClosure(headScope);
     LivenessState exitState = LivenessState::reachableEmpty();
     for (auto bID : bindings) {
-      EnvBindingSEXP eb(bID, pool);
-      bool isEvalTainted = (*iris)[bID].isEvalTainted();
-      bool isCap = (*iris)[bID].isCaptured();
+      EnvBindingSEXP eb(bID, ctx);
+      bool isEvalTainted = IRI_BINDING(iris, bID).isEvalTainted();
+      bool isCap = IRI_BINDING(iris, bID).isCaptured();
       bool isArg = eb.hasJSARG();
       bool alwaysLive = isEvalTainted || isCap || (!strict && isArg);
       exitState = exitState.setLattice(bID, alwaysLive
@@ -299,7 +299,7 @@ struct LivenessAnalysis {
     }
 
 #if DEBUG_LIVENESS
-    BBContainerSupport bbc(cfg.id, cfg.pool);
+    BBContainerSupport bbc(cfg.id, cfg.ctx);
     std::cout << "  [Liveness-Analysis] Starting backward solver run on CFG of "
                  "closure "
               << bbc.getStartBBIDX() << "\n";

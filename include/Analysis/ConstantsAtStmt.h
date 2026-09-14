@@ -19,11 +19,11 @@ struct CASLattice {
 
   Kind kind = TOP;
   IRID value = 0;
-  IRI_STORAGE::IridiumPool *pool = nullptr;
+  IRI_STORAGE::IRIContext *ctx = nullptr;
 
   CASLattice() = default;
-  CASLattice(Kind k, IRID val = 0, IRI_STORAGE::IridiumPool *p = nullptr)
-      : kind(k), value(val), pool(p) {}
+  CASLattice(Kind k, IRID val = 0, IRI_STORAGE::IRIContext *p = nullptr)
+      : kind(k), value(val), ctx(p) {}
 
   static CASLattice bottom() { return CASLattice(NAC); }
   static CASLattice top() { return CASLattice(TOP); }
@@ -31,11 +31,11 @@ struct CASLattice {
   bool constantsEqual(IRID a, IRID b) const {
     if (a == b)
       return true;
-    IRI_STORAGE::IridiumPool *p = pool;
+    IRI_STORAGE::IRIContext *p = ctx;
     if (!p)
       return false;
-    auto tagA = p->operator[](a).tag;
-    auto tagB = p->operator[](b).tag;
+    auto tagA = p->storage.nodes.get_node(a).tag;
+    auto tagB = p->storage.nodes.get_node(b).tag;
     if (tagA != tagB)
       return false;
     switch (tagA) {
@@ -70,7 +70,7 @@ struct CASLattice {
 
   // Lattice join operator (Least Upper Bound ⊔)
   [[nodiscard]] CASLattice joinWith(const CASLattice &other) const {
-    IRI_STORAGE::IridiumPool *p = pool ? pool : other.pool;
+    IRI_STORAGE::IRIContext *p = ctx ? ctx : other.ctx;
     if (kind == TOP) {
       return CASLattice(other.kind, other.value, p);
     }
@@ -91,10 +91,10 @@ struct CASLattice {
     if (kind != other.kind)
       return false;
     if (kind == CONST) {
-      IRI_STORAGE::IridiumPool *p = pool ? pool : other.pool;
+      IRI_STORAGE::IRIContext *p = ctx ? ctx : other.ctx;
       if (p) {
         CASLattice temp = *this;
-        temp.pool = p;
+        temp.ctx = p;
         return temp.constantsEqual(value, other.value);
       }
       return value == other.value;
@@ -130,7 +130,7 @@ public:
 
   bool isUnreachable() const { return is_unreachable; }
 
-  void dump(IRI_STORAGE::IridiumPool &pool, std::ostream &oss) const {
+  void dump(IRI_STORAGE::IRIContext &ctx, std::ostream &oss) const {
     if (is_unreachable) {
       oss << "<Unreachable>";
       return;
@@ -141,9 +141,9 @@ public:
       if (!first)
         oss << ", ";
       first = false;
-      if (pool[bID].tag == IRI_GEN::EnvBinding) {
-        IRI_GEN::EnvBindingSEXP eb(bID, pool);
-        oss << pool.strings.get(eb.getNAME());
+      if (IRI_NODE(ctx, bID).tag == IRI_GEN::EnvBinding) {
+        IRI_GEN::EnvBindingSEXP eb(bID, ctx);
+        oss << ctx.storage.strings.get(eb.getNAME());
       } else {
         oss << "IRID(" << bID << ")";
       }
@@ -153,11 +153,11 @@ public:
       } else if (lattice.kind == CASLattice::CONST) {
         oss << "CONST(";
         auto cID = lattice.value;
-        auto tag = pool[cID].tag;
+        auto tag = IRI_NODE(ctx, cID).tag;
         if (tag == IRI_GEN::Number) {
-          oss << IRI_GEN::NumberSEXP(cID, pool).getIridiumPrimitive();
+          oss << IRI_GEN::NumberSEXP(cID, ctx).getIridiumPrimitive();
         } else if (tag == IRI_GEN::Boolean) {
-          oss << (IRI_GEN::BooleanSEXP(cID, pool).getIridiumPrimitive()
+          oss << (IRI_GEN::BooleanSEXP(cID, ctx).getIridiumPrimitive()
                       ? "true"
                       : "false");
         } else if (tag == IRI_GEN::Null) {
@@ -166,12 +166,12 @@ public:
           oss << "undefined";
         } else if (tag == IRI_GEN::String) {
           oss << "\""
-              << pool.strings.get(
-                     IRI_GEN::StringSEXP(cID, pool).getIridiumPrimitive())
+              << ctx.storage.strings.get(
+                     IRI_GEN::StringSEXP(cID, ctx).getIridiumPrimitive())
               << "\"";
         } else if (tag == IRI_GEN::JSBigInt) {
-          oss << pool.strings.get(
-                     IRI_GEN::JSBigIntSEXP(cID, pool).getIridiumPrimitive())
+          oss << ctx.storage.strings.get(
+                     IRI_GEN::JSBigIntSEXP(cID, ctx).getIridiumPrimitive())
               << "n";
         } else {
           oss << "IRID(" << cID << ")";
@@ -227,22 +227,22 @@ public:
     }
 
     CASState nextState = incomingState;
-    auto &pool = stmt.bb->pool;
-    auto tag = pool[stmt.id].tag;
+    auto &ctx = stmt.bb->ctx;
+    auto tag = IRI_NODE(ctx, stmt.id).tag;
 
     if (tag == IRI_GEN::LWrite) {
-      nextState = processWrite(stmt.id, nextState, pool);
+      nextState = processWrite(stmt.id, nextState, ctx);
     } else if (tag == IRI_GEN::CompoundAssn) {
-      auto args = pool.get_args(stmt.id);
+      auto args = ctx.storage.nodes.get_args(stmt.id);
       assert(args.size() > 1);
       for (size_t i = 1; i < args.size(); i++) {
         IRID currWriteID = args[i];
-        if (pool[currWriteID].tag == IRI_GEN::LWrite) {
-          IRI_GEN::LWriteSEXP lw(currWriteID, pool);
+        if (IRI_NODE(ctx, currWriteID).tag == IRI_GEN::LWrite) {
+          IRI_GEN::LWriteSEXP lw(currWriteID, ctx);
           auto lval = lw.getArg_LValTarget();
-          if (pool[lval].tag == IRI_GEN::EnvBinding) {
+          if (IRI_NODE(ctx, lval).tag == IRI_GEN::EnvBinding) {
             nextState = nextState.setLattice(
-                lval, CASLattice(CASLattice::NAC, 0, &pool));
+                lval, CASLattice(CASLattice::NAC, 0, &ctx));
           }
         }
       }
@@ -258,30 +258,30 @@ public:
 
 private:
   CASState processWrite(IRID node, const CASState &state,
-                        IRI_STORAGE::IridiumPool &pool) {
-    auto tag = pool[node].tag;
+                        IRI_STORAGE::IRIContext &ctx) {
+    auto tag = IRI_NODE(ctx, node).tag;
     if (tag == IRI_GEN::LWrite) {
-      IRI_GEN::LWriteSEXP lw(node, pool);
+      IRI_GEN::LWriteSEXP lw(node, ctx);
       auto lval = lw.getArg_LValTarget();
-      auto & iris = pool.iris;
-      if ((*iris)[lval].isCaptured() || (*iris)[lval].isEvalTainted()) {
+      auto & iris = ctx.iris;
+      if (IRI_BINDING(iris, lval).isCaptured() || IRI_BINDING(iris, lval).isEvalTainted()) {
         return state;
       }
-      if (pool[lval].tag == IRI_GEN::EnvBinding) {
+      if (IRI_NODE(ctx, lval).tag == IRI_GEN::EnvBinding) {
         return state.setLattice(lval,
-                                resolveValue(lw.getArg_RVal(), state, pool));
+                                resolveValue(lw.getArg_RVal(), state, ctx));
       }
     }
     return state;
   }
 
   CASLattice resolveValue(IRID node, const CASState &state,
-                          IRI_STORAGE::IridiumPool &pool) {
-    auto tag = pool[node].tag;
+                          IRI_STORAGE::IRIContext &ctx) {
+    auto tag = IRI_NODE(ctx, node).tag;
     if (tag == IRI_GEN::EnvRead) {
-      IRI_GEN::EnvReadSEXP er(node, pool);
+      IRI_GEN::EnvReadSEXP er(node, ctx);
       auto target = er.getArg_Obj();
-      if (pool[target].tag == IRI_GEN::EnvBinding) {
+      if (IRI_NODE(ctx, target).tag == IRI_GEN::EnvBinding) {
         return state.getLattice(target);
       }
     }
@@ -289,9 +289,9 @@ private:
     if (tag == IRI_GEN::Number || tag == IRI_GEN::Boolean ||
         tag == IRI_GEN::Null || tag == IRI_GEN::String ||
         tag == IRI_GEN::JSBigInt || tag == IRI_GEN::JSNUBD) {
-      return CASLattice(CASLattice::CONST, node, &pool);
+      return CASLattice(CASLattice::CONST, node, &ctx);
     }
-    return CASLattice(CASLattice::NAC, 0, &pool);
+    return CASLattice(CASLattice::NAC, 0, &ctx);
   }
 };
 
@@ -312,19 +312,19 @@ public:
   std::string getAnalysisName() const override { return "ConstantsAtStmt"; }
 
   void dumpStateAtStatement(const IRIStatement &stmt,
-                            IRI_STORAGE::IridiumPool &pool,
+                            IRI_STORAGE::IRIContext &ctx,
                             std::ostream &os) const override {
     CASState state = queryStateAtStatement(stmt);
-    state.dump(pool, os);
+    state.dump(ctx, os);
   }
 
-  void dumpBlockEntryState(BBIDX block, IRI_STORAGE::IridiumPool &pool,
+  void dumpBlockEntryState(BBIDX block, IRI_STORAGE::IRIContext &ctx,
                            std::ostream &os) const override {
     const CASState &state = getBlockEntryState(block);
-    state.dump(pool, os);
+    state.dump(ctx, os);
   }
 
-  void dumpBlockExitState(BBIDX block, IRI_STORAGE::IridiumPool &pool,
+  void dumpBlockExitState(BBIDX block, IRI_STORAGE::IRIContext &ctx,
                           std::ostream &os) const override {
     os << "<ExitStateNotTracked>";
   }
@@ -348,16 +348,16 @@ struct ConstantsAtStmt {
 
     // Initial State
     double headScope = cfg.nodeMap.at(cfg.entry_block)->SCOPE;
-    auto bindings = cfg.pool.iris->getEnvBindingsInClosure(headScope);
+    auto bindings = cfg.ctx.iris->getEnvBindingsInClosure(headScope);
     CASState entryState = CASState::reachableEmpty();
-    auto &iris = cfg.pool.iris;
+    auto &iris = cfg.ctx.iris;
     for (auto bID : bindings) {
       bool isArg = false;
-      if (cfg.pool[bID].tag == IRI_GEN::EnvBinding) {
-        IRI_GEN::EnvBindingSEXP eb(bID, cfg.pool);
+      if (IRI_NODE(cfg.ctx, bID).tag == IRI_GEN::EnvBinding) {
+        IRI_GEN::EnvBindingSEXP eb(bID, cfg.ctx);
         isArg = eb.hasJSARG() || eb.hasJSRESTARG();
       }
-      entryState = entryState.setLattice(bID, ((*iris)[bID].isCaptured() || isArg)
+      entryState = entryState.setLattice(bID, (IRI_BINDING(iris, bID).isCaptured() || isArg)
                                                    ? CASLattice::bottom()
                                                    : CASLattice::top());
     }

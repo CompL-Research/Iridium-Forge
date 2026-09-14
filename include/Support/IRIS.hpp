@@ -22,7 +22,7 @@ namespace IRI_STRUCTURAL {
 
 class IRIS {
 public:
-  IRIS(IRI_STORAGE::IridiumPool &,
+  IRIS(IRI_STORAGE::IRIContext &,
        std::unordered_map<int, std::shared_ptr<IRI_PARSE::IridiumBuildContext>>
            &,
        IRI_GEN::IRID);
@@ -41,20 +41,20 @@ public:
 
   bool isGlobal(StringID sid, double startScopeIDX);
 
-  IRI_STORAGE::BindingMeta &operator[](IRI_STORAGE::IRID bID) {
-    return bindingsPool->getMetaFromIRID(pool, bID);
+  IRI_STORAGE::BindingMeta &get_binding(IRI_STORAGE::IRID bID) {
+    return ctx.storage.bindings.getMetaFromIRID(ctx, bID);
   }
 
-  const IRI_STORAGE::BindingMeta &operator[](IRI_STORAGE::IRID bID) const {
-    return bindingsPool->getMetaFromIRID(pool, bID);
+  const IRI_STORAGE::BindingMeta &get_binding(IRI_STORAGE::IRID bID) const {
+    return ctx.storage.bindings.getMetaFromIRID(ctx, bID);
   }
 
   IRI_STORAGE::BindingMeta &getBindingMetaFromLINK(double LINK) {
-    return (*bindingsPool)[LINK];
+    return ctx.storage.bindings.get(LINK);
   }
 
   const IRI_STORAGE::BindingMeta &getBindingMetaFromLINK(double LINK) const {
-    return (*bindingsPool)[LINK];
+    return ctx.storage.bindings.get(LINK);
   }
 
   bool hasBinding(StringID, double);
@@ -133,10 +133,7 @@ public:
 
 private:
   // Node Storage Pool
-  IRI_STORAGE::IridiumPool &pool;
-  // Bindings Metadata Pool
-  std::unique_ptr<IRI_STORAGE::BindingsPool> bindingsPool =
-      std::make_unique<IRI_STORAGE::BindingsPool>();
+  IRI_STORAGE::IRIContext &ctx;
 
   // Graph
   // In a scope tree, each node has atmost one outgoing edges, with -1 denoting
@@ -182,3 +179,7 @@ public:
   void dumpBindingsAtScope(std::ostream &oss, double node) const;
 };
 } // namespace IRI_STRUCTURAL
+
+// Readability shorthand for IRIS::get_binding, replacing the old
+// (*iris)[id] operator[] syntax.
+#define IRI_BINDING(iris, id) ((iris)->get_binding(id))

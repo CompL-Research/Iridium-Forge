@@ -37,16 +37,16 @@ public:
 
   bool isUnreachable() const { return is_unreachable; }
 
-  void dump(IRI_STORAGE::IridiumPool &pool, std::ostream &oss) const {
+  void dump(IRI_STORAGE::IRIContext &ctx, std::ostream &oss) const {
     if (is_unreachable) {
       oss << "<Unreachable>";
       return;
     }
     oss << "{";
     if (validEffect) {
-      if (pool[store].tag == IRI_GEN::EnvBinding) {
-        IRI_GEN::EnvBindingSEXP eb(store, pool);
-        oss << pool.strings.get(eb.getNAME()) << " -> IRID(" << effect << ")";
+      if (IRI_NODE(ctx, store).tag == IRI_GEN::EnvBinding) {
+        IRI_GEN::EnvBindingSEXP eb(store, ctx);
+        oss << ctx.storage.strings.get(eb.getNAME()) << " -> IRID(" << effect << ")";
       } else {
         oss << "IRID(" << store << ") -> IRID(" << effect << ")";
       }
@@ -82,17 +82,17 @@ public:
 // ============================================================================
 class EffectAtStmtTransfer : public TransferFunction<EffectAtStmtState> {
 public:
-  static bool isSideEffectingTag(IRI_GEN::IRI_TAG tag, IRID node, IRI_STORAGE::IridiumPool &pool) {
+  static bool isSideEffectingTag(IRI_GEN::IRI_TAG tag, IRID node, IRI_STORAGE::IRIContext &ctx) {
     auto meta = IRI_GEN::get_meta(tag);
     if (meta == IRI_GEN::RVAL || meta == IRI_GEN::UKN) {
       return false;
     }
     // Special case: EnvRead is side-effect-free ONLY if it is marked SAFE and is a local non-captured variable
     if (tag == IRI_GEN::EnvRead) {
-      IRI_GEN::EnvReadSEXP er(node, pool);
+      IRI_GEN::EnvReadSEXP er(node, ctx);
       if (er.hasSAFE()) {
         auto obj = er.getArg_Obj();
-        if (pool[obj].tag == IRI_GEN::EnvBinding && !(*pool.iris)[obj].isCaptured()) {
+        if (IRI_NODE(ctx, obj).tag == IRI_GEN::EnvBinding && !IRI_BINDING(ctx.iris, obj).isCaptured()) {
           return false;
         }
       }
@@ -107,16 +107,16 @@ public:
     }
 
     EffectAtStmtState nextState = incomingState;
-    auto &pool = stmt.bb->pool;
-    auto tag = pool[stmt.id].tag;
+    auto &ctx = stmt.bb->ctx;
+    auto tag = IRI_NODE(ctx, stmt.id).tag;
 
     // Recursive helper to check for side-effecting sub-expressions
     auto hasSideEffect = [&](auto &self, IRID node) -> bool {
-      auto t = pool[node].tag;
-      if (isSideEffectingTag(t, node, pool)) {
+      auto t = IRI_NODE(ctx, node).tag;
+      if (isSideEffectingTag(t, node, ctx)) {
         return true;
       }
-      for (auto child : pool.get_args_view(node)) {
+      for (auto child : ctx.storage.nodes.get_args_view(node)) {
         if (self(self, child)) {
           return true;
         }
@@ -126,25 +126,25 @@ public:
 
     // Recursive helper to check for reads/writes to captured variables
     auto hasCapturedAccess = [&](auto &self, IRID node) -> bool {
-      auto t = pool[node].tag;
+      auto t = IRI_NODE(ctx, node).tag;
       if (t == IRI_GEN::EnvRead) {
-        IRI_GEN::EnvReadSEXP er(node, pool);
+        IRI_GEN::EnvReadSEXP er(node, ctx);
         auto target = er.getArg_Obj();
-        if (pool[target].tag == IRI_GEN::EnvBinding) {
-          if ((*pool.iris)[target].isCaptured()) {
+        if (IRI_NODE(ctx, target).tag == IRI_GEN::EnvBinding) {
+          if (IRI_BINDING(ctx.iris, target).isCaptured()) {
             return true;
           }
         }
       } else if (t == IRI_GEN::LWrite) {
-        IRI_GEN::LWriteSEXP lw(node, pool);
+        IRI_GEN::LWriteSEXP lw(node, ctx);
         auto target = lw.getArg_LValTarget();
-        if (pool[target].tag == IRI_GEN::EnvBinding) {
-          if ((*pool.iris)[target].isCaptured()) {
+        if (IRI_NODE(ctx, target).tag == IRI_GEN::EnvBinding) {
+          if (IRI_BINDING(ctx.iris, target).isCaptured()) {
             return true;
           }
         }
       }
-      for (auto child : pool.get_args_view(node)) {
+      for (auto child : ctx.storage.nodes.get_args_view(node)) {
         if (self(self, child)) {
           return true;
         }
@@ -157,7 +157,7 @@ public:
       if (node == target) {
         return true;
       }
-      for (auto child : pool.get_args_view(node)) {
+      for (auto child : ctx.storage.nodes.get_args_view(node)) {
         if (self(self, child, target)) {
           return true;
         }
@@ -167,21 +167,21 @@ public:
 
     // Recursive helper to collect all bindings read in an expression
     auto getReadBindings = [&](auto &self, IRID node, std::set<IRID> &bindings) -> void {
-      auto t = pool[node].tag;
+      auto t = IRI_NODE(ctx, node).tag;
       if (t == IRI_GEN::EnvRead) {
-        IRI_GEN::EnvReadSEXP er(node, pool);
+        IRI_GEN::EnvReadSEXP er(node, ctx);
         auto target = er.getArg_Obj();
-        if (pool[target].tag == IRI_GEN::EnvBinding) {
+        if (IRI_NODE(ctx, target).tag == IRI_GEN::EnvBinding) {
           bindings.insert(target);
         }
       }
-      for (auto child : pool.get_args_view(node)) {
+      for (auto child : ctx.storage.nodes.get_args_view(node)) {
         self(self, child, bindings);
       }
     };
 
     if (tag == IRI_GEN::LWrite) {
-      IRI_GEN::LWriteSEXP lw(stmt.id, pool);
+      IRI_GEN::LWriteSEXP lw(stmt.id, ctx);
       auto LVAL = lw.getArg_LValTarget();
       auto rval = lw.getArg_RVal();
 
@@ -218,7 +218,7 @@ public:
 
       // Overwrite/Update state after the kill checks so we don't kill ourselves immediately.
       // Only track effect-free writes: if RVal has side effects, don't mark as valid.
-      if (pool[LVAL].tag == IRI_GEN::EnvBinding && !(*pool.iris)[LVAL].isCaptured() &&
+      if (IRI_NODE(ctx, LVAL).tag == IRI_GEN::EnvBinding && !IRI_BINDING(ctx.iris, LVAL).isCaptured() &&
           !hasSideEffect(hasSideEffect, rval)) {
         nextState = EffectAtStmtState(false, true, LVAL, rval, stmt.id);
       } else {
@@ -270,19 +270,19 @@ public:
   std::string getAnalysisName() const override { return "EffectAtStmt"; }
 
   void dumpStateAtStatement(const IRIStatement &stmt,
-                            IRI_STORAGE::IridiumPool &pool,
+                            IRI_STORAGE::IRIContext &ctx,
                             std::ostream &os) const override {
     EffectAtStmtState state = queryStateAtStatement(stmt);
-    state.dump(pool, os);
+    state.dump(ctx, os);
   }
 
-  void dumpBlockEntryState(BBIDX block, IRI_STORAGE::IridiumPool &pool,
+  void dumpBlockEntryState(BBIDX block, IRI_STORAGE::IRIContext &ctx,
                            std::ostream &os) const override {
     const EffectAtStmtState &state = getBlockEntryState(block);
-    state.dump(pool, os);
+    state.dump(ctx, os);
   }
 
-  void dumpBlockExitState(BBIDX block, IRI_STORAGE::IridiumPool &pool,
+  void dumpBlockExitState(BBIDX block, IRI_STORAGE::IRIContext &ctx,
                           std::ostream &os) const override {
     os << "<ExitStateNotTracked>";
   }

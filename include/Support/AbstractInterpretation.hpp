@@ -264,7 +264,7 @@ public:
     IRICFG *cfg = resumptionState.cfg;
 
     auto cs =
-        cfg->pool.traceWriter->enterClosure(cfg->getDebugID(), "", "entry");
+        cfg->ctx.debugger.traceWriter->enterClosure(cfg->getDebugID(), "", "entry");
 
     // Results
     std::unordered_map<IRIStatement *, State> cfgAtStmt;
@@ -316,7 +316,7 @@ public:
       State currState = blockEntryStates[currIdx];
       double exceptionTarget = bb->EXCEPTION;
 
-      auto bs = cfg->pool.traceWriter->enterBlock(bb->getDebugID(), iter++);
+      auto bs = cfg->ctx.debugger.traceWriter->enterBlock(bb->getDebugID(), iter++);
 
       bool exceptionPropagatedForCurrentState = false;
       auto handleException = [&](const State &stateBefore) {
@@ -328,13 +328,13 @@ public:
 
       // Helper to transfer a statement
       auto runTransfer = [&](IRIStatement *s) {
-        auto e = cfg->pool.traceWriter->eval(s->getDebugID());
+        auto e = cfg->ctx.debugger.traceWriter->eval(s->getDebugID());
 
         State nextState = transferFn.transferStatement(*s, currState);
 
         std::stringstream ss;
         currState.dumpDOT(ss, "YADataflowSolver",
-                          cfg->pool.traceNodeMetaMapper);
+                          cfg->ctx.debugger.traceNodeMetaMapper);
         e.state(ss.str());
 
         bool changed = nextState != currState;
@@ -359,8 +359,8 @@ public:
       if (bb->tail) {
         handleException(currState);
         runTransfer(bb->tail);
-        if (cfg->pool[bb->tail->id].tag == IRI_GEN::Goto) {
-          GotoSEXP gt(bb->tail->id, cfg->pool);
+        if (IRI_NODE(cfg->ctx, bb->tail->id).tag == IRI_GEN::Goto) {
+          GotoSEXP gt(bb->tail->id, cfg->ctx);
           if (gt.hasDeferred()) {
             throw std::runtime_error("WIP Await Semantics");
             // BBIDX targetIDX = gt.getIDX();

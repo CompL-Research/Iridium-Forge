@@ -19,23 +19,23 @@ struct EffectPropPass {
     const EffectAtStmtResult &effectResult = am.getResult<EffectAtStmtAnalysis>(cfg);
     const LivenessAnalysisResult &livenessResult = am.getResult<LivenessAnalysis>(cfg);
 
-    auto &pool = cfg.pool;
+    auto &ctx = cfg.ctx;
 
-    BBContainerSupport bbc(cfg.id, pool);
+    BBContainerSupport bbc(cfg.id, ctx);
     bool strict = bbc.hasSTRICT();
     LivenessTransfer livenessTransfer(strict);
 
     // Check if a value node is safe to duplicate (constant or cheap read)
     auto isSafeToDup = [&](IRID node) -> bool {
-      switch (pool[node].tag) {
+      switch (IRI_NODE(ctx, node).tag) {
         case IRI_GEN::Number: case IRI_GEN::Boolean: case IRI_GEN::Null:
         case IRI_GEN::String: case IRI_GEN::JSBigInt: case IRI_GEN::JSNUBD:
           return true;
         case IRI_GEN::EnvRead: {
-          IRI_GEN::EnvReadSEXP er(node, pool);
+          IRI_GEN::EnvReadSEXP er(node, ctx);
           if (er.hasSAFE()) {
             IRID obj = er.getArg_Obj();
-            if (pool[obj].tag == IRI_GEN::GlobalBinding || pool[obj].tag == IRI_GEN::ScriptBinding)
+            if (IRI_NODE(ctx, obj).tag == IRI_GEN::GlobalBinding || IRI_NODE(ctx, obj).tag == IRI_GEN::ScriptBinding)
               return true;
           }
           break;
@@ -105,11 +105,11 @@ struct EffectPropPass {
           while (!worklist.empty()) {
             IRID cur = worklist.back();
             worklist.pop_back();
-            if (pool[cur].tag == IRI_GEN::EnvRead) {
-              IRI_GEN::EnvReadSEXP er(cur, pool);
+            if (IRI_NODE(ctx, cur).tag == IRI_GEN::EnvRead) {
+              IRI_GEN::EnvReadSEXP er(cur, ctx);
               if (er.getArg_Obj() == targetStore) ++occurrences;
             }
-            for (auto child : pool.get_args_view(cur))
+            for (auto child : ctx.storage.nodes.get_args_view(cur))
               worklist.push_back(child);
           }
         }
@@ -129,14 +129,14 @@ struct EffectPropPass {
           while (!path.empty()) {
             auto [parent, cur] = path.back();
             path.pop_back();
-            if (pool[cur].tag == IRI_GEN::EnvRead) {
-              IRI_GEN::EnvReadSEXP er(cur, pool);
+            if (IRI_NODE(ctx, cur).tag == IRI_GEN::EnvRead) {
+              IRI_GEN::EnvReadSEXP er(cur, ctx);
               if (er.getArg_Obj() == targetStore) {
                 // Replace in-place
-                auto parentArgs = pool.get_args_view(parent);
+                auto parentArgs = ctx.storage.nodes.get_args_view(parent);
                 for (size_t ai = 0; ai < parentArgs.size(); ++ai) {
                   if (parentArgs[ai] == cur) {
-                    pool.update_arg_inplace(parent, ai, replacementEffect);
+                    ctx.storage.nodes.update_arg_inplace(parent, ai, replacementEffect);
                     didPatch = true;
                     break; // don't recurse into replaced node
                   }
@@ -144,7 +144,7 @@ struct EffectPropPass {
                 continue;
               }
             }
-            for (auto child : pool.get_args_view(cur))
+            for (auto child : ctx.storage.nodes.get_args_view(cur))
               path.push_back({ cur, child });
           }
         }

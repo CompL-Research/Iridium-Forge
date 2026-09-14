@@ -13,12 +13,12 @@ namespace IRI_STRUCTURAL {
 struct MTDZSPass {
   bool run(IRICFG& cfg, AnalysisManager& am) {
     bool changed = false;
-    BBContainerSupport bbc(cfg.id, cfg.pool);
+    BBContainerSupport bbc(cfg.id, cfg.ctx);
 
     // Query the TDZAnalysis result (this triggers TDZAnalysis if not cached)
     const TDZAnalysisResult& tdzResult = am.getResult<TDZAnalysis>(cfg);
 
-    auto &pool = cfg.pool;
+    auto &ctx = cfg.ctx;
 
     TDZATransfer transfer;
 
@@ -29,14 +29,14 @@ struct MTDZSPass {
       while (s != nullptr) {
         IRIStatement* nextStmt = s->next;
         auto stmtID = s->id;
-        auto stmtTag = pool[stmtID].tag;
+        auto stmtTag = IRI_NODE(ctx, stmtID).tag;
         bool removed = false;
 
         // Compute the next state before we potentially modify/delete s
         TDZState nextState = transfer.transferStatement(*s, state);
 
         if (stmtTag == IRI_GEN::LWrite) {
-          IRI_GEN::LWriteSEXP lw(stmtID, pool);
+          IRI_GEN::LWriteSEXP lw(stmtID, ctx);
           bool isInit = lw.hasINIT() || lw.hasTHISINIT();
           if (!isInit) {
             auto target = lw.getArg_LValTarget();
@@ -48,7 +48,7 @@ struct MTDZSPass {
             }
           }
         } else if (stmtTag == IRI_GEN::EnvRead) {
-          IRI_GEN::EnvReadSEXP envRead(stmtID, pool);
+          IRI_GEN::EnvReadSEXP envRead(stmtID, ctx);
           auto target = envRead.getArg_Obj();
           bool willRemove = !state.isUnreachable() && state.getLattice(target).kind == TDZLattice::SAFE;
 
@@ -62,8 +62,8 @@ struct MTDZSPass {
 
         if (!removed) {
           auto processNestedEnvReads = [&](auto& self, IRID node) -> void {
-            if (pool[node].tag == IRI_GEN::EnvRead) {
-              IRI_GEN::EnvReadSEXP envRead(node, pool);
+            if (IRI_NODE(ctx, node).tag == IRI_GEN::EnvRead) {
+              IRI_GEN::EnvReadSEXP envRead(node, ctx);
               auto target = envRead.getArg_Obj();
               bool nestedSafe = !state.isUnreachable() && state.getLattice(target).kind == TDZLattice::SAFE;
 
@@ -72,7 +72,7 @@ struct MTDZSPass {
                 changed = true;
               }
             }
-            for (auto child : pool.get_args_view(node)) {
+            for (auto child : ctx.storage.nodes.get_args_view(node)) {
               self(self, child);
             }
           };
