@@ -1,4 +1,3 @@
-// #!/usr/bin/env node
 import fs from "fs";
 import spec from "../TYPESPEC.mjs";
 
@@ -20,8 +19,6 @@ function genSchema(spec) {
 
   TAGS.add(tag);
 
-  // 1. Flatten all flags into an indexed list
-  // CHANGED: string flags now map to StringID
   const allFlags = [];
   if (flags.string)
     flags.string.forEach((f) => {
@@ -44,15 +41,12 @@ function genSchema(spec) {
       FLAGS.add(f);
     });
 
-  // 2. Generate static indices
   const indexDefs = allFlags
     .map(
       (f, idx) => `    static constexpr uint32_t FLAG_IDX_${f.name} = ${idx};`,
     )
     .join("\n");
 
-  // 3. Generate Getters/Setters for Flags
-  // CHANGED: Now uses the inline get_flag() helper instead of node->getSlot()
   const flagMethods = allFlags
     .map((f) => {
       if (f.isVoid) {
@@ -72,14 +66,12 @@ function genSchema(spec) {
     })
     .join("\n\n");
 
-  // 4. Generate Getters/Setters for Arguments
-  // CHANGED: Now returns and accepts IRID instead of IridiumSEXP*
   const argMethods = (args || [])
     .map((a, idx) => {
       return (
-        `    IRID getArg_${a}() const { return pool->get_args(id)[${idx}]; }\n` +
-        `    bool hasArg_${a}() const { return ${idx} < pool->get_args(id).size(); }\n` +
-        `    void setArg_${a}(IRID val) { assert(hasArg_${a}() && "Tried to set missing ARG"); pool->update_arg_inplace(id,${idx},val); }`
+        `    IRID getArg_${a}() const { return ctx->storage.get_args(id)[${idx}]; }\n` +
+        `    bool hasArg_${a}() const { return ${idx} < ctx->storage.get_args(id).size(); }\n` +
+        `    void setArg_${a}(IRID val) { assert(hasArg_${a}() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,${idx},val); }`
       );
     })
     .join("\n\n");
@@ -101,20 +93,18 @@ function genSchema(spec) {
     })
     .join(", ");
 
-  // Return the lightweight schema wrapper
-  // CHANGED: Constructor accepts IRID and IridiumPool&
   return `  struct ${tag}SEXP {
     IRID id;
-    IridiumPool* pool;
+    IRIContext* ctx;
 
-    explicit ${tag}SEXP(IRID n, IridiumPool& p) : id(n), pool(&p) {
-      if (pool->operator[](n).tag != IRI_GEN::${tag}) {
-        throw std::runtime_error("Schema Cast Error: Expected ${tag}, but got " + IRI_GEN::dump_tag(pool->operator[](n).tag));
+    explicit ${tag}SEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
+      if (ctx->storage.get_node(n).tag != IRI_GEN::${tag}) {
+        throw std::runtime_error("Schema Cast Error: Expected ${tag}, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
       }
     }
 
-    static IRID create(IridiumPool& p${createArgs.length === 0 ? "" : ", " + createArgs.join(", ")}) {
-      return p.add_node(IRI_GEN::IRI_TAG::${tag}, {${(args || []).join(", ")}}, {${createFlags}});
+    static IRID create(IRIContext& p${createArgs.length === 0 ? "" : ", " + createArgs.join(", ")}) {
+      return p.storage.add_node(IRI_GEN::IRI_TAG::${tag}, {${(args || []).join(", ")}}, {${createFlags}});
     }
 
     static constexpr uint32_t TOTAL_ARGS = ${(args || []).length};
@@ -124,10 +114,10 @@ ${indexDefs}
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return pool->get_flags_m(id)[idx];
+        return ctx->storage.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return pool->get_flags(id)[idx];
+        return ctx->storage.get_flags(id)[idx];
     }
 
     // --- Arguments ---
@@ -171,7 +161,6 @@ for (let s of spec) {
   slotCounts.push(`      case IRI_GEN::${s.tag}: return ${allFlags.length};`);
 
   if (allFlags.length > 0) {
-    // Reverse lookup for the dump() method
     const innerEnumCases = allFlags
       .map((f, idx) => `        case ${idx}: return IRI_GEN::${f};`)
       .join("\n");
@@ -182,7 +171,6 @@ ${innerEnumCases}
         }
         break;`);
 
-    // Forward lookup for the Parser
     const innerIndexCases = allFlags
       .map((f, idx) => `        case IRI_GEN::${f}: return ${idx};`)
       .join("\n");
@@ -200,7 +188,7 @@ const typesFile = [
   `#pragma once`,
   `#include "Storage/Config.h"`,
   `#include "Storage/IridiumSEXP.h"`,
-  `#include "Storage/IridiumPool.h"`,
+  `#include "Storage/IRIContext.h"`,
   `#include "IridiumEnums.h"`,
   `#include <variant>`,
   `#include <span>`,
@@ -208,7 +196,7 @@ const typesFile = [
   `#include <stdexcept>`,
   ``,
   `namespace IRI_GEN {`,
-  `using IRI_STORAGE::IridiumPool;`,
+  `using IRI_STORAGE::IRIContext;`,
   `using IRI_STORAGE::IRID;`,
   `using IRI_STORAGE::FlagValue;`,
   ...schemas,
@@ -321,7 +309,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT_DIR = path.resolve(__dirname, "..");
 
-// Write outputs
 const genIncludeDir = path.join(ROOT_DIR, "include", "Generated");
 fs.mkdirSync(genIncludeDir, { recursive: true });
 
