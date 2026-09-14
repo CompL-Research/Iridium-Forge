@@ -69,9 +69,9 @@ function genSchema(spec) {
   const argMethods = (args || [])
     .map((a, idx) => {
       return (
-        `    IRID getArg_${a}() const { return ctx->storage.get_args(id)[${idx}]; }\n` +
-        `    bool hasArg_${a}() const { return ${idx} < ctx->storage.get_args(id).size(); }\n` +
-        `    void setArg_${a}(IRID val) { assert(hasArg_${a}() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,${idx},val); }`
+        `    IRID getArg_${a}() const { return ctx->storage.nodes.get_args(id)[${idx}]; }\n` +
+        `    bool hasArg_${a}() const { return ${idx} < ctx->storage.nodes.get_args(id).size(); }\n` +
+        `    void setArg_${a}(IRID val) { assert(hasArg_${a}() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,${idx},val); }`
       );
     })
     .join("\n\n");
@@ -98,13 +98,13 @@ function genSchema(spec) {
     IRIContext* ctx;
 
     explicit ${tag}SEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::${tag}) {
-        throw std::runtime_error("Schema Cast Error: Expected ${tag}, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::${tag}) {
+        throw std::runtime_error("Schema Cast Error: Expected ${tag}, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p${createArgs.length === 0 ? "" : ", " + createArgs.join(", ")}) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::${tag}, {${(args || []).join(", ")}}, {${createFlags}});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::${tag}, {${(args || []).join(", ")}}, {${createFlags}});
     }
 
     static constexpr uint32_t TOTAL_ARGS = ${(args || []).length};
@@ -114,10 +114,10 @@ ${indexDefs}
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---

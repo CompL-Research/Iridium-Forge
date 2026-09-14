@@ -1,5 +1,7 @@
 #pragma once
+#include "PoolMemStats.h"
 #include <cstdint>
+#include <string>
 #include <string_view>
 #include <unordered_map>
 #include <vector>
@@ -13,6 +15,7 @@ class StringPool {
     std::vector<std::unique_ptr<std::string>> storage;
     std::unordered_map<std::string_view, StringID> intern_map;
     std::vector<std::string_view> id_to_view;
+    uint32_t tempIDX = 0;
 
 public:
     StringID intern(std::string_view str) {
@@ -31,4 +34,18 @@ public:
         return new_id;
     }
     std::string_view get(StringID id) const { return id_to_view[id]; }
+
+    // Intern a fresh, guaranteed-unique synthetic identifier.
+    StringID getTemp() {
+        return intern("<iritemp-" + std::to_string(tempIDX++) + ">");
+    }
+
+    IRI_STORAGE::PoolMemStats telemetry() const {
+        size_t used = 0, cap = 0;
+        for (auto &s : storage) {
+            used += s->size();
+            cap += s->capacity();
+        }
+        return {storage.size(), used, cap};
+    }
 };
