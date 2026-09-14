@@ -4,7 +4,7 @@
 #include "Generated/IridiumTypes.h"
 #include "Parser/IridiumBuildContext.h"
 #include "Storage/Config.h"
-#include "Storage/IridiumPool.h"
+#include "Storage/IRIContext.h"
 #include <napi.h>
 #include <zlib.h>
 
@@ -20,7 +20,7 @@ class IridiumParser {
   Napi::Array arr;
   uint32_t size = 0;
   uint32_t current_idx = 0;
-  IRI_STORAGE::IridiumPool &pool;
+  IRI_STORAGE::IRIContext &ctx;
 
   std::unordered_map<IRI_GEN::IRI_TAG, IRI_STORAGE::IRID> internedTags;
 
@@ -30,7 +30,7 @@ public:
 
   std::unordered_map<int, IRI_STORAGE::IRID> bbIdxToSEXPMap;
 
-  IridiumParser(IRI_STORAGE::IridiumPool &pool) : pool(pool) {}
+  IridiumParser(IRI_STORAGE::IRIContext &ctx) : ctx(ctx) {}
 
   // Initialize the parser state
   void initParseCTX(Napi::Array codeArray) {
@@ -83,10 +83,10 @@ public:
         } else if (val_obj.IsBoolean()) {
           flags[slot_idx] = val_obj.As<Napi::Boolean>().Value();
         } else if (val_obj.IsString()) {
-          // STRING POOLING: Hash it, store it in the pool, and save the integer
+          // STRING POOLING: Hash it, store it in the ctx, and save the integer
           // ID
           std::string temp_str = val_obj.As<Napi::String>().Utf8Value();
-          StringID id = pool.strings.intern(temp_str);
+          StringID id = ctx.storage.strings.intern(temp_str);
           flags[slot_idx] = id;
         } else if (val_obj.IsNull()) {
           flags[slot_idx] = std::nullptr_t{};
@@ -111,19 +111,19 @@ public:
 
     // Intern constant tags
     if (tag == IRI_GEN::IRI_TAG::Null) {
-      node_id = pool.NULL_SEXP;
+      node_id = ctx.storage.nodes.NULL_SEXP;
     } else if (tag == IRI_GEN::IRI_TAG::NOP) {
-      node_id = pool.NOP_SEXP;
+      node_id = ctx.storage.nodes.NOP_SEXP;
     } else if (tag == IRI_GEN::IRI_TAG::JSNUBD) {
-      node_id = pool.NUBD_SEXP;
+      node_id = ctx.storage.nodes.NUBD_SEXP;
     } else {
-      node_id = pool.add_node(tag, args, flags);
+      node_id = ctx.storage.nodes.add_node(tag, args, flags);
     }
 
     // If this is a BBSEXP, populate it in the map
     if (tag == IRI_GEN::IRI_TAG::BB) {
       // BBSEXP now takes a reference to the IridiumSEXP data
-      IRI_GEN::BBSEXP bbSEXPView(node_id, pool);
+      IRI_GEN::BBSEXP bbSEXPView(node_id, ctx);
 
       if (bbIdxToSEXPMap.count(bbSEXPView.getIDX()) > 0) {
         throw std::runtime_error(

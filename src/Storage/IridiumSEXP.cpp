@@ -3,7 +3,7 @@
 #include "Generated/IridiumMeta.h"
 #include "Generated/IridiumTypes.h"
 #include "Storage/Config.h"
-#include "Storage/IridiumPool.h"
+#include "Storage/IRIContext.h"
 #include "Support/IRIS.hpp"
 #include <iomanip>
 #include <stdexcept>
@@ -107,7 +107,7 @@ void append_escaped_json_string(std::ostream &oss, std::string_view s) {
 
 // --- Implementations for IridiumSEXP ---
 
-void IridiumSEXP::dump(std::ostream &oss, IridiumPool *pool, bool compressed,
+void IridiumSEXP::dump(std::ostream &oss, IRIContext *ctx, bool compressed,
                        int indent) const {
   std::string pad = compressed ? "" : std::string(indent, ' ');
   std::string pad1 = compressed ? "" : std::string(indent + 2, ' ');
@@ -123,12 +123,12 @@ void IridiumSEXP::dump(std::ostream &oss, IridiumPool *pool, bool compressed,
     oss << pad1 << "[]," << nl;
   } else {
     oss << pad1 << "[" << nl;
-    auto args_span = pool->get_args_view(this);
+    auto args_span = ctx->storage.nodes.get_args_view(this);
 
     for (uint32_t i = 0; i < num_args; ++i) {
       IRID child_id = args_span[i];
 
-      pool->operator[](child_id).dump(oss, pool, compressed, indent + 4);
+      ctx->storage.nodes.get_node(child_id).dump(oss, ctx, compressed, indent + 4);
 
       if (i + 1 < num_args)
         oss << "," << nl;
@@ -139,7 +139,7 @@ void IridiumSEXP::dump(std::ostream &oss, IridiumPool *pool, bool compressed,
   // Serialize flags
   oss << pad1 << "[";
   bool first_flag = true;
-  auto flags_span = pool->get_flags(this);
+  auto flags_span = ctx->storage.nodes.get_flags(this);
 
   for (uint32_t i = 0; i < num_flag_slots; ++i) {
     const auto &v = flags_span[i];
@@ -160,8 +160,8 @@ void IridiumSEXP::dump(std::ostream &oss, IridiumPool *pool, bool compressed,
     } else if (std::holds_alternative<bool>(v)) {
       oss << std::boolalpha << std::get<bool>(v);
     } else if (std::holds_alternative<StringID>(v)) {
-      // Unpack the StringID using the pool
-      std::string_view str = pool->strings.get(std::get<StringID>(v));
+      // Unpack the StringID using the ctx
+      std::string_view str = ctx->storage.strings.get(std::get<StringID>(v));
       append_escaped_json_string(oss, str);
     } else if (std::holds_alternative<std::nullptr_t>(v)) {
       oss << "null";
@@ -172,34 +172,34 @@ void IridiumSEXP::dump(std::ostream &oss, IridiumPool *pool, bool compressed,
   oss << "]" << nl << pad << "]";
 }
 
-void IridiumSEXP::dumpFlat(std::ostream &oss, IridiumPool *pool, int depth,
+void IridiumSEXP::dumpFlat(std::ostream &oss, IRIContext *ctx, int depth,
                            bool full) const {
   // 1. Setup Indentation
   std::string indent(depth, ' ');
 
   // if (tag == IRI_GEN::EnvBinding) {
-  //   auto flags_span = pool->get_flags(this);
+  //   auto flags_span = ctx->storage.nodes.get_flags(this);
   //   const auto &v = flags_span[IRI_GEN::EnvBindingSEXP::FLAG_IDX_LINK];
   //   if (!std::holds_alternative<double>(v)) {
   //     throw std::runtime_error("Expected LINK to be a double");
   //   }
   //   double link = std::get<double>(v);
   //   oss << indent;
-  //   pool->iris->getBindingMetaFromLINK(link).dump(*pool, oss, full);
+  //   ctx->iris->getBindingMetaFromLINK(link).dump(*ctx, oss, full);
   //   oss << "\n";
 
   //   return;
   // }
 
   // if (tag == IRI_GEN::RemoteEnvBinding) {
-  //   auto flags_span = pool->get_flags(this);
+  //   auto flags_span = ctx->storage.nodes.get_flags(this);
   //   const auto &v = flags_span[IRI_GEN::RemoteEnvBindingSEXP::FLAG_IDX_LINK];
   //   if (!std::holds_alternative<double>(v)) {
   //     throw std::runtime_error("Expected LINK to be a double");
   //   }
   //   double link = std::get<double>(v);
   //   oss << indent;
-  //   pool->iris->getBindingMetaFromLINK(link).dump(*pool, oss, full);
+  //   ctx->iris->getBindingMetaFromLINK(link).dump(*ctx, oss, full);
   //   oss << "\n";
 
   //   return;
@@ -210,7 +210,7 @@ void IridiumSEXP::dumpFlat(std::ostream &oss, IridiumPool *pool, int depth,
 
   // 3. Handle Flags
   bool first_flag = true;
-  auto flags_span = pool->get_flags(this);
+  auto flags_span = ctx->storage.nodes.get_flags(this);
 
   for (uint32_t i = 0; i < num_flag_slots; ++i) {
     const auto &v = flags_span[i];
@@ -236,7 +236,7 @@ void IridiumSEXP::dumpFlat(std::ostream &oss, IridiumPool *pool, int depth,
       oss << std::boolalpha << std::get<bool>(v);
     } else if (std::holds_alternative<StringID>(v)) {
       oss << IRI_GEN::dump_flag(flagEnum) << ": ";
-      std::string_view str = pool->strings.get(std::get<StringID>(v));
+      std::string_view str = ctx->storage.strings.get(std::get<StringID>(v));
       append_escaped_json_string(oss, str);
     } else if (std::holds_alternative<std::nullptr_t>(v)) {
       oss << IRI_GEN::dump_flag(flagEnum);
@@ -250,11 +250,11 @@ void IridiumSEXP::dumpFlat(std::ostream &oss, IridiumPool *pool, int depth,
   oss << "\n";
 
   // 4. Handle Args (Children)
-  auto args_span = pool->get_args_view(this);
+  auto args_span = ctx->storage.nodes.get_args_view(this);
   for (uint32_t i = 0; i < num_args; ++i) {
     IRID child_id = args_span[i];
-    pool->operator[](child_id).dumpFlat(oss, pool, depth + 2,
-                                        tag == IRI_GEN::BB ? false : full);
+    ctx->storage.nodes.get_node(child_id).dumpFlat(oss, ctx, depth + 2,
+                                             tag == IRI_GEN::BB ? false : full);
   }
 }
 

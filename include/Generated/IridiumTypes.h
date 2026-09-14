@@ -1,4 +1,4 @@
-// Generated: 2026-09-14 20:21:31
+// Generated: 2026-09-14 20:33:35
 #pragma once
 #include "Storage/Config.h"
 #include "Storage/IridiumSEXP.h"
@@ -18,13 +18,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit FileSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::File) {
-        throw std::runtime_error("Schema Cast Error: Expected File, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::File) {
+        throw std::runtime_error("Schema Cast Error: Expected File, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, bool JSScript, bool JSModule, bool TLA) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::File, {}, {JSScript ? FlagValue(JSScript) : FlagValue(std::monostate()), JSModule ? FlagValue(JSModule) : FlagValue(std::monostate()), TLA ? FlagValue(TLA) : FlagValue(std::monostate())});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::File, {}, {JSScript ? FlagValue(JSScript) : FlagValue(std::monostate()), JSModule ? FlagValue(JSModule) : FlagValue(std::monostate()), TLA ? FlagValue(TLA) : FlagValue(std::monostate())});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
@@ -36,10 +36,10 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
@@ -64,13 +64,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit ResolveEnvBindingSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::ResolveEnvBinding) {
-        throw std::runtime_error("Schema Cast Error: Expected ResolveEnvBinding, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::ResolveEnvBinding) {
+        throw std::runtime_error("Schema Cast Error: Expected ResolveEnvBinding, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, StringID NAME, bool ASW) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::ResolveEnvBinding, {}, {FlagValue(NAME), ASW ? FlagValue(ASW) : FlagValue(std::monostate())});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::ResolveEnvBinding, {}, {FlagValue(NAME), ASW ? FlagValue(ASW) : FlagValue(std::monostate())});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
@@ -81,10 +81,10 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
@@ -106,13 +106,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit ListSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::List) {
-        throw std::runtime_error("Schema Cast Error: Expected List, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::List) {
+        throw std::runtime_error("Schema Cast Error: Expected List, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, StringID TYPE) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::List, {}, {FlagValue(TYPE)});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::List, {}, {FlagValue(TYPE)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
@@ -122,10 +122,10 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
@@ -143,13 +143,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit JSImplicitBindingDeclarationSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::JSImplicitBindingDeclaration) {
-        throw std::runtime_error("Schema Cast Error: Expected JSImplicitBindingDeclaration, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::JSImplicitBindingDeclaration) {
+        throw std::runtime_error("Schema Cast Error: Expected JSImplicitBindingDeclaration, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, IRID Store, IRID Args, StringID NAME, bool JSLET, bool JSCONST, bool JSVAR, bool SLOPPY, bool SKIPINIT, bool SAFE, bool THISINIT, double OPID) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::JSImplicitBindingDeclaration, {Store, Args}, {FlagValue(NAME), JSLET ? FlagValue(JSLET) : FlagValue(std::monostate()), JSCONST ? FlagValue(JSCONST) : FlagValue(std::monostate()), JSVAR ? FlagValue(JSVAR) : FlagValue(std::monostate()), SLOPPY ? FlagValue(SLOPPY) : FlagValue(std::monostate()), SKIPINIT ? FlagValue(SKIPINIT) : FlagValue(std::monostate()), FlagValue(SAFE), FlagValue(THISINIT), FlagValue(OPID)});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSImplicitBindingDeclaration, {Store, Args}, {FlagValue(NAME), JSLET ? FlagValue(JSLET) : FlagValue(std::monostate()), JSCONST ? FlagValue(JSCONST) : FlagValue(std::monostate()), JSVAR ? FlagValue(JSVAR) : FlagValue(std::monostate()), SLOPPY ? FlagValue(SLOPPY) : FlagValue(std::monostate()), SKIPINIT ? FlagValue(SKIPINIT) : FlagValue(std::monostate()), FlagValue(SAFE), FlagValue(THISINIT), FlagValue(OPID)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 2;
@@ -167,20 +167,20 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
-    IRID getArg_Store() const { return ctx->storage.get_args(id)[0]; }
-    bool hasArg_Store() const { return 0 < ctx->storage.get_args(id).size(); }
-    void setArg_Store(IRID val) { assert(hasArg_Store() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,0,val); }
+    IRID getArg_Store() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_Store() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Store(IRID val) { assert(hasArg_Store() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
-    IRID getArg_Args() const { return ctx->storage.get_args(id)[1]; }
-    bool hasArg_Args() const { return 1 < ctx->storage.get_args(id).size(); }
-    void setArg_Args(IRID val) { assert(hasArg_Args() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,1,val); }
+    IRID getArg_Args() const { return ctx->storage.nodes.get_args(id)[1]; }
+    bool hasArg_Args() const { return 1 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Args(IRID val) { assert(hasArg_Args() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,1,val); }
 
     // --- Flags ---
     StringID getNAME() const { return std::get<StringID>(get_flag(FLAG_IDX_NAME)); }
@@ -229,13 +229,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit EnvReadSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::EnvRead) {
-        throw std::runtime_error("Schema Cast Error: Expected EnvRead, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::EnvRead) {
+        throw std::runtime_error("Schema Cast Error: Expected EnvRead, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, IRID Obj, bool SAFE, bool TAINTED) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::EnvRead, {Obj}, {SAFE ? FlagValue(SAFE) : FlagValue(std::monostate()), TAINTED ? FlagValue(TAINTED) : FlagValue(std::monostate())});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::EnvRead, {Obj}, {SAFE ? FlagValue(SAFE) : FlagValue(std::monostate()), TAINTED ? FlagValue(TAINTED) : FlagValue(std::monostate())});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 1;
@@ -246,16 +246,16 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
-    IRID getArg_Obj() const { return ctx->storage.get_args(id)[0]; }
-    bool hasArg_Obj() const { return 0 < ctx->storage.get_args(id).size(); }
-    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,0,val); }
+    IRID getArg_Obj() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_Obj() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
     // --- Flags ---
     bool hasSAFE() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_SAFE)); }
@@ -272,13 +272,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit TDZReadSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::TDZRead) {
-        throw std::runtime_error("Schema Cast Error: Expected TDZRead, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::TDZRead) {
+        throw std::runtime_error("Schema Cast Error: Expected TDZRead, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, IRID Obj, bool SAFE) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::TDZRead, {Obj}, {SAFE ? FlagValue(SAFE) : FlagValue(std::monostate())});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::TDZRead, {Obj}, {SAFE ? FlagValue(SAFE) : FlagValue(std::monostate())});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 1;
@@ -288,16 +288,16 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
-    IRID getArg_Obj() const { return ctx->storage.get_args(id)[0]; }
-    bool hasArg_Obj() const { return 0 < ctx->storage.get_args(id).size(); }
-    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,0,val); }
+    IRID getArg_Obj() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_Obj() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
     // --- Flags ---
     bool hasSAFE() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_SAFE)); }
@@ -310,13 +310,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit StringSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::String) {
-        throw std::runtime_error("Schema Cast Error: Expected String, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::String) {
+        throw std::runtime_error("Schema Cast Error: Expected String, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, StringID IridiumPrimitive) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::String, {}, {FlagValue(IridiumPrimitive)});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::String, {}, {FlagValue(IridiumPrimitive)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
@@ -326,10 +326,10 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
@@ -347,13 +347,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit FieldReadSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::FieldRead) {
-        throw std::runtime_error("Schema Cast Error: Expected FieldRead, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::FieldRead) {
+        throw std::runtime_error("Schema Cast Error: Expected FieldRead, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, IRID Obj, IRID Field) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::FieldRead, {Obj, Field}, {});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::FieldRead, {Obj, Field}, {});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 2;
@@ -363,20 +363,20 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
-    IRID getArg_Obj() const { return ctx->storage.get_args(id)[0]; }
-    bool hasArg_Obj() const { return 0 < ctx->storage.get_args(id).size(); }
-    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,0,val); }
+    IRID getArg_Obj() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_Obj() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
-    IRID getArg_Field() const { return ctx->storage.get_args(id)[1]; }
-    bool hasArg_Field() const { return 1 < ctx->storage.get_args(id).size(); }
-    void setArg_Field(IRID val) { assert(hasArg_Field() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,1,val); }
+    IRID getArg_Field() const { return ctx->storage.nodes.get_args(id)[1]; }
+    bool hasArg_Field() const { return 1 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Field(IRID val) { assert(hasArg_Field() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,1,val); }
 
     // --- Flags ---
 
@@ -387,13 +387,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit JSExplicitBindingDeclarationSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::JSExplicitBindingDeclaration) {
-        throw std::runtime_error("Schema Cast Error: Expected JSExplicitBindingDeclaration, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::JSExplicitBindingDeclaration) {
+        throw std::runtime_error("Schema Cast Error: Expected JSExplicitBindingDeclaration, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, IRID LValTarget, IRID RVal, bool JSLET, bool JSCONST, bool JSVAR, bool SLOPPY, bool SAFE, bool THISINIT) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::JSExplicitBindingDeclaration, {LValTarget, RVal}, {JSLET ? FlagValue(JSLET) : FlagValue(std::monostate()), JSCONST ? FlagValue(JSCONST) : FlagValue(std::monostate()), JSVAR ? FlagValue(JSVAR) : FlagValue(std::monostate()), SLOPPY ? FlagValue(SLOPPY) : FlagValue(std::monostate()), FlagValue(SAFE), FlagValue(THISINIT)});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSExplicitBindingDeclaration, {LValTarget, RVal}, {JSLET ? FlagValue(JSLET) : FlagValue(std::monostate()), JSCONST ? FlagValue(JSCONST) : FlagValue(std::monostate()), JSVAR ? FlagValue(JSVAR) : FlagValue(std::monostate()), SLOPPY ? FlagValue(SLOPPY) : FlagValue(std::monostate()), FlagValue(SAFE), FlagValue(THISINIT)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 2;
@@ -408,20 +408,20 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
-    IRID getArg_LValTarget() const { return ctx->storage.get_args(id)[0]; }
-    bool hasArg_LValTarget() const { return 0 < ctx->storage.get_args(id).size(); }
-    void setArg_LValTarget(IRID val) { assert(hasArg_LValTarget() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,0,val); }
+    IRID getArg_LValTarget() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_LValTarget() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_LValTarget(IRID val) { assert(hasArg_LValTarget() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
-    IRID getArg_RVal() const { return ctx->storage.get_args(id)[1]; }
-    bool hasArg_RVal() const { return 1 < ctx->storage.get_args(id).size(); }
-    void setArg_RVal(IRID val) { assert(hasArg_RVal() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,1,val); }
+    IRID getArg_RVal() const { return ctx->storage.nodes.get_args(id)[1]; }
+    bool hasArg_RVal() const { return 1 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_RVal(IRID val) { assert(hasArg_RVal() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,1,val); }
 
     // --- Flags ---
     bool hasJSLET() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_JSLET)); }
@@ -456,13 +456,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit JSExplicitBindingDeclarationNSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::JSExplicitBindingDeclarationN) {
-        throw std::runtime_error("Schema Cast Error: Expected JSExplicitBindingDeclarationN, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::JSExplicitBindingDeclarationN) {
+        throw std::runtime_error("Schema Cast Error: Expected JSExplicitBindingDeclarationN, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, IRID LValTarget, IRID RVal, bool JSLET, bool JSCONST, bool JSVAR, bool SLOPPY, bool SAFE, bool THISINIT) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::JSExplicitBindingDeclarationN, {LValTarget, RVal}, {JSLET ? FlagValue(JSLET) : FlagValue(std::monostate()), JSCONST ? FlagValue(JSCONST) : FlagValue(std::monostate()), JSVAR ? FlagValue(JSVAR) : FlagValue(std::monostate()), SLOPPY ? FlagValue(SLOPPY) : FlagValue(std::monostate()), FlagValue(SAFE), FlagValue(THISINIT)});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSExplicitBindingDeclarationN, {LValTarget, RVal}, {JSLET ? FlagValue(JSLET) : FlagValue(std::monostate()), JSCONST ? FlagValue(JSCONST) : FlagValue(std::monostate()), JSVAR ? FlagValue(JSVAR) : FlagValue(std::monostate()), SLOPPY ? FlagValue(SLOPPY) : FlagValue(std::monostate()), FlagValue(SAFE), FlagValue(THISINIT)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 2;
@@ -477,20 +477,20 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
-    IRID getArg_LValTarget() const { return ctx->storage.get_args(id)[0]; }
-    bool hasArg_LValTarget() const { return 0 < ctx->storage.get_args(id).size(); }
-    void setArg_LValTarget(IRID val) { assert(hasArg_LValTarget() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,0,val); }
+    IRID getArg_LValTarget() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_LValTarget() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_LValTarget(IRID val) { assert(hasArg_LValTarget() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
-    IRID getArg_RVal() const { return ctx->storage.get_args(id)[1]; }
-    bool hasArg_RVal() const { return 1 < ctx->storage.get_args(id).size(); }
-    void setArg_RVal(IRID val) { assert(hasArg_RVal() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,1,val); }
+    IRID getArg_RVal() const { return ctx->storage.nodes.get_args(id)[1]; }
+    bool hasArg_RVal() const { return 1 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_RVal(IRID val) { assert(hasArg_RVal() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,1,val); }
 
     // --- Flags ---
     bool hasJSLET() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_JSLET)); }
@@ -525,13 +525,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit JSExplicitBindingDeclarationXSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::JSExplicitBindingDeclarationX) {
-        throw std::runtime_error("Schema Cast Error: Expected JSExplicitBindingDeclarationX, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::JSExplicitBindingDeclarationX) {
+        throw std::runtime_error("Schema Cast Error: Expected JSExplicitBindingDeclarationX, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, IRID LValTarget, IRID RVal, bool JSLET, bool JSCONST, bool JSVAR, bool SLOPPY, bool SAFE, bool THISINIT) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::JSExplicitBindingDeclarationX, {LValTarget, RVal}, {JSLET ? FlagValue(JSLET) : FlagValue(std::monostate()), JSCONST ? FlagValue(JSCONST) : FlagValue(std::monostate()), JSVAR ? FlagValue(JSVAR) : FlagValue(std::monostate()), SLOPPY ? FlagValue(SLOPPY) : FlagValue(std::monostate()), FlagValue(SAFE), FlagValue(THISINIT)});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSExplicitBindingDeclarationX, {LValTarget, RVal}, {JSLET ? FlagValue(JSLET) : FlagValue(std::monostate()), JSCONST ? FlagValue(JSCONST) : FlagValue(std::monostate()), JSVAR ? FlagValue(JSVAR) : FlagValue(std::monostate()), SLOPPY ? FlagValue(SLOPPY) : FlagValue(std::monostate()), FlagValue(SAFE), FlagValue(THISINIT)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 2;
@@ -546,20 +546,20 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
-    IRID getArg_LValTarget() const { return ctx->storage.get_args(id)[0]; }
-    bool hasArg_LValTarget() const { return 0 < ctx->storage.get_args(id).size(); }
-    void setArg_LValTarget(IRID val) { assert(hasArg_LValTarget() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,0,val); }
+    IRID getArg_LValTarget() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_LValTarget() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_LValTarget(IRID val) { assert(hasArg_LValTarget() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
-    IRID getArg_RVal() const { return ctx->storage.get_args(id)[1]; }
-    bool hasArg_RVal() const { return 1 < ctx->storage.get_args(id).size(); }
-    void setArg_RVal(IRID val) { assert(hasArg_RVal() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,1,val); }
+    IRID getArg_RVal() const { return ctx->storage.nodes.get_args(id)[1]; }
+    bool hasArg_RVal() const { return 1 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_RVal(IRID val) { assert(hasArg_RVal() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,1,val); }
 
     // --- Flags ---
     bool hasJSLET() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_JSLET)); }
@@ -594,13 +594,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit CallSiteSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::CallSite) {
-        throw std::runtime_error("Schema Cast Error: Expected CallSite, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::CallSite) {
+        throw std::runtime_error("Schema Cast Error: Expected CallSite, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, bool CCall, bool ConstructorCall, bool PrivateCall, bool Import, bool Super, bool V8Intrinsic, bool TAILCALL, double JSDirectEval) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::CallSite, {}, {CCall ? FlagValue(CCall) : FlagValue(std::monostate()), ConstructorCall ? FlagValue(ConstructorCall) : FlagValue(std::monostate()), PrivateCall ? FlagValue(PrivateCall) : FlagValue(std::monostate()), Import ? FlagValue(Import) : FlagValue(std::monostate()), Super ? FlagValue(Super) : FlagValue(std::monostate()), V8Intrinsic ? FlagValue(V8Intrinsic) : FlagValue(std::monostate()), TAILCALL ? FlagValue(TAILCALL) : FlagValue(std::monostate()), FlagValue(JSDirectEval)});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::CallSite, {}, {CCall ? FlagValue(CCall) : FlagValue(std::monostate()), ConstructorCall ? FlagValue(ConstructorCall) : FlagValue(std::monostate()), PrivateCall ? FlagValue(PrivateCall) : FlagValue(std::monostate()), Import ? FlagValue(Import) : FlagValue(std::monostate()), Super ? FlagValue(Super) : FlagValue(std::monostate()), V8Intrinsic ? FlagValue(V8Intrinsic) : FlagValue(std::monostate()), TAILCALL ? FlagValue(TAILCALL) : FlagValue(std::monostate()), FlagValue(JSDirectEval)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
@@ -617,10 +617,10 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
@@ -666,13 +666,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit ApplySEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::Apply) {
-        throw std::runtime_error("Schema Cast Error: Expected Apply, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::Apply) {
+        throw std::runtime_error("Schema Cast Error: Expected Apply, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, IRID Callee, IRID Context, IRID ArgList, bool ConstructorCall, bool Super, double JSDirectEval) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::Apply, {Callee, Context, ArgList}, {ConstructorCall ? FlagValue(ConstructorCall) : FlagValue(std::monostate()), Super ? FlagValue(Super) : FlagValue(std::monostate()), FlagValue(JSDirectEval)});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::Apply, {Callee, Context, ArgList}, {ConstructorCall ? FlagValue(ConstructorCall) : FlagValue(std::monostate()), Super ? FlagValue(Super) : FlagValue(std::monostate()), FlagValue(JSDirectEval)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 3;
@@ -684,24 +684,24 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
-    IRID getArg_Callee() const { return ctx->storage.get_args(id)[0]; }
-    bool hasArg_Callee() const { return 0 < ctx->storage.get_args(id).size(); }
-    void setArg_Callee(IRID val) { assert(hasArg_Callee() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,0,val); }
+    IRID getArg_Callee() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_Callee() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Callee(IRID val) { assert(hasArg_Callee() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
-    IRID getArg_Context() const { return ctx->storage.get_args(id)[1]; }
-    bool hasArg_Context() const { return 1 < ctx->storage.get_args(id).size(); }
-    void setArg_Context(IRID val) { assert(hasArg_Context() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,1,val); }
+    IRID getArg_Context() const { return ctx->storage.nodes.get_args(id)[1]; }
+    bool hasArg_Context() const { return 1 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Context(IRID val) { assert(hasArg_Context() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,1,val); }
 
-    IRID getArg_ArgList() const { return ctx->storage.get_args(id)[2]; }
-    bool hasArg_ArgList() const { return 2 < ctx->storage.get_args(id).size(); }
-    void setArg_ArgList(IRID val) { assert(hasArg_ArgList() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,2,val); }
+    IRID getArg_ArgList() const { return ctx->storage.nodes.get_args(id)[2]; }
+    bool hasArg_ArgList() const { return 2 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_ArgList(IRID val) { assert(hasArg_ArgList() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,2,val); }
 
     // --- Flags ---
     bool hasConstructorCall() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_ConstructorCall)); }
@@ -723,13 +723,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit ReturnAsyncSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::ReturnAsync) {
-        throw std::runtime_error("Schema Cast Error: Expected ReturnAsync, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::ReturnAsync) {
+        throw std::runtime_error("Schema Cast Error: Expected ReturnAsync, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, IRID RetVal) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::ReturnAsync, {RetVal}, {});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::ReturnAsync, {RetVal}, {});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 1;
@@ -739,16 +739,16 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
-    IRID getArg_RetVal() const { return ctx->storage.get_args(id)[0]; }
-    bool hasArg_RetVal() const { return 0 < ctx->storage.get_args(id).size(); }
-    void setArg_RetVal(IRID val) { assert(hasArg_RetVal() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,0,val); }
+    IRID getArg_RetVal() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_RetVal() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_RetVal(IRID val) { assert(hasArg_RetVal() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
     // --- Flags ---
 
@@ -759,13 +759,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit BBSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::BB) {
-        throw std::runtime_error("Schema Cast Error: Expected BB, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::BB) {
+        throw std::runtime_error("Schema Cast Error: Expected BB, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, bool TopLevel, bool ClosureBoundary, bool Lexical, bool VARBoundary, bool TryBB, double IDX, double ScopeIDX) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::BB, {}, {TopLevel ? FlagValue(TopLevel) : FlagValue(std::monostate()), ClosureBoundary ? FlagValue(ClosureBoundary) : FlagValue(std::monostate()), Lexical ? FlagValue(Lexical) : FlagValue(std::monostate()), VARBoundary ? FlagValue(VARBoundary) : FlagValue(std::monostate()), TryBB ? FlagValue(TryBB) : FlagValue(std::monostate()), FlagValue(IDX), FlagValue(ScopeIDX)});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::BB, {}, {TopLevel ? FlagValue(TopLevel) : FlagValue(std::monostate()), ClosureBoundary ? FlagValue(ClosureBoundary) : FlagValue(std::monostate()), Lexical ? FlagValue(Lexical) : FlagValue(std::monostate()), VARBoundary ? FlagValue(VARBoundary) : FlagValue(std::monostate()), TryBB ? FlagValue(TryBB) : FlagValue(std::monostate()), FlagValue(IDX), FlagValue(ScopeIDX)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
@@ -781,10 +781,10 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
@@ -827,13 +827,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit ReturnSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::Return) {
-        throw std::runtime_error("Schema Cast Error: Expected Return, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::Return) {
+        throw std::runtime_error("Schema Cast Error: Expected Return, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, IRID Obj) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::Return, {Obj}, {});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::Return, {Obj}, {});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 1;
@@ -843,16 +843,16 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
-    IRID getArg_Obj() const { return ctx->storage.get_args(id)[0]; }
-    bool hasArg_Obj() const { return 0 < ctx->storage.get_args(id).size(); }
-    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,0,val); }
+    IRID getArg_Obj() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_Obj() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
     // --- Flags ---
 
@@ -863,13 +863,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit UnresolvedReturnSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::UnresolvedReturn) {
-        throw std::runtime_error("Schema Cast Error: Expected UnresolvedReturn, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::UnresolvedReturn) {
+        throw std::runtime_error("Schema Cast Error: Expected UnresolvedReturn, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::UnresolvedReturn, {}, {});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::UnresolvedReturn, {}, {});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
@@ -879,10 +879,10 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
@@ -897,13 +897,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit IfJumpSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::IfJump) {
-        throw std::runtime_error("Schema Cast Error: Expected IfJump, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::IfJump) {
+        throw std::runtime_error("Schema Cast Error: Expected IfJump, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, IRID Test, bool NOT, double IDX) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::IfJump, {Test}, {NOT ? FlagValue(NOT) : FlagValue(std::monostate()), FlagValue(IDX)});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::IfJump, {Test}, {NOT ? FlagValue(NOT) : FlagValue(std::monostate()), FlagValue(IDX)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 1;
@@ -914,16 +914,16 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
-    IRID getArg_Test() const { return ctx->storage.get_args(id)[0]; }
-    bool hasArg_Test() const { return 0 < ctx->storage.get_args(id).size(); }
-    void setArg_Test(IRID val) { assert(hasArg_Test() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,0,val); }
+    IRID getArg_Test() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_Test() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Test(IRID val) { assert(hasArg_Test() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
     // --- Flags ---
     bool hasNOT() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_NOT)); }
@@ -941,13 +941,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit IfElseJumpSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::IfElseJump) {
-        throw std::runtime_error("Schema Cast Error: Expected IfElseJump, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::IfElseJump) {
+        throw std::runtime_error("Schema Cast Error: Expected IfElseJump, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, IRID Test, bool NOT, double TRUE, double FALSE) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::IfElseJump, {Test}, {NOT ? FlagValue(NOT) : FlagValue(std::monostate()), FlagValue(TRUE), FlagValue(FALSE)});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::IfElseJump, {Test}, {NOT ? FlagValue(NOT) : FlagValue(std::monostate()), FlagValue(TRUE), FlagValue(FALSE)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 1;
@@ -959,16 +959,16 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
-    IRID getArg_Test() const { return ctx->storage.get_args(id)[0]; }
-    bool hasArg_Test() const { return 0 < ctx->storage.get_args(id).size(); }
-    void setArg_Test(IRID val) { assert(hasArg_Test() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,0,val); }
+    IRID getArg_Test() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_Test() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Test(IRID val) { assert(hasArg_Test() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
     // --- Flags ---
     bool hasNOT() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_NOT)); }
@@ -991,13 +991,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit GotoSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::Goto) {
-        throw std::runtime_error("Schema Cast Error: Expected Goto, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::Goto) {
+        throw std::runtime_error("Schema Cast Error: Expected Goto, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, bool Deferred, double IDX) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::Goto, {}, {Deferred ? FlagValue(Deferred) : FlagValue(std::monostate()), FlagValue(IDX)});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::Goto, {}, {Deferred ? FlagValue(Deferred) : FlagValue(std::monostate()), FlagValue(IDX)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
@@ -1008,10 +1008,10 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
@@ -1033,13 +1033,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit JSFuncDeclSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::JSFuncDecl) {
-        throw std::runtime_error("Schema Cast Error: Expected JSFuncDecl, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::JSFuncDecl) {
+        throw std::runtime_error("Schema Cast Error: Expected JSFuncDecl, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, IRID LValTarget, IRID RVal, bool JSLET, bool JSCONST, bool JSVAR, bool SLOPPY, bool SAFE, bool THISINIT) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::JSFuncDecl, {LValTarget, RVal}, {JSLET ? FlagValue(JSLET) : FlagValue(std::monostate()), JSCONST ? FlagValue(JSCONST) : FlagValue(std::monostate()), JSVAR ? FlagValue(JSVAR) : FlagValue(std::monostate()), SLOPPY ? FlagValue(SLOPPY) : FlagValue(std::monostate()), FlagValue(SAFE), FlagValue(THISINIT)});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSFuncDecl, {LValTarget, RVal}, {JSLET ? FlagValue(JSLET) : FlagValue(std::monostate()), JSCONST ? FlagValue(JSCONST) : FlagValue(std::monostate()), JSVAR ? FlagValue(JSVAR) : FlagValue(std::monostate()), SLOPPY ? FlagValue(SLOPPY) : FlagValue(std::monostate()), FlagValue(SAFE), FlagValue(THISINIT)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 2;
@@ -1054,20 +1054,20 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
-    IRID getArg_LValTarget() const { return ctx->storage.get_args(id)[0]; }
-    bool hasArg_LValTarget() const { return 0 < ctx->storage.get_args(id).size(); }
-    void setArg_LValTarget(IRID val) { assert(hasArg_LValTarget() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,0,val); }
+    IRID getArg_LValTarget() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_LValTarget() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_LValTarget(IRID val) { assert(hasArg_LValTarget() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
-    IRID getArg_RVal() const { return ctx->storage.get_args(id)[1]; }
-    bool hasArg_RVal() const { return 1 < ctx->storage.get_args(id).size(); }
-    void setArg_RVal(IRID val) { assert(hasArg_RVal() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,1,val); }
+    IRID getArg_RVal() const { return ctx->storage.nodes.get_args(id)[1]; }
+    bool hasArg_RVal() const { return 1 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_RVal(IRID val) { assert(hasArg_RVal() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,1,val); }
 
     // --- Flags ---
     bool hasJSLET() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_JSLET)); }
@@ -1102,13 +1102,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit LambdaSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::Lambda) {
-        throw std::runtime_error("Schema Cast Error: Expected Lambda, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::Lambda) {
+        throw std::runtime_error("Schema Cast Error: Expected Lambda, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, StringID NAME, bool CNAME, bool SETNAME, double StartBBIDX) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::Lambda, {}, {FlagValue(NAME), FlagValue(CNAME), FlagValue(SETNAME), FlagValue(StartBBIDX)});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::Lambda, {}, {FlagValue(NAME), FlagValue(CNAME), FlagValue(SETNAME), FlagValue(StartBBIDX)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
@@ -1121,10 +1121,10 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
@@ -1157,13 +1157,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit NOPSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::NOP) {
-        throw std::runtime_error("Schema Cast Error: Expected NOP, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::NOP) {
+        throw std::runtime_error("Schema Cast Error: Expected NOP, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::NOP, {}, {});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::NOP, {}, {});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
@@ -1173,10 +1173,10 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
@@ -1191,13 +1191,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit BBContainerSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::BBContainer) {
-        throw std::runtime_error("Schema Cast Error: Expected BBContainer, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::BBContainer) {
+        throw std::runtime_error("Schema Cast Error: Expected BBContainer, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, IRID Bindings, IRID BB, StringID NAME, bool ARGUMENTS, bool ASYNC, bool STRICT, bool GENERATOR, bool PROTO, bool NEW, bool SCALL, bool SOBJ, bool HOME, bool DERIVED, bool TopLevel, double ECMAArgs, double StartBBIDX, double ScopeIDX, double ContainerFlagID) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::BBContainer, {Bindings, BB}, {FlagValue(NAME), ARGUMENTS ? FlagValue(ARGUMENTS) : FlagValue(std::monostate()), ASYNC ? FlagValue(ASYNC) : FlagValue(std::monostate()), STRICT ? FlagValue(STRICT) : FlagValue(std::monostate()), GENERATOR ? FlagValue(GENERATOR) : FlagValue(std::monostate()), PROTO ? FlagValue(PROTO) : FlagValue(std::monostate()), NEW ? FlagValue(NEW) : FlagValue(std::monostate()), SCALL ? FlagValue(SCALL) : FlagValue(std::monostate()), SOBJ ? FlagValue(SOBJ) : FlagValue(std::monostate()), HOME ? FlagValue(HOME) : FlagValue(std::monostate()), DERIVED ? FlagValue(DERIVED) : FlagValue(std::monostate()), TopLevel ? FlagValue(TopLevel) : FlagValue(std::monostate()), FlagValue(ECMAArgs), FlagValue(StartBBIDX), FlagValue(ScopeIDX), FlagValue(ContainerFlagID)});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::BBContainer, {Bindings, BB}, {FlagValue(NAME), ARGUMENTS ? FlagValue(ARGUMENTS) : FlagValue(std::monostate()), ASYNC ? FlagValue(ASYNC) : FlagValue(std::monostate()), STRICT ? FlagValue(STRICT) : FlagValue(std::monostate()), GENERATOR ? FlagValue(GENERATOR) : FlagValue(std::monostate()), PROTO ? FlagValue(PROTO) : FlagValue(std::monostate()), NEW ? FlagValue(NEW) : FlagValue(std::monostate()), SCALL ? FlagValue(SCALL) : FlagValue(std::monostate()), SOBJ ? FlagValue(SOBJ) : FlagValue(std::monostate()), HOME ? FlagValue(HOME) : FlagValue(std::monostate()), DERIVED ? FlagValue(DERIVED) : FlagValue(std::monostate()), TopLevel ? FlagValue(TopLevel) : FlagValue(std::monostate()), FlagValue(ECMAArgs), FlagValue(StartBBIDX), FlagValue(ScopeIDX), FlagValue(ContainerFlagID)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 2;
@@ -1222,20 +1222,20 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
-    IRID getArg_Bindings() const { return ctx->storage.get_args(id)[0]; }
-    bool hasArg_Bindings() const { return 0 < ctx->storage.get_args(id).size(); }
-    void setArg_Bindings(IRID val) { assert(hasArg_Bindings() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,0,val); }
+    IRID getArg_Bindings() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_Bindings() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Bindings(IRID val) { assert(hasArg_Bindings() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
-    IRID getArg_BB() const { return ctx->storage.get_args(id)[1]; }
-    bool hasArg_BB() const { return 1 < ctx->storage.get_args(id).size(); }
-    void setArg_BB(IRID val) { assert(hasArg_BB() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,1,val); }
+    IRID getArg_BB() const { return ctx->storage.nodes.get_args(id)[1]; }
+    bool hasArg_BB() const { return 1 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_BB(IRID val) { assert(hasArg_BB() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,1,val); }
 
     // --- Flags ---
     StringID getNAME() const { return std::get<StringID>(get_flag(FLAG_IDX_NAME)); }
@@ -1313,13 +1313,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit BindingsSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::Bindings) {
-        throw std::runtime_error("Schema Cast Error: Expected Bindings, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::Bindings) {
+        throw std::runtime_error("Schema Cast Error: Expected Bindings, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, IRID LocalBindings, IRID RemoteBindings, IRID Lambdas) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::Bindings, {LocalBindings, RemoteBindings, Lambdas}, {});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::Bindings, {LocalBindings, RemoteBindings, Lambdas}, {});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 3;
@@ -1329,24 +1329,24 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
-    IRID getArg_LocalBindings() const { return ctx->storage.get_args(id)[0]; }
-    bool hasArg_LocalBindings() const { return 0 < ctx->storage.get_args(id).size(); }
-    void setArg_LocalBindings(IRID val) { assert(hasArg_LocalBindings() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,0,val); }
+    IRID getArg_LocalBindings() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_LocalBindings() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_LocalBindings(IRID val) { assert(hasArg_LocalBindings() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
-    IRID getArg_RemoteBindings() const { return ctx->storage.get_args(id)[1]; }
-    bool hasArg_RemoteBindings() const { return 1 < ctx->storage.get_args(id).size(); }
-    void setArg_RemoteBindings(IRID val) { assert(hasArg_RemoteBindings() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,1,val); }
+    IRID getArg_RemoteBindings() const { return ctx->storage.nodes.get_args(id)[1]; }
+    bool hasArg_RemoteBindings() const { return 1 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_RemoteBindings(IRID val) { assert(hasArg_RemoteBindings() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,1,val); }
 
-    IRID getArg_Lambdas() const { return ctx->storage.get_args(id)[2]; }
-    bool hasArg_Lambdas() const { return 2 < ctx->storage.get_args(id).size(); }
-    void setArg_Lambdas(IRID val) { assert(hasArg_Lambdas() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,2,val); }
+    IRID getArg_Lambdas() const { return ctx->storage.nodes.get_args(id)[2]; }
+    bool hasArg_Lambdas() const { return 2 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Lambdas(IRID val) { assert(hasArg_Lambdas() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,2,val); }
 
     // --- Flags ---
 
@@ -1357,13 +1357,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit StarExportSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::StarExport) {
-        throw std::runtime_error("Schema Cast Error: Expected StarExport, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::StarExport) {
+        throw std::runtime_error("Schema Cast Error: Expected StarExport, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, double MODULEREQIDX) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::StarExport, {}, {FlagValue(MODULEREQIDX)});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::StarExport, {}, {FlagValue(MODULEREQIDX)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
@@ -1373,10 +1373,10 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
@@ -1394,13 +1394,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit StaticImportSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::StaticImport) {
-        throw std::runtime_error("Schema Cast Error: Expected StaticImport, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::StaticImport) {
+        throw std::runtime_error("Schema Cast Error: Expected StaticImport, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, IRID StorageLocation, StringID FIELD, bool NSIMPORT, double MODULEREQIDX) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::StaticImport, {StorageLocation}, {FlagValue(FIELD), NSIMPORT ? FlagValue(NSIMPORT) : FlagValue(std::monostate()), FlagValue(MODULEREQIDX)});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::StaticImport, {StorageLocation}, {FlagValue(FIELD), NSIMPORT ? FlagValue(NSIMPORT) : FlagValue(std::monostate()), FlagValue(MODULEREQIDX)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 1;
@@ -1412,16 +1412,16 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
-    IRID getArg_StorageLocation() const { return ctx->storage.get_args(id)[0]; }
-    bool hasArg_StorageLocation() const { return 0 < ctx->storage.get_args(id).size(); }
-    void setArg_StorageLocation(IRID val) { assert(hasArg_StorageLocation() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,0,val); }
+    IRID getArg_StorageLocation() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_StorageLocation() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_StorageLocation(IRID val) { assert(hasArg_StorageLocation() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
     // --- Flags ---
     StringID getFIELD() const { return std::get<StringID>(get_flag(FLAG_IDX_FIELD)); }
@@ -1444,13 +1444,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit LocalStaticExportSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::LocalStaticExport) {
-        throw std::runtime_error("Schema Cast Error: Expected LocalStaticExport, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::LocalStaticExport) {
+        throw std::runtime_error("Schema Cast Error: Expected LocalStaticExport, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, IRID StorageLocation, StringID LOCALNAME, StringID EXPORTNAME) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::LocalStaticExport, {StorageLocation}, {FlagValue(LOCALNAME), FlagValue(EXPORTNAME)});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::LocalStaticExport, {StorageLocation}, {FlagValue(LOCALNAME), FlagValue(EXPORTNAME)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 1;
@@ -1461,16 +1461,16 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
-    IRID getArg_StorageLocation() const { return ctx->storage.get_args(id)[0]; }
-    bool hasArg_StorageLocation() const { return 0 < ctx->storage.get_args(id).size(); }
-    void setArg_StorageLocation(IRID val) { assert(hasArg_StorageLocation() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,0,val); }
+    IRID getArg_StorageLocation() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_StorageLocation() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_StorageLocation(IRID val) { assert(hasArg_StorageLocation() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
     // --- Flags ---
     StringID getLOCALNAME() const { return std::get<StringID>(get_flag(FLAG_IDX_LOCALNAME)); }
@@ -1489,13 +1489,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit NamedReexportSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::NamedReexport) {
-        throw std::runtime_error("Schema Cast Error: Expected NamedReexport, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::NamedReexport) {
+        throw std::runtime_error("Schema Cast Error: Expected NamedReexport, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, StringID LOCALNAME, StringID EXPORTNAME, double MODULEREQIDX) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::NamedReexport, {}, {FlagValue(LOCALNAME), FlagValue(EXPORTNAME), FlagValue(MODULEREQIDX)});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::NamedReexport, {}, {FlagValue(LOCALNAME), FlagValue(EXPORTNAME), FlagValue(MODULEREQIDX)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
@@ -1507,10 +1507,10 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
@@ -1538,13 +1538,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit ModuleRequestSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::ModuleRequest) {
-        throw std::runtime_error("Schema Cast Error: Expected ModuleRequest, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::ModuleRequest) {
+        throw std::runtime_error("Schema Cast Error: Expected ModuleRequest, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, StringID SOURCE, double REQIDX) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::ModuleRequest, {}, {FlagValue(SOURCE), FlagValue(REQIDX)});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::ModuleRequest, {}, {FlagValue(SOURCE), FlagValue(REQIDX)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
@@ -1555,10 +1555,10 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
@@ -1581,13 +1581,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit EnvBindingSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::EnvBinding) {
-        throw std::runtime_error("Schema Cast Error: Expected EnvBinding, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::EnvBinding) {
+        throw std::runtime_error("Schema Cast Error: Expected EnvBinding, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, StringID NAME, bool JSARG, bool JSRESTARG, bool JSLET, bool JSCONST, bool JSVAR, double REFIDX, double SCOPE, double NEXT, double LINK) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::EnvBinding, {}, {FlagValue(NAME), JSARG ? FlagValue(JSARG) : FlagValue(std::monostate()), JSRESTARG ? FlagValue(JSRESTARG) : FlagValue(std::monostate()), JSLET ? FlagValue(JSLET) : FlagValue(std::monostate()), JSCONST ? FlagValue(JSCONST) : FlagValue(std::monostate()), JSVAR ? FlagValue(JSVAR) : FlagValue(std::monostate()), FlagValue(REFIDX), FlagValue(SCOPE), FlagValue(NEXT), FlagValue(LINK)});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::EnvBinding, {}, {FlagValue(NAME), JSARG ? FlagValue(JSARG) : FlagValue(std::monostate()), JSRESTARG ? FlagValue(JSRESTARG) : FlagValue(std::monostate()), JSLET ? FlagValue(JSLET) : FlagValue(std::monostate()), JSCONST ? FlagValue(JSCONST) : FlagValue(std::monostate()), JSVAR ? FlagValue(JSVAR) : FlagValue(std::monostate()), FlagValue(REFIDX), FlagValue(SCOPE), FlagValue(NEXT), FlagValue(LINK)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
@@ -1606,10 +1606,10 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
@@ -1667,13 +1667,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit RemoteEnvBindingSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::RemoteEnvBinding) {
-        throw std::runtime_error("Schema Cast Error: Expected RemoteEnvBinding, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::RemoteEnvBinding) {
+        throw std::runtime_error("Schema Cast Error: Expected RemoteEnvBinding, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, IRID ParentReference, bool MODULE, bool MODULEI, bool MODULENSI, double REFIDX, double LINK) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::RemoteEnvBinding, {ParentReference}, {MODULE ? FlagValue(MODULE) : FlagValue(std::monostate()), MODULEI ? FlagValue(MODULEI) : FlagValue(std::monostate()), MODULENSI ? FlagValue(MODULENSI) : FlagValue(std::monostate()), FlagValue(REFIDX), FlagValue(LINK)});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::RemoteEnvBinding, {ParentReference}, {MODULE ? FlagValue(MODULE) : FlagValue(std::monostate()), MODULEI ? FlagValue(MODULEI) : FlagValue(std::monostate()), MODULENSI ? FlagValue(MODULENSI) : FlagValue(std::monostate()), FlagValue(REFIDX), FlagValue(LINK)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 1;
@@ -1687,16 +1687,16 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
-    IRID getArg_ParentReference() const { return ctx->storage.get_args(id)[0]; }
-    bool hasArg_ParentReference() const { return 0 < ctx->storage.get_args(id).size(); }
-    void setArg_ParentReference(IRID val) { assert(hasArg_ParentReference() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,0,val); }
+    IRID getArg_ParentReference() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_ParentReference() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_ParentReference(IRID val) { assert(hasArg_ParentReference() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
     // --- Flags ---
     bool hasMODULE() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_MODULE)); }
@@ -1727,13 +1727,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit GlobalBindingSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::GlobalBinding) {
-        throw std::runtime_error("Schema Cast Error: Expected GlobalBinding, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::GlobalBinding) {
+        throw std::runtime_error("Schema Cast Error: Expected GlobalBinding, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, StringID NAME, double LINK) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::GlobalBinding, {}, {FlagValue(NAME), FlagValue(LINK)});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::GlobalBinding, {}, {FlagValue(NAME), FlagValue(LINK)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
@@ -1744,10 +1744,10 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
@@ -1770,13 +1770,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit ScriptBindingSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::ScriptBinding) {
-        throw std::runtime_error("Schema Cast Error: Expected ScriptBinding, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::ScriptBinding) {
+        throw std::runtime_error("Schema Cast Error: Expected ScriptBinding, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, StringID NAME, bool JSLET, bool JSCONST, bool JSVAR, double LINK) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::ScriptBinding, {}, {FlagValue(NAME), JSLET ? FlagValue(JSLET) : FlagValue(std::monostate()), JSCONST ? FlagValue(JSCONST) : FlagValue(std::monostate()), JSVAR ? FlagValue(JSVAR) : FlagValue(std::monostate()), FlagValue(LINK)});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::ScriptBinding, {}, {FlagValue(NAME), JSLET ? FlagValue(JSLET) : FlagValue(std::monostate()), JSCONST ? FlagValue(JSCONST) : FlagValue(std::monostate()), JSVAR ? FlagValue(JSVAR) : FlagValue(std::monostate()), FlagValue(LINK)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
@@ -1790,10 +1790,10 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
@@ -1828,13 +1828,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit EnvWriteSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::EnvWrite) {
-        throw std::runtime_error("Schema Cast Error: Expected EnvWrite, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::EnvWrite) {
+        throw std::runtime_error("Schema Cast Error: Expected EnvWrite, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, IRID LValTarget, IRID RVal, bool SLOPPY, bool SAFE, bool THISINIT, bool CINIT) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::EnvWrite, {LValTarget, RVal}, {SLOPPY ? FlagValue(SLOPPY) : FlagValue(std::monostate()), FlagValue(SAFE), FlagValue(THISINIT), FlagValue(CINIT)});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::EnvWrite, {LValTarget, RVal}, {SLOPPY ? FlagValue(SLOPPY) : FlagValue(std::monostate()), FlagValue(SAFE), FlagValue(THISINIT), FlagValue(CINIT)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 2;
@@ -1847,20 +1847,20 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
-    IRID getArg_LValTarget() const { return ctx->storage.get_args(id)[0]; }
-    bool hasArg_LValTarget() const { return 0 < ctx->storage.get_args(id).size(); }
-    void setArg_LValTarget(IRID val) { assert(hasArg_LValTarget() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,0,val); }
+    IRID getArg_LValTarget() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_LValTarget() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_LValTarget(IRID val) { assert(hasArg_LValTarget() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
-    IRID getArg_RVal() const { return ctx->storage.get_args(id)[1]; }
-    bool hasArg_RVal() const { return 1 < ctx->storage.get_args(id).size(); }
-    void setArg_RVal(IRID val) { assert(hasArg_RVal() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,1,val); }
+    IRID getArg_RVal() const { return ctx->storage.nodes.get_args(id)[1]; }
+    bool hasArg_RVal() const { return 1 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_RVal(IRID val) { assert(hasArg_RVal() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,1,val); }
 
     // --- Flags ---
     bool hasSLOPPY() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_SLOPPY)); }
@@ -1888,13 +1888,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit SiblingSpecialWriteSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::SiblingSpecialWrite) {
-        throw std::runtime_error("Schema Cast Error: Expected SiblingSpecialWrite, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::SiblingSpecialWrite) {
+        throw std::runtime_error("Schema Cast Error: Expected SiblingSpecialWrite, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, IRID LValTarget, IRID RVal, bool SLOPPY, bool SAFE, bool THISINIT, bool CINIT, double ScopeIDX) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::SiblingSpecialWrite, {LValTarget, RVal}, {SLOPPY ? FlagValue(SLOPPY) : FlagValue(std::monostate()), FlagValue(SAFE), FlagValue(THISINIT), FlagValue(CINIT), FlagValue(ScopeIDX)});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::SiblingSpecialWrite, {LValTarget, RVal}, {SLOPPY ? FlagValue(SLOPPY) : FlagValue(std::monostate()), FlagValue(SAFE), FlagValue(THISINIT), FlagValue(CINIT), FlagValue(ScopeIDX)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 2;
@@ -1908,20 +1908,20 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
-    IRID getArg_LValTarget() const { return ctx->storage.get_args(id)[0]; }
-    bool hasArg_LValTarget() const { return 0 < ctx->storage.get_args(id).size(); }
-    void setArg_LValTarget(IRID val) { assert(hasArg_LValTarget() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,0,val); }
+    IRID getArg_LValTarget() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_LValTarget() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_LValTarget(IRID val) { assert(hasArg_LValTarget() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
-    IRID getArg_RVal() const { return ctx->storage.get_args(id)[1]; }
-    bool hasArg_RVal() const { return 1 < ctx->storage.get_args(id).size(); }
-    void setArg_RVal(IRID val) { assert(hasArg_RVal() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,1,val); }
+    IRID getArg_RVal() const { return ctx->storage.nodes.get_args(id)[1]; }
+    bool hasArg_RVal() const { return 1 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_RVal(IRID val) { assert(hasArg_RVal() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,1,val); }
 
     // --- Flags ---
     bool hasSLOPPY() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_SLOPPY)); }
@@ -1954,13 +1954,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit JSNUBDSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::JSNUBD) {
-        throw std::runtime_error("Schema Cast Error: Expected JSNUBD, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::JSNUBD) {
+        throw std::runtime_error("Schema Cast Error: Expected JSNUBD, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::JSNUBD, {}, {});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSNUBD, {}, {});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
@@ -1970,10 +1970,10 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
@@ -1988,13 +1988,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit NumberSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::Number) {
-        throw std::runtime_error("Schema Cast Error: Expected Number, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::Number) {
+        throw std::runtime_error("Schema Cast Error: Expected Number, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, double IridiumPrimitive) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::Number, {}, {FlagValue(IridiumPrimitive)});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::Number, {}, {FlagValue(IridiumPrimitive)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
@@ -2004,10 +2004,10 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
@@ -2025,13 +2025,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit JSClassSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::JSClass) {
-        throw std::runtime_error("Schema Cast Error: Expected JSClass, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::JSClass) {
+        throw std::runtime_error("Schema Cast Error: Expected JSClass, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, IRID Parent, IRID Constructor, StringID NAME, bool DERIVED) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::JSClass, {Parent, Constructor}, {FlagValue(NAME), DERIVED ? FlagValue(DERIVED) : FlagValue(std::monostate())});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSClass, {Parent, Constructor}, {FlagValue(NAME), DERIVED ? FlagValue(DERIVED) : FlagValue(std::monostate())});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 2;
@@ -2042,20 +2042,20 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
-    IRID getArg_Parent() const { return ctx->storage.get_args(id)[0]; }
-    bool hasArg_Parent() const { return 0 < ctx->storage.get_args(id).size(); }
-    void setArg_Parent(IRID val) { assert(hasArg_Parent() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,0,val); }
+    IRID getArg_Parent() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_Parent() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Parent(IRID val) { assert(hasArg_Parent() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
-    IRID getArg_Constructor() const { return ctx->storage.get_args(id)[1]; }
-    bool hasArg_Constructor() const { return 1 < ctx->storage.get_args(id).size(); }
-    void setArg_Constructor(IRID val) { assert(hasArg_Constructor() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,1,val); }
+    IRID getArg_Constructor() const { return ctx->storage.nodes.get_args(id)[1]; }
+    bool hasArg_Constructor() const { return 1 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Constructor(IRID val) { assert(hasArg_Constructor() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,1,val); }
 
     // --- Flags ---
     StringID getNAME() const { return std::get<StringID>(get_flag(FLAG_IDX_NAME)); }
@@ -2073,13 +2073,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit JSCheckConstructorSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::JSCheckConstructor) {
-        throw std::runtime_error("Schema Cast Error: Expected JSCheckConstructor, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::JSCheckConstructor) {
+        throw std::runtime_error("Schema Cast Error: Expected JSCheckConstructor, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::JSCheckConstructor, {}, {});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSCheckConstructor, {}, {});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
@@ -2089,10 +2089,10 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
@@ -2107,13 +2107,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit ResolvePrivateEnvBindingSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::ResolvePrivateEnvBinding) {
-        throw std::runtime_error("Schema Cast Error: Expected ResolvePrivateEnvBinding, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::ResolvePrivateEnvBinding) {
+        throw std::runtime_error("Schema Cast Error: Expected ResolvePrivateEnvBinding, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, StringID NAME, bool FULLY_RESOLVE) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::ResolvePrivateEnvBinding, {}, {FlagValue(NAME), FULLY_RESOLVE ? FlagValue(FULLY_RESOLVE) : FlagValue(std::monostate())});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::ResolvePrivateEnvBinding, {}, {FlagValue(NAME), FULLY_RESOLVE ? FlagValue(FULLY_RESOLVE) : FlagValue(std::monostate())});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
@@ -2124,10 +2124,10 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
@@ -2149,13 +2149,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit PVTEnvReadSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::PVTEnvRead) {
-        throw std::runtime_error("Schema Cast Error: Expected PVTEnvRead, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::PVTEnvRead) {
+        throw std::runtime_error("Schema Cast Error: Expected PVTEnvRead, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, IRID Obj, bool SYMBOL, bool METHOD, bool FULLY_RESOLVE) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::PVTEnvRead, {Obj}, {SYMBOL ? FlagValue(SYMBOL) : FlagValue(std::monostate()), METHOD ? FlagValue(METHOD) : FlagValue(std::monostate()), FULLY_RESOLVE ? FlagValue(FULLY_RESOLVE) : FlagValue(std::monostate())});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::PVTEnvRead, {Obj}, {SYMBOL ? FlagValue(SYMBOL) : FlagValue(std::monostate()), METHOD ? FlagValue(METHOD) : FlagValue(std::monostate()), FULLY_RESOLVE ? FlagValue(FULLY_RESOLVE) : FlagValue(std::monostate())});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 1;
@@ -2167,16 +2167,16 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
-    IRID getArg_Obj() const { return ctx->storage.get_args(id)[0]; }
-    bool hasArg_Obj() const { return 0 < ctx->storage.get_args(id).size(); }
-    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,0,val); }
+    IRID getArg_Obj() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_Obj() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
     // --- Flags ---
     bool hasSYMBOL() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_SYMBOL)); }
@@ -2197,13 +2197,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit JSPrivateSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::JSPrivate) {
-        throw std::runtime_error("Schema Cast Error: Expected JSPrivate, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::JSPrivate) {
+        throw std::runtime_error("Schema Cast Error: Expected JSPrivate, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, StringID IridiumPrimitive) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::JSPrivate, {}, {FlagValue(IridiumPrimitive)});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSPrivate, {}, {FlagValue(IridiumPrimitive)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
@@ -2213,10 +2213,10 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
@@ -2234,13 +2234,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit JSPrivateFieldWriteSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::JSPrivateFieldWrite) {
-        throw std::runtime_error("Schema Cast Error: Expected JSPrivateFieldWrite, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::JSPrivateFieldWrite) {
+        throw std::runtime_error("Schema Cast Error: Expected JSPrivateFieldWrite, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, IRID Obj, IRID Field, IRID Value, bool DECL) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::JSPrivateFieldWrite, {Obj, Field, Value}, {DECL ? FlagValue(DECL) : FlagValue(std::monostate())});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSPrivateFieldWrite, {Obj, Field, Value}, {DECL ? FlagValue(DECL) : FlagValue(std::monostate())});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 3;
@@ -2250,24 +2250,24 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
-    IRID getArg_Obj() const { return ctx->storage.get_args(id)[0]; }
-    bool hasArg_Obj() const { return 0 < ctx->storage.get_args(id).size(); }
-    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,0,val); }
+    IRID getArg_Obj() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_Obj() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
-    IRID getArg_Field() const { return ctx->storage.get_args(id)[1]; }
-    bool hasArg_Field() const { return 1 < ctx->storage.get_args(id).size(); }
-    void setArg_Field(IRID val) { assert(hasArg_Field() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,1,val); }
+    IRID getArg_Field() const { return ctx->storage.nodes.get_args(id)[1]; }
+    bool hasArg_Field() const { return 1 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Field(IRID val) { assert(hasArg_Field() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,1,val); }
 
-    IRID getArg_Value() const { return ctx->storage.get_args(id)[2]; }
-    bool hasArg_Value() const { return 2 < ctx->storage.get_args(id).size(); }
-    void setArg_Value(IRID val) { assert(hasArg_Value() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,2,val); }
+    IRID getArg_Value() const { return ctx->storage.nodes.get_args(id)[2]; }
+    bool hasArg_Value() const { return 2 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Value(IRID val) { assert(hasArg_Value() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,2,val); }
 
     // --- Flags ---
     bool hasDECL() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_DECL)); }
@@ -2280,13 +2280,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit JSADDBRANDSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::JSADDBRAND) {
-        throw std::runtime_error("Schema Cast Error: Expected JSADDBRAND, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::JSADDBRAND) {
+        throw std::runtime_error("Schema Cast Error: Expected JSADDBRAND, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, IRID Obj, IRID HomeObj) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::JSADDBRAND, {Obj, HomeObj}, {});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSADDBRAND, {Obj, HomeObj}, {});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 2;
@@ -2296,20 +2296,20 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
-    IRID getArg_Obj() const { return ctx->storage.get_args(id)[0]; }
-    bool hasArg_Obj() const { return 0 < ctx->storage.get_args(id).size(); }
-    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,0,val); }
+    IRID getArg_Obj() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_Obj() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
-    IRID getArg_HomeObj() const { return ctx->storage.get_args(id)[1]; }
-    bool hasArg_HomeObj() const { return 1 < ctx->storage.get_args(id).size(); }
-    void setArg_HomeObj(IRID val) { assert(hasArg_HomeObj() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,1,val); }
+    IRID getArg_HomeObj() const { return ctx->storage.nodes.get_args(id)[1]; }
+    bool hasArg_HomeObj() const { return 1 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_HomeObj(IRID val) { assert(hasArg_HomeObj() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,1,val); }
 
     // --- Flags ---
 
@@ -2320,13 +2320,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit JSPrivateFieldReadSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::JSPrivateFieldRead) {
-        throw std::runtime_error("Schema Cast Error: Expected JSPrivateFieldRead, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::JSPrivateFieldRead) {
+        throw std::runtime_error("Schema Cast Error: Expected JSPrivateFieldRead, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, IRID Obj, IRID Field) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::JSPrivateFieldRead, {Obj, Field}, {});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSPrivateFieldRead, {Obj, Field}, {});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 2;
@@ -2336,20 +2336,20 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
-    IRID getArg_Obj() const { return ctx->storage.get_args(id)[0]; }
-    bool hasArg_Obj() const { return 0 < ctx->storage.get_args(id).size(); }
-    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,0,val); }
+    IRID getArg_Obj() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_Obj() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
-    IRID getArg_Field() const { return ctx->storage.get_args(id)[1]; }
-    bool hasArg_Field() const { return 1 < ctx->storage.get_args(id).size(); }
-    void setArg_Field(IRID val) { assert(hasArg_Field() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,1,val); }
+    IRID getArg_Field() const { return ctx->storage.nodes.get_args(id)[1]; }
+    bool hasArg_Field() const { return 1 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Field(IRID val) { assert(hasArg_Field() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,1,val); }
 
     // --- Flags ---
 
@@ -2360,13 +2360,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit PoolBindingSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::PoolBinding) {
-        throw std::runtime_error("Schema Cast Error: Expected PoolBinding, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::PoolBinding) {
+        throw std::runtime_error("Schema Cast Error: Expected PoolBinding, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, IRID Lambda, double REFIDX) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::PoolBinding, {Lambda}, {FlagValue(REFIDX)});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::PoolBinding, {Lambda}, {FlagValue(REFIDX)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 1;
@@ -2376,16 +2376,16 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
-    IRID getArg_Lambda() const { return ctx->storage.get_args(id)[0]; }
-    bool hasArg_Lambda() const { return 0 < ctx->storage.get_args(id).size(); }
-    void setArg_Lambda(IRID val) { assert(hasArg_Lambda() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,0,val); }
+    IRID getArg_Lambda() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_Lambda() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Lambda(IRID val) { assert(hasArg_Lambda() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
     // --- Flags ---
     double getREFIDX() const { return std::get<double>(get_flag(FLAG_IDX_REFIDX)); }
@@ -2399,13 +2399,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit ResolveContinueTargetSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::ResolveContinueTarget) {
-        throw std::runtime_error("Schema Cast Error: Expected ResolveContinueTarget, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::ResolveContinueTarget) {
+        throw std::runtime_error("Schema Cast Error: Expected ResolveContinueTarget, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, StringID Label) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::ResolveContinueTarget, {}, {FlagValue(Label)});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::ResolveContinueTarget, {}, {FlagValue(Label)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
@@ -2415,10 +2415,10 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
@@ -2436,13 +2436,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit ResolveBreakTargetSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::ResolveBreakTarget) {
-        throw std::runtime_error("Schema Cast Error: Expected ResolveBreakTarget, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::ResolveBreakTarget) {
+        throw std::runtime_error("Schema Cast Error: Expected ResolveBreakTarget, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, StringID Label) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::ResolveBreakTarget, {}, {FlagValue(Label)});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::ResolveBreakTarget, {}, {FlagValue(Label)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
@@ -2452,10 +2452,10 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
@@ -2473,13 +2473,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit JSForOfIteratorCloseSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::JSForOfIteratorClose) {
-        throw std::runtime_error("Schema Cast Error: Expected JSForOfIteratorClose, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::JSForOfIteratorClose) {
+        throw std::runtime_error("Schema Cast Error: Expected JSForOfIteratorClose, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::JSForOfIteratorClose, {}, {});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSForOfIteratorClose, {}, {});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
@@ -2489,10 +2489,10 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
@@ -2507,13 +2507,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit PopCatchContextSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::PopCatchContext) {
-        throw std::runtime_error("Schema Cast Error: Expected PopCatchContext, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::PopCatchContext) {
+        throw std::runtime_error("Schema Cast Error: Expected PopCatchContext, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::PopCatchContext, {}, {});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::PopCatchContext, {}, {});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
@@ -2523,10 +2523,10 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
@@ -2541,13 +2541,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit PopFinalizerReturnTargetSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::PopFinalizerReturnTarget) {
-        throw std::runtime_error("Schema Cast Error: Expected PopFinalizerReturnTarget, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::PopFinalizerReturnTarget) {
+        throw std::runtime_error("Schema Cast Error: Expected PopFinalizerReturnTarget, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::PopFinalizerReturnTarget, {}, {});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::PopFinalizerReturnTarget, {}, {});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
@@ -2557,10 +2557,10 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
@@ -2575,13 +2575,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit InvokeFinalizerSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::InvokeFinalizer) {
-        throw std::runtime_error("Schema Cast Error: Expected InvokeFinalizer, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::InvokeFinalizer) {
+        throw std::runtime_error("Schema Cast Error: Expected InvokeFinalizer, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, double IDX) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::InvokeFinalizer, {}, {FlagValue(IDX)});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::InvokeFinalizer, {}, {FlagValue(IDX)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
@@ -2591,10 +2591,10 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
@@ -2612,13 +2612,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit JSForInStartSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::JSForInStart) {
-        throw std::runtime_error("Schema Cast Error: Expected JSForInStart, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::JSForInStart) {
+        throw std::runtime_error("Schema Cast Error: Expected JSForInStart, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, IRID Obj) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::JSForInStart, {Obj}, {});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSForInStart, {Obj}, {});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 1;
@@ -2628,16 +2628,16 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
-    IRID getArg_Obj() const { return ctx->storage.get_args(id)[0]; }
-    bool hasArg_Obj() const { return 0 < ctx->storage.get_args(id).size(); }
-    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,0,val); }
+    IRID getArg_Obj() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_Obj() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
     // --- Flags ---
 
@@ -2648,13 +2648,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit JSForInNextSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::JSForInNext) {
-        throw std::runtime_error("Schema Cast Error: Expected JSForInNext, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::JSForInNext) {
+        throw std::runtime_error("Schema Cast Error: Expected JSForInNext, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, IRID IteratorObj) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::JSForInNext, {IteratorObj}, {});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSForInNext, {IteratorObj}, {});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 1;
@@ -2664,16 +2664,16 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
-    IRID getArg_IteratorObj() const { return ctx->storage.get_args(id)[0]; }
-    bool hasArg_IteratorObj() const { return 0 < ctx->storage.get_args(id).size(); }
-    void setArg_IteratorObj(IRID val) { assert(hasArg_IteratorObj() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,0,val); }
+    IRID getArg_IteratorObj() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_IteratorObj() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_IteratorObj(IRID val) { assert(hasArg_IteratorObj() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
     // --- Flags ---
 
@@ -2684,13 +2684,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit JSForOfStartSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::JSForOfStart) {
-        throw std::runtime_error("Schema Cast Error: Expected JSForOfStart, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::JSForOfStart) {
+        throw std::runtime_error("Schema Cast Error: Expected JSForOfStart, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, IRID Obj, bool AWAIT) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::JSForOfStart, {Obj}, {FlagValue(AWAIT)});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSForOfStart, {Obj}, {FlagValue(AWAIT)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 1;
@@ -2700,16 +2700,16 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
-    IRID getArg_Obj() const { return ctx->storage.get_args(id)[0]; }
-    bool hasArg_Obj() const { return 0 < ctx->storage.get_args(id).size(); }
-    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,0,val); }
+    IRID getArg_Obj() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_Obj() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
     // --- Flags ---
     bool getAWAIT() const { return std::get<bool>(get_flag(FLAG_IDX_AWAIT)); }
@@ -2723,13 +2723,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit JSForOfNextSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::JSForOfNext) {
-        throw std::runtime_error("Schema Cast Error: Expected JSForOfNext, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::JSForOfNext) {
+        throw std::runtime_error("Schema Cast Error: Expected JSForOfNext, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, IRID Obj, bool AWAIT) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::JSForOfNext, {Obj}, {FlagValue(AWAIT)});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSForOfNext, {Obj}, {FlagValue(AWAIT)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 1;
@@ -2739,16 +2739,16 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
-    IRID getArg_Obj() const { return ctx->storage.get_args(id)[0]; }
-    bool hasArg_Obj() const { return 0 < ctx->storage.get_args(id).size(); }
-    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,0,val); }
+    IRID getArg_Obj() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_Obj() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
     // --- Flags ---
     bool getAWAIT() const { return std::get<bool>(get_flag(FLAG_IDX_AWAIT)); }
@@ -2762,13 +2762,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit PushCatchContextSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::PushCatchContext) {
-        throw std::runtime_error("Schema Cast Error: Expected PushCatchContext, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::PushCatchContext) {
+        throw std::runtime_error("Schema Cast Error: Expected PushCatchContext, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, double IDX) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::PushCatchContext, {}, {FlagValue(IDX)});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::PushCatchContext, {}, {FlagValue(IDX)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
@@ -2778,10 +2778,10 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
@@ -2799,13 +2799,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit JSCatchContextSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::JSCatchContext) {
-        throw std::runtime_error("Schema Cast Error: Expected JSCatchContext, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::JSCatchContext) {
+        throw std::runtime_error("Schema Cast Error: Expected JSCatchContext, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, StringID NAME) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::JSCatchContext, {}, {FlagValue(NAME)});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSCatchContext, {}, {FlagValue(NAME)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
@@ -2815,10 +2815,10 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
@@ -2836,13 +2836,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit ThrowSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::Throw) {
-        throw std::runtime_error("Schema Cast Error: Expected Throw, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::Throw) {
+        throw std::runtime_error("Schema Cast Error: Expected Throw, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, IRID ThrowVal) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::Throw, {ThrowVal}, {});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::Throw, {ThrowVal}, {});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 1;
@@ -2852,16 +2852,16 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
-    IRID getArg_ThrowVal() const { return ctx->storage.get_args(id)[0]; }
-    bool hasArg_ThrowVal() const { return 0 < ctx->storage.get_args(id).size(); }
-    void setArg_ThrowVal(IRID val) { assert(hasArg_ThrowVal() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,0,val); }
+    IRID getArg_ThrowVal() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_ThrowVal() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_ThrowVal(IRID val) { assert(hasArg_ThrowVal() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
     // --- Flags ---
 
@@ -2872,13 +2872,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit RetSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::Ret) {
-        throw std::runtime_error("Schema Cast Error: Expected Ret, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::Ret) {
+        throw std::runtime_error("Schema Cast Error: Expected Ret, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::Ret, {}, {});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::Ret, {}, {});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
@@ -2888,10 +2888,10 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
@@ -2906,13 +2906,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit JSBinopSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::JSBinop) {
-        throw std::runtime_error("Schema Cast Error: Expected JSBinop, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::JSBinop) {
+        throw std::runtime_error("Schema Cast Error: Expected JSBinop, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, IRID LBinop, IRID RBinop, StringID OP) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::JSBinop, {LBinop, RBinop}, {FlagValue(OP)});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSBinop, {LBinop, RBinop}, {FlagValue(OP)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 2;
@@ -2922,20 +2922,20 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
-    IRID getArg_LBinop() const { return ctx->storage.get_args(id)[0]; }
-    bool hasArg_LBinop() const { return 0 < ctx->storage.get_args(id).size(); }
-    void setArg_LBinop(IRID val) { assert(hasArg_LBinop() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,0,val); }
+    IRID getArg_LBinop() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_LBinop() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_LBinop(IRID val) { assert(hasArg_LBinop() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
-    IRID getArg_RBinop() const { return ctx->storage.get_args(id)[1]; }
-    bool hasArg_RBinop() const { return 1 < ctx->storage.get_args(id).size(); }
-    void setArg_RBinop(IRID val) { assert(hasArg_RBinop() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,1,val); }
+    IRID getArg_RBinop() const { return ctx->storage.nodes.get_args(id)[1]; }
+    bool hasArg_RBinop() const { return 1 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_RBinop(IRID val) { assert(hasArg_RBinop() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,1,val); }
 
     // --- Flags ---
     StringID getOP() const { return std::get<StringID>(get_flag(FLAG_IDX_OP)); }
@@ -2949,13 +2949,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit FieldWriteSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::FieldWrite) {
-        throw std::runtime_error("Schema Cast Error: Expected FieldWrite, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::FieldWrite) {
+        throw std::runtime_error("Schema Cast Error: Expected FieldWrite, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, IRID Obj, IRID Field, IRID Value) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::FieldWrite, {Obj, Field, Value}, {});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::FieldWrite, {Obj, Field, Value}, {});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 3;
@@ -2965,24 +2965,24 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
-    IRID getArg_Obj() const { return ctx->storage.get_args(id)[0]; }
-    bool hasArg_Obj() const { return 0 < ctx->storage.get_args(id).size(); }
-    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,0,val); }
+    IRID getArg_Obj() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_Obj() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
-    IRID getArg_Field() const { return ctx->storage.get_args(id)[1]; }
-    bool hasArg_Field() const { return 1 < ctx->storage.get_args(id).size(); }
-    void setArg_Field(IRID val) { assert(hasArg_Field() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,1,val); }
+    IRID getArg_Field() const { return ctx->storage.nodes.get_args(id)[1]; }
+    bool hasArg_Field() const { return 1 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Field(IRID val) { assert(hasArg_Field() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,1,val); }
 
-    IRID getArg_Value() const { return ctx->storage.get_args(id)[2]; }
-    bool hasArg_Value() const { return 2 < ctx->storage.get_args(id).size(); }
-    void setArg_Value(IRID val) { assert(hasArg_Value() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,2,val); }
+    IRID getArg_Value() const { return ctx->storage.nodes.get_args(id)[2]; }
+    bool hasArg_Value() const { return 2 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Value(IRID val) { assert(hasArg_Value() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,2,val); }
 
     // --- Flags ---
 
@@ -2993,13 +2993,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit JSUnopSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::JSUnop) {
-        throw std::runtime_error("Schema Cast Error: Expected JSUnop, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::JSUnop) {
+        throw std::runtime_error("Schema Cast Error: Expected JSUnop, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, IRID Val, StringID OP) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::JSUnop, {Val}, {FlagValue(OP)});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSUnop, {Val}, {FlagValue(OP)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 1;
@@ -3009,16 +3009,16 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
-    IRID getArg_Val() const { return ctx->storage.get_args(id)[0]; }
-    bool hasArg_Val() const { return 0 < ctx->storage.get_args(id).size(); }
-    void setArg_Val(IRID val) { assert(hasArg_Val() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,0,val); }
+    IRID getArg_Val() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_Val() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Val(IRID val) { assert(hasArg_Val() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
     // --- Flags ---
     StringID getOP() const { return std::get<StringID>(get_flag(FLAG_IDX_OP)); }
@@ -3032,13 +3032,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit UnopSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::Unop) {
-        throw std::runtime_error("Schema Cast Error: Expected Unop, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::Unop) {
+        throw std::runtime_error("Schema Cast Error: Expected Unop, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, IRID Val, StringID OP) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::Unop, {Val}, {FlagValue(OP)});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::Unop, {Val}, {FlagValue(OP)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 1;
@@ -3048,16 +3048,16 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
-    IRID getArg_Val() const { return ctx->storage.get_args(id)[0]; }
-    bool hasArg_Val() const { return 0 < ctx->storage.get_args(id).size(); }
-    void setArg_Val(IRID val) { assert(hasArg_Val() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,0,val); }
+    IRID getArg_Val() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_Val() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Val(IRID val) { assert(hasArg_Val() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
     // --- Flags ---
     StringID getOP() const { return std::get<StringID>(get_flag(FLAG_IDX_OP)); }
@@ -3071,13 +3071,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit JSObjectSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::JSObject) {
-        throw std::runtime_error("Schema Cast Error: Expected JSObject, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::JSObject) {
+        throw std::runtime_error("Schema Cast Error: Expected JSObject, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::JSObject, {}, {});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSObject, {}, {});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
@@ -3087,10 +3087,10 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
@@ -3105,13 +3105,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit BooleanSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::Boolean) {
-        throw std::runtime_error("Schema Cast Error: Expected Boolean, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::Boolean) {
+        throw std::runtime_error("Schema Cast Error: Expected Boolean, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, bool IridiumPrimitive) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::Boolean, {}, {FlagValue(IridiumPrimitive)});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::Boolean, {}, {FlagValue(IridiumPrimitive)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
@@ -3121,10 +3121,10 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
@@ -3142,13 +3142,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit JSDefineObjPropSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::JSDefineObjProp) {
-        throw std::runtime_error("Schema Cast Error: Expected JSDefineObjProp, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::JSDefineObjProp) {
+        throw std::runtime_error("Schema Cast Error: Expected JSDefineObjProp, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, IRID TargetObj, IRID Key, IRID Value) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::JSDefineObjProp, {TargetObj, Key, Value}, {});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSDefineObjProp, {TargetObj, Key, Value}, {});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 3;
@@ -3158,24 +3158,24 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
-    IRID getArg_TargetObj() const { return ctx->storage.get_args(id)[0]; }
-    bool hasArg_TargetObj() const { return 0 < ctx->storage.get_args(id).size(); }
-    void setArg_TargetObj(IRID val) { assert(hasArg_TargetObj() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,0,val); }
+    IRID getArg_TargetObj() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_TargetObj() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_TargetObj(IRID val) { assert(hasArg_TargetObj() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
-    IRID getArg_Key() const { return ctx->storage.get_args(id)[1]; }
-    bool hasArg_Key() const { return 1 < ctx->storage.get_args(id).size(); }
-    void setArg_Key(IRID val) { assert(hasArg_Key() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,1,val); }
+    IRID getArg_Key() const { return ctx->storage.nodes.get_args(id)[1]; }
+    bool hasArg_Key() const { return 1 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Key(IRID val) { assert(hasArg_Key() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,1,val); }
 
-    IRID getArg_Value() const { return ctx->storage.get_args(id)[2]; }
-    bool hasArg_Value() const { return 2 < ctx->storage.get_args(id).size(); }
-    void setArg_Value(IRID val) { assert(hasArg_Value() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,2,val); }
+    IRID getArg_Value() const { return ctx->storage.nodes.get_args(id)[2]; }
+    bool hasArg_Value() const { return 2 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Value(IRID val) { assert(hasArg_Value() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,2,val); }
 
     // --- Flags ---
 
@@ -3186,13 +3186,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit JSArraySEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::JSArray) {
-        throw std::runtime_error("Schema Cast Error: Expected JSArray, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::JSArray) {
+        throw std::runtime_error("Schema Cast Error: Expected JSArray, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::JSArray, {}, {});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSArray, {}, {});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
@@ -3202,10 +3202,10 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
@@ -3220,13 +3220,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit BinopSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::Binop) {
-        throw std::runtime_error("Schema Cast Error: Expected Binop, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::Binop) {
+        throw std::runtime_error("Schema Cast Error: Expected Binop, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, IRID LBinop, IRID RBinop, StringID OP) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::Binop, {LBinop, RBinop}, {FlagValue(OP)});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::Binop, {LBinop, RBinop}, {FlagValue(OP)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 2;
@@ -3236,20 +3236,20 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
-    IRID getArg_LBinop() const { return ctx->storage.get_args(id)[0]; }
-    bool hasArg_LBinop() const { return 0 < ctx->storage.get_args(id).size(); }
-    void setArg_LBinop(IRID val) { assert(hasArg_LBinop() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,0,val); }
+    IRID getArg_LBinop() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_LBinop() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_LBinop(IRID val) { assert(hasArg_LBinop() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
-    IRID getArg_RBinop() const { return ctx->storage.get_args(id)[1]; }
-    bool hasArg_RBinop() const { return 1 < ctx->storage.get_args(id).size(); }
-    void setArg_RBinop(IRID val) { assert(hasArg_RBinop() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,1,val); }
+    IRID getArg_RBinop() const { return ctx->storage.nodes.get_args(id)[1]; }
+    bool hasArg_RBinop() const { return 1 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_RBinop(IRID val) { assert(hasArg_RBinop() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,1,val); }
 
     // --- Flags ---
     StringID getOP() const { return std::get<StringID>(get_flag(FLAG_IDX_OP)); }
@@ -3263,13 +3263,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit NullSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::Null) {
-        throw std::runtime_error("Schema Cast Error: Expected Null, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::Null) {
+        throw std::runtime_error("Schema Cast Error: Expected Null, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, bool IridiumPrimitive) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::Null, {}, {IridiumPrimitive ? FlagValue(IridiumPrimitive) : FlagValue(std::monostate())});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::Null, {}, {IridiumPrimitive ? FlagValue(IridiumPrimitive) : FlagValue(std::monostate())});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
@@ -3279,10 +3279,10 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
@@ -3299,13 +3299,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit JSComputedFieldReadSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::JSComputedFieldRead) {
-        throw std::runtime_error("Schema Cast Error: Expected JSComputedFieldRead, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::JSComputedFieldRead) {
+        throw std::runtime_error("Schema Cast Error: Expected JSComputedFieldRead, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, IRID Obj, IRID Field, bool SAFE) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::JSComputedFieldRead, {Obj, Field}, {SAFE ? FlagValue(SAFE) : FlagValue(std::monostate())});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSComputedFieldRead, {Obj, Field}, {SAFE ? FlagValue(SAFE) : FlagValue(std::monostate())});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 2;
@@ -3315,20 +3315,20 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
-    IRID getArg_Obj() const { return ctx->storage.get_args(id)[0]; }
-    bool hasArg_Obj() const { return 0 < ctx->storage.get_args(id).size(); }
-    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,0,val); }
+    IRID getArg_Obj() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_Obj() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
-    IRID getArg_Field() const { return ctx->storage.get_args(id)[1]; }
-    bool hasArg_Field() const { return 1 < ctx->storage.get_args(id).size(); }
-    void setArg_Field(IRID val) { assert(hasArg_Field() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,1,val); }
+    IRID getArg_Field() const { return ctx->storage.nodes.get_args(id)[1]; }
+    bool hasArg_Field() const { return 1 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Field(IRID val) { assert(hasArg_Field() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,1,val); }
 
     // --- Flags ---
     bool hasSAFE() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_SAFE)); }
@@ -3341,13 +3341,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit JSComputedFieldWriteSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::JSComputedFieldWrite) {
-        throw std::runtime_error("Schema Cast Error: Expected JSComputedFieldWrite, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::JSComputedFieldWrite) {
+        throw std::runtime_error("Schema Cast Error: Expected JSComputedFieldWrite, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, IRID Obj, IRID Field, IRID Value, bool SAFE) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::JSComputedFieldWrite, {Obj, Field, Value}, {SAFE ? FlagValue(SAFE) : FlagValue(std::monostate())});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSComputedFieldWrite, {Obj, Field, Value}, {SAFE ? FlagValue(SAFE) : FlagValue(std::monostate())});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 3;
@@ -3357,24 +3357,24 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
-    IRID getArg_Obj() const { return ctx->storage.get_args(id)[0]; }
-    bool hasArg_Obj() const { return 0 < ctx->storage.get_args(id).size(); }
-    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,0,val); }
+    IRID getArg_Obj() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_Obj() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
-    IRID getArg_Field() const { return ctx->storage.get_args(id)[1]; }
-    bool hasArg_Field() const { return 1 < ctx->storage.get_args(id).size(); }
-    void setArg_Field(IRID val) { assert(hasArg_Field() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,1,val); }
+    IRID getArg_Field() const { return ctx->storage.nodes.get_args(id)[1]; }
+    bool hasArg_Field() const { return 1 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Field(IRID val) { assert(hasArg_Field() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,1,val); }
 
-    IRID getArg_Value() const { return ctx->storage.get_args(id)[2]; }
-    bool hasArg_Value() const { return 2 < ctx->storage.get_args(id).size(); }
-    void setArg_Value(IRID val) { assert(hasArg_Value() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,2,val); }
+    IRID getArg_Value() const { return ctx->storage.nodes.get_args(id)[2]; }
+    bool hasArg_Value() const { return 2 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Value(IRID val) { assert(hasArg_Value() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,2,val); }
 
     // --- Flags ---
     bool hasSAFE() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_SAFE)); }
@@ -3387,13 +3387,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit JSSuperFieldReadSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::JSSuperFieldRead) {
-        throw std::runtime_error("Schema Cast Error: Expected JSSuperFieldRead, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::JSSuperFieldRead) {
+        throw std::runtime_error("Schema Cast Error: Expected JSSuperFieldRead, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, IRID This, IRID Super, IRID Field) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::JSSuperFieldRead, {This, Super, Field}, {});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSSuperFieldRead, {This, Super, Field}, {});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 3;
@@ -3403,24 +3403,24 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
-    IRID getArg_This() const { return ctx->storage.get_args(id)[0]; }
-    bool hasArg_This() const { return 0 < ctx->storage.get_args(id).size(); }
-    void setArg_This(IRID val) { assert(hasArg_This() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,0,val); }
+    IRID getArg_This() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_This() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_This(IRID val) { assert(hasArg_This() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
-    IRID getArg_Super() const { return ctx->storage.get_args(id)[1]; }
-    bool hasArg_Super() const { return 1 < ctx->storage.get_args(id).size(); }
-    void setArg_Super(IRID val) { assert(hasArg_Super() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,1,val); }
+    IRID getArg_Super() const { return ctx->storage.nodes.get_args(id)[1]; }
+    bool hasArg_Super() const { return 1 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Super(IRID val) { assert(hasArg_Super() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,1,val); }
 
-    IRID getArg_Field() const { return ctx->storage.get_args(id)[2]; }
-    bool hasArg_Field() const { return 2 < ctx->storage.get_args(id).size(); }
-    void setArg_Field(IRID val) { assert(hasArg_Field() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,2,val); }
+    IRID getArg_Field() const { return ctx->storage.nodes.get_args(id)[2]; }
+    bool hasArg_Field() const { return 2 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Field(IRID val) { assert(hasArg_Field() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,2,val); }
 
     // --- Flags ---
 
@@ -3431,13 +3431,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit JSSuperFieldWriteSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::JSSuperFieldWrite) {
-        throw std::runtime_error("Schema Cast Error: Expected JSSuperFieldWrite, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::JSSuperFieldWrite) {
+        throw std::runtime_error("Schema Cast Error: Expected JSSuperFieldWrite, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, IRID This, IRID Super, IRID Field, IRID Value) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::JSSuperFieldWrite, {This, Super, Field, Value}, {});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSSuperFieldWrite, {This, Super, Field, Value}, {});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 4;
@@ -3447,28 +3447,28 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
-    IRID getArg_This() const { return ctx->storage.get_args(id)[0]; }
-    bool hasArg_This() const { return 0 < ctx->storage.get_args(id).size(); }
-    void setArg_This(IRID val) { assert(hasArg_This() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,0,val); }
+    IRID getArg_This() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_This() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_This(IRID val) { assert(hasArg_This() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
-    IRID getArg_Super() const { return ctx->storage.get_args(id)[1]; }
-    bool hasArg_Super() const { return 1 < ctx->storage.get_args(id).size(); }
-    void setArg_Super(IRID val) { assert(hasArg_Super() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,1,val); }
+    IRID getArg_Super() const { return ctx->storage.nodes.get_args(id)[1]; }
+    bool hasArg_Super() const { return 1 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Super(IRID val) { assert(hasArg_Super() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,1,val); }
 
-    IRID getArg_Field() const { return ctx->storage.get_args(id)[2]; }
-    bool hasArg_Field() const { return 2 < ctx->storage.get_args(id).size(); }
-    void setArg_Field(IRID val) { assert(hasArg_Field() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,2,val); }
+    IRID getArg_Field() const { return ctx->storage.nodes.get_args(id)[2]; }
+    bool hasArg_Field() const { return 2 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Field(IRID val) { assert(hasArg_Field() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,2,val); }
 
-    IRID getArg_Value() const { return ctx->storage.get_args(id)[3]; }
-    bool hasArg_Value() const { return 3 < ctx->storage.get_args(id).size(); }
-    void setArg_Value(IRID val) { assert(hasArg_Value() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,3,val); }
+    IRID getArg_Value() const { return ctx->storage.nodes.get_args(id)[3]; }
+    bool hasArg_Value() const { return 3 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Value(IRID val) { assert(hasArg_Value() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,3,val); }
 
     // --- Flags ---
 
@@ -3479,13 +3479,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit JSToObjectSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::JSToObject) {
-        throw std::runtime_error("Schema Cast Error: Expected JSToObject, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::JSToObject) {
+        throw std::runtime_error("Schema Cast Error: Expected JSToObject, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, IRID TargetObj) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::JSToObject, {TargetObj}, {});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSToObject, {TargetObj}, {});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 1;
@@ -3495,16 +3495,16 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
-    IRID getArg_TargetObj() const { return ctx->storage.get_args(id)[0]; }
-    bool hasArg_TargetObj() const { return 0 < ctx->storage.get_args(id).size(); }
-    void setArg_TargetObj(IRID val) { assert(hasArg_TargetObj() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,0,val); }
+    IRID getArg_TargetObj() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_TargetObj() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_TargetObj(IRID val) { assert(hasArg_TargetObj() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
     // --- Flags ---
 
@@ -3515,13 +3515,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit JSAppendSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::JSAppend) {
-        throw std::runtime_error("Schema Cast Error: Expected JSAppend, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::JSAppend) {
+        throw std::runtime_error("Schema Cast Error: Expected JSAppend, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, IRID TargetObj, IRID InsertionIdx, IRID SpreadObj) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::JSAppend, {TargetObj, InsertionIdx, SpreadObj}, {});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSAppend, {TargetObj, InsertionIdx, SpreadObj}, {});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 3;
@@ -3531,24 +3531,24 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
-    IRID getArg_TargetObj() const { return ctx->storage.get_args(id)[0]; }
-    bool hasArg_TargetObj() const { return 0 < ctx->storage.get_args(id).size(); }
-    void setArg_TargetObj(IRID val) { assert(hasArg_TargetObj() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,0,val); }
+    IRID getArg_TargetObj() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_TargetObj() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_TargetObj(IRID val) { assert(hasArg_TargetObj() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
-    IRID getArg_InsertionIdx() const { return ctx->storage.get_args(id)[1]; }
-    bool hasArg_InsertionIdx() const { return 1 < ctx->storage.get_args(id).size(); }
-    void setArg_InsertionIdx(IRID val) { assert(hasArg_InsertionIdx() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,1,val); }
+    IRID getArg_InsertionIdx() const { return ctx->storage.nodes.get_args(id)[1]; }
+    bool hasArg_InsertionIdx() const { return 1 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_InsertionIdx(IRID val) { assert(hasArg_InsertionIdx() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,1,val); }
 
-    IRID getArg_SpreadObj() const { return ctx->storage.get_args(id)[2]; }
-    bool hasArg_SpreadObj() const { return 2 < ctx->storage.get_args(id).size(); }
-    void setArg_SpreadObj(IRID val) { assert(hasArg_SpreadObj() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,2,val); }
+    IRID getArg_SpreadObj() const { return ctx->storage.nodes.get_args(id)[2]; }
+    bool hasArg_SpreadObj() const { return 2 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_SpreadObj(IRID val) { assert(hasArg_SpreadObj() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,2,val); }
 
     // --- Flags ---
 
@@ -3559,13 +3559,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit JSDefineObjMethodSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::JSDefineObjMethod) {
-        throw std::runtime_error("Schema Cast Error: Expected JSDefineObjMethod, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::JSDefineObjMethod) {
+        throw std::runtime_error("Schema Cast Error: Expected JSDefineObjMethod, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, IRID TargetObj, IRID Key, IRID Value, bool NOENUM, bool METHOD, bool GET, bool SET) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::JSDefineObjMethod, {TargetObj, Key, Value}, {NOENUM ? FlagValue(NOENUM) : FlagValue(std::monostate()), METHOD ? FlagValue(METHOD) : FlagValue(std::monostate()), GET ? FlagValue(GET) : FlagValue(std::monostate()), SET ? FlagValue(SET) : FlagValue(std::monostate())});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSDefineObjMethod, {TargetObj, Key, Value}, {NOENUM ? FlagValue(NOENUM) : FlagValue(std::monostate()), METHOD ? FlagValue(METHOD) : FlagValue(std::monostate()), GET ? FlagValue(GET) : FlagValue(std::monostate()), SET ? FlagValue(SET) : FlagValue(std::monostate())});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 3;
@@ -3578,24 +3578,24 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
-    IRID getArg_TargetObj() const { return ctx->storage.get_args(id)[0]; }
-    bool hasArg_TargetObj() const { return 0 < ctx->storage.get_args(id).size(); }
-    void setArg_TargetObj(IRID val) { assert(hasArg_TargetObj() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,0,val); }
+    IRID getArg_TargetObj() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_TargetObj() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_TargetObj(IRID val) { assert(hasArg_TargetObj() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
-    IRID getArg_Key() const { return ctx->storage.get_args(id)[1]; }
-    bool hasArg_Key() const { return 1 < ctx->storage.get_args(id).size(); }
-    void setArg_Key(IRID val) { assert(hasArg_Key() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,1,val); }
+    IRID getArg_Key() const { return ctx->storage.nodes.get_args(id)[1]; }
+    bool hasArg_Key() const { return 1 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Key(IRID val) { assert(hasArg_Key() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,1,val); }
 
-    IRID getArg_Value() const { return ctx->storage.get_args(id)[2]; }
-    bool hasArg_Value() const { return 2 < ctx->storage.get_args(id).size(); }
-    void setArg_Value(IRID val) { assert(hasArg_Value() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,2,val); }
+    IRID getArg_Value() const { return ctx->storage.nodes.get_args(id)[2]; }
+    bool hasArg_Value() const { return 2 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Value(IRID val) { assert(hasArg_Value() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,2,val); }
 
     // --- Flags ---
     bool hasNOENUM() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_NOENUM)); }
@@ -3620,13 +3620,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit JSCopyDataPropertiesSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::JSCopyDataProperties) {
-        throw std::runtime_error("Schema Cast Error: Expected JSCopyDataProperties, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::JSCopyDataProperties) {
+        throw std::runtime_error("Schema Cast Error: Expected JSCopyDataProperties, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, IRID ExclusionObj, IRID SourceObj, IRID TargetObj) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::JSCopyDataProperties, {ExclusionObj, SourceObj, TargetObj}, {});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSCopyDataProperties, {ExclusionObj, SourceObj, TargetObj}, {});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 3;
@@ -3636,24 +3636,24 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
-    IRID getArg_ExclusionObj() const { return ctx->storage.get_args(id)[0]; }
-    bool hasArg_ExclusionObj() const { return 0 < ctx->storage.get_args(id).size(); }
-    void setArg_ExclusionObj(IRID val) { assert(hasArg_ExclusionObj() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,0,val); }
+    IRID getArg_ExclusionObj() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_ExclusionObj() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_ExclusionObj(IRID val) { assert(hasArg_ExclusionObj() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
-    IRID getArg_SourceObj() const { return ctx->storage.get_args(id)[1]; }
-    bool hasArg_SourceObj() const { return 1 < ctx->storage.get_args(id).size(); }
-    void setArg_SourceObj(IRID val) { assert(hasArg_SourceObj() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,1,val); }
+    IRID getArg_SourceObj() const { return ctx->storage.nodes.get_args(id)[1]; }
+    bool hasArg_SourceObj() const { return 1 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_SourceObj(IRID val) { assert(hasArg_SourceObj() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,1,val); }
 
-    IRID getArg_TargetObj() const { return ctx->storage.get_args(id)[2]; }
-    bool hasArg_TargetObj() const { return 2 < ctx->storage.get_args(id).size(); }
-    void setArg_TargetObj(IRID val) { assert(hasArg_TargetObj() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,2,val); }
+    IRID getArg_TargetObj() const { return ctx->storage.nodes.get_args(id)[2]; }
+    bool hasArg_TargetObj() const { return 2 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_TargetObj(IRID val) { assert(hasArg_TargetObj() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,2,val); }
 
     // --- Flags ---
 
@@ -3664,13 +3664,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit RegExpSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::RegExp) {
-        throw std::runtime_error("Schema Cast Error: Expected RegExp, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::RegExp) {
+        throw std::runtime_error("Schema Cast Error: Expected RegExp, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, StringID EXP, StringID FLAGS) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::RegExp, {}, {FlagValue(EXP), FlagValue(FLAGS)});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::RegExp, {}, {FlagValue(EXP), FlagValue(FLAGS)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
@@ -3681,10 +3681,10 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
@@ -3707,13 +3707,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit UNOPDelMemberExprSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::UNOPDelMemberExpr) {
-        throw std::runtime_error("Schema Cast Error: Expected UNOPDelMemberExpr, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::UNOPDelMemberExpr) {
+        throw std::runtime_error("Schema Cast Error: Expected UNOPDelMemberExpr, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, IRID Receiver, IRID Field) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::UNOPDelMemberExpr, {Receiver, Field}, {});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::UNOPDelMemberExpr, {Receiver, Field}, {});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 2;
@@ -3723,20 +3723,20 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
-    IRID getArg_Receiver() const { return ctx->storage.get_args(id)[0]; }
-    bool hasArg_Receiver() const { return 0 < ctx->storage.get_args(id).size(); }
-    void setArg_Receiver(IRID val) { assert(hasArg_Receiver() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,0,val); }
+    IRID getArg_Receiver() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_Receiver() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Receiver(IRID val) { assert(hasArg_Receiver() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
-    IRID getArg_Field() const { return ctx->storage.get_args(id)[1]; }
-    bool hasArg_Field() const { return 1 < ctx->storage.get_args(id).size(); }
-    void setArg_Field(IRID val) { assert(hasArg_Field() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,1,val); }
+    IRID getArg_Field() const { return ctx->storage.nodes.get_args(id)[1]; }
+    bool hasArg_Field() const { return 1 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Field(IRID val) { assert(hasArg_Field() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,1,val); }
 
     // --- Flags ---
 
@@ -3747,13 +3747,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit UNOPDelVarSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::UNOPDelVar) {
-        throw std::runtime_error("Schema Cast Error: Expected UNOPDelVar, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::UNOPDelVar) {
+        throw std::runtime_error("Schema Cast Error: Expected UNOPDelVar, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, StringID NAME) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::UNOPDelVar, {}, {FlagValue(NAME)});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::UNOPDelVar, {}, {FlagValue(NAME)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
@@ -3763,10 +3763,10 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
@@ -3784,13 +3784,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit JSTemplateSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::JSTemplate) {
-        throw std::runtime_error("Schema Cast Error: Expected JSTemplate, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::JSTemplate) {
+        throw std::runtime_error("Schema Cast Error: Expected JSTemplate, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::JSTemplate, {}, {});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSTemplate, {}, {});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
@@ -3800,10 +3800,10 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
@@ -3818,13 +3818,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit JSBigIntSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::JSBigInt) {
-        throw std::runtime_error("Schema Cast Error: Expected JSBigInt, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::JSBigInt) {
+        throw std::runtime_error("Schema Cast Error: Expected JSBigInt, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, StringID IridiumPrimitive) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::JSBigInt, {}, {FlagValue(IridiumPrimitive)});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSBigInt, {}, {FlagValue(IridiumPrimitive)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
@@ -3834,10 +3834,10 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
@@ -3855,13 +3855,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit AwaitSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::Await) {
-        throw std::runtime_error("Schema Cast Error: Expected Await, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::Await) {
+        throw std::runtime_error("Schema Cast Error: Expected Await, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, IRID Obj) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::Await, {Obj}, {});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::Await, {Obj}, {});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 1;
@@ -3871,16 +3871,16 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
-    IRID getArg_Obj() const { return ctx->storage.get_args(id)[0]; }
-    bool hasArg_Obj() const { return 0 < ctx->storage.get_args(id).size(); }
-    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,0,val); }
+    IRID getArg_Obj() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_Obj() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
     // --- Flags ---
 
@@ -3891,13 +3891,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit YieldSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::Yield) {
-        throw std::runtime_error("Schema Cast Error: Expected Yield, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::Yield) {
+        throw std::runtime_error("Schema Cast Error: Expected Yield, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, IRID Obj) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::Yield, {Obj}, {});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::Yield, {Obj}, {});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 1;
@@ -3907,16 +3907,16 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
-    IRID getArg_Obj() const { return ctx->storage.get_args(id)[0]; }
-    bool hasArg_Obj() const { return 0 < ctx->storage.get_args(id).size(); }
-    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,0,val); }
+    IRID getArg_Obj() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_Obj() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
     // --- Flags ---
 
@@ -3927,13 +3927,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit JSInitialYieldSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::JSInitialYield) {
-        throw std::runtime_error("Schema Cast Error: Expected JSInitialYield, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::JSInitialYield) {
+        throw std::runtime_error("Schema Cast Error: Expected JSInitialYield, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::JSInitialYield, {}, {});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSInitialYield, {}, {});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
@@ -3943,10 +3943,10 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
@@ -3961,13 +3961,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit IDOPSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::IDOP) {
-        throw std::runtime_error("Schema Cast Error: Expected IDOP, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::IDOP) {
+        throw std::runtime_error("Schema Cast Error: Expected IDOP, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, IRID Obj, bool PREFIX, bool INCREMENT) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::IDOP, {Obj}, {FlagValue(PREFIX), FlagValue(INCREMENT)});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::IDOP, {Obj}, {FlagValue(PREFIX), FlagValue(INCREMENT)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 1;
@@ -3978,16 +3978,16 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
-    IRID getArg_Obj() const { return ctx->storage.get_args(id)[0]; }
-    bool hasArg_Obj() const { return 0 < ctx->storage.get_args(id).size(); }
-    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,0,val); }
+    IRID getArg_Obj() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_Obj() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
     // --- Flags ---
     bool getPREFIX() const { return std::get<bool>(get_flag(FLAG_IDX_PREFIX)); }
@@ -4006,13 +4006,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit JSIDOPSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::JSIDOP) {
-        throw std::runtime_error("Schema Cast Error: Expected JSIDOP, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::JSIDOP) {
+        throw std::runtime_error("Schema Cast Error: Expected JSIDOP, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, IRID Obj, bool PREFIX, bool INCREMENT) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::JSIDOP, {Obj}, {FlagValue(PREFIX), FlagValue(INCREMENT)});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSIDOP, {Obj}, {FlagValue(PREFIX), FlagValue(INCREMENT)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 1;
@@ -4023,16 +4023,16 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
-    IRID getArg_Obj() const { return ctx->storage.get_args(id)[0]; }
-    bool hasArg_Obj() const { return 0 < ctx->storage.get_args(id).size(); }
-    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,0,val); }
+    IRID getArg_Obj() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_Obj() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
     // --- Flags ---
     bool getPREFIX() const { return std::get<bool>(get_flag(FLAG_IDX_PREFIX)); }
@@ -4051,13 +4051,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit StackToHeapSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::StackToHeap) {
-        throw std::runtime_error("Schema Cast Error: Expected StackToHeap, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::StackToHeap) {
+        throw std::runtime_error("Schema Cast Error: Expected StackToHeap, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::StackToHeap, {}, {});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::StackToHeap, {}, {});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
@@ -4067,10 +4067,10 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
@@ -4085,13 +4085,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit LoopInitPreludeEndSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::LoopInitPreludeEnd) {
-        throw std::runtime_error("Schema Cast Error: Expected LoopInitPreludeEnd, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::LoopInitPreludeEnd) {
+        throw std::runtime_error("Schema Cast Error: Expected LoopInitPreludeEnd, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::LoopInitPreludeEnd, {}, {});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::LoopInitPreludeEnd, {}, {});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
@@ -4101,10 +4101,10 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
@@ -4119,13 +4119,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit JSSetHomeSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::JSSetHome) {
-        throw std::runtime_error("Schema Cast Error: Expected JSSetHome, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::JSSetHome) {
+        throw std::runtime_error("Schema Cast Error: Expected JSSetHome, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, IRID HomeObj, IRID FuncObj) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::JSSetHome, {HomeObj, FuncObj}, {});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSSetHome, {HomeObj, FuncObj}, {});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 2;
@@ -4135,20 +4135,20 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
-    IRID getArg_HomeObj() const { return ctx->storage.get_args(id)[0]; }
-    bool hasArg_HomeObj() const { return 0 < ctx->storage.get_args(id).size(); }
-    void setArg_HomeObj(IRID val) { assert(hasArg_HomeObj() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,0,val); }
+    IRID getArg_HomeObj() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_HomeObj() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_HomeObj(IRID val) { assert(hasArg_HomeObj() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
-    IRID getArg_FuncObj() const { return ctx->storage.get_args(id)[1]; }
-    bool hasArg_FuncObj() const { return 1 < ctx->storage.get_args(id).size(); }
-    void setArg_FuncObj(IRID val) { assert(hasArg_FuncObj() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,1,val); }
+    IRID getArg_FuncObj() const { return ctx->storage.nodes.get_args(id)[1]; }
+    bool hasArg_FuncObj() const { return 1 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_FuncObj(IRID val) { assert(hasArg_FuncObj() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,1,val); }
 
     // --- Flags ---
 
@@ -4159,13 +4159,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit JSSetNameSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::JSSetName) {
-        throw std::runtime_error("Schema Cast Error: Expected JSSetName, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::JSSetName) {
+        throw std::runtime_error("Schema Cast Error: Expected JSSetName, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, IRID obj, IRID name) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::JSSetName, {obj, name}, {});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSSetName, {obj, name}, {});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 2;
@@ -4175,20 +4175,20 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
-    IRID getArg_obj() const { return ctx->storage.get_args(id)[0]; }
-    bool hasArg_obj() const { return 0 < ctx->storage.get_args(id).size(); }
-    void setArg_obj(IRID val) { assert(hasArg_obj() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,0,val); }
+    IRID getArg_obj() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_obj() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_obj(IRID val) { assert(hasArg_obj() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
-    IRID getArg_name() const { return ctx->storage.get_args(id)[1]; }
-    bool hasArg_name() const { return 1 < ctx->storage.get_args(id).size(); }
-    void setArg_name(IRID val) { assert(hasArg_name() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,1,val); }
+    IRID getArg_name() const { return ctx->storage.nodes.get_args(id)[1]; }
+    bool hasArg_name() const { return 1 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_name(IRID val) { assert(hasArg_name() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,1,val); }
 
     // --- Flags ---
 
@@ -4199,13 +4199,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit JSSetPrototypeOfSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::JSSetPrototypeOf) {
-        throw std::runtime_error("Schema Cast Error: Expected JSSetPrototypeOf, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::JSSetPrototypeOf) {
+        throw std::runtime_error("Schema Cast Error: Expected JSSetPrototypeOf, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, IRID TargetObj, IRID ProtoValue) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::JSSetPrototypeOf, {TargetObj, ProtoValue}, {});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSSetPrototypeOf, {TargetObj, ProtoValue}, {});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 2;
@@ -4215,20 +4215,20 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
-    IRID getArg_TargetObj() const { return ctx->storage.get_args(id)[0]; }
-    bool hasArg_TargetObj() const { return 0 < ctx->storage.get_args(id).size(); }
-    void setArg_TargetObj(IRID val) { assert(hasArg_TargetObj() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,0,val); }
+    IRID getArg_TargetObj() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_TargetObj() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_TargetObj(IRID val) { assert(hasArg_TargetObj() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
-    IRID getArg_ProtoValue() const { return ctx->storage.get_args(id)[1]; }
-    bool hasArg_ProtoValue() const { return 1 < ctx->storage.get_args(id).size(); }
-    void setArg_ProtoValue(IRID val) { assert(hasArg_ProtoValue() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,1,val); }
+    IRID getArg_ProtoValue() const { return ctx->storage.nodes.get_args(id)[1]; }
+    bool hasArg_ProtoValue() const { return 1 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_ProtoValue(IRID val) { assert(hasArg_ProtoValue() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,1,val); }
 
     // --- Flags ---
 
@@ -4239,13 +4239,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit GWriteSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::GWrite) {
-        throw std::runtime_error("Schema Cast Error: Expected GWrite, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::GWrite) {
+        throw std::runtime_error("Schema Cast Error: Expected GWrite, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, IRID LValTarget, IRID RVal, bool INIT, bool SAFE, bool DECLVAR, bool DECLFUN) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::GWrite, {LValTarget, RVal}, {INIT ? FlagValue(INIT) : FlagValue(std::monostate()), SAFE ? FlagValue(SAFE) : FlagValue(std::monostate()), DECLVAR ? FlagValue(DECLVAR) : FlagValue(std::monostate()), DECLFUN ? FlagValue(DECLFUN) : FlagValue(std::monostate())});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::GWrite, {LValTarget, RVal}, {INIT ? FlagValue(INIT) : FlagValue(std::monostate()), SAFE ? FlagValue(SAFE) : FlagValue(std::monostate()), DECLVAR ? FlagValue(DECLVAR) : FlagValue(std::monostate()), DECLFUN ? FlagValue(DECLFUN) : FlagValue(std::monostate())});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 2;
@@ -4258,20 +4258,20 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
-    IRID getArg_LValTarget() const { return ctx->storage.get_args(id)[0]; }
-    bool hasArg_LValTarget() const { return 0 < ctx->storage.get_args(id).size(); }
-    void setArg_LValTarget(IRID val) { assert(hasArg_LValTarget() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,0,val); }
+    IRID getArg_LValTarget() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_LValTarget() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_LValTarget(IRID val) { assert(hasArg_LValTarget() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
-    IRID getArg_RVal() const { return ctx->storage.get_args(id)[1]; }
-    bool hasArg_RVal() const { return 1 < ctx->storage.get_args(id).size(); }
-    void setArg_RVal(IRID val) { assert(hasArg_RVal() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,1,val); }
+    IRID getArg_RVal() const { return ctx->storage.nodes.get_args(id)[1]; }
+    bool hasArg_RVal() const { return 1 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_RVal(IRID val) { assert(hasArg_RVal() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,1,val); }
 
     // --- Flags ---
     bool hasINIT() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_INIT)); }
@@ -4296,13 +4296,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit LWriteSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::LWrite) {
-        throw std::runtime_error("Schema Cast Error: Expected LWrite, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::LWrite) {
+        throw std::runtime_error("Schema Cast Error: Expected LWrite, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, IRID LValTarget, IRID RVal, bool INIT, bool SAFE, bool THISINIT) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::LWrite, {LValTarget, RVal}, {INIT ? FlagValue(INIT) : FlagValue(std::monostate()), SAFE ? FlagValue(SAFE) : FlagValue(std::monostate()), THISINIT ? FlagValue(THISINIT) : FlagValue(std::monostate())});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::LWrite, {LValTarget, RVal}, {INIT ? FlagValue(INIT) : FlagValue(std::monostate()), SAFE ? FlagValue(SAFE) : FlagValue(std::monostate()), THISINIT ? FlagValue(THISINIT) : FlagValue(std::monostate())});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 2;
@@ -4314,20 +4314,20 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
-    IRID getArg_LValTarget() const { return ctx->storage.get_args(id)[0]; }
-    bool hasArg_LValTarget() const { return 0 < ctx->storage.get_args(id).size(); }
-    void setArg_LValTarget(IRID val) { assert(hasArg_LValTarget() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,0,val); }
+    IRID getArg_LValTarget() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_LValTarget() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_LValTarget(IRID val) { assert(hasArg_LValTarget() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
-    IRID getArg_RVal() const { return ctx->storage.get_args(id)[1]; }
-    bool hasArg_RVal() const { return 1 < ctx->storage.get_args(id).size(); }
-    void setArg_RVal(IRID val) { assert(hasArg_RVal() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,1,val); }
+    IRID getArg_RVal() const { return ctx->storage.nodes.get_args(id)[1]; }
+    bool hasArg_RVal() const { return 1 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_RVal(IRID val) { assert(hasArg_RVal() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,1,val); }
 
     // --- Flags ---
     bool hasINIT() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_INIT)); }
@@ -4348,13 +4348,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit RWriteSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::RWrite) {
-        throw std::runtime_error("Schema Cast Error: Expected RWrite, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::RWrite) {
+        throw std::runtime_error("Schema Cast Error: Expected RWrite, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, IRID LValTarget, IRID RVal, bool INIT, bool SAFE, bool THISINIT) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::RWrite, {LValTarget, RVal}, {INIT ? FlagValue(INIT) : FlagValue(std::monostate()), SAFE ? FlagValue(SAFE) : FlagValue(std::monostate()), THISINIT ? FlagValue(THISINIT) : FlagValue(std::monostate())});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::RWrite, {LValTarget, RVal}, {INIT ? FlagValue(INIT) : FlagValue(std::monostate()), SAFE ? FlagValue(SAFE) : FlagValue(std::monostate()), THISINIT ? FlagValue(THISINIT) : FlagValue(std::monostate())});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 2;
@@ -4366,20 +4366,20 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
-    IRID getArg_LValTarget() const { return ctx->storage.get_args(id)[0]; }
-    bool hasArg_LValTarget() const { return 0 < ctx->storage.get_args(id).size(); }
-    void setArg_LValTarget(IRID val) { assert(hasArg_LValTarget() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,0,val); }
+    IRID getArg_LValTarget() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_LValTarget() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_LValTarget(IRID val) { assert(hasArg_LValTarget() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
-    IRID getArg_RVal() const { return ctx->storage.get_args(id)[1]; }
-    bool hasArg_RVal() const { return 1 < ctx->storage.get_args(id).size(); }
-    void setArg_RVal(IRID val) { assert(hasArg_RVal() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,1,val); }
+    IRID getArg_RVal() const { return ctx->storage.nodes.get_args(id)[1]; }
+    bool hasArg_RVal() const { return 1 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_RVal(IRID val) { assert(hasArg_RVal() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,1,val); }
 
     // --- Flags ---
     bool hasINIT() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_INIT)); }
@@ -4400,13 +4400,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit MWriteSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::MWrite) {
-        throw std::runtime_error("Schema Cast Error: Expected MWrite, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::MWrite) {
+        throw std::runtime_error("Schema Cast Error: Expected MWrite, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, IRID LValTarget, IRID RVal, bool INIT, bool SAFE) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::MWrite, {LValTarget, RVal}, {INIT ? FlagValue(INIT) : FlagValue(std::monostate()), SAFE ? FlagValue(SAFE) : FlagValue(std::monostate())});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::MWrite, {LValTarget, RVal}, {INIT ? FlagValue(INIT) : FlagValue(std::monostate()), SAFE ? FlagValue(SAFE) : FlagValue(std::monostate())});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 2;
@@ -4417,20 +4417,20 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
-    IRID getArg_LValTarget() const { return ctx->storage.get_args(id)[0]; }
-    bool hasArg_LValTarget() const { return 0 < ctx->storage.get_args(id).size(); }
-    void setArg_LValTarget(IRID val) { assert(hasArg_LValTarget() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,0,val); }
+    IRID getArg_LValTarget() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_LValTarget() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_LValTarget(IRID val) { assert(hasArg_LValTarget() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
-    IRID getArg_RVal() const { return ctx->storage.get_args(id)[1]; }
-    bool hasArg_RVal() const { return 1 < ctx->storage.get_args(id).size(); }
-    void setArg_RVal(IRID val) { assert(hasArg_RVal() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,1,val); }
+    IRID getArg_RVal() const { return ctx->storage.nodes.get_args(id)[1]; }
+    bool hasArg_RVal() const { return 1 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_RVal(IRID val) { assert(hasArg_RVal() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,1,val); }
 
     // --- Flags ---
     bool hasINIT() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_INIT)); }
@@ -4447,13 +4447,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit DCTRRetSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::DCTRRet) {
-        throw std::runtime_error("Schema Cast Error: Expected DCTRRet, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::DCTRRet) {
+        throw std::runtime_error("Schema Cast Error: Expected DCTRRet, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, IRID userObj, IRID thisObj) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::DCTRRet, {userObj, thisObj}, {});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::DCTRRet, {userObj, thisObj}, {});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 2;
@@ -4463,20 +4463,20 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
-    IRID getArg_userObj() const { return ctx->storage.get_args(id)[0]; }
-    bool hasArg_userObj() const { return 0 < ctx->storage.get_args(id).size(); }
-    void setArg_userObj(IRID val) { assert(hasArg_userObj() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,0,val); }
+    IRID getArg_userObj() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_userObj() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_userObj(IRID val) { assert(hasArg_userObj() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
-    IRID getArg_thisObj() const { return ctx->storage.get_args(id)[1]; }
-    bool hasArg_thisObj() const { return 1 < ctx->storage.get_args(id).size(); }
-    void setArg_thisObj(IRID val) { assert(hasArg_thisObj() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,1,val); }
+    IRID getArg_thisObj() const { return ctx->storage.nodes.get_args(id)[1]; }
+    bool hasArg_thisObj() const { return 1 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_thisObj(IRID val) { assert(hasArg_thisObj() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,1,val); }
 
     // --- Flags ---
 
@@ -4487,13 +4487,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit ToNumericSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::ToNumeric) {
-        throw std::runtime_error("Schema Cast Error: Expected ToNumeric, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::ToNumeric) {
+        throw std::runtime_error("Schema Cast Error: Expected ToNumeric, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, IRID Obj) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::ToNumeric, {Obj}, {});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::ToNumeric, {Obj}, {});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 1;
@@ -4503,16 +4503,16 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
-    IRID getArg_Obj() const { return ctx->storage.get_args(id)[0]; }
-    bool hasArg_Obj() const { return 0 < ctx->storage.get_args(id).size(); }
-    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,0,val); }
+    IRID getArg_Obj() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_Obj() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
     // --- Flags ---
 
@@ -4523,13 +4523,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit JSCTXSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::JSCTX) {
-        throw std::runtime_error("Schema Cast Error: Expected JSCTX, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::JSCTX) {
+        throw std::runtime_error("Schema Cast Error: Expected JSCTX, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, double OPID) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::JSCTX, {}, {FlagValue(OPID)});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSCTX, {}, {FlagValue(OPID)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
@@ -4539,10 +4539,10 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
@@ -4560,13 +4560,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit QJSModuleInitSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::QJSModuleInit) {
-        throw std::runtime_error("Schema Cast Error: Expected QJSModuleInit, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::QJSModuleInit) {
+        throw std::runtime_error("Schema Cast Error: Expected QJSModuleInit, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::QJSModuleInit, {}, {});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::QJSModuleInit, {}, {});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
@@ -4576,10 +4576,10 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
@@ -4594,13 +4594,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit CompoundAssnSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::CompoundAssn) {
-        throw std::runtime_error("Schema Cast Error: Expected CompoundAssn, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::CompoundAssn) {
+        throw std::runtime_error("Schema Cast Error: Expected CompoundAssn, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::CompoundAssn, {}, {});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::CompoundAssn, {}, {});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
@@ -4610,10 +4610,10 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
@@ -4628,13 +4628,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit ThisINITSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::ThisINIT) {
-        throw std::runtime_error("Schema Cast Error: Expected ThisINIT, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::ThisINIT) {
+        throw std::runtime_error("Schema Cast Error: Expected ThisINIT, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p, IRID oldVal, IRID newVal) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::ThisINIT, {oldVal, newVal}, {});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::ThisINIT, {oldVal, newVal}, {});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 2;
@@ -4644,20 +4644,20 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
-    IRID getArg_oldVal() const { return ctx->storage.get_args(id)[0]; }
-    bool hasArg_oldVal() const { return 0 < ctx->storage.get_args(id).size(); }
-    void setArg_oldVal(IRID val) { assert(hasArg_oldVal() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,0,val); }
+    IRID getArg_oldVal() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_oldVal() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_oldVal(IRID val) { assert(hasArg_oldVal() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
-    IRID getArg_newVal() const { return ctx->storage.get_args(id)[1]; }
-    bool hasArg_newVal() const { return 1 < ctx->storage.get_args(id).size(); }
-    void setArg_newVal(IRID val) { assert(hasArg_newVal() && "Tried to set missing ARG"); ctx->storage.update_arg_inplace(id,1,val); }
+    IRID getArg_newVal() const { return ctx->storage.nodes.get_args(id)[1]; }
+    bool hasArg_newVal() const { return 1 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_newVal(IRID val) { assert(hasArg_newVal() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,1,val); }
 
     // --- Flags ---
 
@@ -4668,13 +4668,13 @@ using IRI_STORAGE::FlagValue;
     IRIContext* ctx;
 
     explicit PTAStubSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.get_node(n).tag != IRI_GEN::PTAStub) {
-        throw std::runtime_error("Schema Cast Error: Expected PTAStub, but got " + IRI_GEN::dump_tag(ctx->storage.get_node(n).tag));
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::PTAStub) {
+        throw std::runtime_error("Schema Cast Error: Expected PTAStub, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p) {
-      return p.storage.add_node(IRI_GEN::IRI_TAG::PTAStub, {}, {});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::PTAStub, {}, {});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
@@ -4684,10 +4684,10 @@ using IRI_STORAGE::FlagValue;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.get_flags_m(id)[idx];
+        return ctx->storage.nodes.get_flags_m(id)[idx];
     }
     inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.get_flags(id)[idx];
+        return ctx->storage.nodes.get_flags(id)[idx];
     }
 
     // --- Arguments ---
