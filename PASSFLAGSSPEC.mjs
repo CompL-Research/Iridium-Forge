@@ -21,12 +21,17 @@ export default [
   },
   {
     name: "dumpClosureTree",
-    default: true,
+    default: false,
     desc: "Dump the closure tree to stdout after optimization passes run",
   },
   {
     name: "dumpIrisInfo",
-    default: true,
+    default: false,
     desc: "Dump IRIS scope-resolution info to stdout after optimization passes run",
+  },
+  {
+    name: "debugStorage",
+    default: false,
+    desc: "Dump IRIStorage pool memory diagnostics after optimization passes run",
   },
 ];

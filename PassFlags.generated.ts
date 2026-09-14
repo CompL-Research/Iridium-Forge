@@ -1,4 +1,4 @@
-/** Generated: 2026-09-14 22:47:27 */
+/** Generated: 2026-09-15 00:39:12 */
 
 export interface PassFlags {
   constantProp?: boolean; // Constant propagation optimization pass
@@ -7,6 +7,7 @@ export interface PassFlags {
   effectProp?: boolean; // Effect propagation optimization pass
   dumpClosureTree?: boolean; // Dump the closure tree to stdout after optimization passes run
   dumpIrisInfo?: boolean; // Dump IRIS scope-resolution info to stdout after optimization passes run
+  debugStorage?: boolean; // Dump IRIStorage pool memory diagnostics after optimization passes run
 }
 
 export const DEFAULT_PASS_FLAGS: Required<PassFlags> = {
@@ -14,8 +15,9 @@ export const DEFAULT_PASS_FLAGS: Required<PassFlags> = {
   tdz: true,
   dce: true,
   effectProp: true,
-  dumpClosureTree: true,
-  dumpIrisInfo: true,
+  dumpClosureTree: false,
+  dumpIrisInfo: false,
+  debugStorage: false,
 };
 
 // Machine-readable spec, kept in sync with PassFlags/DEFAULT_PASS_FLAGS above.
@@ -30,6 +32,7 @@ export const PASS_FLAGS_SPEC: Array<{
   { name: "tdz", default: true, desc: "TDZ-check elimination optimization pass (MTDZS)" },
   { name: "dce", default: true, desc: "Dead code elimination optimization pass" },
   { name: "effectProp", default: true, desc: "Effect propagation optimization pass" },
-  { name: "dumpClosureTree", default: true, desc: "Dump the closure tree to stdout after optimization passes run" },
-  { name: "dumpIrisInfo", default: true, desc: "Dump IRIS scope-resolution info to stdout after optimization passes run" },
+  { name: "dumpClosureTree", default: false, desc: "Dump the closure tree to stdout after optimization passes run" },
+  { name: "dumpIrisInfo", default: false, desc: "Dump IRIS scope-resolution info to stdout after optimization passes run" },
+  { name: "debugStorage", default: false, desc: "Dump IRIStorage pool memory diagnostics after optimization passes run" },
 ];
