@@ -1,9 +1,7 @@
-// Generated Stub for IRI_TAG::JSObject (RVal)
 #include "Generated/IridiumTypes.h"
 #include "Support/PTA/PTAContext.hpp"
-#include "Support/PTA/PTARVALHandlers.hpp"
+#include "external/Prakriti.hpp"
 #include <set>
-#include <stdexcept>
 
 namespace IRI_STRUCTURAL {
 
@@ -14,13 +12,15 @@ namespace IRI_STRUCTURAL {
  * Flags: (none)
  */
 void computeJSObjectVals(const PTAStatementContext &ptactx, IRID node,
-                       std::set<Prakriti::NodeUID> &res_) {
-  throw std::runtime_error("PTA RVal unhandled case JSObject");
-  // IRI_GEN::JSObjectSEXP sexp(node, ptactx.ctx);
+                        std::set<Prakriti::NodeUID> &res_) {
+  Prakriti::ECMAGraph *G = ptactx.incomingState;
 
-  // === TODO : JSObject ===
+  if (!G->hasNode(node))
+    Prakriti::AllocOrdinaryObject(
+        G, node, Prakriti::PKRGlobalState::getTRUE(),
+        Prakriti::PKRGlobalState::getGOOBJ_Object_prototype());
 
-  return;
+  res_.insert(node);
 }
 
 } // namespace IRI_STRUCTURAL
