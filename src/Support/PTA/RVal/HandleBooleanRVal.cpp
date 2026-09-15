@@ -1,9 +1,7 @@
-// Generated Stub for IRI_TAG::Boolean (RVal)
 #include "Generated/IridiumTypes.h"
 #include "Support/PTA/PTAContext.hpp"
-#include "Support/PTA/PTARVALHandlers.hpp"
+#include "external/Prakriti.hpp"
 #include <set>
-#include <stdexcept>
 
 namespace IRI_STRUCTURAL {
 
@@ -16,13 +14,9 @@ namespace IRI_STRUCTURAL {
  */
 void computeBooleanVals(const PTAStatementContext &ptactx, IRID node,
                        std::set<Prakriti::NodeUID> &res_) {
-  throw std::runtime_error("PTA RVal unhandled case Boolean");
-  // IRI_GEN::BooleanSEXP sexp(node, ptactx.ctx);
-
-  // === TODO : Boolean ===
-  // if (sexp.hasIridiumPrimitive()) { bool val_IridiumPrimitive = sexp.getIridiumPrimitive(); }
-
-  return;
+  IRI_GEN::BooleanSEXP sexp(node, ptactx.ctx);
+  res_.insert(sexp.getIridiumPrimitive() ? Prakriti::PKRGlobalState::getTRUE()
+                                         : Prakriti::PKRGlobalState::getFALSE());
 }
 
 } // namespace IRI_STRUCTURAL

@@ -1,9 +1,6 @@
-// Generated Stub for IRI_TAG::Null (RVal)
-#include "Generated/IridiumTypes.h"
 #include "Support/PTA/PTAContext.hpp"
-#include "Support/PTA/PTARVALHandlers.hpp"
+#include "external/Prakriti.hpp"
 #include <set>
-#include <stdexcept>
 
 namespace IRI_STRUCTURAL {
 
@@ -16,13 +13,7 @@ namespace IRI_STRUCTURAL {
  */
 void computeNullVals(const PTAStatementContext &ptactx, IRID node,
                        std::set<Prakriti::NodeUID> &res_) {
-  throw std::runtime_error("PTA RVal unhandled case Null");
-  // IRI_GEN::NullSEXP sexp(node, ptactx.ctx);
-
-  // === TODO : Null ===
-  // bool has_IridiumPrimitive = sexp.hasIridiumPrimitive();
-
-  return;
+  res_.insert(Prakriti::PKRGlobalState::getNULL());
 }
 
 } // namespace IRI_STRUCTURAL
