@@ -34,4 +34,14 @@ export default [
     default: false,
     desc: "Dump IRIStorage pool memory diagnostics after optimization passes run",
   },
+  {
+    name: "pta",
+    default: false,
+    desc: "Run the Points-To Analysis solver after optimization passes run",
+  },
+  {
+    name: "dumpPTA",
+    default: false,
+    desc: "Write the PTA solver trace to out.pta (requires --pta)",
+  },
 ];

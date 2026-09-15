@@ -1,4 +1,4 @@
-// Generated: 2026-09-15 00:39:12
+// Generated: 2026-09-15 12:01:18
 #pragma once
 #include <functional>
 #include <string>
@@ -13,6 +13,8 @@ struct PassFlags {
   bool dumpClosureTree = false; // Dump the closure tree to stdout after optimization passes run
   bool dumpIrisInfo = false; // Dump IRIS scope-resolution info to stdout after optimization passes run
   bool debugStorage = false; // Dump IRIStorage pool memory diagnostics after optimization passes run
+  bool pta = false; // Run the Points-To Analysis solver after optimization passes run
+  bool dumpPTA = false; // Write the PTA solver trace to out.pta (requires --pta)
 };
 
 // Lets embedders (e.g. the Node addon) populate PassFlags generically
@@ -27,6 +29,8 @@ inline void forEachPassFlag(
   fn("dumpClosureTree", flags.dumpClosureTree);
   fn("dumpIrisInfo", flags.dumpIrisInfo);
   fn("debugStorage", flags.debugStorage);
+  fn("pta", flags.pta);
+  fn("dumpPTA", flags.dumpPTA);
 }
 
 } // namespace IRI_GEN

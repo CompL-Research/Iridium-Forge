@@ -1,4 +1,4 @@
-/** Generated: 2026-09-15 00:39:12 */
+/** Generated: 2026-09-15 12:01:18 */
 
 export interface PassFlags {
   constantProp?: boolean; // Constant propagation optimization pass
@@ -8,6 +8,8 @@ export interface PassFlags {
   dumpClosureTree?: boolean; // Dump the closure tree to stdout after optimization passes run
   dumpIrisInfo?: boolean; // Dump IRIS scope-resolution info to stdout after optimization passes run
   debugStorage?: boolean; // Dump IRIStorage pool memory diagnostics after optimization passes run
+  pta?: boolean; // Run the Points-To Analysis solver after optimization passes run
+  dumpPTA?: boolean; // Write the PTA solver trace to out.pta (requires --pta)
 }
 
 export const DEFAULT_PASS_FLAGS: Required<PassFlags> = {
@@ -18,6 +20,8 @@ export const DEFAULT_PASS_FLAGS: Required<PassFlags> = {
   dumpClosureTree: false,
   dumpIrisInfo: false,
   debugStorage: false,
+  pta: false,
+  dumpPTA: false,
 };
 
 // Machine-readable spec, kept in sync with PassFlags/DEFAULT_PASS_FLAGS above.
@@ -35,4 +39,6 @@ export const PASS_FLAGS_SPEC: Array<{
   { name: "dumpClosureTree", default: false, desc: "Dump the closure tree to stdout after optimization passes run" },
   { name: "dumpIrisInfo", default: false, desc: "Dump IRIS scope-resolution info to stdout after optimization passes run" },
   { name: "debugStorage", default: false, desc: "Dump IRIStorage pool memory diagnostics after optimization passes run" },
+  { name: "pta", default: false, desc: "Run the Points-To Analysis solver after optimization passes run" },
+  { name: "dumpPTA", default: false, desc: "Write the PTA solver trace to out.pta (requires --pta)" },
 ];
