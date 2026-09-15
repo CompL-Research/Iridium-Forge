@@ -320,7 +320,8 @@ public:
   V(NAC_ToPrimitive)                                                          \
   V(NAC_ToString)                                                             \
   V(NAC_ToNumeric)                                                            \
-  V(NAC_HandleBinop)
+  V(NAC_HandleBinop)                                                         \
+  V(NAC_HandleRelop)
 
 // Global object identities. PKRGlobalState (ECMAGraph.hpp) turns each of
 // these into a NodeUID field + getter + Init() reservation.
@@ -2464,6 +2465,30 @@ inline bool initBinaryOperators = []() {
 
     // Over-approximated
     return {{PKRGlobalState::getNUMBER(), PKRGlobalState::getBIGINT()}};
+  });
+
+  // ECMA-262 13.10
+  PKRGlobalState::NAC_HandleRelop = DEFINE_ACTION() {
+    ECMAGraph *G = args.G;
+    auto &L = args.L;
+    auto &A = args.A;
+
+    ASSERT(L.size() == 2 && A.size() == 1);
+    NodeUID lval = L[0];
+    NodeUID rval = L[1];
+    std::string op = A[0];
+
+    const std::set<std::string> validOps = {"<", ">", "<=", ">="};
+    ASSERT(validOps.count(op) > 0);
+
+    // ToPrimitive is called for its side effects only (left first, then
+    // right); the result is always a Boolean regardless of operand types.
+    NodeUID tpAct =
+        PKRGlobalState::getActionNode(PKRGlobalState::NAC_ToPrimitive);
+    invokeAction(tpAct, {G, {lval}});
+    invokeAction(tpAct, {G, {rval}});
+
+    return {{PKRGlobalState::getTRUE(), PKRGlobalState::getFALSE()}};
   });
 
   return true;
