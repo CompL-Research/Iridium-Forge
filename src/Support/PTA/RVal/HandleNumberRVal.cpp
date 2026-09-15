@@ -1,9 +1,6 @@
-// Generated Stub for IRI_TAG::Number (RVal)
-#include "Generated/IridiumTypes.h"
 #include "Support/PTA/PTAContext.hpp"
-#include "Support/PTA/PTARVALHandlers.hpp"
+#include "external/Prakriti.hpp"
 #include <set>
-#include <stdexcept>
 
 namespace IRI_STRUCTURAL {
 
@@ -16,13 +13,7 @@ namespace IRI_STRUCTURAL {
  */
 void computeNumberVals(const PTAStatementContext &ptactx, IRID node,
                        std::set<Prakriti::NodeUID> &res_) {
-  throw std::runtime_error("PTA RVal unhandled case Number");
-  // IRI_GEN::NumberSEXP sexp(node, ptactx.ctx);
-
-  // === TODO : Number ===
-  // if (sexp.hasIridiumPrimitive()) { double dbl_IridiumPrimitive = sexp.getIridiumPrimitive(); }
-
-  return;
+  res_.insert(Prakriti::PKRGlobalState::getNUMBER());
 }
 
 } // namespace IRI_STRUCTURAL
