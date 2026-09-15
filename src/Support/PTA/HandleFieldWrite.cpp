@@ -1,8 +1,11 @@
-// Generated Stub for IRI_TAG::FieldWrite
 #include "Generated/IridiumTypes.h"
 #include "Support/PTA/PTAContext.hpp"
 #include "Support/PTA/PTAHandlers.hpp"
-#include <stdexcept>
+#include "Support/PTA/PTARVALDispatch.hpp"
+#include "external/Prakriti.hpp"
+#include <cassert>
+#include <set>
+#include <string>
 
 namespace IRI_STRUCTURAL {
 
@@ -16,15 +19,28 @@ namespace IRI_STRUCTURAL {
  * Flags: (none)
  */
 void handleFieldWrite(const PTAStatementContext &ptactx) {
-  throw std::runtime_error("PTA unhandled case FieldWrite");
-  // IRI_GEN::FieldWriteSEXP sexp(ptactx.stmt.id, ptactx.ctx);
+  IRI_GEN::FieldWriteSEXP sexp(ptactx.stmt.id, ptactx.ctx);
+  Prakriti::ECMAGraph *G = ptactx.incomingState;
 
-  // === TODO : FieldWrite ===
-  // if (sexp.hasArg_Obj()) { IRID arg_Obj = sexp.getArg_Obj(); }
-  // if (sexp.hasArg_Field()) { IRID arg_Field = sexp.getArg_Field(); }
-  // if (sexp.hasArg_Value()) { IRID arg_Value = sexp.getArg_Value(); }
+  std::set<Prakriti::NodeUID> objs, values;
+  resolvePKRRVal(ptactx, sexp.getArg_Obj(), objs);
+  resolvePKRRVal(ptactx, sexp.getArg_Value(), values);
+  assert(!objs.empty());
+  assert(!values.empty());
 
-  return;
+  IRI_GEN::StringSEXP fieldSexp(sexp.getArg_Field(), ptactx.ctx);
+  std::string field(
+      Prakriti::PKRGlobalState::EdgeGet(fieldSexp.getIridiumPrimitive()));
+
+  for (auto obj : objs) {
+    assert(G->hasNode(obj));
+    auto setClosures =
+        G->getPointees(obj, Prakriti::PKRGlobalState::EdgeIntern(PKR_Set));
+    assert(!setClosures.empty());
+    for (auto val : values) {
+      Prakriti::KarmaBindu(G, setClosures, {nullptr, {obj, val}, {field}});
+    }
+  }
 }
 
 } // namespace IRI_STRUCTURAL
