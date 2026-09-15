@@ -23,6 +23,7 @@
 #define DEF_NODE_DYNAMIC(V)                                                    \
   V(STKOBJ)                                                                    \
   V(TSTKOBJ)                                                                   \
+  V(WIPSTKOBJ)                                                                 \
   V(OOBJ)                                                                      \
   V(FOX)                                                                       \
   V(FOBJ)                                                                      \
@@ -305,6 +306,8 @@ public:
   V(NAC_SOBJ_Set)                                                              \
   V(NAC_TSOBJ_Get)                                                             \
   V(NAC_TSOBJ_Set)                                                             \
+  V(NAC_WIPSTKOBJ_Get)                                                         \
+  V(NAC_WIPSTKOBJ_Set)                                                         \
   V(NAC_ECMASCRIPT_Eval)                                                       \
   V(NAC_ECMAMODULE_Eval)                                                       \
   V(NAC_NODESCRIPT_Eval)                                                       \
@@ -2959,6 +2962,29 @@ inline void AllocTransientStackObject(ECMAGraph *G, NodeUID id) {
   SET_AC(id, NAC_TSOBJ_Get, PKR_Get);
   G->addEdge(id, PKRGlobalState::getFALSE(),
              PKRGlobalState::EdgeIntern(PKR_TRANSIENCE));
+}
+
+} // namespace Prakriti
+
+namespace Prakriti {
+
+inline bool initWIPSOBJ = []() {
+  PKRGlobalState::NAC_WIPSTKOBJ_Set = DEFINE_ACTION() {
+    throw std::runtime_error("[Prakriti] Not implemented: WIPStackObject");
+  });
+
+  PKRGlobalState::NAC_WIPSTKOBJ_Get = DEFINE_ACTION() {
+    throw std::runtime_error("[Prakriti] Not implemented: WIPStackObject");
+  });
+
+  return true;
+}();
+
+inline void AllocWIPStackObject(ECMAGraph *G, NodeUID id) {
+  G->addNode(id, TAG::WIPSTKOBJ);
+  NodeUID temp;
+  SET_AC(id, NAC_WIPSTKOBJ_Set, PKR_Set);
+  SET_AC(id, NAC_WIPSTKOBJ_Get, PKR_Get);
 }
 
 } // namespace Prakriti
