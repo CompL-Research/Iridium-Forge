@@ -42,7 +42,8 @@
   V(STATE_VAL)                                                                 \
   V(NUMBER_VAL)                                                                \
   V(STRING_VAL)                                                                \
-  V(BIGINT_VAL)
+  V(BIGINT_VAL)                                                                \
+  V(SYMBOL_TOPRIMITIVE_VAL)
 
 #define DEF_NODE_TYPES(V)                                                      \
   DEF_NODE_EVAL(V)                                                             \
@@ -313,7 +314,13 @@ public:
   V(NAC_Await_Eval)                                                            \
   V(NAC_MARGSOBJ_Get)                                                          \
   V(NAC_MARGSOBJ_Set)                                                          \
-  V(NAC_MARGSOBJ_Unsupported)
+  V(NAC_MARGSOBJ_Unsupported)                                                  \
+  V(NAC_ToNumber)                                                              \
+  V(NAC_OrdinaryToPrimitive)                                                   \
+  V(NAC_ToPrimitive)                                                          \
+  V(NAC_ToString)                                                             \
+  V(NAC_ToNumeric)                                                            \
+  V(NAC_HandleBinop)
 
 // Global object identities. PKRGlobalState (ECMAGraph.hpp) turns each of
 // these into a NodeUID field + getter + Init() reservation.
@@ -630,6 +637,7 @@ private:
   inline static NodeUID NUMBER_VAL = 0;
   inline static NodeUID STRING_VAL = 0;
   inline static NodeUID BIGINT_VAL = 0;
+  inline static NodeUID SYMBOL_TOPRIMITIVE_VAL = 0;
 
   // See list-globals.hpp.
 #define AS_GLOBAL_FIELDS(name) inline static NodeUID name = 0;
@@ -699,6 +707,11 @@ public:
     return BIGINT_VAL;
   }
 
+  static NodeUID getSYMBOL_TOPRIMITIVE() {
+    ASSERT(isInitialized);
+    return SYMBOL_TOPRIMITIVE_VAL;
+  }
+
 #define AS_GLOBAL_GETTERS(name)                                                \
   static NodeUID get##name() { return name; }
   DEF_GLOBAL_IDENTITIES(AS_GLOBAL_GETTERS)
@@ -745,6 +758,7 @@ public:
     NUMBER_VAL = reserveNodeUID();
     STRING_VAL = reserveNodeUID();
     BIGINT_VAL = reserveNodeUID();
+    SYMBOL_TOPRIMITIVE_VAL = reserveNodeUID();
 
 #define AS_GLOBAL_INIT(name) name = reserveNodeUID();
     DEF_GLOBAL_IDENTITIES(AS_GLOBAL_INIT)
@@ -915,6 +929,8 @@ public:
       return "String";
     if (uid == BIGINT_VAL)
       return "BigInt";
+    if (uid == SYMBOL_TOPRIMITIVE_VAL)
+      return "Symbol.toPrimitive";
 
     // Global Identities
 #define AS_GLOBAL_NAME(name)                                                   \
@@ -1300,6 +1316,7 @@ inline ECMAGraph::ActionClosure makeTracedAction(std::string_view file,
 #define PKR_TRANSIENCE "[[transience]]"
 #define PKR_ARGUMENTS "[[Arguments]]"
 #define PKR_MAPPED_ARGUMENTS "[[MappedArguments]]"
+#define PKR_SYM_toPrimitive "[[Symbol.toPrimitive]]"
 
 #include <algorithm>
 #include <set>
@@ -1350,7 +1367,7 @@ inline std::vector<KarmaResult> Karma(const ECMAGraph *G,
   std::vector<KarmaResult> res;
   std::vector<NodeUID> skipped;
   for (const NodeUID aID : acts) {
-    if (G->getNodeTAG(aID) == TAG::ACT) {
+    if (PKRGlobalState::nodeHasActionClosure(aID)) {
       auto G_ = G->clone();
       auto ret =
           invokeAction(aID, ECMAGraph::PJSSL_ARG{&G_, args.L, args.A, args.X});
@@ -2200,6 +2217,260 @@ inline void SetAwaitStoreTarget(ECMAGraph *G, NodeUID awaitID,
 
 } // namespace Prakriti
 
+#include <set>
+
+namespace Prakriti {
+
+inline bool isObjectNode(const ECMAGraph *G, NodeUID v) {
+  switch (G->getNodeTAG(v)) {
+  case TAG::OOBJ:
+  case TAG::FOBJ:
+  case TAG::ARRAYOBJ:
+  case TAG::ARGSOBJ:
+  case TAG::MARGSOBJ:
+    return true;
+  default:
+    return false;
+  }
+}
+
+// ECMA-262 7.1.4 ToNumber
+inline bool initBinaryOperators = []() {
+  PKRGlobalState::NAC_ToNumber = DEFINE_ACTION() {
+    ECMAGraph *G = args.G;
+    auto &L = args.L;
+
+    ASSERT(L.size() == 1);
+    NodeUID v = L[0];
+    switch (G->getNodeTAG(v)) {
+    case TAG::UNDEF_VAL:
+      return {{PKRGlobalState::getNAN()}};
+    case TAG::STRING_VAL:
+      return {{PKRGlobalState::getNUMBER(), PKRGlobalState::getNAN()}};
+    default:
+      return {{PKRGlobalState::getNUMBER()}};
+    }
+  });
+
+  // ECMA-262 7.1.1.1 OrdinaryToPrimitive
+  PKRGlobalState::NAC_OrdinaryToPrimitive = DEFINE_ACTION() {
+    ECMAGraph *G = args.G;
+    auto &L = args.L;
+
+    ASSERT(L.size() == 1);
+    NodeUID ctx = L[0];
+
+    auto getActs = G->getPointees(ctx, PKRGlobalState::EdgeIntern(PKR_Get));
+    auto funs1 = KarmaBindu(G, getActs, {NULL, {ctx, ctx}, {"toString"}});
+    auto funs2 = KarmaBindu(G, getActs, {NULL, {ctx, ctx}, {"valueOf"}});
+
+    std::vector<NodeUID> toStringFns, valueOfFns;
+    for (NodeUID f : funs1)
+      if (PKRGlobalState::nodeHasActionClosure(f))
+        toStringFns.push_back(f);
+    for (NodeUID f : funs2)
+      if (PKRGlobalState::nodeHasActionClosure(f))
+        valueOfFns.push_back(f);
+
+    // I am unsure about that to do here, for a later day ~ Meetesh
+    ASSERT(!toStringFns.empty() || !valueOfFns.empty());
+
+    // Its sound only under all execution ordered,
+    // in the spec its under a loop, so some ordering exists,
+    // cannot Karma and forget here...
+    ECMAGraph GA = G->clone();
+    auto resA1 = KarmaBindu(&GA, toStringFns, {NULL, {ctx}});
+    auto resA2 = KarmaBindu(&GA, valueOfFns, {NULL, {ctx}});
+
+    ECMAGraph GB = G->clone();
+    auto resB1 = KarmaBindu(&GB, valueOfFns, {NULL, {ctx}});
+    auto resB2 = KarmaBindu(&GB, toStringFns, {NULL, {ctx}});
+
+    GA.mutateMergeUnion({GB});
+    *G = std::move(GA);
+
+    std::set<NodeUID> allResults;
+    for (auto *s : {&resA1, &resA2, &resB1, &resB2})
+      allResults.insert(s->begin(), s->end());
+
+    std::vector<NodeUID> finRes;
+    for (NodeUID r : allResults)
+      if (!isObjectNode(G, r))
+        finRes.push_back(r);
+
+    ASSERT(!finRes.empty());
+
+    return {{finRes.begin(), finRes.end()}};
+  });
+
+  // ECMA-262 7.1.1 ToPrimitive
+  PKRGlobalState::NAC_ToPrimitive = DEFINE_ACTION() {
+    ECMAGraph *G = args.G;
+    auto &L = args.L;
+
+    ASSERT(L.size() == 1);
+    NodeUID val = L[0];
+
+    if (!isObjectNode(G, val))
+      return {{val}};
+
+    auto getActs = G->getPointees(val, PKRGlobalState::EdgeIntern(PKR_Get));
+    auto funcs =
+        KarmaBindu(G, getActs, {NULL, {val, val}, {PKR_SYM_toPrimitive}});
+
+    bool sawUndefined = false;
+    std::vector<NodeUID> callable;
+    for (NodeUID f : funcs) {
+      if (f == PKRGlobalState::getUNDEF())
+        sawUndefined = true;
+      else if (PKRGlobalState::nodeHasActionClosure(f))
+        callable.push_back(f);
+      else
+        ASSERT(
+            false); // non-callable [Symbol.toPrimitive]: TypeError, unmodeled
+    }
+
+    // Do I really wanna throw an error with undefined or just move on... its a
+    // corner case I hope... ~ Meetesh
+    ASSERT(!(sawUndefined && !callable.empty()));
+
+    if (!callable.empty()) {
+      auto results = KarmaBindu(G, callable, {NULL, {val}});
+      return {{results.begin(), results.end()}};
+    }
+
+    NodeUID otpAct =
+        PKRGlobalState::getActionNode(PKRGlobalState::NAC_OrdinaryToPrimitive);
+    return invokeAction(otpAct, {G, {val}});
+  });
+
+  // ECMA-262 7.1.17 ToString
+  PKRGlobalState::NAC_ToString = DEFINE_ACTION() {
+    ECMAGraph *G = args.G;
+    auto &L = args.L;
+
+    ASSERT(L.size() == 1);
+    NodeUID ctx = L[0];
+
+    NodeUID tpAct =
+        PKRGlobalState::getActionNode(PKRGlobalState::NAC_ToPrimitive);
+    invokeAction(tpAct, {G, {ctx}});
+
+    return {{PKRGlobalState::getSTRING()}};
+  });
+
+  // ECMA-262 7.1.3 ToNumeric
+  PKRGlobalState::NAC_ToNumeric = DEFINE_ACTION() {
+    ECMAGraph *G = args.G;
+    auto &L = args.L;
+
+    ASSERT(L.size() == 1);
+    NodeUID ctx = L[0];
+
+    NodeUID tpAct =
+        PKRGlobalState::getActionNode(PKRGlobalState::NAC_ToPrimitive);
+    auto primRes = invokeAction(tpAct, {G, {ctx}});
+    std::set<NodeUID> vals(primRes.L.begin(), primRes.L.end());
+
+    bool allBigInt = true, allNumber = true;
+    for (NodeUID v : vals) {
+      TAG t = G->getNodeTAG(v);
+      allBigInt &= (t == TAG::BIGINT_VAL);
+      allNumber &= (t == TAG::NUMBER_VAL);
+    }
+
+    if (allBigInt)
+      return {{PKRGlobalState::getBIGINT()}};
+    if (allNumber)
+      return {{PKRGlobalState::getNUMBER()}};
+
+    NodeUID tnAct = PKRGlobalState::getActionNode(PKRGlobalState::NAC_ToNumber);
+    std::set<NodeUID> res;
+    for (NodeUID v : vals) {
+      auto r = invokeAction(tnAct, {G, {v}});
+      res.insert(r.L.begin(), r.L.end());
+    }
+
+    ASSERT(!res.empty());
+    return {{res.begin(), res.end()}};
+  });
+
+  // ECMA-262 13.15.3 ApplyStringOrNumericBinaryOperator
+  PKRGlobalState::NAC_HandleBinop = DEFINE_ACTION() {
+    ECMAGraph *G = args.G;
+    auto &L = args.L;
+    auto &A = args.A;
+
+    ASSERT(L.size() == 2 && A.size() == 1);
+    NodeUID lval = L[0];
+    NodeUID rval = L[1];
+    std::string op = A[0];
+
+    const std::set<std::string> validOps = {"**", "*",  "/",   "%", "+", "-",
+                                            "<<", ">>", ">>>", "&", "^", "|"};
+    ASSERT(validOps.count(op) > 0);
+
+    std::set<NodeUID> lvalSet = {lval};
+    std::set<NodeUID> rvalSet = {rval};
+
+    if (op == "+") {
+      NodeUID tpAct =
+          PKRGlobalState::getActionNode(PKRGlobalState::NAC_ToPrimitive);
+      auto vv1Ret = invokeAction(tpAct, {G, {lval}});
+      std::set<NodeUID> vv1(vv1Ret.L.begin(), vv1Ret.L.end());
+      auto vv2Ret = invokeAction(tpAct, {G, {rval}});
+      std::set<NodeUID> vv2(vv2Ret.L.begin(), vv2Ret.L.end());
+
+      bool anyString = false;
+      for (NodeUID v : vv1)
+        anyString |= (G->getNodeTAG(v) == TAG::STRING_VAL);
+      for (NodeUID v : vv2)
+        anyString |= (G->getNodeTAG(v) == TAG::STRING_VAL);
+
+      if (anyString) {
+        NodeUID tsAct =
+            PKRGlobalState::getActionNode(PKRGlobalState::NAC_ToString);
+        for (NodeUID v : vv1)
+          invokeAction(tsAct, {G, {v}}); // side effects only
+        for (NodeUID v : vv2)
+          invokeAction(tsAct, {G, {v}}); // side effects only
+        return {{PKRGlobalState::getSTRING()}};
+      }
+
+      lvalSet = vv1;
+      rvalSet = vv2;
+    }
+
+    NodeUID tnumAct =
+        PKRGlobalState::getActionNode(PKRGlobalState::NAC_ToNumeric);
+    std::set<NodeUID> v1, v2;
+    for (NodeUID v : lvalSet) {
+      auto r = invokeAction(tnumAct, {G, {v}});
+      v1.insert(r.L.begin(), r.L.end());
+    }
+    for (NodeUID v : rvalSet) {
+      auto r = invokeAction(tnumAct, {G, {v}});
+      v2.insert(r.L.begin(), r.L.end());
+    }
+
+    if (v1.size() == 1 && v2.size() == 1) {
+      TAG t1 = G->getNodeTAG(*v1.begin());
+      TAG t2 = G->getNodeTAG(*v2.begin());
+      if (t1 == TAG::BIGINT_VAL && t2 == TAG::BIGINT_VAL)
+        return {{PKRGlobalState::getBIGINT()}};
+      if (t1 == TAG::NUMBER_VAL && t2 == TAG::NUMBER_VAL)
+        return {{PKRGlobalState::getNUMBER()}};
+    }
+
+    // Over-approximated
+    return {{PKRGlobalState::getNUMBER(), PKRGlobalState::getBIGINT()}};
+  });
+
+  return true;
+}();
+
+} // namespace Prakriti
+
 namespace Prakriti {
 
 inline bool initClosure = []() { return true; }();
@@ -2457,6 +2728,14 @@ inline void initECMAEnvironment(ECMAGraph *G) {
                       PKRGlobalState::getGOOBJ_Symbol_prototype(),
                       PKRGlobalState::getGOOBJ_Object_prototype(),
                       {"for", "keyFor"}, {"toString", "valueOf"}, "Symbol");
+  // Add Symbol.toPrimitive -> SYMBOL_TOPRIMITIVE_VAL
+  KarmaBindu(G,
+             G->getPointees(PKRGlobalState::getGFOBJ_Symbol(),
+                            PKRGlobalState::EdgeIntern(PKR_Set)),
+             {NULL,
+              {PKRGlobalState::getGFOBJ_Symbol(),
+               PKRGlobalState::getSYMBOL_TOPRIMITIVE()},
+              {"toPrimitive"}});
 
   defineStubIntrinsic(G, PKRGlobalState::getGFOBJ_Error(),
                       PKRGlobalState::getGOOBJ_Error_prototype(),
@@ -2552,6 +2831,8 @@ inline void initLeaves(ECMAGraph *G) {
   G->addNode(PKRGlobalState::getNUMBER(), TAG::NUMBER_VAL);
   G->addNode(PKRGlobalState::getSTRING(), TAG::STRING_VAL);
   G->addNode(PKRGlobalState::getBIGINT(), TAG::BIGINT_VAL);
+  G->addNode(PKRGlobalState::getSYMBOL_TOPRIMITIVE(),
+             TAG::SYMBOL_TOPRIMITIVE_VAL);
 }
 
 #define DEF_JSFILE_EVAL(NACName, envInitFn)                                    \
