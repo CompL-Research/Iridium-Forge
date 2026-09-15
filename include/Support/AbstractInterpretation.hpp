@@ -359,6 +359,7 @@ public:
       if (bb->tail) {
         handleException(currState);
         runTransfer(bb->tail);
+        cfgAtStmt[bb->tail] = currState;
         if (IRI_NODE(cfg->ctx, bb->tail->id).tag == IRI_GEN::Goto) {
           GotoSEXP gt(bb->tail->id, cfg->ctx);
           if (gt.hasDeferred()) {
