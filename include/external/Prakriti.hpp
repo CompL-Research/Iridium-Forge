@@ -311,19 +311,8 @@ public:
   V(NAC_QJSSCRIPT_Eval)                                                        \
   V(NAC_QJSMODULE_Eval)                                                        \
   V(NAC_Await_Eval)                                                            \
-  V(NAC_UNKNOWN_GetPrototypeOf)                                                \
-  V(NAC_UNKNOWN_SetPrototypeOf)                                                \
-  V(NAC_UNKNOWN_IsExtensible)                                                  \
-  V(NAC_UNKNOWN_PreventExtensions)                                             \
-  V(NAC_UNKNOWN_GetOwnProperty)                                                \
-  V(NAC_UNKNOWN_DefineOwnProperty)                                             \
-  V(NAC_UNKNOWN_HasProperty)                                                   \
-  V(NAC_UNKNOWN_Get)                                                           \
-  V(NAC_UNKNOWN_Set)                                                           \
-  V(NAC_UNKNOWN_Delete)                                                        \
-  V(NAC_UNKNOWN_OwnPropertyKeys)                                               \
-  V(NAC_MARGSOBJ_Get)                                                         \
-  V(NAC_MARGSOBJ_Set)                                                         \
+  V(NAC_MARGSOBJ_Get)                                                          \
+  V(NAC_MARGSOBJ_Set)                                                          \
   V(NAC_MARGSOBJ_Unsupported)
 
 // Global object identities. PKRGlobalState (ECMAGraph.hpp) turns each of
