@@ -1,9 +1,12 @@
-// Generated Stub for IRI_TAG::CallSite (RVal)
 #include "Generated/IridiumTypes.h"
+#include "Support/PTA/PTACallHelpers.hpp"
 #include "Support/PTA/PTAContext.hpp"
-#include "Support/PTA/PTARVALHandlers.hpp"
+#include "Support/PTA/PTARVALDispatch.hpp"
+#include "external/Prakriti.hpp"
+#include <cassert>
 #include <set>
 #include <stdexcept>
+#include <vector>
 
 namespace IRI_STRUCTURAL {
 
@@ -22,21 +25,35 @@ namespace IRI_STRUCTURAL {
  *   - double JSDirectEval -> sexp.getJSDirectEval()
  */
 void computeCallSiteVals(const PTAStatementContext &ptactx, IRID node,
-                       std::set<Prakriti::NodeUID> &res_) {
-  throw std::runtime_error("PTA RVal unhandled case CallSite");
-  // IRI_GEN::CallSiteSEXP sexp(node, ptactx.ctx);
+                         std::set<Prakriti::NodeUID> &res_) {
+  IRI_GEN::CallSiteSEXP sexp(node, ptactx.ctx);
+  if (sexp.hasCCall() || sexp.hasConstructorCall() || sexp.hasPrivateCall() ||
+      sexp.hasImport() || sexp.hasSuper() || sexp.hasV8Intrinsic())
+    throw std::runtime_error(
+        "PTA CallSite: only the basic calling convention is implemented");
 
-  // === TODO : CallSite ===
-  // bool has_CCall = sexp.hasCCall();
-  // bool has_ConstructorCall = sexp.hasConstructorCall();
-  // bool has_PrivateCall = sexp.hasPrivateCall();
-  // bool has_Import = sexp.hasImport();
-  // bool has_Super = sexp.hasSuper();
-  // bool has_V8Intrinsic = sexp.hasV8Intrinsic();
-  // bool has_TAILCALL = sexp.hasTAILCALL();
-  // if (sexp.hasJSDirectEval()) { double dbl_JSDirectEval = sexp.getJSDirectEval(); }
+  Prakriti::ECMAGraph *G = ptactx.incomingState;
+  auto rawArgs = ptactx.ctx.storage.nodes.get_args(node);
+  assert(!rawArgs.empty());
 
-  return;
+  std::set<Prakriti::NodeUID> callees;
+  resolvePKRRVal(ptactx, rawArgs[0], callees);
+  assert(!callees.empty());
+
+  std::vector<std::set<Prakriti::NodeUID>> positional;
+  std::vector<Prakriti::NodeUID> flatArgs;
+  for (size_t i = 1; i < rawArgs.size(); i++) {
+    std::set<Prakriti::NodeUID> a;
+    resolvePKRRVal(ptactx, rawArgs[i], a);
+    assert(!a.empty());
+    positional.push_back(a);
+    flatArgs.insert(flatArgs.end(), a.begin(), a.end());
+  }
+
+  std::vector<Prakriti::NodeUID> calleeVec(callees.begin(), callees.end());
+  auto vals = Prakriti::KarmaBindu(
+      G, calleeVec, {nullptr, flatArgs, {encodeArgRanges(positional)}});
+  res_.insert(vals.begin(), vals.end());
 }
 
 } // namespace IRI_STRUCTURAL
