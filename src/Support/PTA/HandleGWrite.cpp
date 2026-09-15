@@ -1,8 +1,11 @@
-// Generated Stub for IRI_TAG::GWrite
 #include "Generated/IridiumTypes.h"
 #include "Support/PTA/PTAContext.hpp"
 #include "Support/PTA/PTAHandlers.hpp"
-#include <stdexcept>
+#include "Support/PTA/PTARVALDispatch.hpp"
+#include "external/Prakriti.hpp"
+#include <cassert>
+#include <set>
+#include <vector>
 
 namespace IRI_STRUCTURAL {
 
@@ -19,18 +22,30 @@ namespace IRI_STRUCTURAL {
  *   - void   DECLFUN -> sexp.hasDECLFUN()
  */
 void handleGWrite(const PTAStatementContext &ptactx) {
-  throw std::runtime_error("PTA unhandled case GWrite");
-  // IRI_GEN::GWriteSEXP sexp(ptactx.stmt.id, ptactx.ctx);
+  IRI_GEN::GWriteSEXP sexp(ptactx.stmt.id, ptactx.ctx);
+  Prakriti::ECMAGraph *G = ptactx.incomingState;
 
-  // === TODO : GWrite ===
-  // if (sexp.hasArg_LValTarget()) { IRID arg_LValTarget = sexp.getArg_LValTarget(); }
-  // if (sexp.hasArg_RVal()) { IRID arg_RVal = sexp.getArg_RVal(); }
-  // bool has_INIT = sexp.hasINIT();
-  // bool has_SAFE = sexp.hasSAFE();
-  // bool has_DECLVAR = sexp.hasDECLVAR();
-  // bool has_DECLFUN = sexp.hasDECLFUN();
+  std::set<Prakriti::NodeUID> values;
+  resolvePKRRVal(ptactx, sexp.getArg_RVal(), values);
+  assert(!values.empty());
 
-  return;
+  IRID lval = sexp.getArg_LValTarget();
+  auto lvalTag = IRI_NODE(ptactx.ctx, lval).tag;
+
+  Prakriti::NodeUID target =
+      lvalTag == IRI_GEN::GlobalBinding
+          ? Prakriti::PKRGlobalState::getGlobal(
+                IRI_GEN::GlobalBindingSEXP(lval, ptactx.ctx).getNAME())
+          : lval;
+  assert(G->hasNode(target));
+
+  std::vector<Prakriti::NodeUID> setArgs = {target};
+  setArgs.insert(setArgs.end(), values.begin(), values.end());
+
+  auto setClosures =
+      G->getPointees(target, Prakriti::PKRGlobalState::EdgeIntern(PKR_Set));
+  assert(!setClosures.empty());
+  Prakriti::KarmaBindu(G, setClosures, {nullptr, setArgs});
 }
 
 } // namespace IRI_STRUCTURAL
