@@ -8,7 +8,9 @@
 #include "Support/PTA/PTADispatch.hpp"
 #include "external/Prakriti.hpp"
 #include "external/pta_trace.hpp"
+#include <algorithm>
 #include <memory>
+#include <set>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -63,7 +65,7 @@ void setupTraceWriter(IRIContext &ctx) {
 
   ctx.closureTree->preorderTraversal([&](IRICFG *cfg) {
     auto &c = ctx.debugger.traceWriter->declareClosure(cfg->getDebugID(),
-                                                        cfg->getDebugName());
+                                                       cfg->getDebugName());
     for (const BBIDX bbID : cfg->getReversePostOrder(true)) {
       IRIBB *bb = IRI_BB(cfg, bbID);
       auto &currBB = c.block(bb->getDebugID(), bb->getDebugName());
@@ -105,7 +107,7 @@ globalInitializers() {
           {GSTK_Symbol, Prakriti::initGSTK_Symbol},
           {GSTK_Error, Prakriti::initGSTK_Error},
           {GSTK_Object, Prakriti::initGSTK_Object},
-      };
+  };
   return table;
 }
 
@@ -125,8 +127,7 @@ void initGlobalBindings(IRIContext &ctx, IRICFG *rootCFG, ECMAGraph *G) {
   }
 }
 
-std::vector<Prakriti::NodeUID> initStackLocals(IRICFG *rootCFG,
-                                                ECMAGraph *G) {
+std::vector<Prakriti::NodeUID> initStackLocals(IRICFG *rootCFG, ECMAGraph *G) {
   std::vector<Prakriti::NodeUID> locals;
   for (const auto b : rootCFG->ptaGenStack()) {
     if (!G->hasNode(b))
@@ -143,7 +144,8 @@ std::vector<Prakriti::NodeUID> initStackLocals(IRICFG *rootCFG,
   return locals;
 }
 
-void pruneToReachable(ECMAGraph *G, const std::vector<Prakriti::NodeUID> &locals,
+void pruneToReachable(ECMAGraph *G,
+                      const std::vector<Prakriti::NodeUID> &locals,
                       const std::vector<Prakriti::NodeUID> &remoteRefs) {
   std::vector<Prakriti::NodeUID> roots = {
       Prakriti::PKRGlobalState::getINF(),
@@ -187,13 +189,101 @@ void runFile(IRIContext &ctx, IRICFG *rootCFG, ECMAGraph *G) {
       true);
 }
 
+// Allocate Stack bindings, JSCTX, bind arguments, etc.. some assertions like
+// captured existing...
+void setupClosureFrame(
+    IRIContext &ctx, IRICFG *calleeCFG, ECMAGraph *G,
+    const std::vector<std::set<Prakriti::NodeUID>> &actualArgs) {
+  std::vector<Prakriti::NodeUID> locals;
+  for (const auto b : calleeCFG->ptaGenStack()) {
+    if (!G->hasNode(b))
+      Prakriti::AllocStackObject(G, b);
+    locals.push_back(b);
+  }
+  for (const auto b : calleeCFG->ptaGenTStack()) {
+    if (!G->hasNode(b))
+      Prakriti::AllocStackObject(G, b);
+    locals.push_back(b);
+  }
+
+  for (const auto ref : calleeCFG->ptaAssertTransient()) {
+    if (!G->hasNode(ref))
+      throw std::runtime_error("Remote binding not found!");
+  }
+
+  std::vector<std::pair<double, Prakriti::NodeUID>> formals;
+  for (const auto b : locals) {
+    IRI_GEN::EnvBindingSEXP eb(b, ctx);
+    if (eb.hasJSARG())
+      formals.push_back({eb.getREFIDX(), b});
+  }
+  std::sort(formals.begin(), formals.end());
+
+  for (size_t i = 0; i < formals.size(); i++) {
+    Prakriti::NodeUID param = formals[i].second;
+    // First arg is the ctx... I keep forgetting that, keeping this here just
+    // for reference...
+    std::vector<Prakriti::NodeUID> setArgs = {param};
+    if (i < actualArgs.size())
+      setArgs.insert(setArgs.end(), actualArgs[i].begin(), actualArgs[i].end());
+    else
+      setArgs.push_back(Prakriti::PKRGlobalState::getUNDEF());
+    auto setClosures =
+        G->getPointees(param, Prakriti::PKRGlobalState::EdgeIntern(PKR_Set));
+    Prakriti::KarmaBindu(G, setClosures, {nullptr, setArgs});
+  }
+
+  auto sentinel = [&](int slot) {
+    return Prakriti::PKRGlobalState::generateSentinel(
+        calleeCFG->id,
+        Prakriti::PKRGlobalState::EdgeIntern("JSCTX" + std::to_string(slot)));
+  };
+
+  Prakriti::NodeUID argsID = sentinel(0);
+  if (!G->hasNode(argsID))
+    Prakriti::AllocArgumentsObject(
+        G, argsID, Prakriti::PKRGlobalState::getTRUE(),
+        Prakriti::PKRGlobalState::getGOOBJ_Object_prototype());
+
+  Prakriti::NodeUID margsID = sentinel(1);
+  if (!G->hasNode(margsID)) {
+    Prakriti::AllocMappedArgumentsObject(
+        G, margsID, Prakriti::PKRGlobalState::getTRUE(),
+        Prakriti::PKRGlobalState::getGOOBJ_Object_prototype());
+    for (const auto &[refidx, param] : formals)
+      G->addEdge(
+          margsID, param,
+          Prakriti::PKRGlobalState::EdgeIntern(std::to_string((long)refidx)));
+  }
+
+  // TODO: Added WIPStackObject Nodes, will need to implement these later...
+  for (int slot = 2; slot <= 9; slot++) {
+    Prakriti::NodeUID id = sentinel(slot);
+    if (!G->hasNode(id))
+      Prakriti::AllocWIPStackObject(G, id);
+  }
+}
+
+// Calling [[Get]] on the <common-ret>
+std::pair<std::set<Prakriti::NodeUID>, ECMAGraph>
+extractReturnValue(IRICFG *calleeCFG,
+                   std::unordered_map<IRIStatement *, ECMAGraph> &states) {
+  IRIStatement *tailStmt = calleeCFG->get_bb(calleeCFG->exit_block)->tail;
+  auto it = states.find(tailStmt);
+  if (it == states.end())
+    throw std::runtime_error("PTA: closure exit block unreachable");
+
+  ECMAGraph finalState = it->second;
+  auto getClosures = finalState.getPointees(
+      calleeCFG->retCTX, Prakriti::PKRGlobalState::EdgeIntern(PKR_Get));
+  auto vals = Prakriti::KarmaBindu(&finalState, getClosures,
+                                   {nullptr, {calleeCFG->retCTX}});
+  return {vals, finalState};
+}
+
 } // namespace
 
 void PTASolver::solve(IRIContext &ctx) {
-  // The dataflow solver (YADataflowSolver::run) always calls into
-  // ctx.debugger.traceWriter -- it isn't optional debug scaffolding, so it
-  // has to exist regardless of dumpPTA. dumpPTA only controls the extra
-  // per-event detail gated by Prakriti::isTraceEnabled().
   Prakriti::setTraceEnabled(ctx.flags.dumpPTA);
   setupTraceWriter(ctx);
 
@@ -240,6 +330,22 @@ void PTASolver::solve(IRIContext &ctx) {
 
   ctx.debugger.traceWriter->finish();
   Prakriti::setTraceEnabled(false);
+}
+
+std::set<Prakriti::NodeUID> PTASolver::invokeClosure(
+    IRIContext &ctx, IRICFG *calleeCFG, ECMAGraph *G,
+    const std::vector<std::set<Prakriti::NodeUID>> &actualArgs) {
+  setupClosureFrame(ctx, calleeCFG, G, actualArgs);
+
+  PTATransfer transferFunction;
+  YADataflowSolver<ECMAGraph> solver(transferFunction);
+  auto cfgAtStmt = solver.run(
+      ResumableDataflowState<ECMAGraph>(calleeCFG, calleeCFG->entry_block, *G),
+      true);
+
+  auto [retVals, finalState] = extractReturnValue(calleeCFG, cfgAtStmt);
+  *G = finalState;
+  return retVals;
 }
 
 } // namespace IRI_STRUCTURAL

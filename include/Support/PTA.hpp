@@ -4,7 +4,9 @@
 #include "Support/AbstractInterpretation.hpp"
 #include "Support/IRICFG.hpp"
 #include "external/Prakriti.hpp"
+#include <set>
 #include <unordered_map>
+#include <vector>
 
 namespace IRI_STRUCTURAL {
 
@@ -38,6 +40,11 @@ private:
 
 public:
   static void solve(IRIContext &);
+
+  // Fixed point computation for closures
+  static std::set<Prakriti::NodeUID>
+  invokeClosure(IRIContext &ctx, IRICFG *calleeCFG, Prakriti::ECMAGraph *G,
+                const std::vector<std::set<Prakriti::NodeUID>> &actualArgs);
 };
 
 } // namespace IRI_STRUCTURAL
