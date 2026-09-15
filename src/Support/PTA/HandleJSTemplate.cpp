@@ -2,7 +2,8 @@
 #include "Generated/IridiumTypes.h"
 #include "Support/PTA/PTAContext.hpp"
 #include "Support/PTA/PTAHandlers.hpp"
-#include <iostream>
+#include "Support/PTA/PTARVALDispatch.hpp"
+#include <set>
 
 namespace IRI_STRUCTURAL {
 
@@ -11,14 +12,13 @@ namespace IRI_STRUCTURAL {
  * Meta:    AMP
  * Arguments: (none)
  * Flags: (none)
+ *
+ * AMP node used as a bare statement: evaluate it via RVal resolution for
+ * its side effects and discard the produced value.
  */
-void handleJSTemplate(const PTAStatementContext &ctx) {
-  throw std::runtime_error("PTA unhandled case JSTemplate");
-  // IRI_GEN::JSTemplateSEXP sexp(ctx.stmt.id, ctx.pool);
-
-  // === TODO : JSTemplate ===
-
-  return ;
+void handleJSTemplate(const PTAStatementContext &ptactx) {
+  std::set<Prakriti::NodeUID> discarded;
+  resolvePKRRVal(ptactx, ptactx.stmt.id, discarded);
 }
 
 } // namespace IRI_STRUCTURAL

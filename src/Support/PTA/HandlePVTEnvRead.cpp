@@ -2,7 +2,8 @@
 #include "Generated/IridiumTypes.h"
 #include "Support/PTA/PTAContext.hpp"
 #include "Support/PTA/PTAHandlers.hpp"
-#include <iostream>
+#include "Support/PTA/PTARVALDispatch.hpp"
+#include <set>
 
 namespace IRI_STRUCTURAL {
 
@@ -15,18 +16,13 @@ namespace IRI_STRUCTURAL {
  *   - void   SYMBOL -> sexp.hasSYMBOL()
  *   - void   METHOD -> sexp.hasMETHOD()
  *   - void   FULLY_RESOLVE -> sexp.hasFULLY_RESOLVE()
+ *
+ * AMP node used as a bare statement: evaluate it via RVal resolution for
+ * its side effects and discard the produced value.
  */
-void handlePVTEnvRead(const PTAStatementContext &ctx) {
-  throw std::runtime_error("PTA unhandled case PVTEnvRead");
-  // IRI_GEN::PVTEnvReadSEXP sexp(ctx.stmt.id, ctx.pool);
-
-  // === TODO : PVTEnvRead ===
-  // if (sexp.hasArg_Obj()) { IRID arg_Obj = sexp.getArg_Obj(); }
-  // bool has_SYMBOL = sexp.hasSYMBOL();
-  // bool has_METHOD = sexp.hasMETHOD();
-  // bool has_FULLY_RESOLVE = sexp.hasFULLY_RESOLVE();
-
-  return ;
+void handlePVTEnvRead(const PTAStatementContext &ptactx) {
+  std::set<Prakriti::NodeUID> discarded;
+  resolvePKRRVal(ptactx, ptactx.stmt.id, discarded);
 }
 
 } // namespace IRI_STRUCTURAL

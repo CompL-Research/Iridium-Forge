@@ -2,7 +2,7 @@
 #include "Generated/IridiumTypes.h"
 #include "Support/PTA/PTAContext.hpp"
 #include "Support/PTA/PTAHandlers.hpp"
-#include <iostream>
+#include <stdexcept>
 
 namespace IRI_STRUCTURAL {
 
@@ -14,15 +14,15 @@ namespace IRI_STRUCTURAL {
  * Flags:
  *   - bool   AWAIT -> sexp.getAWAIT()
  */
-void handleJSForOfStart(const PTAStatementContext &ctx) {
+void handleJSForOfStart(const PTAStatementContext &ptactx) {
   throw std::runtime_error("PTA unhandled case JSForOfStart");
-  // IRI_GEN::JSForOfStartSEXP sexp(ctx.stmt.id, ctx.pool);
+  // IRI_GEN::JSForOfStartSEXP sexp(ptactx.stmt.id, ptactx.ctx);
 
   // === TODO : JSForOfStart ===
   // if (sexp.hasArg_Obj()) { IRID arg_Obj = sexp.getArg_Obj(); }
   // if (sexp.hasAWAIT()) { bool val_AWAIT = sexp.getAWAIT(); }
 
-  return ;
+  return;
 }
 
 } // namespace IRI_STRUCTURAL

@@ -2,7 +2,7 @@
 #include "Generated/IridiumTypes.h"
 #include "Support/PTA/PTAContext.hpp"
 #include "Support/PTA/PTAHandlers.hpp"
-#include <iostream>
+#include <stdexcept>
 
 namespace IRI_STRUCTURAL {
 
@@ -14,15 +14,15 @@ namespace IRI_STRUCTURAL {
  *   [1] IRID ProtoValue -> sexp.getArg_ProtoValue()
  * Flags: (none)
  */
-void handleJSSetPrototypeOf(const PTAStatementContext &ctx) {
+void handleJSSetPrototypeOf(const PTAStatementContext &ptactx) {
   throw std::runtime_error("PTA unhandled case JSSetPrototypeOf");
-  // IRI_GEN::JSSetPrototypeOfSEXP sexp(ctx.stmt.id, ctx.pool);
+  // IRI_GEN::JSSetPrototypeOfSEXP sexp(ptactx.stmt.id, ptactx.ctx);
 
   // === TODO : JSSetPrototypeOf ===
   // if (sexp.hasArg_TargetObj()) { IRID arg_TargetObj = sexp.getArg_TargetObj(); }
   // if (sexp.hasArg_ProtoValue()) { IRID arg_ProtoValue = sexp.getArg_ProtoValue(); }
 
-  return ;
+  return;
 }
 
 } // namespace IRI_STRUCTURAL

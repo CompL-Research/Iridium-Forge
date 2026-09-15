@@ -2,7 +2,7 @@
 #include "Generated/IridiumTypes.h"
 #include "Support/PTA/PTAContext.hpp"
 #include "Support/PTA/PTAHandlers.hpp"
-#include <iostream>
+#include <stdexcept>
 
 namespace IRI_STRUCTURAL {
 
@@ -12,13 +12,13 @@ namespace IRI_STRUCTURAL {
  * Arguments: (none)
  * Flags: (none)
  */
-void handleCompoundAssn(const PTAStatementContext &ctx) {
+void handleCompoundAssn(const PTAStatementContext &ptactx) {
   throw std::runtime_error("PTA unhandled case CompoundAssn");
-  // IRI_GEN::CompoundAssnSEXP sexp(ctx.stmt.id, ctx.pool);
+  // IRI_GEN::CompoundAssnSEXP sexp(ptactx.stmt.id, ptactx.ctx);
 
   // === TODO : CompoundAssn ===
 
-  return ;
+  return;
 }
 
 } // namespace IRI_STRUCTURAL

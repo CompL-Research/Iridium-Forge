@@ -2,7 +2,8 @@
 #include "Generated/IridiumTypes.h"
 #include "Support/PTA/PTAContext.hpp"
 #include "Support/PTA/PTAHandlers.hpp"
-#include <iostream>
+#include "Support/PTA/PTARVALDispatch.hpp"
+#include <set>
 
 namespace IRI_STRUCTURAL {
 
@@ -14,17 +15,13 @@ namespace IRI_STRUCTURAL {
  *   [1] IRID Field -> sexp.getArg_Field()
  * Flags:
  *   - void   SAFE -> sexp.hasSAFE()
+ *
+ * AMP node used as a bare statement: evaluate it via RVal resolution for
+ * its side effects and discard the produced value.
  */
-void handleJSComputedFieldRead(const PTAStatementContext &ctx) {
-  throw std::runtime_error("PTA unhandled case JSComputedFieldRead");
-  // IRI_GEN::JSComputedFieldReadSEXP sexp(ctx.stmt.id, ctx.pool);
-
-  // === TODO : JSComputedFieldRead ===
-  // if (sexp.hasArg_Obj()) { IRID arg_Obj = sexp.getArg_Obj(); }
-  // if (sexp.hasArg_Field()) { IRID arg_Field = sexp.getArg_Field(); }
-  // bool has_SAFE = sexp.hasSAFE();
-
-  return ;
+void handleJSComputedFieldRead(const PTAStatementContext &ptactx) {
+  std::set<Prakriti::NodeUID> discarded;
+  resolvePKRRVal(ptactx, ptactx.stmt.id, discarded);
 }
 
 } // namespace IRI_STRUCTURAL

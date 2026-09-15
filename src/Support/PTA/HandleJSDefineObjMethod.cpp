@@ -2,7 +2,7 @@
 #include "Generated/IridiumTypes.h"
 #include "Support/PTA/PTAContext.hpp"
 #include "Support/PTA/PTAHandlers.hpp"
-#include <iostream>
+#include <stdexcept>
 
 namespace IRI_STRUCTURAL {
 
@@ -19,9 +19,9 @@ namespace IRI_STRUCTURAL {
  *   - void   GET -> sexp.hasGET()
  *   - void   SET -> sexp.hasSET()
  */
-void handleJSDefineObjMethod(const PTAStatementContext &ctx) {
+void handleJSDefineObjMethod(const PTAStatementContext &ptactx) {
   throw std::runtime_error("PTA unhandled case JSDefineObjMethod");
-  // IRI_GEN::JSDefineObjMethodSEXP sexp(ctx.stmt.id, ctx.pool);
+  // IRI_GEN::JSDefineObjMethodSEXP sexp(ptactx.stmt.id, ptactx.ctx);
 
   // === TODO : JSDefineObjMethod ===
   // if (sexp.hasArg_TargetObj()) { IRID arg_TargetObj = sexp.getArg_TargetObj(); }
@@ -32,7 +32,7 @@ void handleJSDefineObjMethod(const PTAStatementContext &ctx) {
   // bool has_GET = sexp.hasGET();
   // bool has_SET = sexp.hasSET();
 
-  return ;
+  return;
 }
 
 } // namespace IRI_STRUCTURAL

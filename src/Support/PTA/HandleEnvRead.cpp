@@ -2,7 +2,8 @@
 #include "Generated/IridiumTypes.h"
 #include "Support/PTA/PTAContext.hpp"
 #include "Support/PTA/PTAHandlers.hpp"
-#include <iostream>
+#include "Support/PTA/PTARVALDispatch.hpp"
+#include <set>
 
 namespace IRI_STRUCTURAL {
 
@@ -14,7 +15,13 @@ namespace IRI_STRUCTURAL {
  * Flags:
  *   - void   SAFE -> sexp.hasSAFE()
  *   - void   TAINTED -> sexp.hasTAINTED()
+ *
+ * AMP node used as a bare statement: evaluate it via RVal resolution for
+ * its side effects and discard the produced value.
  */
-void handleEnvRead(const PTAStatementContext &ctx) { return; }
+void handleEnvRead(const PTAStatementContext &ptactx) {
+  std::set<Prakriti::NodeUID> discarded;
+  resolvePKRRVal(ptactx, ptactx.stmt.id, discarded);
+}
 
 } // namespace IRI_STRUCTURAL

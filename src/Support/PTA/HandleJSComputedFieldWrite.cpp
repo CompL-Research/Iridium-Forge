@@ -2,7 +2,7 @@
 #include "Generated/IridiumTypes.h"
 #include "Support/PTA/PTAContext.hpp"
 #include "Support/PTA/PTAHandlers.hpp"
-#include <iostream>
+#include <stdexcept>
 
 namespace IRI_STRUCTURAL {
 
@@ -16,9 +16,9 @@ namespace IRI_STRUCTURAL {
  * Flags:
  *   - void   SAFE -> sexp.hasSAFE()
  */
-void handleJSComputedFieldWrite(const PTAStatementContext &ctx) {
+void handleJSComputedFieldWrite(const PTAStatementContext &ptactx) {
   throw std::runtime_error("PTA unhandled case JSComputedFieldWrite");
-  // IRI_GEN::JSComputedFieldWriteSEXP sexp(ctx.stmt.id, ctx.pool);
+  // IRI_GEN::JSComputedFieldWriteSEXP sexp(ptactx.stmt.id, ptactx.ctx);
 
   // === TODO : JSComputedFieldWrite ===
   // if (sexp.hasArg_Obj()) { IRID arg_Obj = sexp.getArg_Obj(); }
@@ -26,7 +26,7 @@ void handleJSComputedFieldWrite(const PTAStatementContext &ctx) {
   // if (sexp.hasArg_Value()) { IRID arg_Value = sexp.getArg_Value(); }
   // bool has_SAFE = sexp.hasSAFE();
 
-  return ;
+  return;
 }
 
 } // namespace IRI_STRUCTURAL

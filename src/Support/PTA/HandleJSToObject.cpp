@@ -2,7 +2,8 @@
 #include "Generated/IridiumTypes.h"
 #include "Support/PTA/PTAContext.hpp"
 #include "Support/PTA/PTAHandlers.hpp"
-#include <iostream>
+#include "Support/PTA/PTARVALDispatch.hpp"
+#include <set>
 
 namespace IRI_STRUCTURAL {
 
@@ -12,15 +13,13 @@ namespace IRI_STRUCTURAL {
  * Arguments:
  *   [0] IRID TargetObj -> sexp.getArg_TargetObj()
  * Flags: (none)
+ *
+ * AMP node used as a bare statement: evaluate it via RVal resolution for
+ * its side effects and discard the produced value.
  */
-void handleJSToObject(const PTAStatementContext &ctx) {
-  throw std::runtime_error("PTA unhandled case JSToObject");
-  // IRI_GEN::JSToObjectSEXP sexp(ctx.stmt.id, ctx.pool);
-
-  // === TODO : JSToObject ===
-  // if (sexp.hasArg_TargetObj()) { IRID arg_TargetObj = sexp.getArg_TargetObj(); }
-
-  return ;
+void handleJSToObject(const PTAStatementContext &ptactx) {
+  std::set<Prakriti::NodeUID> discarded;
+  resolvePKRRVal(ptactx, ptactx.stmt.id, discarded);
 }
 
 } // namespace IRI_STRUCTURAL

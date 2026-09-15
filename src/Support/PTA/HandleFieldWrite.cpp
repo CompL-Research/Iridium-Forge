@@ -2,7 +2,7 @@
 #include "Generated/IridiumTypes.h"
 #include "Support/PTA/PTAContext.hpp"
 #include "Support/PTA/PTAHandlers.hpp"
-#include <iostream>
+#include <stdexcept>
 
 namespace IRI_STRUCTURAL {
 
@@ -15,16 +15,16 @@ namespace IRI_STRUCTURAL {
  *   [2] IRID Value -> sexp.getArg_Value()
  * Flags: (none)
  */
-void handleFieldWrite(const PTAStatementContext &ctx) {
+void handleFieldWrite(const PTAStatementContext &ptactx) {
   throw std::runtime_error("PTA unhandled case FieldWrite");
-  // IRI_GEN::FieldWriteSEXP sexp(ctx.stmt.id, ctx.pool);
+  // IRI_GEN::FieldWriteSEXP sexp(ptactx.stmt.id, ptactx.ctx);
 
   // === TODO : FieldWrite ===
   // if (sexp.hasArg_Obj()) { IRID arg_Obj = sexp.getArg_Obj(); }
   // if (sexp.hasArg_Field()) { IRID arg_Field = sexp.getArg_Field(); }
   // if (sexp.hasArg_Value()) { IRID arg_Value = sexp.getArg_Value(); }
 
-  return ;
+  return;
 }
 
 } // namespace IRI_STRUCTURAL

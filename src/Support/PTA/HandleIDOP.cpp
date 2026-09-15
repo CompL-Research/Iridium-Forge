@@ -2,7 +2,8 @@
 #include "Generated/IridiumTypes.h"
 #include "Support/PTA/PTAContext.hpp"
 #include "Support/PTA/PTAHandlers.hpp"
-#include <iostream>
+#include "Support/PTA/PTARVALDispatch.hpp"
+#include <set>
 
 namespace IRI_STRUCTURAL {
 
@@ -14,17 +15,13 @@ namespace IRI_STRUCTURAL {
  * Flags:
  *   - bool   PREFIX -> sexp.getPREFIX()
  *   - bool   INCREMENT -> sexp.getINCREMENT()
+ *
+ * AMP node used as a bare statement: evaluate it via RVal resolution for
+ * its side effects and discard the produced value.
  */
-void handleIDOP(const PTAStatementContext &ctx) {
-  throw std::runtime_error("PTA unhandled case IDOP");
-  // IRI_GEN::IDOPSEXP sexp(ctx.stmt.id, ctx.pool);
-
-  // === TODO : IDOP ===
-  // if (sexp.hasArg_Obj()) { IRID arg_Obj = sexp.getArg_Obj(); }
-  // if (sexp.hasPREFIX()) { bool val_PREFIX = sexp.getPREFIX(); }
-  // if (sexp.hasINCREMENT()) { bool val_INCREMENT = sexp.getINCREMENT(); }
-
-  return ;
+void handleIDOP(const PTAStatementContext &ptactx) {
+  std::set<Prakriti::NodeUID> discarded;
+  resolvePKRRVal(ptactx, ptactx.stmt.id, discarded);
 }
 
 } // namespace IRI_STRUCTURAL

@@ -2,7 +2,8 @@
 #include "Generated/IridiumTypes.h"
 #include "Support/PTA/PTAContext.hpp"
 #include "Support/PTA/PTAHandlers.hpp"
-#include <iostream>
+#include "Support/PTA/PTARVALDispatch.hpp"
+#include <set>
 
 namespace IRI_STRUCTURAL {
 
@@ -17,20 +18,13 @@ namespace IRI_STRUCTURAL {
  *   - void   ConstructorCall -> sexp.hasConstructorCall()
  *   - void   Super -> sexp.hasSuper()
  *   - double JSDirectEval -> sexp.getJSDirectEval()
+ *
+ * AMP node used as a bare statement: evaluate it via RVal resolution for
+ * its side effects and discard the produced value.
  */
-void handleApply(const PTAStatementContext &ctx) {
-  throw std::runtime_error("PTA unhandled case Apply");
-  // IRI_GEN::ApplySEXP sexp(ctx.stmt.id, ctx.pool);
-
-  // === TODO : Apply ===
-  // if (sexp.hasArg_Callee()) { IRID arg_Callee = sexp.getArg_Callee(); }
-  // if (sexp.hasArg_Context()) { IRID arg_Context = sexp.getArg_Context(); }
-  // if (sexp.hasArg_ArgList()) { IRID arg_ArgList = sexp.getArg_ArgList(); }
-  // bool has_ConstructorCall = sexp.hasConstructorCall();
-  // bool has_Super = sexp.hasSuper();
-  // if (sexp.hasJSDirectEval()) { double dbl_JSDirectEval = sexp.getJSDirectEval(); }
-
-  return ;
+void handleApply(const PTAStatementContext &ptactx) {
+  std::set<Prakriti::NodeUID> discarded;
+  resolvePKRRVal(ptactx, ptactx.stmt.id, discarded);
 }
 
 } // namespace IRI_STRUCTURAL

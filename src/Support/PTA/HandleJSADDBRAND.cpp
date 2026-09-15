@@ -2,7 +2,7 @@
 #include "Generated/IridiumTypes.h"
 #include "Support/PTA/PTAContext.hpp"
 #include "Support/PTA/PTAHandlers.hpp"
-#include <iostream>
+#include <stdexcept>
 
 namespace IRI_STRUCTURAL {
 
@@ -14,15 +14,15 @@ namespace IRI_STRUCTURAL {
  *   [1] IRID HomeObj -> sexp.getArg_HomeObj()
  * Flags: (none)
  */
-void handleJSADDBRAND(const PTAStatementContext &ctx) {
+void handleJSADDBRAND(const PTAStatementContext &ptactx) {
   throw std::runtime_error("PTA unhandled case JSADDBRAND");
-  // IRI_GEN::JSADDBRANDSEXP sexp(ctx.stmt.id, ctx.pool);
+  // IRI_GEN::JSADDBRANDSEXP sexp(ptactx.stmt.id, ptactx.ctx);
 
   // === TODO : JSADDBRAND ===
   // if (sexp.hasArg_Obj()) { IRID arg_Obj = sexp.getArg_Obj(); }
   // if (sexp.hasArg_HomeObj()) { IRID arg_HomeObj = sexp.getArg_HomeObj(); }
 
-  return ;
+  return;
 }
 
 } // namespace IRI_STRUCTURAL

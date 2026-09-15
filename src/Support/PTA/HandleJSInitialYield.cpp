@@ -2,7 +2,7 @@
 #include "Generated/IridiumTypes.h"
 #include "Support/PTA/PTAContext.hpp"
 #include "Support/PTA/PTAHandlers.hpp"
-#include <iostream>
+#include <stdexcept>
 
 namespace IRI_STRUCTURAL {
 
@@ -12,13 +12,13 @@ namespace IRI_STRUCTURAL {
  * Arguments: (none)
  * Flags: (none)
  */
-void handleJSInitialYield(const PTAStatementContext &ctx) {
+void handleJSInitialYield(const PTAStatementContext &ptactx) {
   throw std::runtime_error("PTA unhandled case JSInitialYield");
-  // IRI_GEN::JSInitialYieldSEXP sexp(ctx.stmt.id, ctx.pool);
+  // IRI_GEN::JSInitialYieldSEXP sexp(ptactx.stmt.id, ptactx.ctx);
 
   // === TODO : JSInitialYield ===
 
-  return ;
+  return;
 }
 
 } // namespace IRI_STRUCTURAL

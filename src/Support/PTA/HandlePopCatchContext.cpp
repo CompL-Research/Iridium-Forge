@@ -2,7 +2,7 @@
 #include "Generated/IridiumTypes.h"
 #include "Support/PTA/PTAContext.hpp"
 #include "Support/PTA/PTAHandlers.hpp"
-#include <iostream>
+#include <stdexcept>
 
 namespace IRI_STRUCTURAL {
 
@@ -12,13 +12,13 @@ namespace IRI_STRUCTURAL {
  * Arguments: (none)
  * Flags: (none)
  */
-void handlePopCatchContext(const PTAStatementContext &ctx) {
+void handlePopCatchContext(const PTAStatementContext &ptactx) {
   throw std::runtime_error("PTA unhandled case PopCatchContext");
-  // IRI_GEN::PopCatchContextSEXP sexp(ctx.stmt.id, ctx.pool);
+  // IRI_GEN::PopCatchContextSEXP sexp(ptactx.stmt.id, ptactx.ctx);
 
   // === TODO : PopCatchContext ===
 
-  return ;
+  return;
 }
 
 } // namespace IRI_STRUCTURAL

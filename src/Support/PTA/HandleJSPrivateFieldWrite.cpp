@@ -2,7 +2,7 @@
 #include "Generated/IridiumTypes.h"
 #include "Support/PTA/PTAContext.hpp"
 #include "Support/PTA/PTAHandlers.hpp"
-#include <iostream>
+#include <stdexcept>
 
 namespace IRI_STRUCTURAL {
 
@@ -16,9 +16,9 @@ namespace IRI_STRUCTURAL {
  * Flags:
  *   - void   DECL -> sexp.hasDECL()
  */
-void handleJSPrivateFieldWrite(const PTAStatementContext &ctx) {
+void handleJSPrivateFieldWrite(const PTAStatementContext &ptactx) {
   throw std::runtime_error("PTA unhandled case JSPrivateFieldWrite");
-  // IRI_GEN::JSPrivateFieldWriteSEXP sexp(ctx.stmt.id, ctx.pool);
+  // IRI_GEN::JSPrivateFieldWriteSEXP sexp(ptactx.stmt.id, ptactx.ctx);
 
   // === TODO : JSPrivateFieldWrite ===
   // if (sexp.hasArg_Obj()) { IRID arg_Obj = sexp.getArg_Obj(); }
@@ -26,7 +26,7 @@ void handleJSPrivateFieldWrite(const PTAStatementContext &ctx) {
   // if (sexp.hasArg_Value()) { IRID arg_Value = sexp.getArg_Value(); }
   // bool has_DECL = sexp.hasDECL();
 
-  return ;
+  return;
 }
 
 } // namespace IRI_STRUCTURAL

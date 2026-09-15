@@ -2,7 +2,7 @@
 #include "Generated/IridiumTypes.h"
 #include "Support/PTA/PTAContext.hpp"
 #include "Support/PTA/PTAHandlers.hpp"
-#include <iostream>
+#include <stdexcept>
 
 namespace IRI_STRUCTURAL {
 
@@ -15,16 +15,16 @@ namespace IRI_STRUCTURAL {
  *   - void   NOT -> sexp.hasNOT()
  *   - double IDX -> sexp.getIDX()
  */
-void handleIfJump(const PTAStatementContext &ctx) {
+void handleIfJump(const PTAStatementContext &ptactx) {
   throw std::runtime_error("PTA unhandled case IfJump");
-  // IRI_GEN::IfJumpSEXP sexp(ctx.stmt.id, ctx.pool);
+  // IRI_GEN::IfJumpSEXP sexp(ptactx.stmt.id, ptactx.ctx);
 
   // === TODO : IfJump ===
   // if (sexp.hasArg_Test()) { IRID arg_Test = sexp.getArg_Test(); }
   // bool has_NOT = sexp.hasNOT();
   // if (sexp.hasIDX()) { double dbl_IDX = sexp.getIDX(); }
 
-  return ;
+  return;
 }
 
 } // namespace IRI_STRUCTURAL

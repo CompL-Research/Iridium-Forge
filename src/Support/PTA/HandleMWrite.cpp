@@ -2,7 +2,7 @@
 #include "Generated/IridiumTypes.h"
 #include "Support/PTA/PTAContext.hpp"
 #include "Support/PTA/PTAHandlers.hpp"
-#include <iostream>
+#include <stdexcept>
 
 namespace IRI_STRUCTURAL {
 
@@ -16,9 +16,9 @@ namespace IRI_STRUCTURAL {
  *   - void   INIT -> sexp.hasINIT()
  *   - void   SAFE -> sexp.hasSAFE()
  */
-void handleMWrite(const PTAStatementContext &ctx) {
+void handleMWrite(const PTAStatementContext &ptactx) {
   throw std::runtime_error("PTA unhandled case MWrite");
-  // IRI_GEN::MWriteSEXP sexp(ctx.stmt.id, ctx.pool);
+  // IRI_GEN::MWriteSEXP sexp(ptactx.stmt.id, ptactx.ctx);
 
   // === TODO : MWrite ===
   // if (sexp.hasArg_LValTarget()) { IRID arg_LValTarget = sexp.getArg_LValTarget(); }
@@ -26,7 +26,7 @@ void handleMWrite(const PTAStatementContext &ctx) {
   // bool has_INIT = sexp.hasINIT();
   // bool has_SAFE = sexp.hasSAFE();
 
-  return ;
+  return;
 }
 
 } // namespace IRI_STRUCTURAL

@@ -2,7 +2,7 @@
 #include "Generated/IridiumTypes.h"
 #include "Support/PTA/PTAContext.hpp"
 #include "Support/PTA/PTAHandlers.hpp"
-#include <iostream>
+#include <stdexcept>
 
 namespace IRI_STRUCTURAL {
 
@@ -12,13 +12,13 @@ namespace IRI_STRUCTURAL {
  * Arguments: (none)
  * Flags: (none)
  */
-void handleQJSModuleInit(const PTAStatementContext &ctx) {
+void handleQJSModuleInit(const PTAStatementContext &ptactx) {
   throw std::runtime_error("PTA unhandled case QJSModuleInit");
-  // IRI_GEN::QJSModuleInitSEXP sexp(ctx.stmt.id, ctx.pool);
+  // IRI_GEN::QJSModuleInitSEXP sexp(ptactx.stmt.id, ptactx.ctx);
 
   // === TODO : QJSModuleInit ===
 
-  return ;
+  return;
 }
 
 } // namespace IRI_STRUCTURAL

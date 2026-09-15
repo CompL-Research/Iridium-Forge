@@ -2,7 +2,7 @@
 #include "Generated/IridiumTypes.h"
 #include "Support/PTA/PTAContext.hpp"
 #include "Support/PTA/PTAHandlers.hpp"
-#include <iostream>
+#include <stdexcept>
 
 namespace IRI_STRUCTURAL {
 
@@ -12,13 +12,13 @@ namespace IRI_STRUCTURAL {
  * Arguments: (none)
  * Flags: (none)
  */
-void handleStackToHeap(const PTAStatementContext &ctx) {
+void handleStackToHeap(const PTAStatementContext &ptactx) {
   throw std::runtime_error("PTA unhandled case StackToHeap");
-  // IRI_GEN::StackToHeapSEXP sexp(ctx.stmt.id, ctx.pool);
+  // IRI_GEN::StackToHeapSEXP sexp(ptactx.stmt.id, ptactx.ctx);
 
   // === TODO : StackToHeap ===
 
-  return ;
+  return;
 }
 
 } // namespace IRI_STRUCTURAL

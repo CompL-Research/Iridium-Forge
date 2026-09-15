@@ -2,7 +2,7 @@
 #include "Generated/IridiumTypes.h"
 #include "Support/PTA/PTAContext.hpp"
 #include "Support/PTA/PTAHandlers.hpp"
-#include <iostream>
+#include <stdexcept>
 
 namespace IRI_STRUCTURAL {
 
@@ -13,14 +13,14 @@ namespace IRI_STRUCTURAL {
  *   [0] IRID ThrowVal -> sexp.getArg_ThrowVal()
  * Flags: (none)
  */
-void handleThrow(const PTAStatementContext &ctx) {
+void handleThrow(const PTAStatementContext &ptactx) {
   throw std::runtime_error("PTA unhandled case Throw");
-  // IRI_GEN::ThrowSEXP sexp(ctx.stmt.id, ctx.pool);
+  // IRI_GEN::ThrowSEXP sexp(ptactx.stmt.id, ptactx.ctx);
 
   // === TODO : Throw ===
   // if (sexp.hasArg_ThrowVal()) { IRID arg_ThrowVal = sexp.getArg_ThrowVal(); }
 
-  return ;
+  return;
 }
 
 } // namespace IRI_STRUCTURAL

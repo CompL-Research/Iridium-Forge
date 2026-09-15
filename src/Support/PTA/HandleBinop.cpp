@@ -2,7 +2,8 @@
 #include "Generated/IridiumTypes.h"
 #include "Support/PTA/PTAContext.hpp"
 #include "Support/PTA/PTAHandlers.hpp"
-#include <iostream>
+#include "Support/PTA/PTARVALDispatch.hpp"
+#include <set>
 
 namespace IRI_STRUCTURAL {
 
@@ -14,17 +15,13 @@ namespace IRI_STRUCTURAL {
  *   [1] IRID RBinop -> sexp.getArg_RBinop()
  * Flags:
  *   - string OP -> sexp.getOP()
+ *
+ * AMP node used as a bare statement: evaluate it via RVal resolution for
+ * its side effects and discard the produced value.
  */
-void handleBinop(const PTAStatementContext &ctx) {
-  throw std::runtime_error("PTA unhandled case Binop");
-  // IRI_GEN::BinopSEXP sexp(ctx.stmt.id, ctx.pool);
-
-  // === TODO : Binop ===
-  // if (sexp.hasArg_LBinop()) { IRID arg_LBinop = sexp.getArg_LBinop(); }
-  // if (sexp.hasArg_RBinop()) { IRID arg_RBinop = sexp.getArg_RBinop(); }
-  // if (sexp.hasOP()) { StringID str_OP = sexp.getOP(); }
-
-  return ;
+void handleBinop(const PTAStatementContext &ptactx) {
+  std::set<Prakriti::NodeUID> discarded;
+  resolvePKRRVal(ptactx, ptactx.stmt.id, discarded);
 }
 
 } // namespace IRI_STRUCTURAL

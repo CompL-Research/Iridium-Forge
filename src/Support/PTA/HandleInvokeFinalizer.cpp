@@ -2,7 +2,7 @@
 #include "Generated/IridiumTypes.h"
 #include "Support/PTA/PTAContext.hpp"
 #include "Support/PTA/PTAHandlers.hpp"
-#include <iostream>
+#include <stdexcept>
 
 namespace IRI_STRUCTURAL {
 
@@ -13,14 +13,14 @@ namespace IRI_STRUCTURAL {
  * Flags:
  *   - double IDX -> sexp.getIDX()
  */
-void handleInvokeFinalizer(const PTAStatementContext &ctx) {
+void handleInvokeFinalizer(const PTAStatementContext &ptactx) {
   throw std::runtime_error("PTA unhandled case InvokeFinalizer");
-  // IRI_GEN::InvokeFinalizerSEXP sexp(ctx.stmt.id, ctx.pool);
+  // IRI_GEN::InvokeFinalizerSEXP sexp(ptactx.stmt.id, ptactx.ctx);
 
   // === TODO : InvokeFinalizer ===
   // if (sexp.hasIDX()) { double dbl_IDX = sexp.getIDX(); }
 
-  return ;
+  return;
 }
 
 } // namespace IRI_STRUCTURAL

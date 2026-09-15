@@ -2,7 +2,7 @@
 #include "Generated/IridiumTypes.h"
 #include "Support/PTA/PTAContext.hpp"
 #include "Support/PTA/PTAHandlers.hpp"
-#include <iostream>
+#include <stdexcept>
 
 namespace IRI_STRUCTURAL {
 
@@ -18,9 +18,9 @@ namespace IRI_STRUCTURAL {
  *   - void   DECLVAR -> sexp.hasDECLVAR()
  *   - void   DECLFUN -> sexp.hasDECLFUN()
  */
-void handleGWrite(const PTAStatementContext &ctx) {
+void handleGWrite(const PTAStatementContext &ptactx) {
   throw std::runtime_error("PTA unhandled case GWrite");
-  // IRI_GEN::GWriteSEXP sexp(ctx.stmt.id, ctx.pool);
+  // IRI_GEN::GWriteSEXP sexp(ptactx.stmt.id, ptactx.ctx);
 
   // === TODO : GWrite ===
   // if (sexp.hasArg_LValTarget()) { IRID arg_LValTarget = sexp.getArg_LValTarget(); }
@@ -30,7 +30,7 @@ void handleGWrite(const PTAStatementContext &ctx) {
   // bool has_DECLVAR = sexp.hasDECLVAR();
   // bool has_DECLFUN = sexp.hasDECLFUN();
 
-  return ;
+  return;
 }
 
 } // namespace IRI_STRUCTURAL

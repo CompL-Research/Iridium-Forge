@@ -1,4 +1,4 @@
-// Generated: 2026-09-15 02:13:51
+// Generated: 2026-09-15 12:01:18
 #pragma once
 
 #include "Support/PTA/PTAContext.hpp"
@@ -6,7 +6,7 @@
 namespace IRI_STRUCTURAL {
 
 // ============================================================================
-// PTA Transfer Handler Function Declarations
+// PTA Statement Handler Function Declarations
 // ============================================================================
 void handleEnvRead(const PTAStatementContext &ptactx);
 void handleFieldRead(const PTAStatementContext &ptactx);

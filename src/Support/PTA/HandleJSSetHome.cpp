@@ -2,7 +2,7 @@
 #include "Generated/IridiumTypes.h"
 #include "Support/PTA/PTAContext.hpp"
 #include "Support/PTA/PTAHandlers.hpp"
-#include <iostream>
+#include <stdexcept>
 
 namespace IRI_STRUCTURAL {
 
@@ -14,15 +14,15 @@ namespace IRI_STRUCTURAL {
  *   [1] IRID FuncObj -> sexp.getArg_FuncObj()
  * Flags: (none)
  */
-void handleJSSetHome(const PTAStatementContext &ctx) {
+void handleJSSetHome(const PTAStatementContext &ptactx) {
   throw std::runtime_error("PTA unhandled case JSSetHome");
-  // IRI_GEN::JSSetHomeSEXP sexp(ctx.stmt.id, ctx.pool);
+  // IRI_GEN::JSSetHomeSEXP sexp(ptactx.stmt.id, ptactx.ctx);
 
   // === TODO : JSSetHome ===
   // if (sexp.hasArg_HomeObj()) { IRID arg_HomeObj = sexp.getArg_HomeObj(); }
   // if (sexp.hasArg_FuncObj()) { IRID arg_FuncObj = sexp.getArg_FuncObj(); }
 
-  return ;
+  return;
 }
 
 } // namespace IRI_STRUCTURAL
