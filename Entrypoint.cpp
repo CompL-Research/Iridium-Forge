@@ -12,6 +12,7 @@
 #include "Support/IRIS.hpp"
 #include "Support/PTA.hpp"
 #include <exception>
+#include <iostream>
 #if DUMP_CORE_PASSES == 1
 #include <fstream>
 #include <sstream>
@@ -123,12 +124,15 @@ void runOptimizationPasses(IRIContext &ctx) {
       [&](IRICFG *cfgCTX) { pm.run(*cfgCTX, am); });
   ctx.debugger.tock("_23_OPT_MTDZS_DCE");
 
-  // try {
-  //   PTASolver ptaSolver;
-  //   ptaSolver.solve(ctx);
-  // } catch (const std::exception &e) {
-  //   std::cerr << e.what() << std::endl;
-  // }
+  if (ctx.flags.pta) {
+    ctx.debugger.tick("_25_PTA");
+    try {
+      PTASolver::solve(ctx);
+    } catch (const std::exception &e) {
+      std::cerr << "[PTA] " << e.what() << std::endl;
+    }
+    ctx.debugger.tock("_25_PTA");
+  }
 
   if (ctx.flags.effectProp) {
     ctx.debugger.tick("_24_OPT_EFFECT_PROP");
