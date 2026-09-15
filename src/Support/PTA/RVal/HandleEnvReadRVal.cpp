@@ -1,9 +1,8 @@
-// Generated Stub for IRI_TAG::EnvRead (RVal)
 #include "Generated/IridiumTypes.h"
 #include "Support/PTA/PTAContext.hpp"
-#include "Support/PTA/PTARVALHandlers.hpp"
+#include "external/Prakriti.hpp"
+#include <cassert>
 #include <set>
-#include <stdexcept>
 
 namespace IRI_STRUCTURAL {
 
@@ -17,16 +16,25 @@ namespace IRI_STRUCTURAL {
  *   - void   TAINTED -> sexp.hasTAINTED()
  */
 void computeEnvReadVals(const PTAStatementContext &ptactx, IRID node,
-                       std::set<Prakriti::NodeUID> &res_) {
-  throw std::runtime_error("PTA RVal unhandled case EnvRead");
-  // IRI_GEN::EnvReadSEXP sexp(node, ptactx.ctx);
+                        std::set<Prakriti::NodeUID> &res_) {
+  IRI_GEN::EnvReadSEXP sexp(node, ptactx.ctx);
+  Prakriti::ECMAGraph *G = ptactx.incomingState;
 
-  // === TODO : EnvRead ===
-  // if (sexp.hasArg_Obj()) { IRID arg_Obj = sexp.getArg_Obj(); }
-  // bool has_SAFE = sexp.hasSAFE();
-  // bool has_TAINTED = sexp.hasTAINTED();
+  IRID obj = sexp.getArg_Obj();
+  auto objTag = IRI_NODE(ptactx.ctx, obj).tag;
 
-  return;
+  Prakriti::NodeUID target =
+      objTag == IRI_GEN::GlobalBinding
+          ? Prakriti::PKRGlobalState::getGlobal(
+                IRI_GEN::GlobalBindingSEXP(obj, ptactx.ctx).getNAME())
+          : obj;
+  assert(G->hasNode(target));
+
+  auto getClosures =
+      G->getPointees(target, Prakriti::PKRGlobalState::EdgeIntern(PKR_Get));
+  assert(!getClosures.empty());
+  auto vals = Prakriti::KarmaBindu(G, getClosures, {nullptr, {target}});
+  res_.insert(vals.begin(), vals.end());
 }
 
 } // namespace IRI_STRUCTURAL
