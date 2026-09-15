@@ -1,9 +1,12 @@
-// Generated Stub for IRI_TAG::Lambda (RVal)
 #include "Generated/IridiumTypes.h"
+#include "Support/ClosureTree.hpp"
+#include "Support/PTA.hpp"
+#include "Support/PTA/PTACallHelpers.hpp"
 #include "Support/PTA/PTAContext.hpp"
-#include "Support/PTA/PTARVALHandlers.hpp"
+#include "external/Prakriti.hpp"
+#include <memory>
 #include <set>
-#include <stdexcept>
+#include <vector>
 
 namespace IRI_STRUCTURAL {
 
@@ -12,23 +15,41 @@ namespace IRI_STRUCTURAL {
  * Meta:    RVAL
  * Arguments: (none)
  * Flags:
+ *   - string NAME -> sexp.getNAME()
  *   - bool   CNAME -> sexp.getCNAME()
  *   - bool   SETNAME -> sexp.getSETNAME()
- *   - string NAME -> sexp.getNAME()
  *   - double StartBBIDX -> sexp.getStartBBIDX()
  */
 void computeLambdaVals(const PTAStatementContext &ptactx, IRID node,
-                       std::set<Prakriti::NodeUID> &res_) {
-  throw std::runtime_error("PTA RVal unhandled case Lambda");
-  // IRI_GEN::LambdaSEXP sexp(node, ptactx.ctx);
+                      std::set<Prakriti::NodeUID> &res_) {
+  Prakriti::ECMAGraph *G = ptactx.incomingState;
 
-  // === TODO : Lambda ===
-  // if (sexp.hasCNAME()) { bool val_CNAME = sexp.getCNAME(); }
-  // if (sexp.hasSETNAME()) { bool val_SETNAME = sexp.getSETNAME(); }
-  // if (sexp.hasNAME()) { StringID str_NAME = sexp.getNAME(); }
-  // if (sexp.hasStartBBIDX()) { double dbl_StartBBIDX = sexp.getStartBBIDX(); }
+  if (!G->hasNode(node)) {
+    IRI_GEN::LambdaSEXP sexp(node, ptactx.ctx);
+    IRICFG *calleeCFG =
+        ptactx.ctx.closureTree->getClosureByStartBBIDX(sexp.getStartBBIDX());
+    IRIContext *ctxPtr = &ptactx.ctx;
 
-  return;
+    auto action = std::make_shared<Prakriti::ECMAGraph::ActionClosureImpl>(
+        [ctxPtr, calleeCFG](const Prakriti::ECMAGraph::PJSSL_ARG &args)
+            -> Prakriti::ECMAGraph::PJSSL_RET {
+          std::vector<std::set<Prakriti::NodeUID>> positional;
+          if (!args.A.empty())
+            positional = decodeArgRanges(args.L, args.A[0]);
+
+          auto retVals =
+              PTASolver::invokeClosure(*ctxPtr, calleeCFG, args.G, positional);
+
+          Prakriti::ECMAGraph::PJSSL_RET ret;
+          ret.L = std::vector<Prakriti::NodeUID>(retVals.begin(), retVals.end());
+          return ret;
+        });
+
+    Prakriti::AllocClosure(G, node, action, Prakriti::PKRGlobalState::getTRUE(),
+                           Prakriti::PKRGlobalState::getGFOBJ_Function_prototype());
+  }
+
+  res_.insert(node);
 }
 
 } // namespace IRI_STRUCTURAL
