@@ -16,26 +16,19 @@
 #define GSTK_Symbol "Symbol"
 #define GSTK_Error "Error"
 #define GSTK_Object "Object"
-
-// #define GFOBJ_Object "~Object"
-// #define GFOBJ_Function "~Function"
-// #define GFOBJ_Boolean "~Boolean"
-// #define GFOBJ_Symbol "~Symbol"
-// #define GFOBJ_Error "~Error"
-//
-// #define GOOBJ_Object_prototype "~Object.prototype"
-// #define GFOBJ_Function_prototype "~Function.prototype"
-// #define GOOBJ_Boolean_prototype "~Boolean.prototype"
-// #define GOOBJ_Symbol_prototype "~Symbol.prototype"
-// #define GOOBJ_Error_prototype "~Error.prototype"
+#define GSTK_console "console"
 
 #define DEF_NODE_EVAL(V) V(JSFILE)
 
 #define DEF_NODE_DYNAMIC(V)                                                    \
   V(STKOBJ)                                                                    \
+  V(TSTKOBJ)                                                                   \
   V(OOBJ)                                                                      \
   V(FOX)                                                                       \
   V(FOBJ)                                                                      \
+  V(ARGSOBJ)                                                                   \
+  V(MARGSOBJ)                                                                  \
+  V(ARRAYOBJ)                                                                  \
   V(ACT)                                                                       \
   V(AWAIT)
 
@@ -46,7 +39,10 @@
   V(NULL_VAL)                                                                  \
   V(TRUE_VAL)                                                                  \
   V(FALSE_VAL)                                                                 \
-  V(STATE_VAL)
+  V(STATE_VAL)                                                                 \
+  V(NUMBER_VAL)                                                                \
+  V(STRING_VAL)                                                                \
+  V(BIGINT_VAL)
 
 #define DEF_NODE_TYPES(V)                                                      \
   DEF_NODE_EVAL(V)                                                             \
@@ -306,9 +302,45 @@ public:
   V(NAC_OOBJ_OwnPropertyKeys)                                                  \
   V(NAC_SOBJ_Get)                                                              \
   V(NAC_SOBJ_Set)                                                              \
+  V(NAC_TSOBJ_Get)                                                             \
+  V(NAC_TSOBJ_Set)                                                             \
   V(NAC_ECMASCRIPT_Eval)                                                       \
   V(NAC_ECMAMODULE_Eval)                                                       \
-  V(NAC_Await_Eval)
+  V(NAC_NODESCRIPT_Eval)                                                       \
+  V(NAC_NODEMODULE_Eval)                                                       \
+  V(NAC_QJSSCRIPT_Eval)                                                        \
+  V(NAC_QJSMODULE_Eval)                                                        \
+  V(NAC_Await_Eval)                                                            \
+  V(NAC_UNKNOWN_GetPrototypeOf)                                                \
+  V(NAC_UNKNOWN_SetPrototypeOf)                                                \
+  V(NAC_UNKNOWN_IsExtensible)                                                  \
+  V(NAC_UNKNOWN_PreventExtensions)                                             \
+  V(NAC_UNKNOWN_GetOwnProperty)                                                \
+  V(NAC_UNKNOWN_DefineOwnProperty)                                             \
+  V(NAC_UNKNOWN_HasProperty)                                                   \
+  V(NAC_UNKNOWN_Get)                                                           \
+  V(NAC_UNKNOWN_Set)                                                           \
+  V(NAC_UNKNOWN_Delete)                                                        \
+  V(NAC_UNKNOWN_OwnPropertyKeys)                                               \
+  V(NAC_MARGSOBJ_Get)                                                         \
+  V(NAC_MARGSOBJ_Set)                                                         \
+  V(NAC_MARGSOBJ_Unsupported)
+
+// Global object identities. PKRGlobalState (ECMAGraph.hpp) turns each of
+// these into a NodeUID field + getter + Init() reservation.
+#define DEF_GLOBAL_IDENTITIES(V)                                              \
+  V(GFOBJ_Object)                                                             \
+  V(GFOBJ_Function)                                                           \
+  V(GFOBJ_Boolean)                                                            \
+  V(GFOBJ_Symbol)                                                             \
+  V(GFOBJ_Error)                                                              \
+  V(GFOBJ_Function_prototype)                                                 \
+  V(GOOBJ_Object_prototype)                                                   \
+  V(GOOBJ_Boolean_prototype)                                                  \
+  V(GOOBJ_Symbol_prototype)                                                   \
+  V(GOOBJ_Error_prototype)                                                    \
+  V(GOOBJ_Array_prototype)                                                    \
+  V(GOOBJ_console)
 
 #include <algorithm>
 #include <cstddef>
@@ -325,6 +357,7 @@ public:
 #include <sched.h>
 #include <stdexcept>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 namespace Prakriti {
@@ -400,6 +433,34 @@ public:
 
     nodes_ = nodeTransient.persistent();
     edges_ = edgeTransient.persistent();
+  }
+
+  void pruneUnreachable(const std::vector<NodeUID> &roots) {
+    std::unordered_set<NodeUID> reachable;
+    std::vector<NodeUID> worklist(roots.begin(), roots.end());
+
+    while (!worklist.empty()) {
+      NodeUID cur = worklist.back();
+      worklist.pop_back();
+      if (reachable.contains(cur) || !hasNodeImpl(cur))
+        continue;
+      reachable.insert(cur);
+      for (const auto &e : getAllOutgoingEdgesImpl(cur)) {
+        if (!reachable.contains(e.target)) {
+          worklist.push_back(e.target);
+        }
+      }
+    }
+
+    std::vector<NodeUID> toRemove;
+    for (const auto &[uid, tag] : nodes_) {
+      if (!reachable.contains(uid)) {
+        toRemove.push_back(uid);
+      }
+    }
+    for (const auto &uid : toRemove) {
+      removeNodeImpl(uid);
+    }
   }
 
   void addNodeImpl(const NodeUID &uid, const TAG &tag) {
@@ -577,18 +638,14 @@ private:
   inline static NodeUID NULL_VAL = 0;
   inline static NodeUID TRUE_VAL = 0;
   inline static NodeUID FALSE_VAL = 0;
+  inline static NodeUID NUMBER_VAL = 0;
+  inline static NodeUID STRING_VAL = 0;
+  inline static NodeUID BIGINT_VAL = 0;
 
-  inline static NodeUID GFOBJ_Object = 0;
-  inline static NodeUID GFOBJ_Function = 0;
-  inline static NodeUID GFOBJ_Boolean = 0;
-  inline static NodeUID GFOBJ_Symbol = 0;
-  inline static NodeUID GFOBJ_Error = 0;
-
-  inline static NodeUID GOOBJ_Object_prototype = 0;
-  inline static NodeUID GFOBJ_Function_prototype = 0;
-  inline static NodeUID GOOBJ_Boolean_prototype = 0;
-  inline static NodeUID GOOBJ_Symbol_prototype = 0;
-  inline static NodeUID GOOBJ_Error_prototype = 0;
+  // See list-globals.hpp.
+#define AS_GLOBAL_FIELDS(name) inline static NodeUID name = 0;
+  DEF_GLOBAL_IDENTITIES(AS_GLOBAL_FIELDS)
+#undef AS_GLOBAL_FIELDS
 
   inline static std::unordered_map<EdgeUID, NodeUID> globalStackBindings;
   inline static bool isInitialized = false;
@@ -599,6 +656,7 @@ public:
   inline static std::function<EdgeUID(std::string_view)> EdgeIntern = nullptr;
   inline static std::function<std::string_view(EdgeUID)> EdgeGet = nullptr;
   inline static boost::bimap<NodeUID, ActionClosure> ActionClosureMap;
+  inline static std::unordered_map<NodeUID, std::string> ActionNameMap;
   inline static std::unordered_map<StateHash, std::vector<ECMAGraph>>
       StateHashToState;
   inline static boost::bimap<StateHash, NodeUID> StateMap;
@@ -637,21 +695,25 @@ public:
     return FALSE_VAL;
   }
 
-  static NodeUID getGFOBJ_Object() { return GFOBJ_Object; }
-  static NodeUID getGFOBJ_Function() { return GFOBJ_Function; }
-  static NodeUID getGFOBJ_Boolean() { return GFOBJ_Boolean; }
-  static NodeUID getGFOBJ_Symbol() { return GFOBJ_Symbol; }
-  static NodeUID getGFOBJ_Error() { return GFOBJ_Error; }
+  static NodeUID getNUMBER() {
+    ASSERT(isInitialized);
+    return NUMBER_VAL;
+  }
 
-  static NodeUID getGOOBJ_Object_prototype() { return GOOBJ_Object_prototype; }
-  static NodeUID getGFOBJ_Function_prototype() {
-    return GFOBJ_Function_prototype;
+  static NodeUID getSTRING() {
+    ASSERT(isInitialized);
+    return STRING_VAL;
   }
-  static NodeUID getGOOBJ_Boolean_prototype() {
-    return GOOBJ_Boolean_prototype;
+
+  static NodeUID getBIGINT() {
+    ASSERT(isInitialized);
+    return BIGINT_VAL;
   }
-  static NodeUID getGOOBJ_Symbol_prototype() { return GOOBJ_Symbol_prototype; }
-  static NodeUID getGOOBJ_Error_prototype() { return GOOBJ_Error_prototype; }
+
+#define AS_GLOBAL_GETTERS(name)                                                \
+  static NodeUID get##name() { return name; }
+  DEF_GLOBAL_IDENTITIES(AS_GLOBAL_GETTERS)
+#undef AS_GLOBAL_GETTERS
 
   static std::vector<EdgeUID> getGlobals() {
     std::vector<EdgeUID> res;
@@ -666,6 +728,11 @@ public:
     auto it = globalStackBindings.find(stackBindingRef);
     ASSERT(it != globalStackBindings.end());
     return it->second;
+  }
+
+  static bool isKnownGlobal(EdgeUID stackBindingRef) {
+    return globalStackBindings.find(stackBindingRef) !=
+           globalStackBindings.end();
   }
 
   static NodeUID getGlobal(const char *stackBindingRef) {
@@ -686,18 +753,13 @@ public:
     NULL_VAL = reserveNodeUID();
     TRUE_VAL = reserveNodeUID();
     FALSE_VAL = reserveNodeUID();
+    NUMBER_VAL = reserveNodeUID();
+    STRING_VAL = reserveNodeUID();
+    BIGINT_VAL = reserveNodeUID();
 
-    GFOBJ_Object = reserveNodeUID();
-    GFOBJ_Function = reserveNodeUID();
-    GFOBJ_Boolean = reserveNodeUID();
-    GFOBJ_Symbol = reserveNodeUID();
-    GFOBJ_Error = reserveNodeUID();
-
-    GFOBJ_Function_prototype = reserveNodeUID();
-    GOOBJ_Boolean_prototype = reserveNodeUID();
-    GOOBJ_Symbol_prototype = reserveNodeUID();
-    GOOBJ_Error_prototype = reserveNodeUID();
-    GOOBJ_Object_prototype = reserveNodeUID();
+#define AS_GLOBAL_INIT(name) name = reserveNodeUID();
+    DEF_GLOBAL_IDENTITIES(AS_GLOBAL_INIT)
+#undef AS_GLOBAL_INIT
 
     globalStackBindings[edgeIntern(GSTK_globalThis)] = reserveNodeUID();
     globalStackBindings[edgeIntern(GSTK_Infinity)] = reserveNodeUID();
@@ -715,6 +777,18 @@ public:
   associateActionClosure(reserveNodeUID(), PKRGlobalState::name);
     DEF_GRAPH_CLOSURES(AS_ASSIGN)
 #undef AS_ASSIGN
+
+#define AS_NAME(name)                                                          \
+  ActionNameMap.emplace(getActionNode(PKRGlobalState::name), #name);
+    DEF_GRAPH_CLOSURES(AS_NAME)
+#undef AS_NAME
+  }
+
+  static std::string getActionName(NodeUID node) {
+    auto it = ActionNameMap.find(node);
+    if (it != ActionNameMap.end())
+      return it->second;
+    return "<unnamed:" + std::to_string(node) + ">";
   }
 
   static void DumpDebugInfo(std::ostream &os = std::cout) {
@@ -733,19 +807,11 @@ public:
     os << "  TRUE_VAL:  " << TRUE_VAL << "\n";
     os << "  FALSE_VAL: " << FALSE_VAL << "\n\n";
 
-    os << "[Global Objects]\n";
-    os << "  GFOBJ_Object:   " << GFOBJ_Object << "\n";
-    os << "  GFOBJ_Function: " << GFOBJ_Function << "\n";
-    os << "  GFOBJ_Boolean:  " << GFOBJ_Boolean << "\n";
-    os << "  GFOBJ_Symbol:   " << GFOBJ_Symbol << "\n";
-    os << "  GFOBJ_Error:    " << GFOBJ_Error << "\n\n";
-
-    os << "[Prototypes]\n";
-    os << "  GFOBJ_Function_prototype: " << GFOBJ_Function_prototype << "\n";
-    os << "  GOOBJ_Boolean_prototype:  " << GOOBJ_Boolean_prototype << "\n";
-    os << "  GOOBJ_Symbol_prototype:   " << GOOBJ_Symbol_prototype << "\n";
-    os << "  GOOBJ_Error_prototype:    " << GOOBJ_Error_prototype << "\n";
-    os << "  GOOBJ_Object_prototype:   " << GOOBJ_Object_prototype << "\n\n";
+    os << "[Global Identities]\n";
+#define AS_GLOBAL_DEBUG(name) os << "  " #name ": " << name << "\n";
+    DEF_GLOBAL_IDENTITIES(AS_GLOBAL_DEBUG)
+#undef AS_GLOBAL_DEBUG
+    os << "\n";
 
     os << "[Global Stack Bindings]\n";
     for (const auto &[edgeUid, nodeUid] : globalStackBindings) {
@@ -854,30 +920,19 @@ public:
       return "true";
     if (uid == FALSE_VAL)
       return "false";
+    if (uid == NUMBER_VAL)
+      return "Number";
+    if (uid == STRING_VAL)
+      return "String";
+    if (uid == BIGINT_VAL)
+      return "BigInt";
 
-    // Global Objects
-    if (uid == GFOBJ_Object)
-      return "GFOBJ_Object";
-    if (uid == GFOBJ_Function)
-      return "GFOBJ_Function";
-    if (uid == GFOBJ_Boolean)
-      return "GFOBJ_Boolean";
-    if (uid == GFOBJ_Symbol)
-      return "GFOBJ_Symbol";
-    if (uid == GFOBJ_Error)
-      return "GFOBJ_Error";
-
-    // Prototypes
-    if (uid == GOOBJ_Object_prototype)
-      return "GOOBJ_Object_prototype";
-    if (uid == GFOBJ_Function_prototype)
-      return "GFOBJ_Function_prototype";
-    if (uid == GOOBJ_Boolean_prototype)
-      return "GOOBJ_Boolean_prototype";
-    if (uid == GOOBJ_Symbol_prototype)
-      return "GOOBJ_Symbol_prototype";
-    if (uid == GOOBJ_Error_prototype)
-      return "GOOBJ_Error_prototype";
+    // Global Identities
+#define AS_GLOBAL_NAME(name)                                                   \
+  if (uid == name)                                                             \
+    return #name;
+    DEF_GLOBAL_IDENTITIES(AS_GLOBAL_NAME)
+#undef AS_GLOBAL_NAME
 
     // Global Stack Bindings
     for (const auto &[edgeUid, nodeUid] : globalStackBindings) {
@@ -887,16 +942,30 @@ public:
       }
     }
 
-    // Action Closures lookup via ActionClosureMap
-    auto closureIt = ActionClosureMap.left.find(uid);
-    if (closureIt != ActionClosureMap.left.end()) {
-      ActionClosure clos = closureIt->second;
-#define MATCH_CLOSURE(name)                                                    \
-  if (clos && clos == PKRGlobalState::name)                                    \
-    return #name;
-      DEF_GRAPH_CLOSURES(MATCH_CLOSURE)
-#undef MATCH_CLOSURE
-      return "ActionClosure";
+    // Action Closures lookup via ActionClosureMap - prefer the registered
+    // name (e.g. "NAC_OOBJ_Get") over the generic fallback.
+    if (nodeHasActionClosure(uid)) {
+      std::string name = getActionName(uid);
+      if (name.rfind("<unnamed:", 0) == 0)
+        return "ActionClosure";
+      return name;
+    }
+
+    // Saved states (see storeState/getStateVector), reachable via the
+    // Await mechanism's [[State]] edge.
+    auto stateIt = StateMap.right.find(uid);
+    if (stateIt != StateMap.right.end())
+      return "SavedState_" + std::to_string(stateIt->second);
+
+    // Sentinels (see generateSentinel): a synthetic per-(node, edge label)
+    // node, e.g. a closure's shared `arguments` object.
+    for (const auto &[key, sentinelUid] : sentinelMap_) {
+      if (sentinelUid == uid) {
+        const auto &[owner, label] = key;
+        std::string_view labelName = EdgeGet ? EdgeGet(label) : "sentinel";
+        return "Sentinel(" + std::string(labelName) + "@" +
+               std::to_string(owner) + ")";
+      }
     }
 
     return std::nullopt;
@@ -939,6 +1008,278 @@ inline void ECMAGraph::dumpDOT(
 
 } // namespace Prakriti
 
+#include <chrono>
+#include <cstdlib>
+#include <functional>
+#include <iostream>
+#include <optional>
+#include <sstream>
+#include <string>
+#include <vector>
+
+namespace Prakriti {
+
+struct TraceEvent {
+  std::optional<NodeUID> node;
+  const std::string &name;
+  size_t depth;
+  const std::vector<NodeUID> &args;
+  const std::vector<std::string> &argsStr;
+  const std::string &extra; // free-form context: Karma's candidate/skipped
+                             // node lists on enter, an action's return value
+                             // or a merge summary on exit
+  bool isEnter;
+  std::chrono::nanoseconds duration;
+};
+
+inline std::string formatNodeVec(const std::vector<NodeUID> &v) {
+  std::ostringstream o;
+  o << "[";
+  for (size_t i = 0; i < v.size(); ++i) {
+    if (i)
+      o << ",";
+    o << v[i];
+  }
+  o << "]";
+  return o.str();
+}
+
+inline std::string formatStrVec(const std::vector<std::string> &v) {
+  std::ostringstream o;
+  o << "[";
+  for (size_t i = 0; i < v.size(); ++i) {
+    if (i)
+      o << ",";
+    o << "\"" << v[i] << "\"";
+  }
+  o << "]";
+  return o.str();
+}
+
+inline std::string formatDuration(std::chrono::nanoseconds d) {
+  double ns = static_cast<double>(d.count());
+  std::ostringstream out;
+  out.precision(1);
+  out << std::fixed;
+  if (ns < 1'000.0)
+    out << ns << "ns";
+  else if (ns < 1'000'000.0)
+    out << (ns / 1'000.0) << "us";
+  else if (ns < 1'000'000'000.0)
+    out << (ns / 1'000'000.0) << "ms";
+  else
+    out << (ns / 1'000'000'000.0) << "s";
+  return out.str();
+}
+
+// Renders one call-graph line per event, using tree guides ("|  ") to show
+// ancestry and an arrow ("->"/"<-") at the event's own depth - these ligate
+// into single glyphs in fonts like Fira Code, e.g.:
+//   -> Karma node=? acts=[10,11] args=[44,45]
+//   |  -> NAC_OOBJ_Get node=10 args=[44,45]
+//   |  <- NAC_OOBJ_Get node=10 (18.5us) ret=[99]
+//   <- Karma node=? (52.1us) invoked=1/2 skipped=[11]
+inline void defaultTraceSink(const TraceEvent &ev) {
+  std::ostringstream line;
+  for (size_t i = 0; i < ev.depth; ++i)
+    line << "|  ";
+  line << (ev.isEnter ? "-> " : "<- ") << ev.name
+       << " node=" << (ev.node ? std::to_string(*ev.node) : "?");
+  if (ev.isEnter) {
+    if (!ev.args.empty())
+      line << " args=" << formatNodeVec(ev.args);
+    if (!ev.argsStr.empty())
+      line << " strs=" << formatStrVec(ev.argsStr);
+  } else {
+    line << " (" << formatDuration(ev.duration) << ")";
+  }
+  if (!ev.extra.empty())
+    line << " " << ev.extra;
+  line << "\n";
+  std::cerr << line.str();
+}
+
+inline std::function<void(const TraceEvent &)> g_TraceSink = defaultTraceSink;
+inline thread_local size_t g_TraceDepth = 0;
+
+// The NodeUID an action closure is being invoked for, when known. Actions
+// are shared closures (e.g. NAC_OOBJ_Get is one closure invoked for every
+// ordinary object), so the closure body itself has no way to know which
+// node it was called on - callers that know it (Karma, invokeAction) record
+// it here for the duration of the call so tracing can report it and resolve
+// a friendly registered name for it.
+inline thread_local std::optional<NodeUID> g_CurrentActionNode;
+
+class CurrentActionNodeGuard {
+public:
+  explicit CurrentActionNodeGuard(NodeUID node)
+      : previous_(g_CurrentActionNode) {
+    g_CurrentActionNode = node;
+  }
+  ~CurrentActionNodeGuard() { g_CurrentActionNode = previous_; }
+
+  CurrentActionNodeGuard(const CurrentActionNodeGuard &) = delete;
+  CurrentActionNodeGuard &operator=(const CurrentActionNodeGuard &) = delete;
+
+private:
+  std::optional<NodeUID> previous_;
+};
+
+inline bool &traceEnabledFlag() {
+  static bool enabled = [] {
+    const char *env = std::getenv("PRAKRITI_TRACE");
+    return env != nullptr && std::string_view(env) != "0";
+  }();
+  return enabled;
+}
+
+inline bool isTraceEnabled() { return traceEnabledFlag(); }
+inline void setTraceEnabled(bool enabled) { traceEnabledFlag() = enabled; }
+inline void setTraceSink(std::function<void(const TraceEvent &)> sink) {
+  g_TraceSink = std::move(sink);
+}
+
+inline std::string_view basename(std::string_view path) {
+  auto pos = path.find_last_of("/\\");
+  return pos == std::string_view::npos ? path : path.substr(pos + 1);
+}
+
+// Generic RAII span for tracing a named call (e.g. Karma/KarmaBindu) that
+// isn't itself a registered action closure. No-ops entirely (single bool
+// check) when tracing is disabled. `args`/`argsStr` must outlive the span.
+// `enterExtra` is baked in at construction (callers should only bother
+// building it when isTraceEnabled()); `setExitExtra` may be called any time
+// before destruction to attach extra context to the exit line (e.g. how
+// many of the candidate nodes were actually invoked).
+class TraceSpan {
+public:
+  TraceSpan(std::optional<NodeUID> node, std::string name,
+           const std::vector<NodeUID> &args,
+           const std::vector<std::string> &argsStr, std::string enterExtra)
+      : node_(node), name_(std::move(name)), args_(args), argsStr_(argsStr),
+        active_(isTraceEnabled()) {
+    if (!active_)
+      return;
+    depth_ = g_TraceDepth++;
+    start_ = std::chrono::steady_clock::now();
+    g_TraceSink(
+        TraceEvent{node_, name_, depth_, args_, argsStr_, enterExtra, true, {}});
+  }
+
+  void setExitExtra(std::string extra) {
+    if (active_)
+      exitExtra_ = std::move(extra);
+  }
+
+  ~TraceSpan() {
+    if (!active_)
+      return;
+    auto elapsed = std::chrono::steady_clock::now() - start_;
+    --g_TraceDepth;
+    g_TraceSink(TraceEvent{node_, name_, depth_, args_, argsStr_, exitExtra_,
+                           false,
+                           std::chrono::duration_cast<std::chrono::nanoseconds>(
+                               elapsed)});
+  }
+
+  TraceSpan(const TraceSpan &) = delete;
+  TraceSpan &operator=(const TraceSpan &) = delete;
+
+private:
+  std::optional<NodeUID> node_;
+  std::string name_;
+  const std::vector<NodeUID> &args_;
+  const std::vector<std::string> &argsStr_;
+  std::string exitExtra_;
+  bool active_;
+  size_t depth_ = 0;
+  std::chrono::steady_clock::time_point start_;
+};
+
+// RAII scope logging a single action invocation's enter/exit, including its
+// return value. No-ops entirely (single bool check) when tracing is
+// disabled. `fallbackName` identifies the action by where its
+// DEFINE_ACTION() was written; if the invoking node is known (via
+// CurrentActionNodeGuard) and registered under a friendlier name (e.g.
+// "NAC_OOBJ_Get"), that name is used instead.
+class ActionTraceScope {
+public:
+  ActionTraceScope(const std::string &fallbackName,
+                    const ECMAGraph::PJSSL_ARG &args)
+      : args_(args.L), argsStr_(args.A), active_(isTraceEnabled()) {
+    if (!active_)
+      return;
+    node_ = g_CurrentActionNode;
+    name_ = resolveName(fallbackName, node_);
+    depth_ = g_TraceDepth++;
+    start_ = std::chrono::steady_clock::now();
+    g_TraceSink(
+        TraceEvent{node_, name_, depth_, args_, argsStr_, exitExtra_, true, {}});
+  }
+
+  void setResult(const ECMAGraph::PJSSL_RET &ret) {
+    if (!active_)
+      return;
+    exitExtra_ = "ret=" + formatNodeVec(ret.L);
+    if (!ret.A.empty())
+      exitExtra_ += " retStrs=" + formatStrVec(ret.A);
+  }
+
+  ~ActionTraceScope() {
+    if (!active_)
+      return;
+    auto elapsed = std::chrono::steady_clock::now() - start_;
+    --g_TraceDepth;
+    g_TraceSink(TraceEvent{node_, name_, depth_, args_, argsStr_, exitExtra_,
+                           false,
+                           std::chrono::duration_cast<std::chrono::nanoseconds>(
+                               elapsed)});
+  }
+
+  ActionTraceScope(const ActionTraceScope &) = delete;
+  ActionTraceScope &operator=(const ActionTraceScope &) = delete;
+
+private:
+  static std::string resolveName(const std::string &fallbackName,
+                                  const std::optional<NodeUID> &node) {
+    if (!node)
+      return fallbackName;
+    std::string registered = PKRGlobalState::getActionName(*node);
+    if (registered.rfind("<unnamed:", 0) == 0)
+      return fallbackName;
+    return registered;
+  }
+
+  std::optional<NodeUID> node_;
+  std::string name_;
+  const std::vector<NodeUID> &args_;
+  const std::vector<std::string> &argsStr_;
+  std::string exitExtra_;
+  bool active_;
+  size_t depth_ = 0;
+  std::chrono::steady_clock::time_point start_;
+};
+
+// Wraps a DEFINE_ACTION() lambda so every action closure is traced no
+// matter how it later gets invoked (Karma, a direct closure call, or any
+// future call site) - tracing is baked into the closure itself rather than
+// depending on the call site to opt in.
+template <typename F>
+inline ECMAGraph::ActionClosure makeTracedAction(std::string_view file,
+                                                 int line, F &&f) {
+  std::string name = std::string(basename(file)) + ":" + std::to_string(line);
+  return std::make_shared<ECMAGraph::ActionClosureImpl>(
+      [name = std::move(name), f = std::forward<F>(f)](
+          const ECMAGraph::PJSSL_ARG &args) -> ECMAGraph::PJSSL_RET {
+        ActionTraceScope trace(name, args);
+        auto ret = f(args);
+        trace.setResult(ret);
+        return ret;
+      });
+}
+
+} // namespace Prakriti
+
 //
 // Common Edge Labels
 //
@@ -967,6 +1308,9 @@ inline void ECMAGraph::dumpDOT(
 #define PKR_Eval "[[Eval]]"
 #define PKR_StoreTarget "[[StoreTarget]]"
 #define PKR_State "[[State]]"
+#define PKR_TRANSIENCE "[[transience]]"
+#define PKR_ARGUMENTS "[[Arguments]]"
+#define PKR_MAPPED_ARGUMENTS "[[MappedArguments]]"
 
 #include <algorithm>
 #include <set>
@@ -977,8 +1321,8 @@ inline void ECMAGraph::dumpDOT(
   G->addNode(temp, TAG::ACT);                                                  \
   G->addEdge(src, temp, PKRGlobalState::EdgeIntern(edge))
 
-#define DEFINE_ACTION()                                                            \
-      std::make_shared<std::function<ECMAGraph::PJSSL_RET(ECMAGraph::PJSSL_ARG)>>(                   \
+#define DEFINE_ACTION()                                                        \
+      Prakriti::makeTracedAction(__FILE__, __LINE__,                              \
           [](const ECMAGraph::PJSSL_ARG & args) -> ECMAGraph::PJSSL_RET
 
 #define FIELD_VEC(Name)                                                        \
@@ -1000,17 +1344,39 @@ struct KarmaResult {
   ECMAGraph::PJSSL_RET ret;
 };
 
+inline ECMAGraph::PJSSL_RET invokeAction(NodeUID id,
+                                         const ECMAGraph::PJSSL_ARG &args) {
+  CurrentActionNodeGuard nodeGuard(id);
+  return (*PKRGlobalState::getActionClosure(id))(args);
+}
+
 inline std::vector<KarmaResult> Karma(const ECMAGraph *G,
                                       const std::vector<NodeUID> &acts,
                                       const ECMAGraph::PJSSL_ARG &args) {
+  std::string enterExtra;
+  if (isTraceEnabled())
+    enterExtra = "acts=" + formatNodeVec(acts);
+  TraceSpan span(std::nullopt, "Karma", args.L, args.A, enterExtra);
+
   std::vector<KarmaResult> res;
+  std::vector<NodeUID> skipped;
   for (const NodeUID aID : acts) {
     if (G->getNodeTAG(aID) == TAG::ACT) {
       auto G_ = G->clone();
-      auto act = PKRGlobalState::getActionClosure(aID);
-      auto ret = (*act)(ECMAGraph::PJSSL_ARG{&G_, args.L, args.A, args.X});
+      auto ret =
+          invokeAction(aID, ECMAGraph::PJSSL_ARG{&G_, args.L, args.A, args.X});
       res.push_back(KarmaResult{std::move(G_), ret});
+    } else if (isTraceEnabled()) {
+      skipped.push_back(aID);
     }
+  }
+
+  if (isTraceEnabled()) {
+    std::string exitExtra = "invoked=" + std::to_string(res.size()) + "/" +
+                            std::to_string(acts.size());
+    if (!skipped.empty())
+      exitExtra += " skipped=" + formatNodeVec(skipped);
+    span.setExitExtra(exitExtra);
   }
   return res;
 }
@@ -1018,6 +1384,11 @@ inline std::vector<KarmaResult> Karma(const ECMAGraph *G,
 inline std::set<NodeUID> KarmaBindu(ECMAGraph *G,
                                     const std::vector<NodeUID> &acts,
                                     const ECMAGraph::PJSSL_ARG &args) {
+  std::string enterExtra;
+  if (isTraceEnabled())
+    enterExtra = "acts=" + formatNodeVec(acts);
+  TraceSpan span(std::nullopt, "KarmaBindu", args.L, args.A, enterExtra);
+
   std::vector<ECMAGraph> sources;
   std::set<NodeUID> res;
   auto kResults = Karma(G, acts, args);
@@ -1027,8 +1398,18 @@ inline std::set<NodeUID> KarmaBindu(ECMAGraph *G,
       res.insert(b);
   }
 
-  // In place Mutate
-  G->mutateMergeUnion(sources);
+  if (!sources.empty()) {
+    ECMAGraph merged = std::move(sources.front());
+    if (sources.size() > 1) {
+      merged.mutateMergeUnion(
+          std::vector<ECMAGraph>(sources.begin() + 1, sources.end()));
+    }
+    *G = std::move(merged);
+  }
+
+  if (isTraceEnabled())
+    span.setExitExtra("merged=" + formatNodeVec(std::vector<NodeUID>(
+                                      res.begin(), res.end())));
   return res;
 }
 
@@ -1056,97 +1437,7 @@ inline bool hasGetInterface(const ECMAGraph *G, NodeUID node) {
 
 } // namespace Prakriti
 
-namespace Prakriti {
-
-inline bool initAwait = []() {
-  PKRGlobalState::NAC_Await_Eval = DEFINE_ACTION() {
-    ECMAGraph *G = args.G;
-    const auto &L = args.L;
-
-    ASSERT(L.size() > 0);
-    NodeUID ctx = L[0];
-
-    auto storeTargets = G->getAllOutgoingEdgesByLabel(
-        ctx, PKRGlobalState::EdgeIntern(PKR_StoreTarget));
-
-    for (const auto &st : storeTargets) {
-      std::vector<NodeUID> L_(L.begin(), L.end());
-      L_[0] = st.target;
-
-      KarmaBindu(G,
-                 G->getPointees(st.target, PKRGlobalState::EdgeIntern(PKR_Set)),
-                 {NULL, L_});
-    }
-
-    auto savedStateVec = G->getAllOutgoingEdgesByLabel(
-        ctx, PKRGlobalState::EdgeIntern(PKR_State));
-    ASSERT(savedStateVec.size() == 1);
-
-    auto savedState = savedStateVec.at(0).target;
-    ASSERT(G->getNodeTAG(savedState) == TAG::STATE_VAL);
-
-    // Call Registered Action Closure
-    (*PKRGlobalState::getActionClosure(ctx))({G, {savedState}});
-
-    return {};
-  });
-
-  return true;
-}();
-
-inline void AllocAwaitNode(ECMAGraph *G, NodeUID id,
-                           ECMAGraph::ActionClosure clos, NodeUID stateNode) {
-  // Declare Await Node
-  G->addNode(id, TAG::AWAIT);
-  PKRGlobalState::associateActionClosure(id, clos);
-
-  // Set State
-  G->addEdge(id, stateNode, PKRGlobalState::EdgeIntern(PKR_State));
-
-  NodeUID temp;
-  SET_AC(id, NAC_Await_Eval, PKR_Eval);
-}
-
-inline void SetAwaitStoreTarget(ECMAGraph *G, NodeUID awaitID,
-                                NodeUID storeTarget) {
-  // Remove Old StoreTargets
-  G->removeAllOutgoingEdgesByLabel(awaitID,
-                                   PKRGlobalState::EdgeIntern(PKR_StoreTarget));
-  // Set new StoreTarget
-  G->addEdge(awaitID, storeTarget, PKRGlobalState::EdgeIntern(PKR_StoreTarget));
-}
-
-} // namespace Prakriti
-
-namespace Prakriti {
-
-inline bool initClosure = []() { return true; }();
-
-inline void AllocClosure(ECMAGraph *G, NodeUID id,
-                         ECMAGraph::ActionClosure clos, NodeUID ext,
-                         NodeUID proto) {
-  // Declare FOBJ node
-  G->addNode(id, TAG::FOBJ);
-  PKRGlobalState::associateActionClosure(id, clos);
-
-  NodeUID temp;
-  SET_AC(id, NAC_OOBJ_GetPrototypeOf, PKR_GetPrototypeOf);
-  SET_AC(id, NAC_OOBJ_SetPrototypeOf, PKR_SetPrototypeOf);
-  SET_AC(id, NAC_OOBJ_IsExtensible, PKR_IsExtensible);
-  SET_AC(id, NAC_OOBJ_PreventExtensions, PKR_PreventExtensions);
-  SET_AC(id, NAC_OOBJ_GetOwnProperty, PKR_GetOwnProperty);
-  SET_AC(id, NAC_OOBJ_DefineOwnProperty, PKR_DefineOwnProperty);
-  SET_AC(id, NAC_OOBJ_HasProperty, PKR_HasProperty);
-  SET_AC(id, NAC_OOBJ_Get, PKR_Get);
-  SET_AC(id, NAC_OOBJ_Set, PKR_Set);
-  SET_AC(id, NAC_OOBJ_Delete, PKR_Delete);
-  SET_AC(id, NAC_OOBJ_OwnPropertyKeys, PKR_OwnPropertyKeys);
-
-  G->addEdge(id, proto, PKRGlobalState::EdgeIntern(PKR_PROTOTYPE));
-  G->addEdge(id, ext, PKRGlobalState::EdgeIntern(PKR_EXTENSIBLE));
-}
-
-} // namespace Prakriti
+#include <set>
 
 namespace Prakriti {
 
@@ -1209,34 +1500,28 @@ inline void FDUnionTF(TempFieldDescriptor *, FieldDescriptor *) {
   throw std::runtime_error("::TODO:: TempFieldDescriptor X FieldDescriptor");
 }
 
+inline void replaceFieldIfSpecified(const FieldDescriptor *self,
+                                    const std::vector<NodeUID> &vals,
+                                    const char *label) {
+  if (vals.empty())
+    return;
+  EdgeUID edgeLabel = PKRGlobalState::EdgeIntern(label);
+  self->getGraph()->removeAllOutgoingEdgesByLabel(self->getID(), edgeLabel);
+  for (NodeUID tgt : vals)
+    self->getGraph()->addEdge(self->getID(), tgt, edgeLabel);
+}
+
 inline void FDUnionFT(const FieldDescriptor *self,
                       const TempFieldDescriptor *other) {
   if (!self->isLinked())
     throw std::runtime_error("FDUnion called on unlinked FieldDescriptor");
 
-  for (NodeUID tgt : other->getValue())
-    self->getGraph()->addEdge(self->getID(), tgt,
-                              PKRGlobalState::EdgeIntern(PKR_VALUE));
-
-  for (NodeUID id : other->getWritable())
-    self->getGraph()->addEdge(self->getID(), id,
-                              PKRGlobalState::EdgeIntern(PKR_WRITABLE));
-
-  for (NodeUID id : other->getEnumerable())
-    self->getGraph()->addEdge(self->getID(), id,
-                              PKRGlobalState::EdgeIntern(PKR_ENUMERABLE));
-
-  for (NodeUID id : other->getConfigurable())
-    self->getGraph()->addEdge(self->getID(), id,
-                              PKRGlobalState::EdgeIntern(PKR_CONFIGURABLE));
-
-  for (NodeUID id : other->getGet())
-    self->getGraph()->addEdge(self->getID(), id,
-                              PKRGlobalState::EdgeIntern(PKR_Get));
-
-  for (NodeUID id : other->getSet())
-    self->getGraph()->addEdge(self->getID(), id,
-                              PKRGlobalState::EdgeIntern(PKR_Set));
+  replaceFieldIfSpecified(self, other->getValue(), PKR_VALUE);
+  replaceFieldIfSpecified(self, other->getWritable(), PKR_WRITABLE);
+  replaceFieldIfSpecified(self, other->getEnumerable(), PKR_ENUMERABLE);
+  replaceFieldIfSpecified(self, other->getConfigurable(), PKR_CONFIGURABLE);
+  replaceFieldIfSpecified(self, other->getGet(), PKR_Get);
+  replaceFieldIfSpecified(self, other->getSet(), PKR_Set);
 }
 
 //
@@ -1253,6 +1538,25 @@ inline std::vector<NodeUID> GetAllSetters(FieldDescriptor *self) {
 
 inline std::vector<NodeUID> GetAllSetters(const TempFieldDescriptor *self) {
   return self->getSet();
+}
+
+//
+// SameValue
+//
+
+inline std::vector<NodeUID> GetValue(FieldDescriptor *self) {
+  if (const auto *t = dynamic_cast<TempFieldDescriptor *>(self))
+    return t->getValue();
+  return self->getGraph()->getPointees(self->getID(),
+                                       PKRGlobalState::EdgeIntern(PKR_VALUE));
+}
+
+inline bool SameValue(FieldDescriptor *a, FieldDescriptor *b) {
+  auto av = GetValue(a);
+  auto bv = GetValue(b);
+  std::set<NodeUID> as(av.begin(), av.end());
+  std::set<NodeUID> bs(bv.begin(), bv.end());
+  return as == bs;
 }
 
 //
@@ -1358,7 +1662,6 @@ inline void AllocFieldProxyObject(ECMAGraph *G, NodeUID id) {
 
 } // namespace Prakriti
 
-#include <stdexcept>
 #include <string>
 #include <unordered_set>
 
@@ -1503,14 +1806,17 @@ inline bool initOOBJ = []() {
       if (!isExtensible)
         return {{PKRGlobalState::getFALSE()}};
 
-      // When can this happen in the runtime? Find out...
-      throw std::runtime_error("OOBJ_DefineOwnProperty->TODO");
-      // if (Prakriti::isDataDescriptor(rhsValue)) {
-      //     current = AllocFieldProxyObject(G, ECMAGraph::genNodeUID());
-      // } else {
-      //     throw std::runtime_error("Todo handle definition of accessor
-      //     properties");
-      // }
+      // Defining a brand new own property (data or accessor -- FDUnion
+      // doesn't care, it just copies over whatever fields rhsPtr set, same
+      // as NAC_OOBJ_Set's own "create new field proxy" path).
+      NodeUID id = PKRGlobalState::generateSentinel(
+          ctx, PKRGlobalState::EdgeIntern(field));
+      AllocFieldProxyObject(G, id);
+      G->addEdge(ctx, id, PKRGlobalState::EdgeIntern(field));
+
+      FieldDescriptor newFD(G, id);
+      FDUnion(&newFD, rhsPtr.get());
+      return {{PKRGlobalState::getTRUE()}};
     }
 
     auto currentFD = std::make_shared<FieldDescriptor>(G, currentFP);
@@ -1525,7 +1831,8 @@ inline bool initOOBJ = []() {
       if (IsNotWritable(currentFD.get())) {
         if (!IsNotWritable(rhsPtr.get()))
           return {{PKRGlobalState::getFALSE()}};
-        return {{PKRGlobalState::getFALSE()}};
+        if (!SameValue(currentFD.get(), rhsPtr.get()))
+          return {{PKRGlobalState::getFALSE()}};
       }
     }
     FDUnion(currentFD.get(), rhsPtr.get());
@@ -1571,8 +1878,8 @@ inline bool initOOBJ = []() {
         if (p == PKRGlobalState::getNULL()) {
           res.insert(PKRGlobalState::getUNDEF());
         } else {
-          auto acts = G->getPointees(ctx, PKRGlobalState::EdgeIntern(PKR_Get));
-          auto current_ = KarmaBindu(G, acts, {G, {p, rcvr}, {field}});
+          auto acts = G->getPointees(p, PKRGlobalState::EdgeIntern(PKR_Get));
+          auto current_ = KarmaBindu(G, acts, {NULL, {p, rcvr}, {field}});
           for (auto &tgt : current_)
             res.insert(tgt);
         }
@@ -1590,70 +1897,15 @@ inline bool initOOBJ = []() {
   });
 
   PKRGlobalState::NAC_OOBJ_Set = DEFINE_ACTION() {
-
     ECMAGraph *G = args.G;
     auto &L = args.L;
     auto &A = args.A;
-    auto &X = args.X;
     ASSERT(args.L.size() == 2 && args.A.size() == 1);
 
     NodeUID ctx = L[0];
     NodeUID valToSet = L[1];
     std::string field = A[0];
 
-    // TODO: WIP
-    bool isNeverWritable = false;
-
-    if (isNeverWritable == false) {
-      auto currentFP = OOHelpers::getOwnProperty(G, ctx, field);
-      if (currentFP == PKRGlobalState::getUNDEF()) {
-        auto tmp = std::make_shared<TempFieldDescriptor>();
-        tmp->addValue(valToSet);
-        tmp->addWritable(PKRGlobalState::getTRUE());
-        tmp->addEnumerable(PKRGlobalState::getTRUE());
-        tmp->addConfigurable(PKRGlobalState::getTRUE());
-
-        //
-        // Incorrect:
-        // a.f = 12 :: [[fp:f]]->X | a.f = 13 :: [[fp:f]]->!X
-        //
-        // Correct:
-        // a.f = 12 :: [[fp:f]]->X | a.f = 13 :: [[fp:f]]->X
-        //
-
-        NodeUID id = PKRGlobalState::generateSentinel(
-            ctx, PKRGlobalState::EdgeIntern(field));
-        AllocFieldProxyObject(G, id);
-        G->addEdge(ctx, id, PKRGlobalState::EdgeIntern(field));
-        G->addEdge(id, PKRGlobalState::getTRUE(),
-                   PKRGlobalState::EdgeIntern(PKR_WRITABLE));
-        G->addEdge(id, PKRGlobalState::getTRUE(),
-                   PKRGlobalState::EdgeIntern(PKR_ENUMERABLE));
-        G->addEdge(id, PKRGlobalState::getTRUE(),
-                   PKRGlobalState::EdgeIntern(PKR_CONFIGURABLE));
-
-        auto acts = G->getPointees(
-            ctx, PKRGlobalState::EdgeIntern(PKR_DefineOwnProperty));
-        KarmaBindu(G, acts, {NULL, {ctx}, {field}, {tmp}});
-      } else {
-        auto currentFD = FieldDescriptor(G, currentFP);
-        auto tmp = std::make_shared<TempFieldDescriptor>();
-        tmp->addValue(valToSet);
-        tmp->addWritable(!IsNotWritable(&currentFD)
-                             ? PKRGlobalState::getTRUE()
-                             : PKRGlobalState::getFALSE());
-        tmp->addEnumerable(!IsNotEnumerable(&currentFD)
-                               ? PKRGlobalState::getTRUE()
-                               : PKRGlobalState::getFALSE());
-        tmp->addConfigurable(!IsNotConfigurable(&currentFD)
-                                 ? PKRGlobalState::getTRUE()
-                                 : PKRGlobalState::getFALSE());
-
-        auto acts = G->getPointees(
-            ctx, PKRGlobalState::EdgeIntern(PKR_DefineOwnProperty));
-        KarmaBindu(G, acts, {NULL, {ctx}, {field}, {tmp}});
-      }
-    }
     std::vector<NodeUID> fpNodes;
     OOHelpers::searchFPNodes(G, ctx, field, fpNodes);
     std::vector<KarmaResult> kResults;
@@ -1668,11 +1920,42 @@ inline bool initOOBJ = []() {
       }
     }
 
-    std::vector<ECMAGraph> graphsToMerge;
-    for (auto &kr : kResults)
-      graphsToMerge.push_back(kr.clonedG);
+    // an accessor along the chain handled the write, dont also create a data property
+    if (!kResults.empty()) {
+      ECMAGraph merged = std::move(kResults.front().clonedG);
+      if (kResults.size() > 1) {
+        std::vector<ECMAGraph> rest;
+        for (size_t i = 1; i < kResults.size(); i++) {
+          rest.push_back(std::move(kResults[i].clonedG));
+        }
+        merged.mutateMergeUnion(rest);
+      }
+      *G = std::move(merged);
+      return {{}};
+    }
 
-    G->mutateMergeUnion(graphsToMerge);
+    auto currentFP = OOHelpers::getOwnProperty(G, ctx, field);
+    auto tmp = std::make_shared<TempFieldDescriptor>();
+    tmp->addValue(valToSet);
+    if (currentFP == PKRGlobalState::getUNDEF()) {
+      tmp->addWritable(PKRGlobalState::getTRUE());
+      tmp->addEnumerable(PKRGlobalState::getTRUE());
+      tmp->addConfigurable(PKRGlobalState::getTRUE());
+    } else {
+      auto currentFD = FieldDescriptor(G, currentFP);
+      tmp->addWritable(!IsNotWritable(&currentFD) ? PKRGlobalState::getTRUE()
+                                                   : PKRGlobalState::getFALSE());
+      tmp->addEnumerable(!IsNotEnumerable(&currentFD)
+                             ? PKRGlobalState::getTRUE()
+                             : PKRGlobalState::getFALSE());
+      tmp->addConfigurable(!IsNotConfigurable(&currentFD)
+                               ? PKRGlobalState::getTRUE()
+                               : PKRGlobalState::getFALSE());
+    }
+
+    auto acts =
+        G->getPointees(ctx, PKRGlobalState::EdgeIntern(PKR_DefineOwnProperty));
+    KarmaBindu(G, acts, {NULL, {ctx}, {field}, {tmp}});
     return {{}};
   });
 
@@ -1687,7 +1970,7 @@ inline bool initOOBJ = []() {
     std::string field = A[0];
 
     NodeUID currentFP = OOHelpers::getOwnProperty(G, ctx, field);
-    if (currentFP != PKRGlobalState::getUNDEF())
+    if (currentFP == PKRGlobalState::getUNDEF())
       return {{PKRGlobalState::getTRUE()}};
 
     FieldDescriptor currentFD(G, currentFP);
@@ -1743,6 +2026,297 @@ inline void AllocOrdinaryObject(ECMAGraph *G, NodeUID id, NodeUID ext,
 }
 } // namespace Prakriti
 
+#include <cctype>
+#include <stdexcept>
+#include <string>
+
+namespace Prakriti {
+
+namespace MappedArgsHelpers {
+inline bool isNumericIndex(const std::string &field) {
+  if (field.empty()) {
+    return false;
+  }
+  return std::all_of(field.begin(), field.end(),
+                     [](unsigned char c) { return std::isdigit(c); });
+}
+} // namespace MappedArgsHelpers
+
+inline bool initARGSOBJ = []() {
+  PKRGlobalState::NAC_MARGSOBJ_Unsupported = DEFINE_ACTION() {
+    throw std::runtime_error(
+        "PKR: MappedArgumentsObject semantics not implemented");
+  });
+
+  PKRGlobalState::NAC_MARGSOBJ_Get = DEFINE_ACTION() {
+    ECMAGraph *G = args.G;
+    ASSERT(args.L.size() == 2 && args.A.size() == 1);
+    NodeUID ctx = args.L[0];
+    const std::string &field = args.A[0];
+    ASSERT(MappedArgsHelpers::isNumericIndex(field));
+    auto targets =
+        G->getPointees(ctx, PKRGlobalState::EdgeIntern(field.c_str()));
+    ASSERT(!targets.empty());
+    NodeUID stackCell = targets[0];
+    auto acts = G->getPointees(stackCell, PKRGlobalState::EdgeIntern(PKR_Get));
+    auto res = KarmaBindu(G, acts, {NULL, {stackCell}});
+    return {{res.begin(), res.end()}};
+  });
+
+  PKRGlobalState::NAC_MARGSOBJ_Set = DEFINE_ACTION() {
+    ECMAGraph *G = args.G;
+    ASSERT(args.L.size() == 2 && args.A.size() == 1);
+    NodeUID ctx = args.L[0];
+    NodeUID val = args.L[1];
+    const std::string &field = args.A[0];
+    ASSERT(MappedArgsHelpers::isNumericIndex(field));
+    auto targets =
+        G->getPointees(ctx, PKRGlobalState::EdgeIntern(field.c_str()));
+    ASSERT(!targets.empty());
+    NodeUID stackCell = targets[0];
+    auto acts = G->getPointees(stackCell, PKRGlobalState::EdgeIntern(PKR_Set));
+    KarmaBindu(G, acts, {NULL, {stackCell, val}});
+    return {};
+  });
+
+  return true;
+}();
+
+inline void AllocArgumentsObject(ECMAGraph *G, NodeUID id, NodeUID ext,
+                                 NodeUID proto) {
+  AllocOrdinaryObject(G, id, ext, proto);
+  G->addNode(id, TAG::ARGSOBJ);
+  G->addEdge(id, PKRGlobalState::getNUMBER(),
+             PKRGlobalState::EdgeIntern("length"));
+}
+
+inline void AllocMappedArgumentsObject(ECMAGraph *G, NodeUID id, NodeUID ext,
+                                       NodeUID proto) {
+  AllocOrdinaryObject(G, id, ext, proto);
+  G->addNode(id, TAG::MARGSOBJ);
+  G->addEdge(id, PKRGlobalState::getNUMBER(),
+             PKRGlobalState::EdgeIntern("length"));
+
+  NodeUID temp;
+  SET_AC(id, NAC_MARGSOBJ_Get, PKR_Get);
+  SET_AC(id, NAC_MARGSOBJ_Set, PKR_Set);
+  SET_AC(id, NAC_MARGSOBJ_Unsupported, PKR_GetOwnProperty);
+  SET_AC(id, NAC_MARGSOBJ_Unsupported, PKR_DefineOwnProperty);
+  SET_AC(id, NAC_MARGSOBJ_Unsupported, PKR_Delete);
+}
+
+} // namespace Prakriti
+
+namespace Prakriti {
+
+inline void AllocArrayObject(ECMAGraph *G, NodeUID id) {
+  G->addNode(id, TAG::ARRAYOBJ);
+
+  NodeUID temp;
+  SET_AC(id, NAC_OOBJ_GetPrototypeOf, PKR_GetPrototypeOf);
+  SET_AC(id, NAC_OOBJ_SetPrototypeOf, PKR_SetPrototypeOf);
+  SET_AC(id, NAC_OOBJ_IsExtensible, PKR_IsExtensible);
+  SET_AC(id, NAC_OOBJ_PreventExtensions, PKR_PreventExtensions);
+  SET_AC(id, NAC_OOBJ_GetOwnProperty, PKR_GetOwnProperty);
+  SET_AC(id, NAC_OOBJ_DefineOwnProperty, PKR_DefineOwnProperty);
+  SET_AC(id, NAC_OOBJ_HasProperty, PKR_HasProperty);
+  SET_AC(id, NAC_OOBJ_Get, PKR_Get);
+  SET_AC(id, NAC_OOBJ_Set, PKR_Set);
+  SET_AC(id, NAC_OOBJ_Delete, PKR_Delete);
+  SET_AC(id, NAC_OOBJ_OwnPropertyKeys, PKR_OwnPropertyKeys);
+
+  G->addEdge(id, PKRGlobalState::getTRUE(),
+             PKRGlobalState::EdgeIntern(PKR_EXTENSIBLE));
+  G->addEdge(id, PKRGlobalState::getGOOBJ_Array_prototype(),
+             PKRGlobalState::EdgeIntern(PKR_PROTOTYPE));
+
+  NodeUID lengthFP =
+      PKRGlobalState::generateSentinel(id, PKRGlobalState::EdgeIntern("length"));
+  AllocFieldProxyObject(G, lengthFP);
+  G->addEdge(id, lengthFP, PKRGlobalState::EdgeIntern("length"));
+  G->addEdge(lengthFP, PKRGlobalState::getNUMBER(),
+             PKRGlobalState::EdgeIntern(PKR_VALUE));
+  G->addEdge(lengthFP, PKRGlobalState::getTRUE(),
+             PKRGlobalState::EdgeIntern(PKR_WRITABLE));
+  G->addEdge(lengthFP, PKRGlobalState::getFALSE(),
+             PKRGlobalState::EdgeIntern(PKR_ENUMERABLE));
+  G->addEdge(lengthFP, PKRGlobalState::getFALSE(),
+             PKRGlobalState::EdgeIntern(PKR_CONFIGURABLE));
+}
+
+} // namespace Prakriti
+
+namespace Prakriti {
+
+inline bool initAwait = []() {
+  PKRGlobalState::NAC_Await_Eval = DEFINE_ACTION() {
+    ASSERT(false);
+    // WIP ~ Meetesh
+
+    // ECMAGraph *G = args.G;
+    // const auto &L = args.L;
+    //
+    // ASSERT(L.size() > 0);
+    // NodeUID ctx = L[0];
+    //
+    // auto storeTargets = G->getAllOutgoingEdgesByLabel(
+    //     ctx, PKRGlobalState::EdgeIntern(PKR_StoreTarget));
+    //
+    // for (const auto &st : storeTargets) {
+    //   std::vector<NodeUID> L_(L.begin(), L.end());
+    //   L_[0] = st.target;
+    //
+    //   KarmaBindu(G,
+    //              G->getPointees(st.target,
+    //              PKRGlobalState::EdgeIntern(PKR_Set)), {NULL, L_});
+    // }
+    //
+    // auto savedStateVec = G->getAllOutgoingEdgesByLabel(
+    //     ctx, PKRGlobalState::EdgeIntern(PKR_State));
+    // ASSERT(savedStateVec.size() == 1);
+    //
+    // auto savedState = savedStateVec.at(0).target;
+    // ASSERT(G->getNodeTAG(savedState) == TAG::STATE_VAL);
+    //
+    // // Call Registered Action Closure
+    // invokeAction(ctx, {G, {savedState}});
+
+    return {};
+  });
+
+  return true;
+}();
+
+inline void AllocAwaitNode(ECMAGraph *G, NodeUID id,
+                           ECMAGraph::ActionClosure clos, NodeUID stateNode) {
+  // Declare Await Node
+  G->addNode(id, TAG::AWAIT);
+  PKRGlobalState::associateActionClosure(id, clos);
+
+  // Set State
+  G->addEdge(id, stateNode, PKRGlobalState::EdgeIntern(PKR_State));
+
+  NodeUID temp;
+  SET_AC(id, NAC_Await_Eval, PKR_Eval);
+}
+
+inline void SetAwaitStoreTarget(ECMAGraph *G, NodeUID awaitID,
+                                NodeUID storeTarget) {
+  // Remove Old StoreTargets
+  G->removeAllOutgoingEdgesByLabel(awaitID,
+                                   PKRGlobalState::EdgeIntern(PKR_StoreTarget));
+  // Set new StoreTarget
+  G->addEdge(awaitID, storeTarget, PKRGlobalState::EdgeIntern(PKR_StoreTarget));
+}
+
+} // namespace Prakriti
+
+namespace Prakriti {
+
+inline bool initClosure = []() { return true; }();
+
+inline void AllocClosure(ECMAGraph *G, NodeUID id,
+                         ECMAGraph::ActionClosure clos, NodeUID ext,
+                         NodeUID proto) {
+  // Declare FOBJ node
+  G->addNode(id, TAG::FOBJ);
+  PKRGlobalState::associateActionClosure(id, clos);
+
+  NodeUID temp;
+  SET_AC(id, NAC_OOBJ_GetPrototypeOf, PKR_GetPrototypeOf);
+  SET_AC(id, NAC_OOBJ_SetPrototypeOf, PKR_SetPrototypeOf);
+  SET_AC(id, NAC_OOBJ_IsExtensible, PKR_IsExtensible);
+  SET_AC(id, NAC_OOBJ_PreventExtensions, PKR_PreventExtensions);
+  SET_AC(id, NAC_OOBJ_GetOwnProperty, PKR_GetOwnProperty);
+  SET_AC(id, NAC_OOBJ_DefineOwnProperty, PKR_DefineOwnProperty);
+  SET_AC(id, NAC_OOBJ_HasProperty, PKR_HasProperty);
+  SET_AC(id, NAC_OOBJ_Get, PKR_Get);
+  SET_AC(id, NAC_OOBJ_Set, PKR_Set);
+  SET_AC(id, NAC_OOBJ_Delete, PKR_Delete);
+  SET_AC(id, NAC_OOBJ_OwnPropertyKeys, PKR_OwnPropertyKeys);
+
+  G->addEdge(id, proto, PKRGlobalState::EdgeIntern(PKR_PROTOTYPE));
+  G->addEdge(id, ext, PKRGlobalState::EdgeIntern(PKR_EXTENSIBLE));
+}
+
+} // namespace Prakriti
+
+// A constructor body that just asserts if actually called.
+#define PKR_STUB_FUN                                                           \
+  DEFINE_ACTION() {                                                            \
+    ASSERT(false);                                                             \
+    return {};                                                                 \
+  })
+
+// Builds constructor FOBJ `id` and sets its .prototype to `protoField`.
+#define ALLOC_CTR(id, func, protoField)                                        \
+  AllocClosure(G, id, func, PKRGlobalState::getTRUE(),                         \
+               PKRGlobalState::getGFOBJ_Function_prototype());                 \
+  KarmaBindu(G, G->getPointees(id, PKRGlobalState::EdgeIntern(PKR_Set)),       \
+             {NULL, {id, protoField}, {"prototype"}});
+
+namespace Prakriti {
+
+inline void defineStubMethod(ECMAGraph *G, NodeUID target,
+                             const std::string &propName,
+                             const std::string &qualifiedName) {
+  NodeUID methodID = PKRGlobalState::ReserveNodeUID();
+  auto ac = makeTracedAction(
+      __FILE__, __LINE__,
+      [qualifiedName](const ECMAGraph::PJSSL_ARG &) -> ECMAGraph::PJSSL_RET {
+        throw std::runtime_error(
+            "[Prakriti] Not implemented: " + qualifiedName + "()");
+      });
+  AllocClosure(G, methodID, ac, PKRGlobalState::getTRUE(),
+               PKRGlobalState::getGFOBJ_Function_prototype());
+  KarmaBindu(G, G->getPointees(target, PKRGlobalState::EdgeIntern(PKR_Set)),
+             {NULL, {target, methodID}, {propName}});
+}
+
+inline void defineStubMethods(ECMAGraph *G, NodeUID target,
+                              const std::string &qualifiedPrefix,
+                              std::initializer_list<const char *> names) {
+  for (const char *name : names)
+    defineStubMethod(G, target, name, qualifiedPrefix + name);
+}
+
+inline void defineNoopMethod(ECMAGraph *G, NodeUID target,
+                             const std::string &propName) {
+  NodeUID methodID = PKRGlobalState::ReserveNodeUID();
+  auto ac = DEFINE_ACTION() { return {{PKRGlobalState::getUNDEF()}}; });
+  AllocClosure(G, methodID, ac, PKRGlobalState::getTRUE(),
+               PKRGlobalState::getGFOBJ_Function_prototype());
+  KarmaBindu(G, G->getPointees(target, PKRGlobalState::EdgeIntern(PKR_Set)),
+             {NULL, {target, methodID}, {propName}});
+}
+
+inline void defineNoopMethods(ECMAGraph *G, NodeUID target,
+                              std::initializer_list<const char *> names) {
+  for (const char *name : names)
+    defineNoopMethod(G, target, name);
+}
+
+inline void linkPrototypeConstructor(ECMAGraph *G, NodeUID ctorID,
+                                     NodeUID protoID) {
+  KarmaBindu(G, G->getPointees(protoID, PKRGlobalState::EdgeIntern(PKR_Set)),
+             {NULL, {protoID, ctorID}, {"constructor"}});
+}
+
+inline void
+defineStubIntrinsic(ECMAGraph *G, NodeUID ctorID, NodeUID protoID,
+                    NodeUID protoParent,
+                    std::initializer_list<const char *> staticMethodNames,
+                    std::initializer_list<const char *> protoMethodNames,
+                    const std::string &name) {
+  AllocOrdinaryObject(G, protoID, PKRGlobalState::getTRUE(), protoParent);
+  ALLOC_CTR(ctorID, PKR_STUB_FUN, protoID);
+  linkPrototypeConstructor(G, ctorID, protoID);
+  defineStubMethods(G, ctorID, name + ".", staticMethodNames);
+  defineStubMethods(G, protoID, name + ".prototype.", protoMethodNames);
+}
+
+} // namespace Prakriti
+
 namespace Prakriti {
 
 inline bool initSOBJ = []() {
@@ -1780,19 +2354,7 @@ inline void AllocStackObject(ECMAGraph *G, NodeUID id) {
 }
 } // namespace Prakriti
 
-#define PKR_STUB_FUN                                                           \
-  DEFINE_ACTION() {                                                            \
-    ASSERT(false);                                                             \
-    return {};                                                                 \
-  })
-
 #define ALLOC_STKN(name) AllocStackObject(G, PKRGlobalState::getGlobal(name))
-#define ALLOC_CTR(id, func, protoField)                                        \
-  AllocClosure(G, id, func, PKRGlobalState::getTRUE(),                         \
-               PKRGlobalState::getGFOBJ_Function_prototype());                 \
-  KarmaBindu(G, G->getPointees(id, PKRGlobalState::EdgeIntern(PKR_Set)),       \
-             {NULL, {id, protoField}, {"prototype"}});
-
 #define GSTK_BIND(src, dest)                                                   \
   KarmaBindu(G,                                                                \
              G->getPointees(PKRGlobalState::getGlobal(src),                    \
@@ -1801,17 +2363,195 @@ inline void AllocStackObject(ECMAGraph *G, NodeUID id) {
 
 namespace Prakriti {
 
-inline void initGlobalStackRefs(ECMAGraph *G) {
-  ALLOC_STKN(GSTK_globalThis);
+inline void initGSTK_globalThis(ECMAGraph *G) { ALLOC_STKN(GSTK_globalThis); }
+
+inline void initGSTK_Infinity(ECMAGraph *G) {
   ALLOC_STKN(GSTK_Infinity);
-  ALLOC_STKN(GSTK_NaN);
-  ALLOC_STKN(GSTK_undefined);
-  ALLOC_STKN(GSTK_Function);
-  ALLOC_STKN(GSTK_Boolean);
-  ALLOC_STKN(GSTK_Symbol);
-  ALLOC_STKN(GSTK_Error);
-  ALLOC_STKN(GSTK_Object);
+  G->addEdge(PKRGlobalState::getGlobal(GSTK_Infinity), PKRGlobalState::getINF(),
+             PKRGlobalState::EdgeIntern(PKR_STK));
 }
+
+inline void initGSTK_NaN(ECMAGraph *G) {
+  ALLOC_STKN(GSTK_NaN);
+  G->addEdge(PKRGlobalState::getGlobal(GSTK_NaN), PKRGlobalState::getNAN(),
+             PKRGlobalState::EdgeIntern(PKR_STK));
+}
+
+inline void initGSTK_undefined(ECMAGraph *G) {
+  ALLOC_STKN(GSTK_undefined);
+  G->addEdge(PKRGlobalState::getGlobal(GSTK_undefined),
+             PKRGlobalState::getUNDEF(), PKRGlobalState::EdgeIntern(PKR_STK));
+}
+
+inline void initGSTK_Function(ECMAGraph *G) {
+  ALLOC_STKN(GSTK_Function);
+  GSTK_BIND(GSTK_Function, PKRGlobalState::getGFOBJ_Function());
+}
+
+inline void initGSTK_Boolean(ECMAGraph *G) {
+  ALLOC_STKN(GSTK_Boolean);
+  GSTK_BIND(GSTK_Boolean, PKRGlobalState::getGFOBJ_Boolean());
+}
+
+inline void initGSTK_Symbol(ECMAGraph *G) {
+  ALLOC_STKN(GSTK_Symbol);
+  GSTK_BIND(GSTK_Symbol, PKRGlobalState::getGFOBJ_Symbol());
+}
+
+inline void initGSTK_Error(ECMAGraph *G) {
+  ALLOC_STKN(GSTK_Error);
+  GSTK_BIND(GSTK_Error, PKRGlobalState::getGFOBJ_Error());
+}
+
+inline void initGSTK_Object(ECMAGraph *G) {
+  ALLOC_STKN(GSTK_Object);
+  GSTK_BIND(GSTK_Object, PKRGlobalState::getGFOBJ_Object());
+}
+
+// Weird special case from ECMA
+inline void initFunctionPrototype(ECMAGraph *G) {
+  NodeUID protoID = PKRGlobalState::getGFOBJ_Function_prototype();
+  auto ac = DEFINE_ACTION() { return {{PKRGlobalState::getUNDEF()}}; });
+  AllocClosure(G, protoID, ac, PKRGlobalState::getTRUE(),
+               PKRGlobalState::getGOOBJ_Object_prototype());
+}
+
+inline void initFunctionConstructor(ECMAGraph *G) {
+  ALLOC_CTR(PKRGlobalState::getGFOBJ_Function(), PKR_STUB_FUN,
+            PKRGlobalState::getGFOBJ_Function_prototype());
+  linkPrototypeConstructor(G, PKRGlobalState::getGFOBJ_Function(),
+                           PKRGlobalState::getGFOBJ_Function_prototype());
+  defineStubMethods(G, PKRGlobalState::getGFOBJ_Function_prototype(),
+                    "Function.prototype.", {"toString"});
+}
+
+inline void initECMAEnvironment(ECMAGraph *G) {
+  AllocOrdinaryObject(G, PKRGlobalState::getGOOBJ_Object_prototype(),
+                      PKRGlobalState::getTRUE(), PKRGlobalState::getNULL());
+  initFunctionPrototype(G);
+
+  defineStubIntrinsic(
+      G, PKRGlobalState::getGFOBJ_Object(),
+      PKRGlobalState::getGOOBJ_Object_prototype(), PKRGlobalState::getNULL(),
+      {"assign",
+       "create",
+       "defineProperties",
+       "defineProperty",
+       "entries",
+       "freeze",
+       "fromEntries",
+       "getOwnPropertyDescriptor",
+       "getOwnPropertyDescriptors",
+       "getOwnPropertyNames",
+       "getOwnPropertySymbols",
+       "getPrototypeOf",
+       "hasOwn",
+       "is",
+       "isExtensible",
+       "isFrozen",
+       "isSealed",
+       "keys",
+       "preventExtensions",
+       "seal",
+       "setPrototypeOf",
+       "values"},
+      {"hasOwnProperty", "isPrototypeOf", "propertyIsEnumerable",
+       "toLocaleString", "toString", "valueOf"},
+      "Object");
+
+  defineStubIntrinsic(G, PKRGlobalState::getGFOBJ_Boolean(),
+                      PKRGlobalState::getGOOBJ_Boolean_prototype(),
+                      PKRGlobalState::getGOOBJ_Object_prototype(), {},
+                      {"toString", "valueOf"}, "Boolean");
+
+  defineStubIntrinsic(G, PKRGlobalState::getGFOBJ_Symbol(),
+                      PKRGlobalState::getGOOBJ_Symbol_prototype(),
+                      PKRGlobalState::getGOOBJ_Object_prototype(),
+                      {"for", "keyFor"}, {"toString", "valueOf"}, "Symbol");
+
+  defineStubIntrinsic(G, PKRGlobalState::getGFOBJ_Error(),
+                      PKRGlobalState::getGOOBJ_Error_prototype(),
+                      PKRGlobalState::getGOOBJ_Object_prototype(), {},
+                      {"toString"}, "Error");
+
+  AllocOrdinaryObject(G, PKRGlobalState::getGOOBJ_Array_prototype(),
+                      PKRGlobalState::getTRUE(),
+                      PKRGlobalState::getGOOBJ_Object_prototype());
+
+  initFunctionConstructor(G);
+}
+
+} // namespace Prakriti
+
+namespace Prakriti {
+
+inline void initECMAModuleEnvironment(ECMAGraph *G) { initECMAEnvironment(G); }
+
+} // namespace Prakriti
+
+namespace Prakriti {
+
+inline void initECMAScriptEnvironment(ECMAGraph *G) { initECMAEnvironment(G); }
+
+} // namespace Prakriti
+
+namespace Prakriti {
+
+inline void initGSTK_console(ECMAGraph *G) {
+  NodeUID ref = PKRGlobalState::getGlobal(GSTK_console);
+  AllocStackObject(G, ref);
+  KarmaBindu(G, G->getPointees(ref, PKRGlobalState::EdgeIntern(PKR_Set)),
+             {NULL, {ref, PKRGlobalState::getGOOBJ_console()}});
+}
+
+// A plain object, not a stub: log/warn/error accept any arguments, return
+// undefined, no graph side effects.
+inline void initConsole(ECMAGraph *G) {
+  NodeUID consoleID = PKRGlobalState::getGOOBJ_console();
+  AllocOrdinaryObject(G, consoleID, PKRGlobalState::getTRUE(),
+                      PKRGlobalState::getGOOBJ_Object_prototype());
+  defineNoopMethods(G, consoleID, {"log", "warn", "error"});
+}
+
+} // namespace Prakriti
+
+namespace Prakriti {
+
+inline void initNodeModuleEnvironment(ECMAGraph *G) {
+  initECMAEnvironment(G);
+  initConsole(G);
+}
+
+} // namespace Prakriti
+
+namespace Prakriti {
+
+inline void initNodeScriptEnvironment(ECMAGraph *G) {
+  initECMAEnvironment(G);
+  initConsole(G);
+}
+
+} // namespace Prakriti
+
+namespace Prakriti {
+
+inline void initQJSModuleEnvironment(ECMAGraph *G) {
+  initECMAEnvironment(G);
+  initConsole(G);
+}
+
+} // namespace Prakriti
+
+namespace Prakriti {
+
+inline void initQJSScriptEnvironment(ECMAGraph *G) {
+  initECMAEnvironment(G);
+  initConsole(G);
+}
+
+} // namespace Prakriti
+
+namespace Prakriti {
 
 inline void initLeaves(ECMAGraph *G) {
   G->addNode(PKRGlobalState::getINF(), TAG::INF_VAL);
@@ -1820,233 +2560,112 @@ inline void initLeaves(ECMAGraph *G) {
   G->addNode(PKRGlobalState::getNULL(), TAG::NULL_VAL);
   G->addNode(PKRGlobalState::getTRUE(), TAG::TRUE_VAL);
   G->addNode(PKRGlobalState::getFALSE(), TAG::FALSE_VAL);
+  G->addNode(PKRGlobalState::getNUMBER(), TAG::NUMBER_VAL);
+  G->addNode(PKRGlobalState::getSTRING(), TAG::STRING_VAL);
+  G->addNode(PKRGlobalState::getBIGINT(), TAG::BIGINT_VAL);
 }
 
-// ECMA 19.1
-inline void initGlobalValueProps(ECMAGraph *G) {
-  G->addEdge(PKRGlobalState::getGlobal(GSTK_Infinity), PKRGlobalState::getINF(),
-             PKRGlobalState::EdgeIntern(PKR_STK));
-  G->addEdge(PKRGlobalState::getGlobal(GSTK_NaN), PKRGlobalState::getNAN(),
-             PKRGlobalState::EdgeIntern(PKR_STK));
-  G->addEdge(PKRGlobalState::getGlobal(GSTK_undefined),
-             PKRGlobalState::getUNDEF(), PKRGlobalState::EdgeIntern(PKR_STK));
-}
-
-// ECMA 20.1.3
-inline void initObjectPrototype(ECMAGraph *G) {
-  // Object.prototype [OOBJ]
-  //      [[Extensible]] -> TRUE_VAL
-  //      [[Prototype]]  -> NULL_VAL
-  NodeUID objectPrototypeID = PKRGlobalState::getGOOBJ_Object_prototype();
-  AllocOrdinaryObject(G, objectPrototypeID, PKRGlobalState::getTRUE(),
-                      PKRGlobalState::getNULL());
-}
-
-// ECMA 20.2.3
-inline void initFunctionPrototype(ECMAGraph *G) {
-  // Function.prototype [FOBJ]
-  //      [[Extensible]] -> TRUE_VAL
-  //      [[Prototype]]  -> Object.prototype
-  NodeUID functionPrototypeID = PKRGlobalState::getGFOBJ_Function_prototype();
-  NodeUID objectPrototypeID = PKRGlobalState::getGOOBJ_Object_prototype();
-
-  // ECMA -> accepts any arguments and returns undefined when invoked
-  auto ac = DEFINE_ACTION() { return {{PKRGlobalState::getUNDEF()}}; });
-
-  AllocClosure(G, functionPrototypeID, ac, PKRGlobalState::getTRUE(),
-               objectPrototypeID);
-}
-
-inline void initBooleanPrototype(ECMAGraph *G) {
-  // Boolean.prototype [OOBJ]
-  //      [[Extensible]] -> TRUE_VAL
-  //      [[Prototype]]  -> Object.prototype
-  NodeUID booleanPrototypeID = PKRGlobalState::getGOOBJ_Boolean_prototype();
-  NodeUID objectPrototypeID = PKRGlobalState::getGOOBJ_Object_prototype();
-  AllocOrdinaryObject(G, booleanPrototypeID, PKRGlobalState::getTRUE(),
-                      objectPrototypeID);
-}
-
-inline void initSymbolPrototype(ECMAGraph *G) {
-  // Symbol.prototype [OOBJ]
-  //      [[Extensible]] -> TRUE_VAL
-  //      [[Prototype]]  -> Object.prototype
-  NodeUID symbolPrototypeID = PKRGlobalState::getGOOBJ_Symbol_prototype();
-  NodeUID objectPrototypeID = PKRGlobalState::getGOOBJ_Object_prototype();
-  AllocOrdinaryObject(G, symbolPrototypeID, PKRGlobalState::getTRUE(),
-                      objectPrototypeID);
-}
-
-inline void initErrorPrototype(ECMAGraph *G) {
-  // Error.prototype [OOBJ]
-  //      [[Extensible]] -> TRUE_VAL
-  //      [[Prototype]]  -> Object.prototype
-  NodeUID errorPrototypeID = PKRGlobalState::getGOOBJ_Error_prototype();
-  NodeUID objectPrototypeID = PKRGlobalState::getGOOBJ_Object_prototype();
-  AllocOrdinaryObject(G, errorPrototypeID, PKRGlobalState::getTRUE(),
-                      objectPrototypeID);
-}
-
-// ECMA 20.1.1
-inline void initObjectConstructor(ECMAGraph *G) {
-  // Object [[FOBJ]]
-  //      [[Extensible]] -> TRUE_VAL
-  //      [[Prototype]]  -> Function.prototype
-  //      prototype      -> Object.prototype
-
-  // auto ac = DEFINE_ACTION() {
-  //   auto &L = args.L;
-  //   auto &A = args.A;
-  //
-  //   ASSERT(L.size() >= 1);
-  //
-  //   auto &ctx = L[0];
-  //
-  //   if (A.size() > 0) {
-  //     // TODO: CTR Case
-  //     ASSERT(false);
-  //   }
-  //
-  //   auto ooRes =
-  //       PKRGlobalState::generateSentinel(ctx,
-  //       PKRGlobalState::EdgeIntern("2"));
-  //
-  //   // TODO: ToObject
-  //   ASSERT(false);
-  //   return {};
-  // });
-  ALLOC_CTR(PKRGlobalState::getGFOBJ_Object(), PKR_STUB_FUN,
-            PKRGlobalState::getGOOBJ_Object_prototype());
-
-  GSTK_BIND(GSTK_Object, PKRGlobalState::getGFOBJ_Object());
-}
-
-inline void initFunctionConstructor(ECMAGraph *G) {
-  // Function [[FOBJ]]
-  //      [[Extensible]] -> TRUE_VAL
-  //      [[Prototype]]  -> Function.prototype
-  //      prototype      -> Function.prototype
-
-  ALLOC_CTR(PKRGlobalState::getGFOBJ_Function(), PKR_STUB_FUN,
-            PKRGlobalState::getGFOBJ_Function_prototype());
-
-  GSTK_BIND(GSTK_Function, PKRGlobalState::getGFOBJ_Function());
-}
-
-inline void initBooleanConstructor(ECMAGraph *G) {
-  // Boolean [[FOBJ]]
-  //      [[Extensible]] -> TRUE_VAL
-  //      [[Prototype]]  -> Function.prototype
-  //      prototype      -> Boolean.prototype
-
-  ALLOC_CTR(PKRGlobalState::getGFOBJ_Boolean(), PKR_STUB_FUN,
-            PKRGlobalState::getGOOBJ_Boolean_prototype());
-
-  GSTK_BIND(GSTK_Boolean, PKRGlobalState::getGFOBJ_Boolean());
-}
-
-inline void initSymbolConstructor(ECMAGraph *G) {
-  // Symbol [[FOBJ]]
-  //      [[Extensible]] -> TRUE_VAL
-  //      [[Prototype]]  -> Function.prototype
-  //      prototype      -> Symbol.prototype
-
-  ALLOC_CTR(PKRGlobalState::getGFOBJ_Symbol(), PKR_STUB_FUN,
-            PKRGlobalState::getGOOBJ_Symbol_prototype());
-
-  GSTK_BIND(GSTK_Symbol, PKRGlobalState::getGFOBJ_Symbol());
-}
-
-inline void initErrorConstructor(ECMAGraph *G) {
-  // Error [[FOBJ]]
-  //      [[Extensible]] -> TRUE_VAL
-  //      [[Prototype]]  -> Function.prototype
-  //      prototype      -> Error.prototype
-
-  ALLOC_CTR(PKRGlobalState::getGFOBJ_Error(), PKR_STUB_FUN,
-            PKRGlobalState::getGOOBJ_Symbol_prototype());
-
-  GSTK_BIND(GSTK_Error, PKRGlobalState::getGFOBJ_Error());
-}
+#define DEF_JSFILE_EVAL(NACName, envInitFn)                                    \
+  PKRGlobalState::NACName = DEFINE_ACTION() {                                  \
+    ECMAGraph *G = args.G;                                                     \
+    auto &L = args.L;                                                          \
+                                                                               \
+    initLeaves(G);                                                             \
+    envInitFn(G);                                                              \
+                                                                               \
+    ASSERT(L.size() == 1);                                                     \
+    NodeUID ctx = args.L[0];                                                   \
+                                                                               \
+    /* Call Registered Action Closure */                                       \
+    invokeAction(ctx, {G});                                                    \
+                                                                               \
+    /* After expanding the node, delete it */                                  \
+    G->removeNode(ctx);                                                        \
+                                                                               \
+    return {};                                                                 \
+  });
 
 inline bool initJSFileNodes = []() {
-  PKRGlobalState::NAC_ECMASCRIPT_Eval = DEFINE_ACTION() {
+  DEF_JSFILE_EVAL(NAC_ECMASCRIPT_Eval, initECMAScriptEnvironment)
+  DEF_JSFILE_EVAL(NAC_ECMAMODULE_Eval, initECMAModuleEnvironment)
+  DEF_JSFILE_EVAL(NAC_NODESCRIPT_Eval, initNodeScriptEnvironment)
+  DEF_JSFILE_EVAL(NAC_NODEMODULE_Eval, initNodeModuleEnvironment)
+  DEF_JSFILE_EVAL(NAC_QJSSCRIPT_Eval, initQJSScriptEnvironment)
+  DEF_JSFILE_EVAL(NAC_QJSMODULE_Eval, initQJSModuleEnvironment)
+
+  return true;
+}();
+
+#undef DEF_JSFILE_EVAL
+
+#define DEF_ALLOC_JSFILE(FnName, NACName)                                      \
+  inline void FnName(ECMAGraph *G, NodeUID id, ECMAGraph::ActionClosure ac) {  \
+    G->addNode(id, TAG::JSFILE);                                               \
+    PKRGlobalState::associateActionClosure(id, ac);                            \
+                                                                               \
+    NodeUID evalNode = PKRGlobalState::getActionNode(PKRGlobalState::NACName); \
+    G->addNode(evalNode, TAG::ACT);                                            \
+    G->addEdge(id, evalNode, PKRGlobalState::EdgeIntern(PKR_Eval));            \
+  }
+
+DEF_ALLOC_JSFILE(AllocECMAScriptFile, NAC_ECMASCRIPT_Eval)
+DEF_ALLOC_JSFILE(AllocECMAModuleFile, NAC_ECMAMODULE_Eval)
+DEF_ALLOC_JSFILE(AllocNodeScriptFile, NAC_NODESCRIPT_Eval)
+DEF_ALLOC_JSFILE(AllocNodeModuleFile, NAC_NODEMODULE_Eval)
+DEF_ALLOC_JSFILE(AllocQJSScriptFile, NAC_QJSSCRIPT_Eval)
+DEF_ALLOC_JSFILE(AllocQJSModuleFile, NAC_QJSMODULE_Eval)
+
+#undef DEF_ALLOC_JSFILE
+
+} // namespace Prakriti
+
+namespace Prakriti {
+
+inline bool initTSOBJ = []() {
+  PKRGlobalState::NAC_TSOBJ_Set = DEFINE_ACTION() {
     ECMAGraph *G = args.G;
     auto &L = args.L;
 
-    initGlobalStackRefs(G);
-    initLeaves(G);
-    initGlobalValueProps(G);
+    ASSERT(L.size() >= 2);
+    NodeUID ctx = L[0];
 
-    initObjectPrototype(G);
-    initFunctionPrototype(G);
-    initBooleanPrototype(G);
-    initSymbolPrototype(G);
-    initErrorPrototype(G);
+    auto transience =
+        G->getPointees(ctx, PKRGlobalState::EdgeIntern(PKR_TRANSIENCE));
+    bool isStrong =
+        transience.size() == 1 && transience[0] == PKRGlobalState::getTRUE();
 
-    initObjectConstructor(G);
-    initFunctionConstructor(G);
-    initBooleanConstructor(G);
-    initSymbolConstructor(G);
-    initErrorConstructor(G);
-
-    ASSERT(L.size() == 1);
-    NodeUID ctx = args.L[0];
-
-    // Call Registered Action Closure
-    (*PKRGlobalState::getActionClosure(ctx))({G});
-
-    // After expanding the node, delete it
-    G->removeNode(ctx);
+    if (isStrong) {
+      G->removeAllOutgoingEdgesByLabel(ctx,
+                                       PKRGlobalState::EdgeIntern(PKR_STK));
+    }
+    for (auto i = 1; i < L.size(); i++) {
+      G->addEdge(ctx, L[i], PKRGlobalState::EdgeIntern(PKR_STK));
+    }
 
     return {};
   });
 
-  PKRGlobalState::NAC_ECMAMODULE_Eval = DEFINE_ACTION() {
+  PKRGlobalState::NAC_TSOBJ_Get = DEFINE_ACTION() {
     ECMAGraph *G = args.G;
     auto &L = args.L;
-    // TODO Add Module Global Nodes
 
     ASSERT(L.size() == 1);
     NodeUID ctx = args.L[0];
-
-    // Call Registered Action Closure
-    (*PKRGlobalState::getActionClosure(ctx))({G});
-
-    // After expanding the node, delete it
-    G->removeNode(ctx);
-
-    return {};
+    return {G->getPointees(ctx, PKRGlobalState::EdgeIntern(PKR_STK))};
   });
 
   return true;
 }();
 
-inline void AllocECMAScriptFile(ECMAGraph *G, NodeUID id,
-                                ECMAGraph::ActionClosure clos) {
-  // Declare ECMAScript Node
-  G->addNode(id, TAG::JSFILE);
-  PKRGlobalState::associateActionClosure(id, clos);
-
-  // Associate Eval ACT
-  NodeUID esEval =
-      PKRGlobalState::getActionNode(PKRGlobalState::NAC_ECMASCRIPT_Eval);
-  G->addNode(esEval, TAG::ACT);
-  G->addEdge(id, esEval, PKRGlobalState::EdgeIntern(PKR_Eval));
+inline void AllocTransientStackObject(ECMAGraph *G, NodeUID id) {
+  G->addNode(id, TAG::TSTKOBJ);
+  NodeUID temp;
+  SET_AC(id, NAC_TSOBJ_Set, PKR_Set);
+  SET_AC(id, NAC_TSOBJ_Get, PKR_Get);
+  G->addEdge(id, PKRGlobalState::getFALSE(),
+             PKRGlobalState::EdgeIntern(PKR_TRANSIENCE));
 }
 
-inline void AllocECMAModuleFile(ECMAGraph *G, NodeUID id,
-                                ECMAGraph::ActionClosure ac) {
-  // Declare ECMAModule Node
-  G->addNode(id, TAG::JSFILE);
-  PKRGlobalState::associateActionClosure(id, ac);
-
-  // Associate Eval ACT
-  NodeUID esmEval =
-      PKRGlobalState::getActionNode(PKRGlobalState::NAC_ECMAMODULE_Eval);
-  G->addNode(esmEval, TAG::ACT);
-  G->addEdge(id, esmEval, PKRGlobalState::EdgeIntern(PKR_Eval));
-}
 } // namespace Prakriti
 
 #endif
