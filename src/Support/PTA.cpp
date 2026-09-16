@@ -299,6 +299,14 @@ void teardownClosureFrame(IRICFG *calleeCFG, ECMAGraph *G) {
 }
 
 // Calling [[Get]] on the <common-ret>
+std::set<Prakriti::NodeUID> readReturnValue(IRICFG *calleeCFG,
+                                            ECMAGraph *finalState) {
+  auto getClosures = finalState->getPointees(
+      calleeCFG->retCTX, Prakriti::PKRGlobalState::EdgeIntern(PKR_Get));
+  return Prakriti::KarmaBindu(finalState, getClosures,
+                              {nullptr, {calleeCFG->retCTX}});
+}
+
 std::pair<std::set<Prakriti::NodeUID>, ECMAGraph>
 extractReturnValue(IRICFG *calleeCFG,
                    std::unordered_map<IRIStatement *, ECMAGraph> &states) {
@@ -308,10 +316,7 @@ extractReturnValue(IRICFG *calleeCFG,
     throw std::runtime_error("PTA: closure exit block unreachable");
 
   ECMAGraph finalState = it->second;
-  auto getClosures = finalState.getPointees(
-      calleeCFG->retCTX, Prakriti::PKRGlobalState::EdgeIntern(PKR_Get));
-  auto vals = Prakriti::KarmaBindu(&finalState, getClosures,
-                                   {nullptr, {calleeCFG->retCTX}});
+  auto vals = readReturnValue(calleeCFG, &finalState);
   return {vals, finalState};
 }
 
@@ -367,10 +372,29 @@ void PTASolver::solve(IRIContext &ctx) {
 }
 
 std::set<Prakriti::NodeUID> PTASolver::invokeClosure(
-    IRIContext &ctx, IRICFG *calleeCFG, ECMAGraph *G,
-    const std::set<Prakriti::NodeUID> &thisVal,
+    IRIContext &ctx, IRICFG *calleeCFG, Prakriti::NodeUID closureID,
+    ECMAGraph *G, const std::set<Prakriti::NodeUID> &thisVal,
     const std::vector<std::set<Prakriti::NodeUID>> &actualArgs) {
   setupClosureFrame(ctx, calleeCFG, G, thisVal, actualArgs);
+
+  // Recursion guard, for each closure we store a vector of tuples
+  // (code, value_ctx|null). If the closure is recursively reached again with
+  // the same value_ctx we return, if we dont we will end up in infinite loops.
+  auto stateHash = G->hash();
+  auto &entries = progressTracker[closureID];
+  for (auto &[hash, result] : entries) {
+    if (hash != stateHash)
+      continue;
+    if (!result.has_value())
+      return {};
+    ECMAGraph finalState = *result;
+    auto retVals = readReturnValue(calleeCFG, &finalState);
+    *G = finalState;
+    return retVals;
+  }
+
+  entries.push_back({stateHash, std::nullopt});
+  size_t idx = entries.size() - 1;
 
   PTATransfer transferFunction;
   YADataflowSolver<ECMAGraph> solver(transferFunction);
@@ -380,6 +404,8 @@ std::set<Prakriti::NodeUID> PTASolver::invokeClosure(
 
   auto [retVals, finalState] = extractReturnValue(calleeCFG, cfgAtStmt);
   teardownClosureFrame(calleeCFG, &finalState);
+
+  progressTracker[closureID][idx] = {stateHash, finalState};
 
   *G = finalState;
   return retVals;
