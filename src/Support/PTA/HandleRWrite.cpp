@@ -1,8 +1,12 @@
-// Generated Stub for IRI_TAG::RWrite
 #include "Generated/IridiumTypes.h"
+#include "Helpers.h"
 #include "Support/PTA/PTAContext.hpp"
 #include "Support/PTA/PTAHandlers.hpp"
-#include <stdexcept>
+#include "Support/PTA/PTARVALDispatch.hpp"
+#include "external/Prakriti.hpp"
+#include <cassert>
+#include <set>
+#include <vector>
 
 namespace IRI_STRUCTURAL {
 
@@ -18,17 +22,25 @@ namespace IRI_STRUCTURAL {
  *   - void   THISINIT -> sexp.hasTHISINIT()
  */
 void handleRWrite(const PTAStatementContext &ptactx) {
-  throw std::runtime_error("PTA unhandled case RWrite");
-  // IRI_GEN::RWriteSEXP sexp(ptactx.stmt.id, ptactx.ctx);
+  IRI_GEN::RWriteSEXP sexp(ptactx.stmt.id, ptactx.ctx);
+  Prakriti::ECMAGraph *G = ptactx.incomingState;
 
-  // === TODO : RWrite ===
-  // if (sexp.hasArg_LValTarget()) { IRID arg_LValTarget = sexp.getArg_LValTarget(); }
-  // if (sexp.hasArg_RVal()) { IRID arg_RVal = sexp.getArg_RVal(); }
-  // bool has_INIT = sexp.hasINIT();
-  // bool has_SAFE = sexp.hasSAFE();
-  // bool has_THISINIT = sexp.hasTHISINIT();
+  std::set<Prakriti::NodeUID> values;
+  resolvePKRRVal(ptactx, sexp.getArg_RVal(), values);
+  if (values.empty())
+    return;
 
-  return;
+  Prakriti::NodeUID target =
+      IRI_HELPERS::resolveRemoteBinding(ptactx.ctx, sexp.getArg_LValTarget());
+  assert(G->hasNode(target));
+
+  std::vector<Prakriti::NodeUID> setArgs = {target};
+  setArgs.insert(setArgs.end(), values.begin(), values.end());
+
+  auto setClosures =
+      G->getPointees(target, Prakriti::PKRGlobalState::EdgeIntern(PKR_Set));
+  assert(!setClosures.empty());
+  Prakriti::KarmaBindu(G, setClosures, {nullptr, setArgs});
 }
 
 } // namespace IRI_STRUCTURAL
