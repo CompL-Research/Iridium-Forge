@@ -112,7 +112,7 @@ struct IRICFG {
   //
   std::vector<IRID> ptaGenStack();
   std::vector<IRID> ptaGenTStack();
-  std::vector<IRID> ptaAssertTransient();
+  std::vector<IRID> ptaGenRemoteRefs();
   std::vector<StringID> ptaAssertGlobals();
 
   // Constructor declaration

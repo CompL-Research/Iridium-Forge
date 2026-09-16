@@ -742,7 +742,7 @@ std::vector<IRID> IRICFG::ptaGenTStack() {
   return res;
 }
 
-std::vector<IRID> IRICFG::ptaAssertTransient() {
+std::vector<IRID> IRICFG::ptaGenRemoteRefs() {
   BBContainerSupport bbc(id, ctx);
   auto bindings = ctx.iris->getRemoteEnvBindingsInClosure(bbc.getScopeIDX());
   std::vector<IRID> res;
