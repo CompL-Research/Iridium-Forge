@@ -44,7 +44,8 @@
   V(NUMBER_VAL)                                                                \
   V(STRING_VAL)                                                                \
   V(BIGINT_VAL)                                                                \
-  V(SYMBOL_TOPRIMITIVE_VAL)
+  V(SYMBOL_TOPRIMITIVE_VAL)                                                   \
+  V(SYMBOL_TOSTRINGTAG_VAL)
 
 #define DEF_NODE_TYPES(V)                                                      \
   DEF_NODE_EVAL(V)                                                             \
@@ -642,6 +643,7 @@ private:
   inline static NodeUID STRING_VAL = 0;
   inline static NodeUID BIGINT_VAL = 0;
   inline static NodeUID SYMBOL_TOPRIMITIVE_VAL = 0;
+  inline static NodeUID SYMBOL_TOSTRINGTAG_VAL = 0;
 
   // See list-globals.hpp.
 #define AS_GLOBAL_FIELDS(name) inline static NodeUID name = 0;
@@ -716,6 +718,11 @@ public:
     return SYMBOL_TOPRIMITIVE_VAL;
   }
 
+  static NodeUID getSYMBOL_TOSTRINGTAG() {
+    ASSERT(isInitialized);
+    return SYMBOL_TOSTRINGTAG_VAL;
+  }
+
 #define AS_GLOBAL_GETTERS(name)                                                \
   static NodeUID get##name() { return name; }
   DEF_GLOBAL_IDENTITIES(AS_GLOBAL_GETTERS)
@@ -763,6 +770,7 @@ public:
     STRING_VAL = reserveNodeUID();
     BIGINT_VAL = reserveNodeUID();
     SYMBOL_TOPRIMITIVE_VAL = reserveNodeUID();
+    SYMBOL_TOSTRINGTAG_VAL = reserveNodeUID();
 
 #define AS_GLOBAL_INIT(name) name = reserveNodeUID();
     DEF_GLOBAL_IDENTITIES(AS_GLOBAL_INIT)
@@ -935,6 +943,8 @@ public:
       return "BigInt";
     if (uid == SYMBOL_TOPRIMITIVE_VAL)
       return "Symbol.toPrimitive";
+    if (uid == SYMBOL_TOSTRINGTAG_VAL)
+      return "Symbol.toStringTag";
 
     // Global Identities
 #define AS_GLOBAL_NAME(name)                                                   \
@@ -1321,6 +1331,7 @@ inline ECMAGraph::ActionClosure makeTracedAction(std::string_view file,
 #define PKR_ARGUMENTS "[[Arguments]]"
 #define PKR_MAPPED_ARGUMENTS "[[MappedArguments]]"
 #define PKR_SYM_toPrimitive "[[Symbol.toPrimitive]]"
+#define PKR_SYM_toStringTag "[[Symbol.toStringTag]]"
 #define PKR_TRANSIENCE_BACKUP "[[transience-backup]]"
 
 #include <algorithm>
@@ -2643,6 +2654,11 @@ inline void AllocStackObject(ECMAGraph *G, NodeUID id) {
 }
 } // namespace Prakriti
 
+#include <initializer_list>
+#include <stdexcept>
+#include <utility>
+#include <vector>
+
 #define ALLOC_STKN(name) AllocStackObject(G, PKRGlobalState::getGlobal(name))
 #define GSTK_BIND(src, dest)                                                   \
   KarmaBindu(G,                                                                \
@@ -2651,6 +2667,30 @@ inline void AllocStackObject(ECMAGraph *G, NodeUID id) {
              {NULL, {PKRGlobalState::getGlobal(src), dest}});
 
 namespace Prakriti {
+
+// Name -> lazy-init-routine table for an environment's named globals.
+using GlobalInitTable = std::vector<std::pair<const char *, void (*)(ECMAGraph *)>>;
+
+inline GlobalInitTable
+composeGlobalInitializers(std::initializer_list<const GlobalInitTable *> parents) {
+  GlobalInitTable out;
+  for (const auto *parent : parents)
+    out.insert(out.end(), parent->begin(), parent->end());
+  return out;
+}
+
+// Binds `name` using the matching entry in `registry`, throws if unknown.
+inline void initNamedGlobal(ECMAGraph *G, EdgeUID name,
+                            const GlobalInitTable &registry) {
+  for (const auto &[gstkName, initFn] : registry) {
+    if (name == PKRGlobalState::EdgeIntern(gstkName)) {
+      initFn(G);
+      return;
+    }
+  }
+  throw std::runtime_error("Unknown Global: " +
+                           std::string(PKRGlobalState::EdgeGet(name)));
+}
 
 inline void initGSTK_globalThis(ECMAGraph *G) { ALLOC_STKN(GSTK_globalThis); }
 
@@ -2695,6 +2735,22 @@ inline void initGSTK_Error(ECMAGraph *G) {
 inline void initGSTK_Object(ECMAGraph *G) {
   ALLOC_STKN(GSTK_Object);
   GSTK_BIND(GSTK_Object, PKRGlobalState::getGFOBJ_Object());
+}
+
+// Base named globals every ECMA environment provides.
+inline const GlobalInitTable &ecmaGlobalInitializers() {
+  static const GlobalInitTable table = {
+      {GSTK_globalThis, initGSTK_globalThis},
+      {GSTK_Infinity, initGSTK_Infinity},
+      {GSTK_NaN, initGSTK_NaN},
+      {GSTK_undefined, initGSTK_undefined},
+      {GSTK_Function, initGSTK_Function},
+      {GSTK_Boolean, initGSTK_Boolean},
+      {GSTK_Symbol, initGSTK_Symbol},
+      {GSTK_Error, initGSTK_Error},
+      {GSTK_Object, initGSTK_Object},
+  };
+  return table;
 }
 
 // Weird special case from ECMA
@@ -2765,6 +2821,14 @@ inline void initECMAEnvironment(ECMAGraph *G) {
               {PKRGlobalState::getGFOBJ_Symbol(),
                PKRGlobalState::getSYMBOL_TOPRIMITIVE()},
               {"toPrimitive"}});
+  // Add Symbol.toStringTag -> SYMBOL_TOSTRINGTAG_VAL
+  KarmaBindu(G,
+             G->getPointees(PKRGlobalState::getGFOBJ_Symbol(),
+                            PKRGlobalState::EdgeIntern(PKR_Set)),
+             {NULL,
+              {PKRGlobalState::getGFOBJ_Symbol(),
+               PKRGlobalState::getSYMBOL_TOSTRINGTAG()},
+              {"toStringTag"}});
 
   defineStubIntrinsic(G, PKRGlobalState::getGFOBJ_Error(),
                       PKRGlobalState::getGOOBJ_Error_prototype(),
@@ -2784,11 +2848,19 @@ namespace Prakriti {
 
 inline void initECMAModuleEnvironment(ECMAGraph *G) { initECMAEnvironment(G); }
 
+inline const GlobalInitTable &ecmaModuleGlobalInitializers() {
+  return ecmaGlobalInitializers();
+}
+
 } // namespace Prakriti
 
 namespace Prakriti {
 
 inline void initECMAScriptEnvironment(ECMAGraph *G) { initECMAEnvironment(G); }
+
+inline const GlobalInitTable &ecmaScriptGlobalInitializers() {
+  return ecmaGlobalInitializers();
+}
 
 } // namespace Prakriti
 
@@ -2799,6 +2871,11 @@ inline void initGSTK_console(ECMAGraph *G) {
   AllocStackObject(G, ref);
   KarmaBindu(G, G->getPointees(ref, PKRGlobalState::EdgeIntern(PKR_Set)),
              {NULL, {ref, PKRGlobalState::getGOOBJ_console()}});
+}
+
+inline const GlobalInitTable &consoleGlobalInitializers() {
+  static const GlobalInitTable table = {{GSTK_console, initGSTK_console}};
+  return table;
 }
 
 // A plain object, not a stub: log/warn/error accept any arguments, return
@@ -2819,6 +2896,12 @@ inline void initNodeModuleEnvironment(ECMAGraph *G) {
   initConsole(G);
 }
 
+inline const GlobalInitTable &nodeModuleGlobalInitializers() {
+  static const GlobalInitTable table = composeGlobalInitializers(
+      {&ecmaGlobalInitializers(), &consoleGlobalInitializers()});
+  return table;
+}
+
 } // namespace Prakriti
 
 namespace Prakriti {
@@ -2826,6 +2909,12 @@ namespace Prakriti {
 inline void initNodeScriptEnvironment(ECMAGraph *G) {
   initECMAEnvironment(G);
   initConsole(G);
+}
+
+inline const GlobalInitTable &nodeScriptGlobalInitializers() {
+  static const GlobalInitTable table = composeGlobalInitializers(
+      {&ecmaGlobalInitializers(), &consoleGlobalInitializers()});
+  return table;
 }
 
 } // namespace Prakriti
@@ -2837,6 +2926,12 @@ inline void initQJSModuleEnvironment(ECMAGraph *G) {
   initConsole(G);
 }
 
+inline const GlobalInitTable &qjsModuleGlobalInitializers() {
+  static const GlobalInitTable table = composeGlobalInitializers(
+      {&ecmaGlobalInitializers(), &consoleGlobalInitializers()});
+  return table;
+}
+
 } // namespace Prakriti
 
 namespace Prakriti {
@@ -2844,6 +2939,12 @@ namespace Prakriti {
 inline void initQJSScriptEnvironment(ECMAGraph *G) {
   initECMAEnvironment(G);
   initConsole(G);
+}
+
+inline const GlobalInitTable &qjsScriptGlobalInitializers() {
+  static const GlobalInitTable table = composeGlobalInitializers(
+      {&ecmaGlobalInitializers(), &consoleGlobalInitializers()});
+  return table;
 }
 
 } // namespace Prakriti
@@ -2862,6 +2963,8 @@ inline void initLeaves(ECMAGraph *G) {
   G->addNode(PKRGlobalState::getBIGINT(), TAG::BIGINT_VAL);
   G->addNode(PKRGlobalState::getSYMBOL_TOPRIMITIVE(),
              TAG::SYMBOL_TOPRIMITIVE_VAL);
+  G->addNode(PKRGlobalState::getSYMBOL_TOSTRINGTAG(),
+             TAG::SYMBOL_TOSTRINGTAG_VAL);
 }
 
 #define DEF_JSFILE_EVAL(NACName, envInitFn)                                    \
@@ -2897,6 +3000,8 @@ inline bool initJSFileNodes = []() {
 
 #undef DEF_JSFILE_EVAL
 
+namespace detail {
+
 #define DEF_ALLOC_JSFILE(FnName, NACName)                                      \
   inline void FnName(ECMAGraph *G, NodeUID id, ECMAGraph::ActionClosure ac) {  \
     G->addNode(id, TAG::JSFILE);                                               \
@@ -2907,14 +3012,41 @@ inline bool initJSFileNodes = []() {
     G->addEdge(id, evalNode, PKRGlobalState::EdgeIntern(PKR_Eval));            \
   }
 
-DEF_ALLOC_JSFILE(AllocECMAScriptFile, NAC_ECMASCRIPT_Eval)
-DEF_ALLOC_JSFILE(AllocECMAModuleFile, NAC_ECMAMODULE_Eval)
-DEF_ALLOC_JSFILE(AllocNodeScriptFile, NAC_NODESCRIPT_Eval)
-DEF_ALLOC_JSFILE(AllocNodeModuleFile, NAC_NODEMODULE_Eval)
-DEF_ALLOC_JSFILE(AllocQJSScriptFile, NAC_QJSSCRIPT_Eval)
-DEF_ALLOC_JSFILE(AllocQJSModuleFile, NAC_QJSMODULE_Eval)
+DEF_ALLOC_JSFILE(allocECMAScriptFile, NAC_ECMASCRIPT_Eval)
+DEF_ALLOC_JSFILE(allocECMAModuleFile, NAC_ECMAMODULE_Eval)
+DEF_ALLOC_JSFILE(allocNodeScriptFile, NAC_NODESCRIPT_Eval)
+DEF_ALLOC_JSFILE(allocNodeModuleFile, NAC_NODEMODULE_Eval)
+DEF_ALLOC_JSFILE(allocQJSScriptFile, NAC_QJSSCRIPT_Eval)
+DEF_ALLOC_JSFILE(allocQJSModuleFile, NAC_QJSMODULE_Eval)
 
 #undef DEF_ALLOC_JSFILE
+
+} // namespace detail
+
+// A neat wrapper trick to prevent mismatched nodes and global registries
+struct JSFileAllocator {
+  void (*alloc)(ECMAGraph *, NodeUID, ECMAGraph::ActionClosure);
+  const GlobalInitTable &globals;
+};
+
+inline JSFileAllocator ECMAScriptFile() {
+  return {detail::allocECMAScriptFile, ecmaScriptGlobalInitializers()};
+}
+inline JSFileAllocator ECMAModuleFile() {
+  return {detail::allocECMAModuleFile, ecmaModuleGlobalInitializers()};
+}
+inline JSFileAllocator NodeScriptFile() {
+  return {detail::allocNodeScriptFile, nodeScriptGlobalInitializers()};
+}
+inline JSFileAllocator NodeModuleFile() {
+  return {detail::allocNodeModuleFile, nodeModuleGlobalInitializers()};
+}
+inline JSFileAllocator QJSScriptFile() {
+  return {detail::allocQJSScriptFile, qjsScriptGlobalInitializers()};
+}
+inline JSFileAllocator QJSModuleFile() {
+  return {detail::allocQJSModuleFile, qjsModuleGlobalInitializers()};
+}
 
 } // namespace Prakriti
 
