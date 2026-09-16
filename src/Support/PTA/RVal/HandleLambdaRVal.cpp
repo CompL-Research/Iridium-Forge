@@ -33,12 +33,18 @@ void computeLambdaVals(const PTAStatementContext &ptactx, IRID node,
     auto action = std::make_shared<Prakriti::ECMAGraph::ActionClosureImpl>(
         [ctxPtr, calleeCFG](const Prakriti::ECMAGraph::PJSSL_ARG &args)
             -> Prakriti::ECMAGraph::PJSSL_RET {
+          std::set<Prakriti::NodeUID> thisVal;
           std::vector<std::set<Prakriti::NodeUID>> positional;
-          if (!args.A.empty())
-            positional = decodeArgRanges(args.L, args.A[0]);
+          if (args.A.size() >= 1) {
+            auto thisSlice = decodeArgRanges(args.L, args.A[0]);
+            if (!thisSlice.empty())
+              thisVal = thisSlice[0];
+          }
+          if (args.A.size() >= 2)
+            positional = decodeArgRanges(args.L, args.A[1]);
 
-          auto retVals =
-              PTASolver::invokeClosure(*ctxPtr, calleeCFG, args.G, positional);
+          auto retVals = PTASolver::invokeClosure(*ctxPtr, calleeCFG, args.G,
+                                                  thisVal, positional);
 
           Prakriti::ECMAGraph::PJSSL_RET ret;
           ret.L = std::vector<Prakriti::NodeUID>(retVals.begin(), retVals.end());
