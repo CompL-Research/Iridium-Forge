@@ -1,9 +1,9 @@
-// Generated Stub for IRI_TAG::JSCTX (RVal)
 #include "Generated/IridiumTypes.h"
 #include "Support/PTA/PTAContext.hpp"
-#include "Support/PTA/PTARVALHandlers.hpp"
+#include "external/Prakriti.hpp"
+#include <cassert>
 #include <set>
-#include <stdexcept>
+#include <string>
 
 namespace IRI_STRUCTURAL {
 
@@ -15,14 +15,22 @@ namespace IRI_STRUCTURAL {
  *   - double OPID -> sexp.getOPID()
  */
 void computeJSCTXVals(const PTAStatementContext &ptactx, IRID node,
-                       std::set<Prakriti::NodeUID> &res_) {
-  throw std::runtime_error("PTA RVal unhandled case JSCTX");
-  // IRI_GEN::JSCTXSEXP sexp(node, ptactx.ctx);
+                      std::set<Prakriti::NodeUID> &res_) {
+  IRI_GEN::JSCTXSEXP sexp(node, ptactx.ctx);
+  Prakriti::ECMAGraph *G = ptactx.incomingState;
 
-  // === TODO : JSCTX ===
-  // if (sexp.hasOPID()) { double dbl_OPID = sexp.getOPID(); }
+  // The the sentinal, we expect this to always exist...
+  IRID closureID = ptactx.getBB()->closure->id;
+  Prakriti::NodeUID target = Prakriti::PKRGlobalState::generateSentinel(
+      closureID, Prakriti::PKRGlobalState::EdgeIntern(
+                     "JSCTX" + std::to_string((long)sexp.getOPID())));
+  assert(G->hasNode(target));
 
-  return;
+  auto getClosures =
+      G->getPointees(target, Prakriti::PKRGlobalState::EdgeIntern(PKR_Get));
+  assert(!getClosures.empty());
+  auto vals = Prakriti::KarmaBindu(G, getClosures, {nullptr, {target}});
+  res_.insert(vals.begin(), vals.end());
 }
 
 } // namespace IRI_STRUCTURAL
