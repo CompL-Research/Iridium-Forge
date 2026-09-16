@@ -73,6 +73,7 @@ public:
   // Fixed point computation for closures
   static std::set<Prakriti::NodeUID>
   invokeClosure(IRIContext &ctx, IRICFG *calleeCFG, Prakriti::ECMAGraph *G,
+                const std::set<Prakriti::NodeUID> &thisVal,
                 const std::vector<std::set<Prakriti::NodeUID>> &actualArgs);
 };
 

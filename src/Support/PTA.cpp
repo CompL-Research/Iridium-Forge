@@ -205,6 +205,7 @@ void runFile(IRIContext &ctx, IRICFG *rootCFG, ECMAGraph *G) {
 // captured existing...
 void setupClosureFrame(
     IRIContext &ctx, IRICFG *calleeCFG, ECMAGraph *G,
+    const std::set<Prakriti::NodeUID> &thisVal,
     const std::vector<std::set<Prakriti::NodeUID>> &actualArgs) {
   std::vector<Prakriti::NodeUID> locals;
   for (const auto b : calleeCFG->ptaGenStack()) {
@@ -270,10 +271,24 @@ void setupClosureFrame(
   }
 
   // TODO: Added WIPStackObject Nodes, will need to implement these later...
-  for (int slot = 2; slot <= 9; slot++) {
+  for (int slot = 2; slot <= 8; slot++) {
     Prakriti::NodeUID id = sentinel(slot);
     if (!G->hasNode(id))
       Prakriti::AllocWIPStackObject(G, id);
+  }
+
+  Prakriti::NodeUID thisID = sentinel(9);
+  if (!G->hasNode(thisID))
+    Prakriti::AllocStackObject(G, thisID);
+  {
+    std::vector<Prakriti::NodeUID> setArgs = {thisID};
+    if (!thisVal.empty())
+      setArgs.insert(setArgs.end(), thisVal.begin(), thisVal.end());
+    else
+      setArgs.push_back(Prakriti::PKRGlobalState::getUNDEF());
+    auto setClosures =
+        G->getPointees(thisID, Prakriti::PKRGlobalState::EdgeIntern(PKR_Set));
+    Prakriti::KarmaBindu(G, setClosures, {nullptr, setArgs});
   }
 }
 
@@ -353,8 +368,9 @@ void PTASolver::solve(IRIContext &ctx) {
 
 std::set<Prakriti::NodeUID> PTASolver::invokeClosure(
     IRIContext &ctx, IRICFG *calleeCFG, ECMAGraph *G,
+    const std::set<Prakriti::NodeUID> &thisVal,
     const std::vector<std::set<Prakriti::NodeUID>> &actualArgs) {
-  setupClosureFrame(ctx, calleeCFG, G, actualArgs);
+  setupClosureFrame(ctx, calleeCFG, G, thisVal, actualArgs);
 
   PTATransfer transferFunction;
   YADataflowSolver<ECMAGraph> solver(transferFunction);
