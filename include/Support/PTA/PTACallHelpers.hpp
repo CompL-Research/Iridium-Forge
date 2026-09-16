@@ -13,9 +13,9 @@ namespace IRI_STRUCTURAL {
 // e, f} + "0-1,2-2,3-5" ~ Meetesh
 //
 inline std::string
-encodeArgRanges(const std::vector<std::set<Prakriti::NodeUID>> &positional) {
+encodeArgRanges(const std::vector<std::set<Prakriti::NodeUID>> &positional,
+                size_t start = 0) {
   std::string out;
-  size_t start = 0;
   for (size_t i = 0; i < positional.size(); i++) {
     size_t count = positional[i].size();
     size_t end = start + (count == 0 ? 0 : count - 1);
