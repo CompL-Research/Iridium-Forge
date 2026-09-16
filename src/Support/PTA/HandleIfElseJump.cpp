@@ -1,8 +1,8 @@
-// Generated Stub for IRI_TAG::IfElseJump
 #include "Generated/IridiumTypes.h"
 #include "Support/PTA/PTAContext.hpp"
 #include "Support/PTA/PTAHandlers.hpp"
-#include <stdexcept>
+#include "Support/PTA/PTARVALDispatch.hpp"
+#include <set>
 
 namespace IRI_STRUCTURAL {
 
@@ -17,16 +17,9 @@ namespace IRI_STRUCTURAL {
  *   - double FALSE -> sexp.getFALSE()
  */
 void handleIfElseJump(const PTAStatementContext &ptactx) {
-  throw std::runtime_error("PTA unhandled case IfElseJump");
-  // IRI_GEN::IfElseJumpSEXP sexp(ptactx.stmt.id, ptactx.ctx);
-
-  // === TODO : IfElseJump ===
-  // if (sexp.hasArg_Test()) { IRID arg_Test = sexp.getArg_Test(); }
-  // bool has_NOT = sexp.hasNOT();
-  // if (sexp.hasTRUE()) { double dbl_TRUE = sexp.getTRUE(); }
-  // if (sexp.hasFALSE()) { double dbl_FALSE = sexp.getFALSE(); }
-
-  return;
+  IRI_GEN::IfElseJumpSEXP sexp(ptactx.stmt.id, ptactx.ctx);
+  std::set<Prakriti::NodeUID> discarded;
+  resolvePKRRVal(ptactx, sexp.getArg_Test(), discarded);
 }
 
 } // namespace IRI_STRUCTURAL
