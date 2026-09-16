@@ -27,8 +27,8 @@ namespace IRI_STRUCTURAL {
 void computeCallSiteVals(const PTAStatementContext &ptactx, IRID node,
                          std::set<Prakriti::NodeUID> &res_) {
   IRI_GEN::CallSiteSEXP sexp(node, ptactx.ctx);
-  if (sexp.hasCCall() || sexp.hasPrivateCall() || sexp.hasImport() ||
-      sexp.hasSuper() || sexp.hasV8Intrinsic())
+  if (sexp.hasPrivateCall() || sexp.hasImport() || sexp.hasSuper() ||
+      sexp.hasV8Intrinsic())
     throw std::runtime_error(
         "PTA CallSite: this calling convention is not yet implemented");
 
@@ -36,18 +36,26 @@ void computeCallSiteVals(const PTAStatementContext &ptactx, IRID node,
   auto rawArgs = ptactx.ctx.storage.nodes.get_args(node);
   assert(!rawArgs.empty());
 
+  std::set<Prakriti::NodeUID> thisVal;
+  size_t calleeIdx = 0;
+  if (sexp.hasCCall()) {
+    resolvePKRRVal(ptactx, rawArgs[0], thisVal);
+    assert(!thisVal.empty());
+    calleeIdx = 1;
+  }
+
   std::set<Prakriti::NodeUID> callees;
-  resolvePKRRVal(ptactx, rawArgs[0], callees);
+  resolvePKRRVal(ptactx, rawArgs[calleeIdx], callees);
   assert(!callees.empty());
   std::vector<Prakriti::NodeUID> calleeVec(callees.begin(), callees.end());
 
-  std::set<Prakriti::NodeUID> thisVal;
   if (sexp.hasConstructorCall()) {
     // Allocation site abstraction, reciever is created here
     // CallSite IRID itself becomes the allocation site abstraction :)
     Prakriti::NodeUID thisID = node;
     if (!G->hasNode(thisID))
-      Prakriti::AllocOrdinaryObject(G, thisID, Prakriti::PKRGlobalState::getTRUE(),
+      Prakriti::AllocOrdinaryObject(G, thisID,
+                                    Prakriti::PKRGlobalState::getTRUE(),
                                     Prakriti::PKRGlobalState::getNULL());
     for (const auto callee : calleeVec) {
       auto getClosures =
@@ -65,7 +73,7 @@ void computeCallSiteVals(const PTAStatementContext &ptactx, IRID node,
   std::string thisRange = thisVal.empty() ? "" : encodeArgRanges({thisVal});
 
   std::vector<std::set<Prakriti::NodeUID>> positional;
-  for (size_t i = 1; i < rawArgs.size(); i++) {
+  for (size_t i = calleeIdx + 1; i < rawArgs.size(); i++) {
     std::set<Prakriti::NodeUID> a;
     resolvePKRRVal(ptactx, rawArgs[i], a);
     assert(!a.empty());
