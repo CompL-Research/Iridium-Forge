@@ -16,6 +16,7 @@
 #define GSTK_Symbol "Symbol"
 #define GSTK_Error "Error"
 #define GSTK_Object "Object"
+#define GSTK_Array "Array"
 #define GSTK_console "console"
 
 #define DEF_NODE_EVAL(V) V(JSFILE)
@@ -335,6 +336,7 @@ public:
   V(GFOBJ_Boolean)                                                            \
   V(GFOBJ_Symbol)                                                             \
   V(GFOBJ_Error)                                                              \
+  V(GFOBJ_Array)                                                              \
   V(GFOBJ_Function_prototype)                                                 \
   V(GOOBJ_Object_prototype)                                                   \
   V(GOOBJ_Boolean_prototype)                                                  \
@@ -785,6 +787,7 @@ public:
     globalStackBindings[edgeIntern(GSTK_Symbol)] = reserveNodeUID();
     globalStackBindings[edgeIntern(GSTK_Error)] = reserveNodeUID();
     globalStackBindings[edgeIntern(GSTK_Object)] = reserveNodeUID();
+    globalStackBindings[edgeIntern(GSTK_Array)] = reserveNodeUID();
 
 #define AS_ASSIGN(name)                                                        \
   if (!PKRGlobalState::name)                                                   \
@@ -2737,6 +2740,11 @@ inline void initGSTK_Object(ECMAGraph *G) {
   GSTK_BIND(GSTK_Object, PKRGlobalState::getGFOBJ_Object());
 }
 
+inline void initGSTK_Array(ECMAGraph *G) {
+  ALLOC_STKN(GSTK_Array);
+  GSTK_BIND(GSTK_Array, PKRGlobalState::getGFOBJ_Array());
+}
+
 // Base named globals every ECMA environment provides.
 inline const GlobalInitTable &ecmaGlobalInitializers() {
   static const GlobalInitTable table = {
@@ -2749,6 +2757,7 @@ inline const GlobalInitTable &ecmaGlobalInitializers() {
       {GSTK_Symbol, initGSTK_Symbol},
       {GSTK_Error, initGSTK_Error},
       {GSTK_Object, initGSTK_Object},
+      {GSTK_Array, initGSTK_Array},
   };
   return table;
 }
@@ -2835,9 +2844,46 @@ inline void initECMAEnvironment(ECMAGraph *G) {
                       PKRGlobalState::getGOOBJ_Object_prototype(), {},
                       {"toString"}, "Error");
 
-  AllocOrdinaryObject(G, PKRGlobalState::getGOOBJ_Array_prototype(),
-                      PKRGlobalState::getTRUE(),
-                      PKRGlobalState::getGOOBJ_Object_prototype());
+  defineStubIntrinsic(
+      G, PKRGlobalState::getGFOBJ_Array(),
+      PKRGlobalState::getGOOBJ_Array_prototype(),
+      PKRGlobalState::getGOOBJ_Object_prototype(),
+      {"from", "isArray", "of"},
+      {"at",
+       "concat",
+       "copyWithin",
+       "entries",
+       "every",
+       "fill",
+       "filter",
+       "find",
+       "findIndex",
+       "findLast",
+       "findLastIndex",
+       "flat",
+       "flatMap",
+       "forEach",
+       "includes",
+       "indexOf",
+       "join",
+       "keys",
+       "lastIndexOf",
+       "map",
+       "pop",
+       "push",
+       "reduce",
+       "reduceRight",
+       "reverse",
+       "shift",
+       "slice",
+       "some",
+       "sort",
+       "splice",
+       "toLocaleString",
+       "toString",
+       "unshift",
+       "values"},
+      "Array");
 
   initFunctionConstructor(G);
 }
