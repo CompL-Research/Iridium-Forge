@@ -26,8 +26,16 @@ void computeBinopVals(const PTAStatementContext &ptactx, IRID node,
 
   std::string op(ptactx.ctx.storage.strings.get(sexp.getOP()));
 
+  //
+  // JSBinops: "==" | "===" | "!=" | "!==" | "in" | "instanceof" | "|>";
+  //
+  // Traditional Binops have been mapped to the following in Prakriti:
+  //   1. NAC_HandleBinop: "**", "*",  "/", "%", "+", "-", "<<", ">>", ">>>",
+  //   "&", "^", "|"
+  //   2. NAC_HandleRelop: "<", ">", "<=", ">="
+  //
   static const std::set<std::string> arithBitwiseOps = {
-      "+", "-", "/", "%", "*", "<<", ">>", "&", "^", "|"};
+      "**", "*", "/", "%", "+", "-", "<<", ">>", ">>>", "&", "^", "|"};
   static const std::set<std::string> relopOps = {"<", ">", "<=", ">="};
 
   Prakriti::ECMAGraph::ActionClosure handlerClosure;

@@ -98,6 +98,7 @@ const std::vector<std::pair<const char *, void (*)(ECMAGraph *)>> &
 globalInitializers() {
   static const std::vector<std::pair<const char *, void (*)(ECMAGraph *)>>
       table = {
+          {GSTK_console, Prakriti::initGSTK_console},
           {GSTK_globalThis, Prakriti::initGSTK_globalThis},
           {GSTK_Infinity, Prakriti::initGSTK_Infinity},
           {GSTK_NaN, Prakriti::initGSTK_NaN},
@@ -123,7 +124,9 @@ void initGlobalBindings(IRIContext &ctx, IRICFG *rootCFG, ECMAGraph *G) {
       }
     }
     if (!matched)
-      throw std::runtime_error("Unknown Global");
+      throw std::runtime_error(
+          "Unknown Global: " +
+          std::string(ctx.storage.strings.get(gb.getNAME())));
   }
 }
 
@@ -339,7 +342,7 @@ void PTASolver::solve(IRIContext &ctx) {
   using ActionClosureTarget =
       std::function<ECMAGraph::PJSSL_RET(ECMAGraph::PJSSL_ARG)>;
 
-  Prakriti::AllocECMAScriptFile(
+  Prakriti::AllocQJSScriptFile(
       &currState, rootCFG->id,
       std::make_shared<ActionClosureTarget>([&](ECMAGraph::PJSSL_ARG arg) {
         runFile(ctx, rootCFG, arg.G);
