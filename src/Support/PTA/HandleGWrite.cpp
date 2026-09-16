@@ -27,7 +27,8 @@ void handleGWrite(const PTAStatementContext &ptactx) {
 
   std::set<Prakriti::NodeUID> values;
   resolvePKRRVal(ptactx, sexp.getArg_RVal(), values);
-  assert(!values.empty());
+  if (values.empty())
+    return;
 
   IRID lval = sexp.getArg_LValTarget();
   auto lvalTag = IRI_NODE(ptactx.ctx, lval).tag;

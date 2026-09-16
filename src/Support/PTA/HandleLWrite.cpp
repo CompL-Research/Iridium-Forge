@@ -26,7 +26,8 @@ void handleLWrite(const PTAStatementContext &ptactx) {
 
   std::set<Prakriti::NodeUID> values;
   resolvePKRRVal(ptactx, sexp.getArg_RVal(), values);
-  assert(!values.empty());
+  if (values.empty())
+    return;
 
   Prakriti::NodeUID target = sexp.getArg_LValTarget();
   assert(G->hasNode(target));
