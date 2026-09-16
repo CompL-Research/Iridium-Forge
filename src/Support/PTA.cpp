@@ -134,11 +134,12 @@ std::vector<Prakriti::NodeUID> initStackLocals(IRICFG *rootCFG, ECMAGraph *G) {
       Prakriti::AllocStackObject(G, b);
     locals.push_back(b);
   }
-  // Top-level captured locals can always be strong-updated, no transience
-  // needed since it always holds at this scope.
+  // We are only really doing this for uniformity, so we dont have unnecessary
+  // extra cases
   for (const auto b : rootCFG->ptaGenTStack()) {
     if (!G->hasNode(b))
-      Prakriti::AllocStackObject(G, b);
+      Prakriti::AllocTransientStackObject(G, b);
+    openTransience(G, b);
     locals.push_back(b);
   }
   return locals;
@@ -168,12 +169,10 @@ void pruneToReachable(ECMAGraph *G,
   G->pruneUnreachable(roots);
 }
 
-// Runs the file's entry closure to a dataflow fixpoint, seeding it with
-// global bindings, stack locals, and any remote (already-bound) references.
-void runFile(IRIContext &ctx, IRICFG *rootCFG, ECMAGraph *G) {
+void setupFileFrame(IRIContext &ctx, IRICFG *rootCFG, ECMAGraph *G) {
   initGlobalBindings(ctx, rootCFG, G);
 
-  auto remoteRefs = rootCFG->ptaAssertTransient();
+  auto remoteRefs = rootCFG->ptaGenRemoteRefs();
   for (const auto ref : remoteRefs) {
     if (!G->hasNode(ref))
       throw std::runtime_error("Remote binding not found!");
@@ -181,12 +180,25 @@ void runFile(IRIContext &ctx, IRICFG *rootCFG, ECMAGraph *G) {
 
   auto locals = initStackLocals(rootCFG, G);
   pruneToReachable(G, locals, remoteRefs);
+}
+
+void teardownFileFrame(IRICFG *rootCFG, ECMAGraph *G) {
+  // Obviously redundant, but makes our code make more logical sense
+  for (const auto b : rootCFG->ptaGenTStack())
+    closeTransience(G, b);
+}
+
+// Runs the file's entry closure to a dataflow fixpoint.
+void runFile(IRIContext &ctx, IRICFG *rootCFG, ECMAGraph *G) {
+  setupFileFrame(ctx, rootCFG, G);
 
   PTATransfer transferFunction;
   YADataflowSolver<ECMAGraph> solver(transferFunction);
   solver.run(
       ResumableDataflowState<ECMAGraph>(rootCFG, rootCFG->entry_block, *G),
       true);
+
+  teardownFileFrame(rootCFG, G);
 }
 
 // Allocate Stack bindings, JSCTX, bind arguments, etc.. some assertions like
@@ -202,11 +214,12 @@ void setupClosureFrame(
   }
   for (const auto b : calleeCFG->ptaGenTStack()) {
     if (!G->hasNode(b))
-      Prakriti::AllocStackObject(G, b);
+      Prakriti::AllocTransientStackObject(G, b);
+    openTransience(G, b);
     locals.push_back(b);
   }
 
-  for (const auto ref : calleeCFG->ptaAssertTransient()) {
+  for (const auto ref : calleeCFG->ptaGenRemoteRefs()) {
     if (!G->hasNode(ref))
       throw std::runtime_error("Remote binding not found!");
   }
@@ -262,6 +275,12 @@ void setupClosureFrame(
     if (!G->hasNode(id))
       Prakriti::AllocWIPStackObject(G, id);
   }
+}
+
+void teardownClosureFrame(IRICFG *calleeCFG, ECMAGraph *G) {
+  // This is very neat :) ~Meetesh
+  for (const auto b : calleeCFG->ptaGenTStack())
+    closeTransience(G, b);
 }
 
 // Calling [[Get]] on the <common-ret>
@@ -344,6 +363,8 @@ std::set<Prakriti::NodeUID> PTASolver::invokeClosure(
       true);
 
   auto [retVals, finalState] = extractReturnValue(calleeCFG, cfgAtStmt);
+  teardownClosureFrame(calleeCFG, &finalState);
+
   *G = finalState;
   return retVals;
 }

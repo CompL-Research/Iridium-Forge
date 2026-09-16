@@ -1321,6 +1321,7 @@ inline ECMAGraph::ActionClosure makeTracedAction(std::string_view file,
 #define PKR_ARGUMENTS "[[Arguments]]"
 #define PKR_MAPPED_ARGUMENTS "[[MappedArguments]]"
 #define PKR_SYM_toPrimitive "[[Symbol.toPrimitive]]"
+#define PKR_TRANSIENCE_BACKUP "[[transience-backup]]"
 
 #include <algorithm>
 #include <set>

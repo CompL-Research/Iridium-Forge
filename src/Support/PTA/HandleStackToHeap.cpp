@@ -1,8 +1,9 @@
-// Generated Stub for IRI_TAG::StackToHeap
 #include "Generated/IridiumTypes.h"
+#include "Support/PTA.hpp"
 #include "Support/PTA/PTAContext.hpp"
 #include "Support/PTA/PTAHandlers.hpp"
-#include <stdexcept>
+#include "external/Prakriti.hpp"
+#include <cassert>
 
 namespace IRI_STRUCTURAL {
 
@@ -13,12 +14,14 @@ namespace IRI_STRUCTURAL {
  * Flags: (none)
  */
 void handleStackToHeap(const PTAStatementContext &ptactx) {
-  throw std::runtime_error("PTA unhandled case StackToHeap");
-  // IRI_GEN::StackToHeapSEXP sexp(ptactx.stmt.id, ptactx.ctx);
+  Prakriti::ECMAGraph *G = ptactx.incomingState;
+  auto bindings = ptactx.ctx.storage.nodes.get_args(ptactx.stmt.id);
 
-  // === TODO : StackToHeap ===
-
-  return;
+  for (auto b : bindings) {
+    assert(G->hasNode(b));
+    assert(G->getNodeTAG(b) == Prakriti::TAG::TSTKOBJ);
+    closeTransience(G, b);
+  }
 }
 
 } // namespace IRI_STRUCTURAL

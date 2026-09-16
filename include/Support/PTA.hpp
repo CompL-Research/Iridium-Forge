@@ -10,6 +10,35 @@
 
 namespace IRI_STRUCTURAL {
 
+inline void openTransience(Prakriti::ECMAGraph *G, Prakriti::NodeUID b) {
+  auto current =
+      G->getPointees(b, Prakriti::PKRGlobalState::EdgeIntern(PKR_STK));
+  G->removeAllOutgoingEdgesByLabel(
+      b, Prakriti::PKRGlobalState::EdgeIntern(PKR_TRANSIENCE_BACKUP));
+  for (const auto v : current)
+    G->addEdge(b, v,
+               Prakriti::PKRGlobalState::EdgeIntern(PKR_TRANSIENCE_BACKUP));
+
+  G->removeAllOutgoingEdgesByLabel(
+      b, Prakriti::PKRGlobalState::EdgeIntern(PKR_TRANSIENCE));
+  G->addEdge(b, Prakriti::PKRGlobalState::getTRUE(),
+             Prakriti::PKRGlobalState::EdgeIntern(PKR_TRANSIENCE));
+}
+
+inline void closeTransience(Prakriti::ECMAGraph *G, Prakriti::NodeUID b) {
+  auto backup = G->getPointees(
+      b, Prakriti::PKRGlobalState::EdgeIntern(PKR_TRANSIENCE_BACKUP));
+  for (const auto v : backup)
+    G->addEdge(b, v, Prakriti::PKRGlobalState::EdgeIntern(PKR_STK));
+  G->removeAllOutgoingEdgesByLabel(
+      b, Prakriti::PKRGlobalState::EdgeIntern(PKR_TRANSIENCE_BACKUP));
+
+  G->removeAllOutgoingEdgesByLabel(
+      b, Prakriti::PKRGlobalState::EdgeIntern(PKR_TRANSIENCE));
+  G->addEdge(b, Prakriti::PKRGlobalState::getFALSE(),
+             Prakriti::PKRGlobalState::EdgeIntern(PKR_TRANSIENCE));
+}
+
 class PTATransfer : public TransferFunction<Prakriti::ECMAGraph> {
 public:
   Prakriti::ECMAGraph
