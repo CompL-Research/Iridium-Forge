@@ -91,42 +91,11 @@ void setupTraceWriter(IRIContext &ctx) {
   ctx.debugger.traceWriter->writeClosures();
 }
 
-// Named globals (globalThis, undefined, Function, ...) each need a specific
-// Prakriti init routine; this table replaces initializing them one at a time
-// with a hardcoded if/else chain on the interned name.
-const std::vector<std::pair<const char *, void (*)(ECMAGraph *)>> &
-globalInitializers() {
-  static const std::vector<std::pair<const char *, void (*)(ECMAGraph *)>>
-      table = {
-          {GSTK_console, Prakriti::initGSTK_console},
-          {GSTK_globalThis, Prakriti::initGSTK_globalThis},
-          {GSTK_Infinity, Prakriti::initGSTK_Infinity},
-          {GSTK_NaN, Prakriti::initGSTK_NaN},
-          {GSTK_undefined, Prakriti::initGSTK_undefined},
-          {GSTK_Function, Prakriti::initGSTK_Function},
-          {GSTK_Boolean, Prakriti::initGSTK_Boolean},
-          {GSTK_Symbol, Prakriti::initGSTK_Symbol},
-          {GSTK_Error, Prakriti::initGSTK_Error},
-          {GSTK_Object, Prakriti::initGSTK_Object},
-  };
-  return table;
-}
-
-void initGlobalBindings(IRIContext &ctx, IRICFG *rootCFG, ECMAGraph *G) {
+void initGlobalBindings(IRIContext &ctx, IRICFG *rootCFG, ECMAGraph *G,
+                        const Prakriti::GlobalInitTable &globals) {
   for (const auto ref : rootCFG->ptaAssertGlobals()) {
     GlobalBindingSEXP gb(ref, ctx);
-    bool matched = false;
-    for (const auto &[name, initFn] : globalInitializers()) {
-      if (gb.getNAME() == Prakriti::PKRGlobalState::EdgeIntern(name)) {
-        initFn(G);
-        matched = true;
-        break;
-      }
-    }
-    if (!matched)
-      throw std::runtime_error(
-          "Unknown Global: " +
-          std::string(ctx.storage.strings.get(gb.getNAME())));
+    Prakriti::initNamedGlobal(G, gb.getNAME(), globals);
   }
 }
 
@@ -172,8 +141,9 @@ void pruneToReachable(ECMAGraph *G,
   G->pruneUnreachable(roots);
 }
 
-void setupFileFrame(IRIContext &ctx, IRICFG *rootCFG, ECMAGraph *G) {
-  initGlobalBindings(ctx, rootCFG, G);
+void setupFileFrame(IRIContext &ctx, IRICFG *rootCFG, ECMAGraph *G,
+                    const Prakriti::GlobalInitTable &globals) {
+  initGlobalBindings(ctx, rootCFG, G, globals);
 
   auto remoteRefs = rootCFG->ptaGenRemoteRefs();
   for (const auto ref : remoteRefs) {
@@ -192,8 +162,9 @@ void teardownFileFrame(IRICFG *rootCFG, ECMAGraph *G) {
 }
 
 // Runs the file's entry closure to a dataflow fixpoint.
-void runFile(IRIContext &ctx, IRICFG *rootCFG, ECMAGraph *G) {
-  setupFileFrame(ctx, rootCFG, G);
+void runFile(IRIContext &ctx, IRICFG *rootCFG, ECMAGraph *G,
+            const Prakriti::GlobalInitTable &globals) {
+  setupFileFrame(ctx, rootCFG, G, globals);
 
   PTATransfer transferFunction;
   YADataflowSolver<ECMAGraph> solver(transferFunction);
@@ -342,12 +313,12 @@ void PTASolver::solve(IRIContext &ctx) {
   using ActionClosureTarget =
       std::function<ECMAGraph::PJSSL_RET(ECMAGraph::PJSSL_ARG)>;
 
-  Prakriti::AllocQJSScriptFile(
-      &currState, rootCFG->id,
-      std::make_shared<ActionClosureTarget>([&](ECMAGraph::PJSSL_ARG arg) {
-        runFile(ctx, rootCFG, arg.G);
-        return ECMAGraph::PJSSL_RET();
-      }));
+  auto env = Prakriti::QJSScriptFile();
+  env.alloc(&currState, rootCFG->id,
+           std::make_shared<ActionClosureTarget>([&](ECMAGraph::PJSSL_ARG arg) {
+             runFile(ctx, rootCFG, arg.G, env.globals);
+             return ECMAGraph::PJSSL_RET();
+           }));
 
   // Repeatedly drain pending Eval-like actions off JSFILE nodes until the
   // set of live files stops changing.
