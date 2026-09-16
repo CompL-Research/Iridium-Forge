@@ -1,4 +1,5 @@
 #include "Generated/IridiumTypes.h"
+#include "Helpers.h"
 #include "Support/PTA/PTAContext.hpp"
 #include "external/Prakriti.hpp"
 #include <cassert>
@@ -27,6 +28,8 @@ void computeEnvReadVals(const PTAStatementContext &ptactx, IRID node,
       objTag == IRI_GEN::GlobalBinding
           ? Prakriti::PKRGlobalState::getGlobal(
                 IRI_GEN::GlobalBindingSEXP(obj, ptactx.ctx).getNAME())
+      : objTag == IRI_GEN::RemoteEnvBinding
+          ? IRI_HELPERS::resolveRemoteBinding(ptactx.ctx, obj)
           : obj;
   assert(G->hasNode(target));
 
