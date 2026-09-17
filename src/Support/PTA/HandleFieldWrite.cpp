@@ -59,6 +59,8 @@ void handleFieldWrite(const PTAStatementContext &ptactx) {
       }
     }
   }
+
+  G->mutateMergeUnion(finalRes);
 }
 
 } // namespace IRI_STRUCTURAL

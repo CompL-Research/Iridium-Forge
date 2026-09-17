@@ -39,20 +39,43 @@ void handleJSDefineObjProp(const PTAStatementContext &ptactx) {
   std::string field(
       Prakriti::PKRGlobalState::EdgeGet(keySexp.getIridiumPrimitive()));
 
-  for (auto obj : objs) {
-    assert(G->hasNode(obj));
-    auto defineClosures = G->getPointees(
-        obj, Prakriti::PKRGlobalState::EdgeIntern(PKR_DefineOwnProperty));
-    assert(!defineClosures.empty());
-    for (auto val : values) {
+  //
+  // Define :: A.F = B (node this is different from field write!)
+  // A = {o1, o2...}
+  // B = {ox, oy...}
+  // o1[[DefineOwnProperty]](f) = FieldDescriptor[[Value]] -> ox U
+  // o1[[DefineOwnProperty]](f) = FieldDescriptor[[Value]] -> oy U
+  // o2[[DefineOwnProperty]](f) = FieldDescriptor[[Value]] -> ox U
+  // o2[[DefineOwnProperty]](f) = FieldDescriptor[[Value]] -> oy U
+  //
+
+  std::vector<Prakriti::ECMAGraph> finalRes;
+  for (auto A_a : objs) {
+    for (auto B_b : values) {
+      assert(G->hasNode(A_a));
+      auto targetClosures = G->getPointees(
+          B_b, Prakriti::PKRGlobalState::EdgeIntern(PKR_DefineOwnProperty));
+
+      if (targetClosures.empty())
+        continue; // Same reasoning as FieldWrite...
+                  // :p ~ Meetesh
+
       auto desc = std::make_shared<Prakriti::TempFieldDescriptor>();
-      desc->addValue(val);
+      desc->addValue(B_b);
       desc->addWritable(Prakriti::PKRGlobalState::getTRUE());
       desc->addEnumerable(Prakriti::PKRGlobalState::getTRUE());
       desc->addConfigurable(Prakriti::PKRGlobalState::getTRUE());
-      Prakriti::KarmaBindu(G, defineClosures, {nullptr, {obj}, {field}, {desc}});
+      auto res =
+          Prakriti::ECMAGraph::PJSSL_ARG{nullptr, {A_a}, {field}, {desc}};
+
+      for (auto kr :
+           Prakriti::Karma(G, targetClosures, {nullptr, {A_a, B_b}, {field}})) {
+        finalRes.push_back(kr.clonedG);
+      }
     }
   }
+
+  G->mutateMergeUnion(finalRes);
 }
 
 } // namespace IRI_STRUCTURAL
