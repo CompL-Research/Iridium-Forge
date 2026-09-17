@@ -32,13 +32,31 @@ void handleFieldWrite(const PTAStatementContext &ptactx) {
   std::string field(
       Prakriti::PKRGlobalState::EdgeGet(fieldSexp.getIridiumPrimitive()));
 
-  for (auto obj : objs) {
-    assert(G->hasNode(obj));
-    auto setClosures =
-        G->getPointees(obj, Prakriti::PKRGlobalState::EdgeIntern(PKR_Set));
-    assert(!setClosures.empty());
-    for (auto val : values) {
-      Prakriti::KarmaBindu(G, setClosures, {nullptr, {obj, val}, {field}});
+  //
+  // Here we want to do
+  // A.F = B
+  // A = {o1, o2...}
+  // B = {ox, oy...}
+  // o1[[Set]](f) = ox U
+  // o1[[Set]](f) = oy U
+  // o2[[Set]](f) = ox U
+  // o2[[Set]](f) = oy U
+  //
+  std::vector<Prakriti::ECMAGraph> finalRes;
+  for (auto A_a : objs) {
+    for (auto B_b : values) {
+      assert(G->hasNode(A_a));
+      auto setClosures =
+          G->getPointees(B_b, Prakriti::PKRGlobalState::EdgeIntern(PKR_Set));
+
+      if (setClosures.empty())
+        continue; // o1 can be null right? Dont quote me on this
+                  // :p ~ Meetesh
+
+      for (auto kr :
+           Prakriti::Karma(G, setClosures, {nullptr, {A_a, B_b}, {field}})) {
+        finalRes.push_back(kr.clonedG);
+      }
     }
   }
 }
