@@ -10,34 +10,51 @@
 
 namespace IRI_STRUCTURAL {
 
-inline void openTransience(Prakriti::ECMAGraph *G, Prakriti::NodeUID b) {
-  auto current =
-      G->getPointees(b, Prakriti::PKRGlobalState::EdgeIntern(PKR_STK));
-  G->removeAllOutgoingEdgesByLabel(
-      b, Prakriti::PKRGlobalState::EdgeIntern(PKR_TRANSIENCE_BACKUP));
-  for (const auto v : current)
-    G->addEdge(b, v,
-               Prakriti::PKRGlobalState::EdgeIntern(PKR_TRANSIENCE_BACKUP));
+namespace TransientCell {
 
-  G->removeAllOutgoingEdgesByLabel(
-      b, Prakriti::PKRGlobalState::EdgeIntern(PKR_TRANSIENCE));
-  G->addEdge(b, Prakriti::PKRGlobalState::getTRUE(),
-             Prakriti::PKRGlobalState::EdgeIntern(PKR_TRANSIENCE));
+inline Prakriti::EdgeUID label(const char *l) {
+  return Prakriti::PKRGlobalState::EdgeIntern(l);
 }
 
-inline void closeTransience(Prakriti::ECMAGraph *G, Prakriti::NodeUID b) {
-  auto backup = G->getPointees(
-      b, Prakriti::PKRGlobalState::EdgeIntern(PKR_TRANSIENCE_BACKUP));
-  for (const auto v : backup)
-    G->addEdge(b, v, Prakriti::PKRGlobalState::EdgeIntern(PKR_STK));
-  G->removeAllOutgoingEdgesByLabel(
-      b, Prakriti::PKRGlobalState::EdgeIntern(PKR_TRANSIENCE_BACKUP));
-
-  G->removeAllOutgoingEdgesByLabel(
-      b, Prakriti::PKRGlobalState::EdgeIntern(PKR_TRANSIENCE));
-  G->addEdge(b, Prakriti::PKRGlobalState::getFALSE(),
-             Prakriti::PKRGlobalState::EdgeIntern(PKR_TRANSIENCE));
+inline bool isExecuting(Prakriti::ECMAGraph *G, Prakriti::NodeUID b) {
+  return !G->getPointees(b, label(PKR_IS_EXECUTING)).empty();
 }
+
+inline void setExecuting(Prakriti::ECMAGraph *G, Prakriti::NodeUID b, bool on) {
+  G->removeAllOutgoingEdgesByLabel(b, label(PKR_IS_EXECUTING));
+  if (on)
+    G->addEdge(b, Prakriti::PKRGlobalState::getTRUE(), label(PKR_IS_EXECUTING));
+}
+
+inline void setStrong(Prakriti::ECMAGraph *G, Prakriti::NodeUID b,
+                      bool strong) {
+  G->removeAllOutgoingEdgesByLabel(b, label(PKR_TRANSIENCE));
+  G->addEdge(b,
+             strong ? Prakriti::PKRGlobalState::getTRUE()
+                    : Prakriti::PKRGlobalState::getFALSE(),
+             label(PKR_TRANSIENCE));
+}
+
+// Copies rather than moves: a read before this activation's first write would
+// otherwise see an empty set and trip assertions downstream.
+inline void park(Prakriti::ECMAGraph *G, Prakriti::NodeUID b) {
+  for (const auto v : G->getPointees(b, label(PKR_STK)))
+    G->addEdge(b, v, label(PKR_TRANSIENCE_BACKUP));
+}
+
+inline void unpark(Prakriti::ECMAGraph *G, Prakriti::NodeUID b) {
+  for (const auto v : G->getPointees(b, label(PKR_TRANSIENCE_BACKUP)))
+    G->addEdge(b, v, label(PKR_STK));
+}
+
+// Ends the window early, without ending the frame that owns it: the parked
+// values come back first, because whatever prompted this can observe them.
+inline void close(Prakriti::ECMAGraph *G, Prakriti::NodeUID b) {
+  unpark(G, b);
+  setStrong(G, b, false);
+}
+
+} // namespace TransientCell
 
 class PTATransfer : public TransferFunction<Prakriti::ECMAGraph> {
 public:
