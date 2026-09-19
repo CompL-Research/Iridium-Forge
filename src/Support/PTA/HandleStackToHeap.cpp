@@ -15,12 +15,13 @@ namespace IRI_STRUCTURAL {
  */
 void handleStackToHeap(const PTAStatementContext &ptactx) {
   Prakriti::ECMAGraph *G = ptactx.incomingState;
-  auto bindings = ptactx.ctx.storage.nodes.get_args(ptactx.stmt.id);
 
-  for (auto b : bindings) {
+  // We can retain more precision by parking, instead of closing transience in
+  // case of loops. Hopefully this doesnt come back to bite ~Meetesh
+  for (auto b : ptactx.ctx.storage.nodes.get_args(ptactx.stmt.id)) {
     assert(G->hasNode(b));
     assert(G->getNodeTAG(b) == Prakriti::TAG::TSTKOBJ);
-    closeTransience(G, b);
+    TransientCell::park(G, b);
   }
 }
 

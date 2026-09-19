@@ -106,12 +106,9 @@ std::vector<Prakriti::NodeUID> initStackLocals(IRICFG *rootCFG, ECMAGraph *G) {
       Prakriti::AllocStackObject(G, b);
     locals.push_back(b);
   }
-  // We are only really doing this for uniformity, so we dont have unnecessary
-  // extra cases
   for (const auto b : rootCFG->ptaGenTStack()) {
     if (!G->hasNode(b))
       Prakriti::AllocTransientStackObject(G, b);
-    openTransience(G, b);
     locals.push_back(b);
   }
   return locals;
@@ -141,30 +138,65 @@ void pruneToReachable(ECMAGraph *G,
   G->pruneUnreachable(roots);
 }
 
-void setupFileFrame(IRIContext &ctx, IRICFG *rootCFG, ECMAGraph *G,
-                    const Prakriti::GlobalInitTable &globals) {
-  initGlobalBindings(ctx, rootCFG, G, globals);
+// Opens the strong-update window on the closure's own captured cells. Returns
+// the cells this activation opened: a recursive activation finds them already
+// open, drops to weak updates, and leaves the unwind to the frame that owns it.
+std::vector<Prakriti::NodeUID> openTransientCells(IRICFG *cfg, ECMAGraph *G) {
+  std::vector<Prakriti::NodeUID> owned;
+  for (const auto b : cfg->ptaGenTStack()) {
+    if (TransientCell::isExecuting(G, b)) {
+      TransientCell::setStrong(G, b, false);
+      continue;
+    }
+    TransientCell::park(G, b);
+    TransientCell::setStrong(G, b, true);
+    TransientCell::setExecuting(G, b, true);
+    owned.push_back(b);
+  }
+  return owned;
+}
 
-  auto remoteRefs = rootCFG->ptaGenRemoteRefs();
-  for (const auto ref : remoteRefs) {
+void closeTransientCells(ECMAGraph *G,
+                         const std::vector<Prakriti::NodeUID> &owned) {
+  for (const auto b : owned) {
+    TransientCell::close(G, b);
+    G->removeAllOutgoingEdgesByLabel(
+        b, TransientCell::label(PKR_TRANSIENCE_BACKUP));
+    TransientCell::setExecuting(G, b, false);
+  }
+}
+
+// Asserts the closure's captured references exist, and closes the window on any
+// whose owning frame is still live: this body is about to read a cell that
+// frame has been strongly updating, so its parked values have to come back
+// before the read.
+std::vector<Prakriti::NodeUID> bindRemoteRefs(IRICFG *cfg, ECMAGraph *G) {
+  auto refs = cfg->ptaGenRemoteRefs();
+  for (const auto ref : refs) {
     if (!G->hasNode(ref))
       throw std::runtime_error("Remote binding not found!");
+    if (TransientCell::isExecuting(G, ref))
+      TransientCell::close(G, ref);
   }
+  return refs;
+}
+
+std::vector<Prakriti::NodeUID>
+setupFileFrame(IRIContext &ctx, IRICFG *rootCFG, ECMAGraph *G,
+               const Prakriti::GlobalInitTable &globals) {
+  initGlobalBindings(ctx, rootCFG, G, globals);
+
+  auto remoteRefs = bindRemoteRefs(rootCFG, G);
 
   auto locals = initStackLocals(rootCFG, G);
   pruneToReachable(G, locals, remoteRefs);
-}
-
-void teardownFileFrame(IRICFG *rootCFG, ECMAGraph *G) {
-  // Obviously redundant, but makes our code make more logical sense
-  for (const auto b : rootCFG->ptaGenTStack())
-    closeTransience(G, b);
+  return openTransientCells(rootCFG, G);
 }
 
 // Runs the file's entry closure to a dataflow fixpoint.
 void runFile(IRIContext &ctx, IRICFG *rootCFG, ECMAGraph *G,
             const Prakriti::GlobalInitTable &globals) {
-  setupFileFrame(ctx, rootCFG, G, globals);
+  auto owned = setupFileFrame(ctx, rootCFG, G, globals);
 
   PTATransfer transferFunction;
   YADataflowSolver<ECMAGraph> solver(transferFunction);
@@ -172,12 +204,12 @@ void runFile(IRIContext &ctx, IRICFG *rootCFG, ECMAGraph *G,
       ResumableDataflowState<ECMAGraph>(rootCFG, rootCFG->entry_block, *G),
       true);
 
-  teardownFileFrame(rootCFG, G);
+  closeTransientCells(G, owned);
 }
 
 // Allocate Stack bindings, JSCTX, bind arguments, etc.. some assertions like
 // captured existing...
-void setupClosureFrame(
+std::vector<Prakriti::NodeUID> setupClosureFrame(
     IRIContext &ctx, IRICFG *calleeCFG, ECMAGraph *G,
     const std::set<Prakriti::NodeUID> &thisVal,
     const std::vector<std::set<Prakriti::NodeUID>> &actualArgs) {
@@ -190,14 +222,11 @@ void setupClosureFrame(
   for (const auto b : calleeCFG->ptaGenTStack()) {
     if (!G->hasNode(b))
       Prakriti::AllocTransientStackObject(G, b);
-    openTransience(G, b);
     locals.push_back(b);
   }
 
-  for (const auto ref : calleeCFG->ptaGenRemoteRefs()) {
-    if (!G->hasNode(ref))
-      throw std::runtime_error("Remote binding not found!");
-  }
+  auto owned = openTransientCells(calleeCFG, G);
+  bindRemoteRefs(calleeCFG, G);
 
   std::vector<std::pair<double, Prakriti::NodeUID>> formals;
   for (const auto b : locals) {
@@ -264,12 +293,40 @@ void setupClosureFrame(
         G->getPointees(thisID, Prakriti::PKRGlobalState::EdgeIntern(PKR_Set));
     Prakriti::KarmaBindu(G, setClosures, {nullptr, setArgs});
   }
+
+  return owned;
 }
 
-void teardownClosureFrame(IRICFG *calleeCFG, ECMAGraph *G) {
-  // This is very neat :) ~Meetesh
-  for (const auto b : calleeCFG->ptaGenTStack())
-    closeTransience(G, b);
+using StackSnapshot =
+    std::unordered_map<Prakriti::NodeUID, std::vector<Prakriti::NodeUID>>;
+
+// Uncaptured cells are unreachable outside their frame, so they stay strong
+// throughout and an activation's writes would clobber what a still-live outer
+// activation of the same closure holds. Snapshot on entry, put back on exit.
+// Captured cells use the parked-backup window instead, since a closure may
+// still need what this activation left behind.
+StackSnapshot snapshotStackCells(IRICFG *calleeCFG, ECMAGraph *G) {
+  StackSnapshot snapshot;
+  for (const auto b : calleeCFG->ptaGenStack())
+    if (G->hasNode(b))
+      snapshot[b] =
+          G->getPointees(b, Prakriti::PKRGlobalState::EdgeIntern(PKR_STK));
+  return snapshot;
+}
+
+void restoreStackCells(IRICFG *calleeCFG, ECMAGraph *G,
+                       const StackSnapshot &snapshot) {
+  for (const auto b : calleeCFG->ptaGenStack()) {
+    if (!G->hasNode(b))
+      continue;
+    G->removeAllOutgoingEdgesByLabel(
+        b, Prakriti::PKRGlobalState::EdgeIntern(PKR_STK));
+    auto it = snapshot.find(b);
+    if (it == snapshot.end())
+      continue;
+    for (const auto v : it->second)
+      G->addEdge(b, v, Prakriti::PKRGlobalState::EdgeIntern(PKR_STK));
+  }
 }
 
 // Calling [[Get]] on the <common-ret>
@@ -349,7 +406,8 @@ std::set<Prakriti::NodeUID> PTASolver::invokeClosure(
     IRIContext &ctx, IRICFG *calleeCFG, Prakriti::NodeUID closureID,
     ECMAGraph *G, const std::set<Prakriti::NodeUID> &thisVal,
     const std::vector<std::set<Prakriti::NodeUID>> &actualArgs) {
-  setupClosureFrame(ctx, calleeCFG, G, thisVal, actualArgs);
+  auto snapshot = snapshotStackCells(calleeCFG, G);
+  auto owned = setupClosureFrame(ctx, calleeCFG, G, thisVal, actualArgs);
 
   // Recursion guard, for each closure we store a vector of tuples
   // (code, value_ctx|null). If the closure is recursively reached again with
@@ -359,10 +417,15 @@ std::set<Prakriti::NodeUID> PTASolver::invokeClosure(
   for (auto &[hash, result] : entries) {
     if (hash != stateHash)
       continue;
-    if (!result.has_value())
+    if (!result.has_value()) {
+      closeTransientCells(G, owned);
+      restoreStackCells(calleeCFG, G, snapshot);
       return {};
+    }
     ECMAGraph finalState = *result;
     auto retVals = readReturnValue(calleeCFG, &finalState);
+    closeTransientCells(&finalState, owned);
+    restoreStackCells(calleeCFG, &finalState, snapshot);
     *G = finalState;
     return retVals;
   }
@@ -377,10 +440,10 @@ std::set<Prakriti::NodeUID> PTASolver::invokeClosure(
       true);
 
   auto [retVals, finalState] = extractReturnValue(calleeCFG, cfgAtStmt);
-  teardownClosureFrame(calleeCFG, &finalState);
-
   progressTracker[closureID][idx] = {stateHash, finalState};
 
+  closeTransientCells(&finalState, owned);
+  restoreStackCells(calleeCFG, &finalState, snapshot);
   *G = finalState;
   return retVals;
 }
