@@ -1336,6 +1336,9 @@ inline ECMAGraph::ActionClosure makeTracedAction(std::string_view file,
 #define PKR_SYM_toPrimitive "[[Symbol.toPrimitive]]"
 #define PKR_SYM_toStringTag "[[Symbol.toStringTag]]"
 #define PKR_TRANSIENCE_BACKUP "[[transience-backup]]"
+#define PKR_IS_EXECUTING "[[is-executing]]"
+#define PKR_SENSITIVE "[[Sensitive]]"
+#define PKR_UNKNOWN_FIELD "[[Unknown-Field]]"
 
 #include <algorithm>
 #include <set>
@@ -1448,6 +1451,16 @@ template <typename T> inline bool isOnlyFalse(const T &nodes) {
   return isOnlyFalse(G->getPointees(id, label));
 }
 
+template <typename T> inline bool isOnlyTrue(const T &nodes) {
+  ASSERT(!nodes.empty());
+  return std::ranges::all_of(
+      nodes, [](const auto &tgt) { return tgt == PKRGlobalState::getTRUE(); });
+}
+
+[[nodiscard]] inline bool isOnlyTrue(ECMAGraph *G, NodeUID id, EdgeUID label) {
+  return isOnlyTrue(G->getPointees(id, label));
+}
+
 inline bool hasSetInterface(const ECMAGraph *G, NodeUID node) {
   return G->getAllOutgoingEdgesByLabel(node,
                                        PKRGlobalState::EdgeIntern(PKR_Set))
@@ -1547,6 +1560,32 @@ inline void FDUnionFT(const FieldDescriptor *self,
   replaceFieldIfSpecified(self, other->getConfigurable(), PKR_CONFIGURABLE);
   replaceFieldIfSpecified(self, other->getGet(), PKR_Get);
   replaceFieldIfSpecified(self, other->getSet(), PKR_Set);
+}
+
+inline void appendFieldIfSpecified(const FieldDescriptor *self,
+                                   const std::vector<NodeUID> &vals,
+                                   const char *label) {
+  if (vals.empty())
+    return;
+  EdgeUID edgeLabel = PKRGlobalState::EdgeIntern(label);
+  for (NodeUID tgt : vals)
+    self->getGraph()->addEdge(self->getID(), tgt, edgeLabel);
+}
+
+// Same as FDUnionFT, but never removes an existing edge - for the
+// [[Unknown-Field]] bucket, where a "replace" would soundly-incorrectly
+// drop an earlier unknown write's contribution.
+inline void FDUnionAccumulateFT(const FieldDescriptor *self,
+                                const TempFieldDescriptor *other) {
+  if (!self->isLinked())
+    throw std::runtime_error("FDUnion called on unlinked FieldDescriptor");
+
+  appendFieldIfSpecified(self, other->getValue(), PKR_VALUE);
+  appendFieldIfSpecified(self, other->getWritable(), PKR_WRITABLE);
+  appendFieldIfSpecified(self, other->getEnumerable(), PKR_ENUMERABLE);
+  appendFieldIfSpecified(self, other->getConfigurable(), PKR_CONFIGURABLE);
+  appendFieldIfSpecified(self, other->getGet(), PKR_Get);
+  appendFieldIfSpecified(self, other->getSet(), PKR_Set);
 }
 
 //
@@ -1661,11 +1700,11 @@ inline bool IsAccessorDescriptor(FieldDescriptor *self) {
   auto getters = self->getGraph()->getAllOutgoingEdgesByLabel(
       self->getID(), PKRGlobalState::EdgeIntern(PKR_Get));
 
-  return setters.empty() && getters.empty();
+  return !setters.empty() || !getters.empty();
 }
 
 inline bool IsAccessorDescriptor(const TempFieldDescriptor *self) {
-  return self->getGet().empty() && self->getSet().empty();
+  return !self->getGet().empty() || !self->getSet().empty();
 }
 
 //
@@ -1688,7 +1727,6 @@ inline void AllocFieldProxyObject(ECMAGraph *G, NodeUID id) {
 } // namespace Prakriti
 
 #include <string>
-#include <unordered_set>
 
 namespace Prakriti {
 
@@ -1701,8 +1739,27 @@ inline static bool isExtensible(ECMAGraph *G, NodeUID ctx) {
                                                                          : true;
 }
 
+inline static bool isFieldSensitive(ECMAGraph *G, NodeUID ctx) {
+  return isOnlyTrue(G, ctx, PKRGlobalState::EdgeIntern(PKR_SENSITIVE));
+}
+
+// A real JS property label: anything not a reserved "[[...]]" slot, plus the
+// [[Unknown-Field]] bucket (a reserved name, but a real property).
+inline static bool isOwnFieldLabel(std::string_view lbl) {
+  return lbl.rfind("[[", 0) != 0 || lbl == PKR_UNKNOWN_FIELD;
+}
+
+inline static std::vector<NodeUID> collectOwnFieldFPs(const ECMAGraph *G,
+                                                       NodeUID ctx) {
+  std::vector<NodeUID> res;
+  for (auto &[_, tgt, lab] : G->getAllOutgoingEdges(ctx))
+    if (isOwnFieldLabel(PKRGlobalState::EdgeGet(lab)))
+      res.push_back(tgt);
+  return res;
+}
+
 inline static NodeUID getOwnProperty(ECMAGraph *G, NodeUID ctx,
-                                     std::string &field) {
+                                     const std::string &field) {
   auto acts =
       G->getPointees(ctx, PKRGlobalState::EdgeIntern(PKR_GetOwnProperty));
   auto result = KarmaBindu(G, acts, {NULL, {ctx}, {field}});
@@ -1717,27 +1774,75 @@ inline static std::set<NodeUID> getPrototypes(ECMAGraph *G, NodeUID ctx) {
   return result;
 }
 
-inline static bool hasProperty(ECMAGraph *G, NodeUID ctx, std::string &field) {
+inline static bool hasProperty(ECMAGraph *G, NodeUID ctx,
+                               const std::string &field) {
   auto acts = G->getPointees(ctx, PKRGlobalState::EdgeIntern(PKR_HasProperty));
   auto result = KarmaBindu(G, acts, {NULL, {ctx}, {field}});
   ASSERT(result.size() == 1);
   return *result.begin() != PKRGlobalState::getUNDEF();
 }
 
-inline static void searchFPNodes(ECMAGraph *G, NodeUID ctx, std::string &field,
+// [[Value]] plus any invoked [[Get]] accessor results for one FP node.
+inline static std::vector<NodeUID> readFieldValue(ECMAGraph *G, NodeUID fp,
+                                                   NodeUID rcvr) {
+  std::vector<NodeUID> res = G->getPointees(fp, PKRGlobalState::EdgeIntern(PKR_VALUE));
+  auto acts = G->getPointees(fp, PKRGlobalState::EdgeIntern(PKR_Get));
+  auto got = KarmaBindu(G, acts, {NULL, {rcvr}});
+  res.insert(res.end(), got.begin(), got.end());
+  return res;
+}
+
+// Every prototype's [[Get]] for field; a null prototype contributes undefined.
+// Always called, even when an own match exists: any edge may be absent in some
+// merged branch, so nothing shadows anything.
+inline static void readPrototypes(ECMAGraph *G, NodeUID ctx, NodeUID rcvr,
+                                  const std::string &field,
+                                  std::vector<NodeUID> &res) {
+  for (auto &p : getPrototypes(G, ctx)) {
+    if (p == PKRGlobalState::getNULL()) {
+      res.push_back(PKRGlobalState::getUNDEF());
+      continue;
+    }
+    auto acts = G->getPointees(p, PKRGlobalState::EdgeIntern(PKR_Get));
+    auto got = KarmaBindu(G, acts, {NULL, {p, rcvr}, {field}});
+    res.insert(res.end(), got.begin(), got.end());
+  }
+}
+
+// Unknown-key case: the real key could be any own field at any level of the
+// chain, so (unlike searchFPNodes) never stop early - collect every own
+// field FP, at every level, unconditionally.
+inline static void collectAllFPsUpChain(ECMAGraph *G, NodeUID ctx,
+                                        std::vector<NodeUID> &res) {
+  if (ctx == PKRGlobalState::getNULL())
+    return;
+  auto own = collectOwnFieldFPs(G, ctx);
+  res.insert(res.end(), own.begin(), own.end());
+  auto pp = G->getPointees(ctx, PKRGlobalState::EdgeIntern(PKR_PROTOTYPE));
+  for (auto p : pp)
+    collectAllFPsUpChain(G, p, res);
+}
+
+// Known-key setter search: the field's FP (and the bucket, if insensitive) at
+// every level of the chain. No match stops the walk, see readPrototypes.
+inline static void searchFPNodes(ECMAGraph *G, NodeUID ctx,
+                                 const std::string &field,
                                  std::vector<NodeUID> &res) {
   if (ctx == PKRGlobalState::getNULL())
     return;
+
   auto r = G->getPointees(ctx, PKRGlobalState::EdgeIntern(field.c_str()));
-  if (r.size() == 0) {
-    auto pp = G->getPointees(ctx, PKRGlobalState::EdgeIntern(PKR_PROTOTYPE));
-    for (auto p : pp) {
-      searchFPNodes(G, p, field, res);
-    }
-  } else {
+  if (!r.empty()) {
     ASSERT(r.size() == 1);
-    res.push_back(*r.begin());
+    res.push_back(r[0]);
   }
+  if (!isFieldSensitive(G, ctx)) {
+    auto rb = G->getPointees(ctx, PKRGlobalState::EdgeIntern(PKR_UNKNOWN_FIELD));
+    if (!rb.empty())
+      res.push_back(rb[0]);
+  }
+  for (auto p : G->getPointees(ctx, PKRGlobalState::EdgeIntern(PKR_PROTOTYPE)))
+    searchFPNodes(G, p, field, res);
 }
 
 } // namespace OOHelpers
@@ -1828,12 +1933,14 @@ inline bool initOOBJ = []() {
     auto isExtensible = OOHelpers::isExtensible(G, ctx);
 
     if (currentFP == PKRGlobalState::getUNDEF()) {
-      if (!isExtensible)
+      // Non-extensible blocks new keys only; an unknown key may still hit an
+      // existing own field, so the bucket is refused only when it can't.
+      bool mayAliasOwn = field == PKR_UNKNOWN_FIELD &&
+                         !OOHelpers::collectOwnFieldFPs(G, ctx).empty();
+      if (!isExtensible && !mayAliasOwn)
         return {{PKRGlobalState::getFALSE()}};
 
-      // Defining a brand new own property (data or accessor -- FDUnion
-      // doesn't care, it just copies over whatever fields rhsPtr set, same
-      // as NAC_OOBJ_Set's own "create new field proxy" path).
+      // Brand new own property; FDUnion copies whatever fields rhsPtr set.
       NodeUID id = PKRGlobalState::generateSentinel(
           ctx, PKRGlobalState::EdgeIntern(field));
       AllocFieldProxyObject(G, id);
@@ -1841,26 +1948,38 @@ inline bool initOOBJ = []() {
 
       FieldDescriptor newFD(G, id);
       FDUnion(&newFD, rhsPtr.get());
-      return {{PKRGlobalState::getTRUE()}};
-    }
-
-    auto currentFD = std::make_shared<FieldDescriptor>(G, currentFP);
-    if (IsNotConfigurable(currentFD.get())) {
-      if (!IsNotConfigurable(rhsPtr.get()))
-        return {{PKRGlobalState::getFALSE()}};
-      if (IsNotEnumerable(currentFD.get()) != IsNotEnumerable(rhsPtr.get()))
-        return {{PKRGlobalState::getFALSE()}};
-      if (IsAccessorDescriptor(currentFD.get()) !=
-          IsAccessorDescriptor(rhsPtr.get()))
-        return {{PKRGlobalState::getFALSE()}};
-      if (IsNotWritable(currentFD.get())) {
-        if (!IsNotWritable(rhsPtr.get()))
+    } else {
+      auto currentFD = std::make_shared<FieldDescriptor>(G, currentFP);
+      if (IsNotConfigurable(currentFD.get())) {
+        if (!IsNotConfigurable(rhsPtr.get()))
           return {{PKRGlobalState::getFALSE()}};
-        if (!SameValue(currentFD.get(), rhsPtr.get()))
+        if (IsNotEnumerable(currentFD.get()) != IsNotEnumerable(rhsPtr.get()))
           return {{PKRGlobalState::getFALSE()}};
+        if (IsAccessorDescriptor(currentFD.get()) !=
+            IsAccessorDescriptor(rhsPtr.get()))
+          return {{PKRGlobalState::getFALSE()}};
+        if (IsNotWritable(currentFD.get())) {
+          if (!IsNotWritable(rhsPtr.get()))
+            return {{PKRGlobalState::getFALSE()}};
+          if (!SameValue(currentFD.get(), rhsPtr.get()))
+            return {{PKRGlobalState::getFALSE()}};
+        }
+      }
+      if (field == PKR_UNKNOWN_FIELD) {
+        // The bucket is a may-alias location: accumulate, never replace.
+        auto *tempOther = dynamic_cast<TempFieldDescriptor *>(rhsPtr.get());
+        ASSERT(tempOther);
+        FDUnionAccumulateFT(currentFD.get(), tempOther);
+      } else {
+        FDUnion(currentFD.get(), rhsPtr.get());
       }
     }
-    FDUnion(currentFD.get(), rhsPtr.get());
+
+    // Only a successful bucket write makes ctx insensitive, so the flag and
+    // the bucket always exist together.
+    if (field == PKR_UNKNOWN_FIELD)
+      G->addEdge(ctx, PKRGlobalState::getFALSE(),
+                 PKRGlobalState::EdgeIntern(PKR_SENSITIVE));
     return {{PKRGlobalState::getTRUE()}};
   });
 
@@ -1873,6 +1992,19 @@ inline bool initOOBJ = []() {
     ASSERT(L.size() == 1 && A.size() == 1);
     NodeUID ctx = L[0];
     std::string field = A[0];
+
+    if (field == PKR_UNKNOWN_FIELD) {
+      if (!OOHelpers::collectOwnFieldFPs(G, ctx).empty())
+        return {{PKRGlobalState::getTRUE()}};
+      for (auto p : OOHelpers::getPrototypes(G, ctx)) {
+        if (p == PKRGlobalState::getNULL())
+          continue;
+        if (OOHelpers::hasProperty(G, p, field))
+          return {{PKRGlobalState::getTRUE()}};
+      }
+      return {{PKRGlobalState::getFALSE()}};
+    }
+
     NodeUID currentFP = OOHelpers::getOwnProperty(G, ctx, field);
     if (currentFP != PKRGlobalState::getUNDEF())
       return {{PKRGlobalState::getTRUE()}};
@@ -1881,6 +2013,12 @@ inline bool initOOBJ = []() {
         continue;
       if (OOHelpers::hasProperty(G, p, field))
         return {{PKRGlobalState::getTRUE()}};
+    }
+    if (!OOHelpers::isFieldSensitive(G, ctx)) {
+      // An earlier unknown-keyed write may have targeted this very key.
+      ASSERT(OOHelpers::getOwnProperty(G, ctx, PKR_UNKNOWN_FIELD) !=
+             PKRGlobalState::getUNDEF());
+      return {{PKRGlobalState::getTRUE()}};
     }
     return {{PKRGlobalState::getFALSE()}};
   });
@@ -1895,30 +2033,27 @@ inline bool initOOBJ = []() {
     NodeUID ctx = L[0];
     NodeUID rcvr = L[1];
     std::string field = A[0];
-    NodeUID currentFP = OOHelpers::getOwnProperty(G, ctx, field);
-    std::vector<NodeUID> finRes;
-    if (currentFP == PKRGlobalState::getUNDEF()) {
-      std::unordered_set<NodeUID> res;
-      for (auto &p : OOHelpers::getPrototypes(G, ctx)) {
-        if (p == PKRGlobalState::getNULL()) {
-          res.insert(PKRGlobalState::getUNDEF());
-        } else {
-          auto acts = G->getPointees(p, PKRGlobalState::EdgeIntern(PKR_Get));
-          auto current_ = KarmaBindu(G, acts, {NULL, {p, rcvr}, {field}});
-          for (auto &tgt : current_)
-            res.insert(tgt);
-        }
-      }
-      ASSERT(res.size() > 0);
-      return {{res.begin(), res.end()}};
+
+    std::vector<NodeUID> res;
+    if (field == PKR_UNKNOWN_FIELD) {
+      for (auto fp : OOHelpers::collectOwnFieldFPs(G, ctx))
+        for (auto r : OOHelpers::readFieldValue(G, fp, rcvr))
+          res.push_back(r);
     } else {
-      finRes = G->getPointees(currentFP, PKRGlobalState::EdgeIntern(PKR_VALUE));
+      NodeUID currentFP = OOHelpers::getOwnProperty(G, ctx, field);
+      if (currentFP != PKRGlobalState::getUNDEF())
+        res = OOHelpers::readFieldValue(G, currentFP, rcvr);
+      if (!OOHelpers::isFieldSensitive(G, ctx)) {
+        // An earlier unknown-keyed write may have targeted this very key.
+        NodeUID bucketFP = OOHelpers::getOwnProperty(G, ctx, PKR_UNKNOWN_FIELD);
+        ASSERT(bucketFP != PKRGlobalState::getUNDEF());
+        for (auto r : OOHelpers::readFieldValue(G, bucketFP, rcvr))
+          res.push_back(r);
+      }
     }
-    auto acts = G->getPointees(currentFP, PKRGlobalState::EdgeIntern(PKR_Get));
-    auto res = KarmaBindu(G, acts, {NULL, {rcvr}});
-    for (auto r : res)
-      finRes.push_back(r);
-    return {{finRes.begin(), finRes.end()}};
+    OOHelpers::readPrototypes(G, ctx, rcvr, field, res);
+    ASSERT(!res.empty());
+    return {{res.begin(), res.end()}};
   });
 
   PKRGlobalState::NAC_OOBJ_Set = DEFINE_ACTION() {
@@ -1931,9 +2066,14 @@ inline bool initOOBJ = []() {
     NodeUID valToSet = L[1];
     std::string field = A[0];
 
+    // Setter search: an unknown key may match any field at any level.
     std::vector<NodeUID> fpNodes;
-    OOHelpers::searchFPNodes(G, ctx, field, fpNodes);
-    std::vector<KarmaResult> kResults;
+    if (field == PKR_UNKNOWN_FIELD)
+      OOHelpers::collectAllFPsUpChain(G, ctx, fpNodes);
+    else
+      OOHelpers::searchFPNodes(G, ctx, field, fpNodes);
+    std::vector<ECMAGraph> setterResults;
+    ECMAGraph G_1;
 
     for (auto &fp : fpNodes) {
       FieldDescriptor f(G, fp);
@@ -1941,24 +2081,14 @@ inline bool initOOBJ = []() {
         auto acts = G->getPointees(fp, PKRGlobalState::EdgeIntern(PKR_Set));
         auto rs = Karma(G, acts, {NULL, {ctx, valToSet}});
         for (auto &r : rs)
-          kResults.push_back(std::move(r));
+          setterResults.push_back(std::move(r.clonedG));
       }
     }
 
-    // an accessor along the chain handled the write, dont also create a data property
-    if (!kResults.empty()) {
-      ECMAGraph merged = std::move(kResults.front().clonedG);
-      if (kResults.size() > 1) {
-        std::vector<ECMAGraph> rest;
-        for (size_t i = 1; i < kResults.size(); i++) {
-          rest.push_back(std::move(kResults[i].clonedG));
-        }
-        merged.mutateMergeUnion(rest);
-      }
-      *G = std::move(merged);
-      return {{}};
-    }
+    G_1.mutateMergeUnion(setterResults);
 
+    // Setters may not exist in every merged branch, so the data write always
+    // happens as well.
     auto currentFP = OOHelpers::getOwnProperty(G, ctx, field);
     auto tmp = std::make_shared<TempFieldDescriptor>();
     tmp->addValue(valToSet);
@@ -1969,7 +2099,7 @@ inline bool initOOBJ = []() {
     } else {
       auto currentFD = FieldDescriptor(G, currentFP);
       tmp->addWritable(!IsNotWritable(&currentFD) ? PKRGlobalState::getTRUE()
-                                                   : PKRGlobalState::getFALSE());
+                                                  : PKRGlobalState::getFALSE());
       tmp->addEnumerable(!IsNotEnumerable(&currentFD)
                              ? PKRGlobalState::getTRUE()
                              : PKRGlobalState::getFALSE());
@@ -1978,9 +2108,17 @@ inline bool initOOBJ = []() {
                                : PKRGlobalState::getFALSE());
     }
 
+    std::vector<ECMAGraph> defOwnPropResults;
+    ECMAGraph G_2;
     auto acts =
         G->getPointees(ctx, PKRGlobalState::EdgeIntern(PKR_DefineOwnProperty));
-    KarmaBindu(G, acts, {NULL, {ctx}, {field}, {tmp}});
+
+    auto rs = Karma(G, acts, {NULL, {ctx}, {field}, {tmp}});
+    for (auto &r : rs)
+      defOwnPropResults.push_back(std::move(r.clonedG));
+
+    G_2.mutateMergeUnion(defOwnPropResults);
+    G->mutateMergeUnion({G_1, G_2});
     return {{}};
   });
 
@@ -1993,6 +2131,9 @@ inline bool initOOBJ = []() {
 
     NodeUID ctx = L[0];
     std::string field = A[0];
+
+    if (!OOHelpers::isFieldSensitive(G, ctx))
+      return {{PKRGlobalState::getTRUE()}};
 
     NodeUID currentFP = OOHelpers::getOwnProperty(G, ctx, field);
     if (currentFP == PKRGlobalState::getUNDEF())
@@ -2014,15 +2155,13 @@ inline bool initOOBJ = []() {
 
     NodeUID ctx = args.L[0];
 
+    // Includes the bucket key: iterating it re-enters the unknown-key paths.
     std::vector<std::string> res;
-
     for (auto &[_, __, lab] : G->getAllOutgoingEdges(ctx)) {
       auto lblStr = PKRGlobalState::EdgeGet(lab);
-      if (lblStr.rfind("::", 0) == 0) {
+      if (OOHelpers::isOwnFieldLabel(lblStr))
         res.push_back(std::string(lblStr));
-      }
     }
-
     return {{}, res};
   });
 
@@ -2048,6 +2187,8 @@ inline void AllocOrdinaryObject(ECMAGraph *G, NodeUID id, NodeUID ext,
 
   G->addEdge(id, proto, PKRGlobalState::EdgeIntern(PKR_PROTOTYPE));
   G->addEdge(id, ext, PKRGlobalState::EdgeIntern(PKR_EXTENSIBLE));
+  G->addEdge(id, PKRGlobalState::getTRUE(),
+             PKRGlobalState::EdgeIntern(PKR_SENSITIVE));
 }
 } // namespace Prakriti
 
@@ -2154,6 +2295,8 @@ inline void AllocArrayObject(ECMAGraph *G, NodeUID id) {
              PKRGlobalState::EdgeIntern(PKR_EXTENSIBLE));
   G->addEdge(id, PKRGlobalState::getGOOBJ_Array_prototype(),
              PKRGlobalState::EdgeIntern(PKR_PROTOTYPE));
+  G->addEdge(id, PKRGlobalState::getTRUE(),
+             PKRGlobalState::EdgeIntern(PKR_SENSITIVE));
 
   NodeUID lengthFP =
       PKRGlobalState::generateSentinel(id, PKRGlobalState::EdgeIntern("length"));
@@ -2540,6 +2683,8 @@ inline void AllocClosure(ECMAGraph *G, NodeUID id,
 
   G->addEdge(id, proto, PKRGlobalState::EdgeIntern(PKR_PROTOTYPE));
   G->addEdge(id, ext, PKRGlobalState::EdgeIntern(PKR_EXTENSIBLE));
+  G->addEdge(id, PKRGlobalState::getTRUE(),
+             PKRGlobalState::EdgeIntern(PKR_SENSITIVE));
 }
 
 } // namespace Prakriti
@@ -2672,10 +2817,11 @@ inline void AllocStackObject(ECMAGraph *G, NodeUID id) {
 namespace Prakriti {
 
 // Name -> lazy-init-routine table for an environment's named globals.
-using GlobalInitTable = std::vector<std::pair<const char *, void (*)(ECMAGraph *)>>;
+using GlobalInitTable =
+    std::vector<std::pair<const char *, void (*)(ECMAGraph *)>>;
 
-inline GlobalInitTable
-composeGlobalInitializers(std::initializer_list<const GlobalInitTable *> parents) {
+inline GlobalInitTable composeGlobalInitializers(
+    std::initializer_list<const GlobalInitTable *> parents) {
   GlobalInitTable out;
   for (const auto *parent : parents)
     out.insert(out.end(), parent->begin(), parent->end());
@@ -2770,6 +2916,48 @@ inline void initFunctionPrototype(ECMAGraph *G) {
                PKRGlobalState::getGOOBJ_Object_prototype());
 }
 
+// B.2.2.1
+inline void initObjectPrototypeProtoAccessor(ECMAGraph *G) {
+  NodeUID getter = PKRGlobalState::ReserveNodeUID();
+  auto get = DEFINE_ACTION() {
+    ECMAGraph *G = args.G;
+    NodeUID O = args.L[0];
+    auto acts =
+        G->getPointees(O, PKRGlobalState::EdgeIntern(PKR_GetPrototypeOf));
+    auto protos = KarmaBindu(G, acts, {NULL, {O}});
+    if (protos.empty()) // primitive receiver; ToObject wrappers not modeled
+      return {{PKRGlobalState::getUNDEF()}};
+    return {{protos.begin(), protos.end()}};
+  });
+  AllocClosure(G, getter, get, PKRGlobalState::getTRUE(),
+               PKRGlobalState::getGFOBJ_Function_prototype());
+
+  NodeUID setter = PKRGlobalState::ReserveNodeUID();
+  auto set = DEFINE_ACTION() {
+    ECMAGraph *G = args.G;
+    NodeUID O = args.L[0], proto = args.L[1];
+    if (proto != PKRGlobalState::getNULL() && !isObjectNode(G, proto))
+      return {};
+    auto acts =
+        G->getPointees(O, PKRGlobalState::EdgeIntern(PKR_SetPrototypeOf));
+    KarmaBindu(G, acts, {NULL, {O, proto}});
+    return {};
+  });
+  AllocClosure(G, setter, set, PKRGlobalState::getTRUE(),
+               PKRGlobalState::getGFOBJ_Function_prototype());
+
+  auto fd = std::make_shared<TempFieldDescriptor>();
+  fd->addGet(getter);
+  fd->addSet(setter);
+  fd->addEnumerable(PKRGlobalState::getFALSE());
+  fd->addConfigurable(PKRGlobalState::getTRUE());
+  NodeUID objProto = PKRGlobalState::getGOOBJ_Object_prototype();
+  KarmaBindu(G,
+             G->getPointees(objProto,
+                            PKRGlobalState::EdgeIntern(PKR_DefineOwnProperty)),
+             {NULL, {objProto}, {"__proto__"}, {fd}});
+}
+
 inline void initFunctionConstructor(ECMAGraph *G) {
   ALLOC_CTR(PKRGlobalState::getGFOBJ_Function(), PKR_STUB_FUN,
             PKRGlobalState::getGFOBJ_Function_prototype());
@@ -2783,6 +2971,7 @@ inline void initECMAEnvironment(ECMAGraph *G) {
   AllocOrdinaryObject(G, PKRGlobalState::getGOOBJ_Object_prototype(),
                       PKRGlobalState::getTRUE(), PKRGlobalState::getNULL());
   initFunctionPrototype(G);
+  initObjectPrototypeProtoAccessor(G);
 
   defineStubIntrinsic(
       G, PKRGlobalState::getGFOBJ_Object(),
@@ -2844,46 +3033,20 @@ inline void initECMAEnvironment(ECMAGraph *G) {
                       PKRGlobalState::getGOOBJ_Object_prototype(), {},
                       {"toString"}, "Error");
 
-  defineStubIntrinsic(
-      G, PKRGlobalState::getGFOBJ_Array(),
-      PKRGlobalState::getGOOBJ_Array_prototype(),
-      PKRGlobalState::getGOOBJ_Object_prototype(),
-      {"from", "isArray", "of"},
-      {"at",
-       "concat",
-       "copyWithin",
-       "entries",
-       "every",
-       "fill",
-       "filter",
-       "find",
-       "findIndex",
-       "findLast",
-       "findLastIndex",
-       "flat",
-       "flatMap",
-       "forEach",
-       "includes",
-       "indexOf",
-       "join",
-       "keys",
-       "lastIndexOf",
-       "map",
-       "pop",
-       "push",
-       "reduce",
-       "reduceRight",
-       "reverse",
-       "shift",
-       "slice",
-       "some",
-       "sort",
-       "splice",
-       "toLocaleString",
-       "toString",
-       "unshift",
-       "values"},
-      "Array");
+  defineStubIntrinsic(G, PKRGlobalState::getGFOBJ_Array(),
+                      PKRGlobalState::getGOOBJ_Array_prototype(),
+                      PKRGlobalState::getGOOBJ_Object_prototype(),
+                      {"from", "isArray", "of"},
+                      {"at",        "concat",   "copyWithin",     "entries",
+                       "every",     "fill",     "filter",         "find",
+                       "findIndex", "findLast", "findLastIndex",  "flat",
+                       "flatMap",   "forEach",  "includes",       "indexOf",
+                       "join",      "keys",     "lastIndexOf",    "map",
+                       "pop",       "push",     "reduce",         "reduceRight",
+                       "reverse",   "shift",    "slice",          "some",
+                       "sort",      "splice",   "toLocaleString", "toString",
+                       "unshift",   "values"},
+                      "Array");
 
   initFunctionConstructor(G);
 }
@@ -3106,15 +3269,14 @@ inline bool initTSOBJ = []() {
     ASSERT(L.size() >= 2);
     NodeUID ctx = L[0];
 
+    // Strong only inside the window the owning frame opened. A mixed set is
+    // the join of a branch that closed the window with one that did not, and
+    // falls to weak, which is the safe direction.
     auto transience =
         G->getPointees(ctx, PKRGlobalState::EdgeIntern(PKR_TRANSIENCE));
-    bool isStrong =
-        transience.size() == 1 && transience[0] == PKRGlobalState::getTRUE();
+    if (transience.size() == 1 && transience[0] == PKRGlobalState::getTRUE())
+      G->removeAllOutgoingEdgesByLabel(ctx, PKRGlobalState::EdgeIntern(PKR_STK));
 
-    if (isStrong) {
-      G->removeAllOutgoingEdgesByLabel(ctx,
-                                       PKRGlobalState::EdgeIntern(PKR_STK));
-    }
     for (auto i = 1; i < L.size(); i++) {
       G->addEdge(ctx, L[i], PKRGlobalState::EdgeIntern(PKR_STK));
     }
