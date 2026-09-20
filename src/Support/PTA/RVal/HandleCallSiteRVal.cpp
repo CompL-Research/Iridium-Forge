@@ -1,5 +1,4 @@
 #include "Generated/IridiumTypes.h"
-#include "Support/PTA/PTACallHelpers.hpp"
 #include "Support/PTA/PTAContext.hpp"
 #include "Support/PTA/PTARVALDispatch.hpp"
 #include "external/Prakriti.hpp"
@@ -57,20 +56,20 @@ void computeCallSiteVals(const PTAStatementContext &ptactx, IRID node,
       Prakriti::AllocOrdinaryObject(G, thisID,
                                     Prakriti::PKRGlobalState::getTRUE(),
                                     Prakriti::PKRGlobalState::getNULL());
+    std::vector<Prakriti::NodeUID> protos;
+    std::vector<Prakriti::ECMAGraph> branches;
     for (const auto callee : calleeVec) {
       auto getClosures =
           G->getPointees(callee, Prakriti::PKRGlobalState::EdgeIntern(PKR_Get));
-      auto protos = Prakriti::KarmaBindu(
-          G, getClosures, {nullptr, {callee, callee}, {"prototype"}});
-      for (const auto p : protos)
-        G->addEdge(thisID, p,
-                   Prakriti::PKRGlobalState::EdgeIntern(PKR_PROTOTYPE));
+      Prakriti::Karma(G, getClosures,
+                      {nullptr, {callee, callee}, {"prototype"}}, protos,
+                      branches);
     }
+    Prakriti::KarmaJoin(G, branches);
+    for (const auto p : protos)
+      G->addEdge(thisID, p, Prakriti::PKRGlobalState::EdgeIntern(PKR_PROTOTYPE));
     thisVal = {thisID};
   }
-
-  std::vector<Prakriti::NodeUID> flatArgs(thisVal.begin(), thisVal.end());
-  std::string thisRange = thisVal.empty() ? "" : encodeArgRanges({thisVal});
 
   std::vector<std::set<Prakriti::NodeUID>> positional;
   for (size_t i = calleeIdx + 1; i < rawArgs.size(); i++) {
@@ -78,12 +77,15 @@ void computeCallSiteVals(const PTAStatementContext &ptactx, IRID node,
     resolvePKRRVal(ptactx, rawArgs[i], a);
     assert(!a.empty());
     positional.push_back(a);
-    flatArgs.insert(flatArgs.end(), a.begin(), a.end());
   }
-  std::string argsRange = encodeArgRanges(positional, thisVal.size());
 
-  auto vals = Prakriti::KarmaBindu(G, calleeVec,
-                                   {nullptr, flatArgs, {thisRange, argsRange}});
+  auto call = Prakriti::makeCall(thisVal, positional);
+  std::vector<Prakriti::NodeUID> valVec;
+  std::vector<Prakriti::ECMAGraph> callBranches;
+  Prakriti::Karma(G, calleeVec, {nullptr, call.L, call.A}, valVec,
+                  callBranches);
+  Prakriti::KarmaJoin(G, callBranches);
+  std::set<Prakriti::NodeUID> vals(valVec.begin(), valVec.end());
 
   if (!sexp.hasConstructorCall()) {
     res_.insert(vals.begin(), vals.end());
