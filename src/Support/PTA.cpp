@@ -117,7 +117,7 @@ void setCell(ECMAGraph *G, Prakriti::NodeUID cell,
     args.insert(args.end(), vals.begin(), vals.end());
   auto setClosures =
       G->getPointees(cell, Prakriti::PKRGlobalState::EdgeIntern(PKR_Set));
-  Prakriti::KarmaBindu(G, setClosures, {nullptr, args});
+  Prakriti::KarmaJoin(G, Prakriti::Karma(G, setClosures, {nullptr, args}));
 }
 
 void pruneToReachable(ECMAGraph *G, const PTAClosureInfo &info) {
@@ -336,8 +336,12 @@ std::set<Prakriti::NodeUID> readReturnValue(IRICFG *calleeCFG,
                                             ECMAGraph *finalState) {
   auto getClosures = finalState->getPointees(
       calleeCFG->retCTX, Prakriti::PKRGlobalState::EdgeIntern(PKR_Get));
-  return Prakriti::KarmaBindu(finalState, getClosures,
-                              {nullptr, {calleeCFG->retCTX}});
+  std::vector<Prakriti::NodeUID> vals;
+  std::vector<ECMAGraph> branches;
+  Prakriti::Karma(finalState, getClosures, {nullptr, {calleeCFG->retCTX}}, vals,
+                  branches);
+  Prakriti::KarmaJoin(finalState, branches);
+  return {vals.begin(), vals.end()};
 }
 
 std::pair<std::set<Prakriti::NodeUID>, ECMAGraph>
@@ -390,7 +394,7 @@ void PTASolver::solve(IRIContext &ctx) {
         continue;
       ECMAGraph G = currState.clone();
       auto acts = G.getPointees(n, ctx.storage.strings.intern(PKR_Eval));
-      Prakriti::KarmaBindu(&G, acts, {NULL, {n}});
+      Prakriti::KarmaJoin(&G, Prakriti::Karma(&G, acts, {NULL, {n}}));
       G.removeNode(n);
       results.push_back(G);
     }
