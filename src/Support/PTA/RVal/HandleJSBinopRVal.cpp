@@ -1,9 +1,12 @@
-// Generated Stub for IRI_TAG::JSBinop (RVal)
 #include "Generated/IridiumTypes.h"
 #include "Support/PTA/PTAContext.hpp"
+#include "Support/PTA/PTARVALDispatch.hpp"
 #include "Support/PTA/PTARVALHandlers.hpp"
+#include "external/Prakriti.hpp"
+#include <cassert>
 #include <set>
-#include <stdexcept>
+#include <string>
+#include <vector>
 
 namespace IRI_STRUCTURAL {
 
@@ -17,16 +20,28 @@ namespace IRI_STRUCTURAL {
  *   - string OP -> sexp.getOP()
  */
 void computeJSBinopVals(const PTAStatementContext &ptactx, IRID node,
-                       std::set<Prakriti::NodeUID> &res_) {
-  throw std::runtime_error("PTA RVal unhandled case JSBinop");
-  // IRI_GEN::JSBinopSEXP sexp(node, ptactx.ctx);
+                        std::set<Prakriti::NodeUID> &res_) {
+  IRI_GEN::JSBinopSEXP sexp(node, ptactx.ctx);
+  Prakriti::ECMAGraph *G = ptactx.incomingState;
 
-  // === TODO : JSBinop ===
-  // if (sexp.hasArg_LBinop()) { IRID arg_LBinop = sexp.getArg_LBinop(); }
-  // if (sexp.hasArg_RBinop()) { IRID arg_RBinop = sexp.getArg_RBinop(); }
-  // if (sexp.hasOP()) { StringID str_OP = sexp.getOP(); }
+  std::string op(ptactx.ctx.storage.strings.get(sexp.getOP()));
 
-  return;
+  std::set<Prakriti::NodeUID> lvals, rvals;
+  resolvePKRRVal(ptactx, sexp.getArg_LBinop(), lvals);
+  resolvePKRRVal(ptactx, sexp.getArg_RBinop(), rvals);
+  assert(!lvals.empty() && !rvals.empty());
+
+  Prakriti::NodeUID act = Prakriti::PKRGlobalState::getActionNode(
+      Prakriti::PKRGlobalState::NAC_HandleJSBinop);
+
+  std::vector<Prakriti::NodeUID> vals;
+  std::vector<Prakriti::ECMAGraph> branches;
+  for (const auto lval : lvals)
+    for (const auto rval : rvals)
+      Prakriti::Karma(G, {act}, {nullptr, {lval, rval}, {op}}, vals, branches);
+  Prakriti::KarmaJoin(G, branches);
+
+  res_.insert(vals.begin(), vals.end());
 }
 
 } // namespace IRI_STRUCTURAL
