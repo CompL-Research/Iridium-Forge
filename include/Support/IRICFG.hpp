@@ -3,6 +3,7 @@
 #include "Storage/Config.h"
 #include "Storage/IRIContext.h"
 #include "external/Prakriti.hpp"
+#include <optional>
 #include <set>
 #include <stdexcept>
 #include <string>
@@ -18,6 +19,17 @@ using ScopeIDX = double;
 
 class IRIBB;
 class IRICFG;
+
+// Facts PTA derives from a closure's CFG and bindings.
+struct PTAClosureInfo {
+  std::vector<IRID> stack;      // uncaptured  -> StackObject
+  std::vector<IRID> tstack;     // captured    -> TransientStackObject
+  std::vector<IRID> remoteRefs; // captured from an enclosing scope
+  std::vector<StringID> globals;
+  std::set<double> usedJSCTXSlots;
+  // Parameters, ordered by REFIDX so index i is the i'th actual argument.
+  std::vector<std::pair<double, IRID>> formals;
+};
 
 // 1. Statements Inside the BB
 struct IRIStatement {
@@ -102,18 +114,11 @@ struct IRICFG {
   BBIDX entry_block;
   BBIDX exit_block;
 
-  // PTA Support methods
-  //
-  // 1. getUncapturedStackBindings : StackNode
-  // 2. getCapturedStackBindings   : TransientStackNode
-  // 3. getRemoteReferences        : ASSERT exists
-  //    (i)  RemoteEnvBinding :: TransientStackNodes
-  //    (ii) GlobalBinding    :: PKRGlobalState Binding
-  //
-  std::vector<IRID> ptaGenStack();
-  std::vector<IRID> ptaGenTStack();
-  std::vector<IRID> ptaGenRemoteRefs();
-  std::vector<StringID> ptaAssertGlobals();
+  // What PTA needs from this closure, derived in one pass and cached. Any
+  // structural change drops it via markDirty(); the next query rebuilds it.
+  const PTAClosureInfo &ptaInfo();
+  void markDirty() { ptaInfoCache.reset(); }
+  std::optional<PTAClosureInfo> ptaInfoCache;
 
   // Constructor declaration
   explicit IRICFG(IRI_STORAGE::IRID id, IRI_STORAGE::IRIContext &);

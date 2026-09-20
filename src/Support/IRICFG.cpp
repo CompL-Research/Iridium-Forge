@@ -40,6 +40,7 @@ IRIBB::~IRIBB() {
 }
 
 void IRIBB::append(IRIStatement *inst) {
+  closure->markDirty();
   if (head == nullptr) {
     head = inst;
     inst->prev = nullptr;
@@ -56,6 +57,7 @@ void IRIBB::append(IRIStatement *inst) {
 }
 
 void IRIBB::remove(IRIStatement *inst) {
+  closure->markDirty();
   if (inst == nullptr)
     return;
   if (inst == tail) {
@@ -75,6 +77,7 @@ void IRIBB::remove(IRIStatement *inst) {
 }
 
 void IRIBB::insertBefore(IRIStatement *inst, IRIStatement *before) {
+  closure->markDirty();
   if (inst == nullptr)
     return;
   if (before == nullptr) {
@@ -92,6 +95,7 @@ void IRIBB::insertBefore(IRIStatement *inst, IRIStatement *before) {
 }
 
 void IRIBB::insertAfter(IRIStatement *inst, IRIStatement *after) {
+  closure->markDirty();
   if (inst == nullptr)
     return;
   if (after == nullptr) {
@@ -112,6 +116,7 @@ void IRIBB::insertAfter(IRIStatement *inst, IRIStatement *after) {
 }
 
 void IRIBB::replace(IRIStatement *oldInst, IRIStatement *newInst) {
+  closure->markDirty();
   if (oldInst == nullptr || newInst == nullptr)
     return;
   if (oldInst == tail) {
@@ -153,6 +158,7 @@ static bool isValidBBTerminal(IRI_GEN::IRI_TAG tag, IRIContext &ctx) {
 }
 
 void IRIBB::clearEdges() {
+  closure->markDirty();
   for (auto &e : closure->successors[IDX]) {
     closure->predecessors[e].erase(IDX);
   }
@@ -160,11 +166,13 @@ void IRIBB::clearEdges() {
 }
 
 void IRIBB::addEdge(BBIDX succ) {
+  closure->markDirty();
   closure->successors[IDX].insert(succ);
   closure->predecessors[succ].insert(IDX);
 }
 
 void IRIBB::moveTerminalTo(IRIBB *dst) {
+  closure->markDirty();
   if (tail == nullptr) {
     throw std::runtime_error("moveTerminalTo: source has no terminal");
   }
@@ -197,6 +205,7 @@ void IRIBB::moveTerminalTo(IRIBB *dst) {
 }
 
 IRIBB *IRICFG::makeBB(ScopeIDX scope) {
+  markDirty();
   auto idx = ++ctx.lastBBIDX;
   nodeMap[idx] = std::make_unique<IRIBB>(scope, idx, this, ctx);
   IRIBB *bb = nodeMap[idx].get();
@@ -217,6 +226,7 @@ BBIDX IRICFG::finalizerRetOf(BBIDX entryIDX) {
 }
 
 void IRICFG::retagFinalizerRet(BBIDX from, BBIDX to) {
+  markDirty();
   for (auto &e : finalizerRetBB) {
     if (e.second == from) {
       e.second = to;
@@ -225,6 +235,7 @@ void IRICFG::retagFinalizerRet(BBIDX from, BBIDX to) {
 }
 
 void IRIBB::setTerminal(IRID stmtID) {
+  closure->markDirty();
   if (tail != nullptr) {
     clearEdges();
     delete tail;
@@ -701,64 +712,58 @@ void IRICFG::commit() {
   ctx.storage.nodes.set_args(newBBList, newBBS);
 }
 
-std::vector<IRID> IRICFG::ptaGenStack() {
-  BBContainerSupport bbc(id, ctx);
+const PTAClosureInfo &IRICFG::ptaInfo() {
+  if (ptaInfoCache.has_value())
+    return *ptaInfoCache;
 
-  // Local stack bindings
-  auto bindings = ctx.iris->getEnvBindingsInClosure(bbc.getScopeIDX());
-  std::vector<IRID> res;
-  for (const auto b : bindings) {
-    if (!IRI_BINDING(ctx.iris, b).isCaptured()) {
-      res.push_back(b);
+  BBContainerSupport bbc(id, ctx);
+  PTAClosureInfo info;
+
+  // JSCTX only ever appears as the RVal of an LWrite
+  for (const auto &[bbID, bb] : nodeMap) {
+    for (IRIStatement *s = bb->head; s != nullptr; s = s->next) {
+      if (IRI_NODE(ctx, s->id).tag != IRI_GEN::LWrite)
+        continue;
+      IRID rval = IRI_GEN::LWriteSEXP(s->id, ctx).getArg_RVal();
+      if (IRI_NODE(ctx, rval).tag == IRI_GEN::JSCTX)
+        info.usedJSCTXSlots.insert(IRI_GEN::JSCTXSEXP(rval, ctx).getOPID());
     }
   }
 
-  // Module / Script level bindings
+  // 0 - ArgumentsObject
+  // 1 - MappedArgumentsObject
+  bool argsEscape = info.usedJSCTXSlots.contains(1);
+  for (const auto b : ctx.iris->getEnvBindingsInClosure(bbc.getScopeIDX())) {
+    IRI_GEN::EnvBindingSEXP eb(b, ctx);
+    if (eb.hasJSARG())
+      info.formals.push_back({eb.getREFIDX(), b});
+
+    // Bindings can escape if they are either captured by an inner closure or
+    // the frame actually uses a mapped ArgumentsObject, in which case it holds
+    // references to argument bindings internally
+    bool captured =
+        IRI_BINDING(ctx.iris, b).isCaptured() || (argsEscape && eb.hasJSARG());
+    (captured ? info.tstack : info.stack).push_back(b);
+  }
+  std::sort(info.formals.begin(), info.formals.end());
+
+  auto remoteBindings =
+      ctx.iris->getRemoteEnvBindingsInClosure(bbc.getScopeIDX());
+  for (const auto rb : remoteBindings)
+    info.remoteRefs.push_back(IRI_HELPERS::resolveRemoteBinding(ctx, rb));
+
   if (ctx.iris->isTopLevelScope(bbc.getScopeIDX())) {
-    // Module has top level RemoteEnvBindings
-    auto rBindings = ctx.iris->getRemoteEnvBindingsInClosure(bbc.getScopeIDX());
-    for (const auto b : rBindings) {
-      res.push_back(b);
-    }
-
-    // Script has ScriptBindings
-    auto sBindings = ctx.iris->getScriptBindings();
-    for (const auto b : sBindings) {
-      res.push_back(b);
-    }
+    // A module's top level owns its RemoteEnvBindings, a script its
+    // ScriptBindings; both are plain stack cells here.
+    for (const auto b : remoteBindings)
+      info.stack.push_back(b);
+    for (const auto b : ctx.iris->getScriptBindings())
+      info.stack.push_back(b);
+    info.globals = ctx.iris->getGlobalBindings();
   }
-  return res;
-}
 
-std::vector<IRID> IRICFG::ptaGenTStack() {
-  BBContainerSupport bbc(id, ctx);
-  auto bindings = ctx.iris->getEnvBindingsInClosure(bbc.getScopeIDX());
-  std::vector<IRID> res;
-  for (const auto b : bindings) {
-    if (IRI_BINDING(ctx.iris, b).isCaptured()) {
-      res.push_back(b);
-    }
-  }
-  return res;
-}
-
-std::vector<IRID> IRICFG::ptaGenRemoteRefs() {
-  BBContainerSupport bbc(id, ctx);
-  auto bindings = ctx.iris->getRemoteEnvBindingsInClosure(bbc.getScopeIDX());
-  std::vector<IRID> res;
-  for (const auto rb : bindings) {
-    IRID b = IRI_HELPERS::resolveRemoteBinding(ctx, rb);
-    res.push_back(b);
-  }
-  return res;
-}
-
-std::vector<IRID> IRICFG::ptaAssertGlobals() {
-  BBContainerSupport bbc(id, ctx);
-  if (!ctx.iris->isTopLevelScope(bbc.getScopeIDX()))
-    return {};
-
-  return ctx.iris->getGlobalBindings();
+  ptaInfoCache = std::move(info);
+  return *ptaInfoCache;
 }
 
 std::string IRIBB::getDebugID() {
