@@ -51,11 +51,6 @@ void computeCallSiteVals(const PTAStatementContext &ptactx, IRID node,
   if (sexp.hasConstructorCall()) {
     // Allocation site abstraction, reciever is created here
     // CallSite IRID itself becomes the allocation site abstraction :)
-    Prakriti::NodeUID thisID = node;
-    if (!G->hasNode(thisID))
-      Prakriti::AllocOrdinaryObject(G, thisID,
-                                    Prakriti::PKRGlobalState::getTRUE(),
-                                    Prakriti::PKRGlobalState::getNULL());
     std::vector<Prakriti::NodeUID> protos;
     std::vector<Prakriti::ECMAGraph> branches;
     for (const auto callee : calleeVec) {
@@ -66,7 +61,25 @@ void computeCallSiteVals(const PTAStatementContext &ptactx, IRID node,
                       branches);
     }
     Prakriti::KarmaJoin(G, branches);
-    for (const auto p : protos)
+
+    // OrdinaryCreateFromConstructor: a callee whose `prototype` is not an
+    // object contributes %Object.prototype% instead.
+    std::set<Prakriti::NodeUID> objProtos;
+    bool fallback = protos.empty();
+    for (const auto p : protos) {
+      if (Prakriti::isObjectNode(G, p))
+        objProtos.insert(p);
+      else
+        fallback = true;
+    }
+    if (fallback)
+      objProtos.insert(Prakriti::PKRGlobalState::getGOOBJ_Object_prototype());
+
+    Prakriti::NodeUID thisID = node;
+    if (!G->hasNode(thisID))
+      Prakriti::AllocOrdinaryObject(
+          G, thisID, Prakriti::PKRGlobalState::getTRUE(), *objProtos.begin());
+    for (const auto p : objProtos)
       G->addEdge(thisID, p, Prakriti::PKRGlobalState::EdgeIntern(PKR_PROTOTYPE));
     thisVal = {thisID};
   }

@@ -2,6 +2,7 @@
 #include "Support/ClosureTree.hpp"
 #include "Support/PTA.hpp"
 #include "Support/PTA/PTAContext.hpp"
+#include "Support/PTA/PTAObjectHelpers.hpp"
 #include "external/Prakriti.hpp"
 #include <memory>
 #include <set>
@@ -51,6 +52,20 @@ void computeLambdaVals(const PTAStatementContext &ptactx, IRID node,
 
     Prakriti::AllocClosure(G, node, action, Prakriti::PKRGlobalState::getTRUE(),
                            Prakriti::PKRGlobalState::getGFOBJ_Function_prototype());
+
+    // 10.2.5 MakeConstructor, for the closures the frontend marked PROTO.
+    if (IRI_GEN::BBContainerSEXP(calleeCFG->id, ptactx.ctx).hasPROTO()) {
+      // A reserved label: sentinels keyed on a plain field name are already
+      // taken by that field's FieldProxy.
+      Prakriti::NodeUID protoID = Prakriti::PKRGlobalState::generateSentinel(
+          node, Prakriti::PKRGlobalState::EdgeIntern("[[FunctionPrototype]]"));
+      if (!G->hasNode(protoID))
+        Prakriti::AllocOrdinaryObject(
+            G, protoID, Prakriti::PKRGlobalState::getTRUE(),
+            Prakriti::PKRGlobalState::getGOOBJ_Object_prototype());
+      defineProperty(G, {node}, "prototype", {protoID});
+      defineProperty(G, {protoID}, "constructor", {node});
+    }
   }
 
   res_.insert(node);
