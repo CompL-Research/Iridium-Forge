@@ -1,5 +1,10 @@
 export default [
   {
+    name: "dumpForgePasses",
+    default: false,
+    desc: "Dump Forge Passes",
+  },
+  {
     name: "constantProp",
     default: true,
     desc: "Constant propagation optimization pass",

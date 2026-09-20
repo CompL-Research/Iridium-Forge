@@ -33,10 +33,10 @@ using BuildContextMap =
 namespace {
 
 void dumpIfEnabled(IRIContext &ctx, IRID sexp, const std::string &name) {
-#if DUMP_CORE_PASSES == 1
-  std::ofstream outFile(name + ".iridump");
-  IRI_NODE(ctx, sexp).dumpFlat(outFile, &ctx);
-#endif
+  if (ctx.flags.dumpForgePasses) {
+    std::ofstream outFile(name + ".iridump");
+    IRI_NODE(ctx, sexp).dumpFlat(outFile, &ctx);
+  }
 }
 
 void runCorePasses(IRIContext &ctx, IRID sexp, BuildContextMap &buildContext) {
