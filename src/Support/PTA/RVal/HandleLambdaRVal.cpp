@@ -28,10 +28,9 @@ void computeLambdaVals(const PTAStatementContext &ptactx, IRID node,
     IRI_GEN::LambdaSEXP sexp(node, ptactx.ctx);
     IRICFG *calleeCFG =
         ptactx.ctx.closureTree->getClosureByStartBBIDX(sexp.getStartBBIDX());
-    IRIContext *ctxPtr = &ptactx.ctx;
 
     auto action = std::make_shared<Prakriti::ECMAGraph::ActionClosureImpl>(
-        [ctxPtr, calleeCFG, node](const Prakriti::ECMAGraph::PJSSL_ARG &args)
+        [calleeCFG, node](const Prakriti::ECMAGraph::PJSSL_ARG &args)
             -> Prakriti::ECMAGraph::PJSSL_RET {
           std::set<Prakriti::NodeUID> thisVal;
           std::vector<std::set<Prakriti::NodeUID>> positional;
@@ -43,8 +42,8 @@ void computeLambdaVals(const PTAStatementContext &ptactx, IRID node,
           if (args.A.size() >= 2)
             positional = decodeArgRanges(args.L, args.A[1]);
 
-          auto retVals = PTASolver::invokeClosure(*ctxPtr, calleeCFG, node,
-                                                  args.G, thisVal, positional);
+          auto retVals = PTASolver::invokeClosure(calleeCFG, node, args.G,
+                                                  thisVal, positional);
 
           Prakriti::ECMAGraph::PJSSL_RET ret;
           ret.L = std::vector<Prakriti::NodeUID>(retVals.begin(), retVals.end());
