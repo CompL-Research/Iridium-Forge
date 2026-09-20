@@ -747,6 +747,15 @@ public:
     return res;
   }
 
+  // Reserves the binding for a named global the environment provides.
+  static NodeUID declareGlobal(EdgeUID stackBindingRef) {
+    ASSERT(isInitialized);
+    auto [it, fresh] = globalStackBindings.try_emplace(stackBindingRef, 0);
+    if (fresh)
+      it->second = ReserveNodeUID();
+    return it->second;
+  }
+
   static NodeUID getGlobal(EdgeUID stackBindingRef) {
     auto it = globalStackBindings.find(stackBindingRef);
     ASSERT(it != globalStackBindings.end());
@@ -785,17 +794,6 @@ public:
 #define AS_GLOBAL_INIT(name) name = reserveNodeUID();
     DEF_GLOBAL_IDENTITIES(AS_GLOBAL_INIT)
 #undef AS_GLOBAL_INIT
-
-    globalStackBindings[edgeIntern(GSTK_globalThis)] = reserveNodeUID();
-    globalStackBindings[edgeIntern(GSTK_Infinity)] = reserveNodeUID();
-    globalStackBindings[edgeIntern(GSTK_NaN)] = reserveNodeUID();
-    globalStackBindings[edgeIntern(GSTK_undefined)] = reserveNodeUID();
-    globalStackBindings[edgeIntern(GSTK_Function)] = reserveNodeUID();
-    globalStackBindings[edgeIntern(GSTK_Boolean)] = reserveNodeUID();
-    globalStackBindings[edgeIntern(GSTK_Symbol)] = reserveNodeUID();
-    globalStackBindings[edgeIntern(GSTK_Error)] = reserveNodeUID();
-    globalStackBindings[edgeIntern(GSTK_Object)] = reserveNodeUID();
-    globalStackBindings[edgeIntern(GSTK_Array)] = reserveNodeUID();
 
 #define AS_ASSIGN(name)                                                        \
   if (!PKRGlobalState::name)                                                   \
@@ -2894,6 +2892,12 @@ inline GlobalInitTable composeGlobalInitializers(
   return out;
 }
 
+// Reserves a stack binding for every named global the environment provides.
+inline void declareGlobals(const GlobalInitTable &registry) {
+  for (const auto &[gstkName, initFn] : registry)
+    PKRGlobalState::declareGlobal(PKRGlobalState::EdgeIntern(gstkName));
+}
+
 // Binds `name` using the matching entry in `registry`, throws if unknown.
 inline void initNamedGlobal(ECMAGraph *G, EdgeUID name,
                             const GlobalInitTable &registry) {
@@ -3305,8 +3309,15 @@ DEF_ALLOC_JSFILE(allocQJSModuleFile, NAC_QJSMODULE_Eval)
 
 // A neat wrapper trick to prevent mismatched nodes and global registries
 struct JSFileAllocator {
-  void (*alloc)(ECMAGraph *, NodeUID, ECMAGraph::ActionClosure);
+  void (*allocFile)(ECMAGraph *, NodeUID, ECMAGraph::ActionClosure);
   const GlobalInitTable &globals;
+
+  // Declaring here is what keeps the two in sync: no file exists without its
+  // environment's bindings reserved.
+  void alloc(ECMAGraph *G, NodeUID id, ECMAGraph::ActionClosure ac) const {
+    declareGlobals(globals);
+    allocFile(G, id, ac);
+  }
 };
 
 inline JSFileAllocator ECMAScriptFile() {
