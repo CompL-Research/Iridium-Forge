@@ -1,9 +1,13 @@
 // Generated Stub for IRI_TAG::JSArray (RVal)
 #include "Generated/IridiumTypes.h"
 #include "Support/PTA/PTAContext.hpp"
+#include "Support/PTA/PTAObjectHelpers.hpp"
 #include "Support/PTA/PTARVALHandlers.hpp"
+#include "Support/PTA/PTARVALDispatch.hpp"
 #include <set>
-#include <stdexcept>
+#include <cassert>
+#include <set>
+#include <string>
 
 namespace IRI_STRUCTURAL {
 
@@ -15,12 +19,23 @@ namespace IRI_STRUCTURAL {
  */
 void computeJSArrayVals(const PTAStatementContext &ptactx, IRID node,
                        std::set<Prakriti::NodeUID> &res_) {
-  throw std::runtime_error("PTA RVal unhandled case JSArray");
-  // IRI_GEN::JSArraySEXP sexp(node, ptactx.ctx);
+  Prakriti::ECMAGraph *G = ptactx.incomingState;
 
-  // === TODO : JSArray ===
+  if (!G->hasNode(node))
+    Prakriti::AllocArrayObject(G, node);
 
-  return;
+  // Elements are this node's own variadic args, redefined on every visit so a
+  // loop-varying element is not fixed by the first one.
+  auto elems = ptactx.ctx.storage.nodes.get_args(node);
+  for (size_t i = 0; i < elems.size(); i++) {
+    std::set<Prakriti::NodeUID> vals;
+    resolvePKRRVal(ptactx, elems[i], vals);
+    if (vals.empty())
+      continue;
+    defineProperty(G, {node}, std::to_string(i), vals);
+  }
+
+  res_.insert(node);
 }
 
 } // namespace IRI_STRUCTURAL

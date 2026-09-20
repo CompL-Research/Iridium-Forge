@@ -1,5 +1,6 @@
 #include "Generated/IridiumTypes.h"
 #include "Support/PTA/PTAContext.hpp"
+#include "Support/PTA/PTAObjectHelpers.hpp"
 #include "Support/PTA/PTAHandlers.hpp"
 #include "Support/PTA/PTARVALDispatch.hpp"
 #include "external/Prakriti.hpp"
@@ -39,46 +40,7 @@ void handleJSDefineObjProp(const PTAStatementContext &ptactx) {
   std::string field(
       Prakriti::PKRGlobalState::EdgeGet(keySexp.getIridiumPrimitive()));
 
-  //
-  // Define :: A.F = B (node this is different from field write!)
-  // A = {o1, o2...}
-  // B = {ox, oy...}
-  // o1[[DefineOwnProperty]](f) = FieldDescriptor[[Value]] -> ox U
-  // o1[[DefineOwnProperty]](f) = FieldDescriptor[[Value]] -> oy U
-  // o2[[DefineOwnProperty]](f) = FieldDescriptor[[Value]] -> ox U
-  // o2[[DefineOwnProperty]](f) = FieldDescriptor[[Value]] -> oy U
-  //
-
-  std::vector<Prakriti::ECMAGraph> finalRes;
-  for (auto A_a : objs) {
-    for (auto B_b : values) {
-      assert(G->hasNode(A_a));
-      // [[DefineOwnProperty]] belongs to the target, not the value.
-      auto targetClosures = G->getPointees(
-          A_a, Prakriti::PKRGlobalState::EdgeIntern(PKR_DefineOwnProperty));
-
-      if (targetClosures.empty())
-        continue; // Same reasoning as FieldWrite...
-
-      auto desc = std::make_shared<Prakriti::TempFieldDescriptor>();
-      desc->addValue(B_b);
-      desc->addWritable(Prakriti::PKRGlobalState::getTRUE());
-      desc->addEnumerable(Prakriti::PKRGlobalState::getTRUE());
-      desc->addConfigurable(Prakriti::PKRGlobalState::getTRUE());
-      // A literal's defines are straight-line after its allocation, so every
-      // object from this site has this property on every path.
-      desc->addDefinite(Prakriti::PKRGlobalState::getTRUE());
-      for (auto kr : Prakriti::Karma(
-               G, targetClosures,
-               {nullptr, {A_a}, {field}, {desc}})) {
-        finalRes.push_back(kr.clonedG);
-      }
-    }
-  }
-
-  // Each receiver's write lands in its own clone; their union is the new
-  // state. Merging into G instead would keep the pre-write values alive.
-  Prakriti::KarmaJoin(G, finalRes);
+  defineProperty(G, objs, field, values);
 }
 
 } // namespace IRI_STRUCTURAL

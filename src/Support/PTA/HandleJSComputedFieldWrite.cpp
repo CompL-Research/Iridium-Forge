@@ -1,8 +1,10 @@
-// Generated Stub for IRI_TAG::JSComputedFieldWrite
 #include "Generated/IridiumTypes.h"
 #include "Support/PTA/PTAContext.hpp"
 #include "Support/PTA/PTAHandlers.hpp"
-#include <stdexcept>
+#include "Support/PTA/PTAObjectHelpers.hpp"
+#include "Support/PTA/PTARVALDispatch.hpp"
+#include <cassert>
+#include <set>
 
 namespace IRI_STRUCTURAL {
 
@@ -17,16 +19,18 @@ namespace IRI_STRUCTURAL {
  *   - void   SAFE -> sexp.hasSAFE()
  */
 void handleJSComputedFieldWrite(const PTAStatementContext &ptactx) {
-  throw std::runtime_error("PTA unhandled case JSComputedFieldWrite");
-  // IRI_GEN::JSComputedFieldWriteSEXP sexp(ptactx.stmt.id, ptactx.ctx);
+  IRI_GEN::JSComputedFieldWriteSEXP sexp(ptactx.stmt.id, ptactx.ctx);
+  Prakriti::ECMAGraph *G = ptactx.incomingState;
 
-  // === TODO : JSComputedFieldWrite ===
-  // if (sexp.hasArg_Obj()) { IRID arg_Obj = sexp.getArg_Obj(); }
-  // if (sexp.hasArg_Field()) { IRID arg_Field = sexp.getArg_Field(); }
-  // if (sexp.hasArg_Value()) { IRID arg_Value = sexp.getArg_Value(); }
-  // bool has_SAFE = sexp.hasSAFE();
+  std::set<Prakriti::NodeUID> objs, keys, vals;
+  resolvePKRRVal(ptactx, sexp.getArg_Obj(), objs);
+  resolvePKRRVal(ptactx, sexp.getArg_Field(), keys);
+  resolvePKRRVal(ptactx, sexp.getArg_Value(), vals);
+  assert(!objs.empty());
+  if (vals.empty())
+    return;
 
-  return;
+  setProperty(G, objs, PKR_UNKNOWN_FIELD, vals);
 }
 
 } // namespace IRI_STRUCTURAL

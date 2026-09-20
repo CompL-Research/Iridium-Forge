@@ -1,5 +1,6 @@
 #include "Generated/IridiumTypes.h"
 #include "Support/PTA/PTAContext.hpp"
+#include "Support/PTA/PTAObjectHelpers.hpp"
 #include "Support/PTA/PTAHandlers.hpp"
 #include "Support/PTA/PTARVALDispatch.hpp"
 #include "external/Prakriti.hpp"
@@ -32,37 +33,7 @@ void handleFieldWrite(const PTAStatementContext &ptactx) {
   std::string field(
       Prakriti::PKRGlobalState::EdgeGet(fieldSexp.getIridiumPrimitive()));
 
-  //
-  // Here we want to do
-  // A.F = B
-  // A = {o1, o2...}
-  // B = {ox, oy...}
-  // o1[[Set]](f) = ox U
-  // o1[[Set]](f) = oy U
-  // o2[[Set]](f) = ox U
-  // o2[[Set]](f) = oy U
-  //
-  std::vector<Prakriti::ECMAGraph> finalRes;
-  for (auto A_a : objs) {
-    for (auto B_b : values) {
-      assert(G->hasNode(A_a));
-      // [[Set]] belongs to the target, not the value being written.
-      auto setClosures =
-          G->getPointees(A_a, Prakriti::PKRGlobalState::EdgeIntern(PKR_Set));
-
-      if (setClosures.empty())
-        continue; // A_a can be a primitive, which has no [[Set]]
-
-      for (auto kr :
-           Prakriti::Karma(G, setClosures, {nullptr, {A_a, B_b}, {field}})) {
-        finalRes.push_back(kr.clonedG);
-      }
-    }
-  }
-
-  // Each receiver's write lands in its own clone; their union is the new
-  // state. Merging into G instead would keep the pre-write values alive.
-  Prakriti::KarmaJoin(G, finalRes);
+  setProperty(G, objs, field, values);
 }
 
 } // namespace IRI_STRUCTURAL
