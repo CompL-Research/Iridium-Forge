@@ -1,7 +1,6 @@
 #include "Generated/IridiumTypes.h"
 #include "Support/ClosureTree.hpp"
 #include "Support/PTA.hpp"
-#include "Support/PTA/PTACallHelpers.hpp"
 #include "Support/PTA/PTAContext.hpp"
 #include "external/Prakriti.hpp"
 #include <memory>
@@ -35,12 +34,12 @@ void computeLambdaVals(const PTAStatementContext &ptactx, IRID node,
           std::set<Prakriti::NodeUID> thisVal;
           std::vector<std::set<Prakriti::NodeUID>> positional;
           if (args.A.size() >= 1) {
-            auto thisSlice = decodeArgRanges(args.L, args.A[0]);
+            auto thisSlice = Prakriti::decodeArgRanges(args.L, args.A[0]);
             if (!thisSlice.empty())
               thisVal = thisSlice[0];
           }
           if (args.A.size() >= 2)
-            positional = decodeArgRanges(args.L, args.A[1]);
+            positional = Prakriti::decodeArgRanges(args.L, args.A[1]);
 
           auto retVals = PTASolver::invokeClosure(calleeCFG, node, args.G,
                                                   thisVal, positional);

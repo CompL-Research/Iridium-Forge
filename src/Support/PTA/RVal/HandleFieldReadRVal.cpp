@@ -29,14 +29,20 @@ void computeFieldReadVals(const PTAStatementContext &ptactx, IRID node,
   std::string field(
       Prakriti::PKRGlobalState::EdgeGet(fieldSexp.getIridiumPrimitive()));
 
+  // Each receiver is an alternative, so each reads from the same incoming
+  // state; threading G through the loop would let one observe another.
+  std::vector<Prakriti::NodeUID> vals;
+  std::vector<Prakriti::ECMAGraph> branches;
   for (auto obj : objs) {
     assert(G->hasNode(obj));
     auto getClosures =
         G->getPointees(obj, Prakriti::PKRGlobalState::EdgeIntern(PKR_Get));
     assert(!getClosures.empty());
-    auto vals = Prakriti::KarmaBindu(G, getClosures, {nullptr, {obj, obj}, {field}});
-    res_.insert(vals.begin(), vals.end());
+    Prakriti::Karma(G, getClosures, {nullptr, {obj, obj}, {field}}, vals,
+                    branches);
   }
+  Prakriti::KarmaJoin(G, branches);
+  res_.insert(vals.begin(), vals.end());
 }
 
 } // namespace IRI_STRUCTURAL

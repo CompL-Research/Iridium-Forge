@@ -29,7 +29,10 @@ void computeJSCTXVals(const PTAStatementContext &ptactx, IRID node,
   auto getClosures =
       G->getPointees(target, Prakriti::PKRGlobalState::EdgeIntern(PKR_Get));
   assert(!getClosures.empty());
-  auto vals = Prakriti::KarmaBindu(G, getClosures, {nullptr, {target}});
+  std::vector<Prakriti::NodeUID> vals;
+  std::vector<Prakriti::ECMAGraph> branches;
+  Prakriti::Karma(G, getClosures, {nullptr, {target}}, vals, branches);
+  Prakriti::KarmaJoin(G, branches);
   res_.insert(vals.begin(), vals.end());
 }
 
