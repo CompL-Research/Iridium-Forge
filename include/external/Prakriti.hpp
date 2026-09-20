@@ -292,6 +292,14 @@ public:
                                " at line " STRINGIFY(__LINE__));               \
   } while (0)
 
+// Invariant checks too expensive for the hot path - graph comparisons and the
+// like. Off unless PKR_PARANOID is defined.
+#ifdef PKR_PARANOID
+#define ASSERT_SLOW(condition) ASSERT(condition)
+#else
+#define ASSERT_SLOW(condition) ((void)0)
+#endif
+
 #define DEF_GRAPH_CLOSURES(V)                                                  \
   V(NAC_OOBJ_GetPrototypeOf)                                                   \
   V(NAC_OOBJ_SetPrototypeOf)                                                   \
@@ -1166,7 +1174,7 @@ inline std::string_view basename(std::string_view path) {
   return pos == std::string_view::npos ? path : path.substr(pos + 1);
 }
 
-// Generic RAII span for tracing a named call (e.g. Karma/KarmaBindu) that
+// Generic RAII span for tracing a named call (e.g. Karma) that
 // isn't itself a registered action closure. No-ops entirely (single bool
 // check) when tracing is disabled. `args`/`argsStr` must outlive the span.
 // `enterExtra` is baked in at construction (callers should only bother
@@ -1337,11 +1345,14 @@ inline ECMAGraph::ActionClosure makeTracedAction(std::string_view file,
 #define PKR_SYM_toStringTag "[[Symbol.toStringTag]]"
 #define PKR_TRANSIENCE_BACKUP "[[transience-backup]]"
 #define PKR_IS_EXECUTING "[[is-executing]]"
+#define PKR_DEFINITE "[[Definite]]"
 #define PKR_SENSITIVE "[[Sensitive]]"
 #define PKR_UNKNOWN_FIELD "[[Unknown-Field]]"
 
 #include <algorithm>
+#include <iterator>
 #include <set>
+#include <string>
 #include <vector>
 
 #define SET_AC(src, ac, edge)                                                  \
@@ -1362,6 +1373,64 @@ private:                                                                       \
   std::vector<NodeUID> Name##_;
 
 namespace Prakriti {
+
+//
+// Closure calling convention
+//
+// PJSSL_ARG.L is flat, so a call flattens the this-value and every positional
+// argument into it and records their index ranges in A: A[0] is the
+// this-value's range (empty when there is none), A[1] the comma-joined ranges
+// of the positional arguments. Both sides of the call must agree, so encode
+// and decode live here rather than in the interpreter. ~Meetesh
+//
+inline std::string encodeArgRanges(const std::vector<std::set<NodeUID>> &vals,
+                                   size_t start = 0) {
+  std::string out;
+  for (size_t i = 0; i < vals.size(); i++) {
+    size_t count = vals[i].size();
+    size_t end = start + (count == 0 ? 0 : count - 1);
+    if (i)
+      out += ",";
+    out += std::to_string(start) + "-" + std::to_string(end);
+    start += count;
+  }
+  return out;
+}
+
+inline std::vector<std::set<NodeUID>>
+decodeArgRanges(const std::vector<NodeUID> &flat, const std::string &encoded) {
+  std::vector<std::set<NodeUID>> vals;
+  size_t pos = 0;
+  while (pos < encoded.size()) {
+    size_t comma = encoded.find(',', pos);
+    std::string token = encoded.substr(pos, comma - pos);
+    size_t dash = token.find('-');
+    size_t start = std::stoul(token.substr(0, dash));
+    size_t end = std::stoul(token.substr(dash + 1));
+    vals.push_back(
+        std::set<NodeUID>(flat.begin() + start, flat.begin() + end + 1));
+    if (comma == std::string::npos)
+      break;
+    pos = comma + 1;
+  }
+  return vals;
+}
+
+struct CallArgs {
+  std::vector<NodeUID> L;
+  std::vector<std::string> A;
+};
+
+inline CallArgs makeCall(const std::set<NodeUID> &thisVals,
+                         const std::vector<std::set<NodeUID>> &positional) {
+  CallArgs c;
+  c.L.insert(c.L.end(), thisVals.begin(), thisVals.end());
+  for (const auto &p : positional)
+    c.L.insert(c.L.end(), p.begin(), p.end());
+  c.A.push_back(thisVals.empty() ? "" : encodeArgRanges({thisVals}));
+  c.A.push_back(encodeArgRanges(positional, thisVals.size()));
+  return c;
+}
 
 //
 // Helper Methods
@@ -1409,36 +1478,34 @@ inline std::vector<KarmaResult> Karma(const ECMAGraph *G,
   return res;
 }
 
-inline std::set<NodeUID> KarmaBindu(ECMAGraph *G,
-                                    const std::vector<NodeUID> &acts,
-                                    const ECMAGraph::PJSSL_ARG &args) {
-  std::string enterExtra;
-  if (isTraceEnabled())
-    enterExtra = "acts=" + formatNodeVec(acts);
-  TraceSpan span(std::nullopt, "KarmaBindu", args.L, args.A, enterExtra);
-
-  std::vector<ECMAGraph> sources;
-  std::set<NodeUID> res;
-  auto kResults = Karma(G, acts, args);
-  for (auto &r : kResults) {
-    sources.push_back(r.clonedG);
-    for (NodeUID b : r.ret.L)
-      res.insert(b);
+// Accumulating form: several independent invocations contribute to one join.
+// Each act still runs on its own clone, and the caller decides when to join,
+// so no invocation can observe another's side effects.
+inline void Karma(const ECMAGraph *G, const std::vector<NodeUID> &acts,
+                  const ECMAGraph::PJSSL_ARG &args, std::vector<NodeUID> &res,
+                  std::vector<ECMAGraph> &branches) {
+  for (auto &r : Karma(G, acts, args)) {
+    res.insert(res.end(), r.ret.L.begin(), r.ret.L.end());
+    branches.push_back(std::move(r.clonedG));
   }
+}
 
-  if (!sources.empty()) {
-    ECMAGraph merged = std::move(sources.front());
-    if (sources.size() > 1) {
-      merged.mutateMergeUnion(
-          std::vector<ECMAGraph>(sources.begin() + 1, sources.end()));
-    }
-    *G = std::move(merged);
-  }
+// Replaces G with the union of the branches. Nothing ran means nothing to say
+// about G, so an empty join leaves it alone.
+inline void KarmaJoin(ECMAGraph *G, const std::vector<ECMAGraph> &branches) {
+  if (branches.empty())
+    return;
+  ECMAGraph merged;
+  merged.mutateMergeUnion(branches);
+  *G = std::move(merged);
+}
 
-  if (isTraceEnabled())
-    span.setExitExtra("merged=" + formatNodeVec(std::vector<NodeUID>(
-                                      res.begin(), res.end())));
-  return res;
+inline void KarmaJoin(ECMAGraph *G, const std::vector<KarmaResult> &rs) {
+  std::vector<ECMAGraph> branches;
+  branches.reserve(rs.size());
+  std::transform(rs.begin(), rs.end(), std::back_inserter(branches),
+                 [](const KarmaResult &r) { return r.clonedG; });
+  KarmaJoin(G, branches);
 }
 
 template <typename T> inline bool isOnlyFalse(const T &nodes) {
@@ -1500,67 +1567,16 @@ public:
   FIELD_VEC(Configurable)
   FIELD_VEC(Get)
   FIELD_VEC(Set)
+  FIELD_VEC(Definite)
 };
 
 //
 // FDUnion
 //
-
-inline void FDUnionTT(TempFieldDescriptor *, TempFieldDescriptor *);
-inline void FDUnionTF(TempFieldDescriptor *, FieldDescriptor *);
-inline void FDUnionFT(const FieldDescriptor *self,
-                      const TempFieldDescriptor *other);
-
-inline void FDUnion(FieldDescriptor *self, FieldDescriptor *other) {
-  if (auto *t = dynamic_cast<TempFieldDescriptor *>(self)) {
-    if (auto *o = dynamic_cast<TempFieldDescriptor *>(other)) {
-      return FDUnionTT(t, o);
-    }
-
-    return FDUnionTF(t, other);
-  }
-
-  if (const auto *o = dynamic_cast<TempFieldDescriptor *>(other)) {
-    return FDUnionFT(self, o);
-  }
-
-  throw std::runtime_error("::TODO:: FieldDescriptor X FieldDescriptor");
-}
-
-inline void FDUnionTT(TempFieldDescriptor *, TempFieldDescriptor *) {
-
-  throw std::runtime_error(
-      "::TODO:: TempFieldDescriptor X TempFieldDescriptor");
-}
-
-inline void FDUnionTF(TempFieldDescriptor *, FieldDescriptor *) {
-
-  throw std::runtime_error("::TODO:: TempFieldDescriptor X FieldDescriptor");
-}
-
-inline void replaceFieldIfSpecified(const FieldDescriptor *self,
-                                    const std::vector<NodeUID> &vals,
-                                    const char *label) {
-  if (vals.empty())
-    return;
-  EdgeUID edgeLabel = PKRGlobalState::EdgeIntern(label);
-  self->getGraph()->removeAllOutgoingEdgesByLabel(self->getID(), edgeLabel);
-  for (NodeUID tgt : vals)
-    self->getGraph()->addEdge(self->getID(), tgt, edgeLabel);
-}
-
-inline void FDUnionFT(const FieldDescriptor *self,
-                      const TempFieldDescriptor *other) {
-  if (!self->isLinked())
-    throw std::runtime_error("FDUnion called on unlinked FieldDescriptor");
-
-  replaceFieldIfSpecified(self, other->getValue(), PKR_VALUE);
-  replaceFieldIfSpecified(self, other->getWritable(), PKR_WRITABLE);
-  replaceFieldIfSpecified(self, other->getEnumerable(), PKR_ENUMERABLE);
-  replaceFieldIfSpecified(self, other->getConfigurable(), PKR_CONFIGURABLE);
-  replaceFieldIfSpecified(self, other->getGet(), PKR_Get);
-  replaceFieldIfSpecified(self, other->getSet(), PKR_Set);
-}
+// Only the accumulating form exists: an object node may stand for several
+// concrete objects, so a property is a may-location. Replace semantics belong
+// with singleton allocation nodes, which the abstraction does not have yet.
+//
 
 inline void appendFieldIfSpecified(const FieldDescriptor *self,
                                    const std::vector<NodeUID> &vals,
@@ -1572,9 +1588,8 @@ inline void appendFieldIfSpecified(const FieldDescriptor *self,
     self->getGraph()->addEdge(self->getID(), tgt, edgeLabel);
 }
 
-// Same as FDUnionFT, but never removes an existing edge - for the
-// [[Unknown-Field]] bucket, where a "replace" would soundly-incorrectly
-// drop an earlier unknown write's contribution.
+// Folds a descriptor into a linked field proxy without ever removing an
+// existing edge, so an earlier write's contribution is never dropped.
 inline void FDUnionAccumulateFT(const FieldDescriptor *self,
                                 const TempFieldDescriptor *other) {
   if (!self->isLinked())
@@ -1586,6 +1601,7 @@ inline void FDUnionAccumulateFT(const FieldDescriptor *self,
   appendFieldIfSpecified(self, other->getConfigurable(), PKR_CONFIGURABLE);
   appendFieldIfSpecified(self, other->getGet(), PKR_Get);
   appendFieldIfSpecified(self, other->getSet(), PKR_Set);
+  appendFieldIfSpecified(self, other->getDefinite(), PKR_DEFINITE);
 }
 
 //
@@ -1734,6 +1750,20 @@ namespace OOHelpers {
 //
 // Local Helpers
 //
+
+// Some action closures are meant to be pure, mutation here most likely means
+// broken implementation logic, not always enabled
+inline static std::set<NodeUID> pureQuery(const ECMAGraph *G,
+                                          const std::vector<NodeUID> &acts,
+                                          const ECMAGraph::PJSSL_ARG &args) {
+  std::set<NodeUID> res;
+  for (auto &r : Karma(G, acts, args)) {
+    ASSERT_SLOW(r.clonedG.equals(*G));
+    res.insert(r.ret.L.begin(), r.ret.L.end());
+  }
+  return res;
+}
+
 inline static bool isExtensible(ECMAGraph *G, NodeUID ctx) {
   return isOnlyFalse(G, ctx, PKRGlobalState::EdgeIntern(PKR_EXTENSIBLE)) ? false
                                                                          : true;
@@ -1743,6 +1773,13 @@ inline static bool isFieldSensitive(ECMAGraph *G, NodeUID ctx) {
   return isOnlyTrue(G, ctx, PKRGlobalState::EdgeIntern(PKR_SENSITIVE));
 }
 
+// Every object this node stands for has this property, on every path. Only an
+// object literal's own defines can claim it.
+inline static bool isDefinite(ECMAGraph *G, NodeUID fp) {
+  auto d = G->getPointees(fp, PKRGlobalState::EdgeIntern(PKR_DEFINITE));
+  return !d.empty() && isOnlyTrue(d);
+}
+
 // A real JS property label: anything not a reserved "[[...]]" slot, plus the
 // [[Unknown-Field]] bucket (a reserved name, but a real property).
 inline static bool isOwnFieldLabel(std::string_view lbl) {
@@ -1750,7 +1787,7 @@ inline static bool isOwnFieldLabel(std::string_view lbl) {
 }
 
 inline static std::vector<NodeUID> collectOwnFieldFPs(const ECMAGraph *G,
-                                                       NodeUID ctx) {
+                                                      NodeUID ctx) {
   std::vector<NodeUID> res;
   for (auto &[_, tgt, lab] : G->getAllOutgoingEdges(ctx))
     if (isOwnFieldLabel(PKRGlobalState::EdgeGet(lab)))
@@ -1762,7 +1799,7 @@ inline static NodeUID getOwnProperty(ECMAGraph *G, NodeUID ctx,
                                      const std::string &field) {
   auto acts =
       G->getPointees(ctx, PKRGlobalState::EdgeIntern(PKR_GetOwnProperty));
-  auto result = KarmaBindu(G, acts, {NULL, {ctx}, {field}});
+  auto result = pureQuery(G, acts, {NULL, {ctx}, {field}});
   ASSERT(result.size() == 1);
   return *result.begin();
 }
@@ -1770,43 +1807,15 @@ inline static NodeUID getOwnProperty(ECMAGraph *G, NodeUID ctx,
 inline static std::set<NodeUID> getPrototypes(ECMAGraph *G, NodeUID ctx) {
   auto acts =
       G->getPointees(ctx, PKRGlobalState::EdgeIntern(PKR_GetPrototypeOf));
-  auto result = KarmaBindu(G, acts, {NULL, {ctx}});
-  return result;
+  return pureQuery(G, acts, {NULL, {ctx}});
 }
 
 inline static bool hasProperty(ECMAGraph *G, NodeUID ctx,
                                const std::string &field) {
   auto acts = G->getPointees(ctx, PKRGlobalState::EdgeIntern(PKR_HasProperty));
-  auto result = KarmaBindu(G, acts, {NULL, {ctx}, {field}});
+  auto result = pureQuery(G, acts, {NULL, {ctx}, {field}});
   ASSERT(result.size() == 1);
   return *result.begin() != PKRGlobalState::getUNDEF();
-}
-
-// [[Value]] plus any invoked [[Get]] accessor results for one FP node.
-inline static std::vector<NodeUID> readFieldValue(ECMAGraph *G, NodeUID fp,
-                                                   NodeUID rcvr) {
-  std::vector<NodeUID> res = G->getPointees(fp, PKRGlobalState::EdgeIntern(PKR_VALUE));
-  auto acts = G->getPointees(fp, PKRGlobalState::EdgeIntern(PKR_Get));
-  auto got = KarmaBindu(G, acts, {NULL, {rcvr}});
-  res.insert(res.end(), got.begin(), got.end());
-  return res;
-}
-
-// Every prototype's [[Get]] for field; a null prototype contributes undefined.
-// Always called, even when an own match exists: any edge may be absent in some
-// merged branch, so nothing shadows anything.
-inline static void readPrototypes(ECMAGraph *G, NodeUID ctx, NodeUID rcvr,
-                                  const std::string &field,
-                                  std::vector<NodeUID> &res) {
-  for (auto &p : getPrototypes(G, ctx)) {
-    if (p == PKRGlobalState::getNULL()) {
-      res.push_back(PKRGlobalState::getUNDEF());
-      continue;
-    }
-    auto acts = G->getPointees(p, PKRGlobalState::EdgeIntern(PKR_Get));
-    auto got = KarmaBindu(G, acts, {NULL, {p, rcvr}, {field}});
-    res.insert(res.end(), got.begin(), got.end());
-  }
 }
 
 // Unknown-key case: the real key could be any own field at any level of the
@@ -1837,7 +1846,8 @@ inline static void searchFPNodes(ECMAGraph *G, NodeUID ctx,
     res.push_back(r[0]);
   }
   if (!isFieldSensitive(G, ctx)) {
-    auto rb = G->getPointees(ctx, PKRGlobalState::EdgeIntern(PKR_UNKNOWN_FIELD));
+    auto rb =
+        G->getPointees(ctx, PKRGlobalState::EdgeIntern(PKR_UNKNOWN_FIELD));
     if (!rb.empty())
       res.push_back(rb[0]);
   }
@@ -1947,7 +1957,9 @@ inline bool initOOBJ = []() {
       G->addEdge(ctx, id, PKRGlobalState::EdgeIntern(field));
 
       FieldDescriptor newFD(G, id);
-      FDUnion(&newFD, rhsPtr.get());
+      auto *tempNew = dynamic_cast<TempFieldDescriptor *>(rhsPtr.get());
+      ASSERT(tempNew);
+      FDUnionAccumulateFT(&newFD, tempNew);
     } else {
       auto currentFD = std::make_shared<FieldDescriptor>(G, currentFP);
       if (IsNotConfigurable(currentFD.get())) {
@@ -1965,14 +1977,12 @@ inline bool initOOBJ = []() {
             return {{PKRGlobalState::getFALSE()}};
         }
       }
-      if (field == PKR_UNKNOWN_FIELD) {
-        // The bucket is a may-alias location: accumulate, never replace.
-        auto *tempOther = dynamic_cast<TempFieldDescriptor *>(rhsPtr.get());
-        ASSERT(tempOther);
-        FDUnionAccumulateFT(currentFD.get(), tempOther);
-      } else {
-        FDUnion(currentFD.get(), rhsPtr.get());
-      }
+      // An object node may stand for several concrete objects, so every
+      // property is a may-location: accumulate, never replace. Strong updates
+      // need singleton allocation nodes, which the abstraction does not have.
+      auto *tempOther = dynamic_cast<TempFieldDescriptor *>(rhsPtr.get());
+      ASSERT(tempOther);
+      FDUnionAccumulateFT(currentFD.get(), tempOther);
     }
 
     // Only a successful bucket write makes ctx insensitive, so the flag and
@@ -2034,24 +2044,52 @@ inline bool initOOBJ = []() {
     NodeUID rcvr = L[1];
     std::string field = A[0];
 
-    std::vector<NodeUID> res;
+    // Which own field proxies this read has to consult.
+    std::vector<NodeUID> fps;
+    bool ownIsDefinite = false;
     if (field == PKR_UNKNOWN_FIELD) {
-      for (auto fp : OOHelpers::collectOwnFieldFPs(G, ctx))
-        for (auto r : OOHelpers::readFieldValue(G, fp, rcvr))
-          res.push_back(r);
+      fps = OOHelpers::collectOwnFieldFPs(G, ctx);
     } else {
       NodeUID currentFP = OOHelpers::getOwnProperty(G, ctx, field);
-      if (currentFP != PKRGlobalState::getUNDEF())
-        res = OOHelpers::readFieldValue(G, currentFP, rcvr);
+      if (currentFP != PKRGlobalState::getUNDEF()) {
+        fps.push_back(currentFP);
+        ownIsDefinite = OOHelpers::isDefinite(G, currentFP);
+      }
       if (!OOHelpers::isFieldSensitive(G, ctx)) {
         // An earlier unknown-keyed write may have targeted this very key.
         NodeUID bucketFP = OOHelpers::getOwnProperty(G, ctx, PKR_UNKNOWN_FIELD);
         ASSERT(bucketFP != PKRGlobalState::getUNDEF());
-        for (auto r : OOHelpers::readFieldValue(G, bucketFP, rcvr))
-          res.push_back(r);
+        fps.push_back(bucketFP);
       }
     }
-    OOHelpers::readPrototypes(G, ctx, rcvr, field, res);
+
+    std::vector<NodeUID> res;
+    std::vector<ECMAGraph> branches;
+
+    // Data values are a pure read; accessors and prototypes each fork.
+    for (auto fp : fps) {
+      auto vals = G->getPointees(fp, PKRGlobalState::EdgeIntern(PKR_VALUE));
+      res.insert(res.end(), vals.begin(), vals.end());
+      auto getters = G->getPointees(fp, PKRGlobalState::EdgeIntern(PKR_Get));
+      auto call = makeCall({rcvr}, {});
+      Karma(G, getters, {NULL, call.L, call.A}, res, branches);
+    }
+
+    // OrdinaryGet consults the prototype only when the own property is
+    // absent; skipping is sound only when its presence is a must-fact.
+    if (!ownIsDefinite) {
+      for (auto &p : OOHelpers::getPrototypes(G, ctx)) {
+        if (p == PKRGlobalState::getNULL()) {
+          res.push_back(PKRGlobalState::getUNDEF());
+          continue;
+        }
+        auto acts = G->getPointees(p, PKRGlobalState::EdgeIntern(PKR_Get));
+        Karma(G, acts, {NULL, {p, rcvr}, {field}}, res, branches);
+      }
+    }
+
+    KarmaJoin(G, branches);
+
     ASSERT(!res.empty());
     return {{res.begin(), res.end()}};
   });
@@ -2072,20 +2110,20 @@ inline bool initOOBJ = []() {
       OOHelpers::collectAllFPsUpChain(G, ctx, fpNodes);
     else
       OOHelpers::searchFPNodes(G, ctx, field, fpNodes);
-    std::vector<ECMAGraph> setterResults;
-    ECMAGraph G_1;
+    // Every setter and the data write are alternatives over the same incoming
+    // state, so each forks and the whole operation joins once at the end.
+    std::vector<NodeUID> discarded;
+    std::vector<ECMAGraph> branches;
 
     for (auto &fp : fpNodes) {
       FieldDescriptor f(G, fp);
-      if (GetAllSetters(&f).size() > 0) {
-        auto acts = G->getPointees(fp, PKRGlobalState::EdgeIntern(PKR_Set));
-        auto rs = Karma(G, acts, {NULL, {ctx, valToSet}});
-        for (auto &r : rs)
-          setterResults.push_back(std::move(r.clonedG));
-      }
+      if (GetAllSetters(&f).empty())
+        continue;
+      auto acts = G->getPointees(fp, PKRGlobalState::EdgeIntern(PKR_Set));
+      // Call(setter, Receiver, [V])
+      auto call = makeCall({ctx}, {{valToSet}});
+      Karma(G, acts, {NULL, call.L, call.A}, discarded, branches);
     }
-
-    G_1.mutateMergeUnion(setterResults);
 
     // Setters may not exist in every merged branch, so the data write always
     // happens as well.
@@ -2108,17 +2146,11 @@ inline bool initOOBJ = []() {
                                : PKRGlobalState::getFALSE());
     }
 
-    std::vector<ECMAGraph> defOwnPropResults;
-    ECMAGraph G_2;
     auto acts =
         G->getPointees(ctx, PKRGlobalState::EdgeIntern(PKR_DefineOwnProperty));
+    Karma(G, acts, {NULL, {ctx}, {field}, {tmp}}, discarded, branches);
 
-    auto rs = Karma(G, acts, {NULL, {ctx}, {field}, {tmp}});
-    for (auto &r : rs)
-      defOwnPropResults.push_back(std::move(r.clonedG));
-
-    G_2.mutateMergeUnion(defOwnPropResults);
-    G->mutateMergeUnion({G_1, G_2});
+    KarmaJoin(G, branches);
     return {{}};
   });
 
@@ -2225,8 +2257,11 @@ inline bool initARGSOBJ = []() {
     ASSERT(!targets.empty());
     NodeUID stackCell = targets[0];
     auto acts = G->getPointees(stackCell, PKRGlobalState::EdgeIntern(PKR_Get));
-    auto res = KarmaBindu(G, acts, {NULL, {stackCell}});
-    return {{res.begin(), res.end()}};
+    std::vector<NodeUID> res;
+    std::vector<ECMAGraph> branches;
+    Karma(G, acts, {NULL, {stackCell}}, res, branches);
+    KarmaJoin(G, branches);
+    return {res};
   });
 
   PKRGlobalState::NAC_MARGSOBJ_Set = DEFINE_ACTION() {
@@ -2241,7 +2276,7 @@ inline bool initARGSOBJ = []() {
     ASSERT(!targets.empty());
     NodeUID stackCell = targets[0];
     auto acts = G->getPointees(stackCell, PKRGlobalState::EdgeIntern(PKR_Set));
-    KarmaBindu(G, acts, {NULL, {stackCell, val}});
+    KarmaJoin(G, Karma(G, acts, {NULL, {stackCell, val}}));
     return {};
   });
 
@@ -2334,9 +2369,9 @@ inline bool initAwait = []() {
     //   std::vector<NodeUID> L_(L.begin(), L.end());
     //   L_[0] = st.target;
     //
-    //   KarmaBindu(G,
-    //              G->getPointees(st.target,
-    //              PKRGlobalState::EdgeIntern(PKR_Set)), {NULL, L_});
+    //   KarmaJoin(G, Karma(G,
+    //             G->getPointees(st.target,
+    //             PKRGlobalState::EdgeIntern(PKR_Set)), {NULL, L_}));
     // }
     //
     // auto savedStateVec = G->getAllOutgoingEdgesByLabel(
@@ -2422,38 +2457,52 @@ inline bool initBinaryOperators = []() {
     ASSERT(L.size() == 1);
     NodeUID ctx = L[0];
 
+    // Looking the two methods up are alternatives, so they fork.
     auto getActs = G->getPointees(ctx, PKRGlobalState::EdgeIntern(PKR_Get));
-    auto funs1 = KarmaBindu(G, getActs, {NULL, {ctx, ctx}, {"toString"}});
-    auto funs2 = KarmaBindu(G, getActs, {NULL, {ctx, ctx}, {"valueOf"}});
+    std::vector<NodeUID> funs1, funs2;
+    std::vector<ECMAGraph> lookups;
+    Karma(G, getActs, {NULL, {ctx, ctx}, {"toString"}}, funs1, lookups);
+    Karma(G, getActs, {NULL, {ctx, ctx}, {"valueOf"}}, funs2, lookups);
+    KarmaJoin(G, lookups);
 
+    std::set<NodeUID> toStringSet(funs1.begin(), funs1.end());
+    std::set<NodeUID> valueOfSet(funs2.begin(), funs2.end());
     std::vector<NodeUID> toStringFns, valueOfFns;
-    for (NodeUID f : funs1)
+    for (NodeUID f : toStringSet)
       if (PKRGlobalState::nodeHasActionClosure(f))
         toStringFns.push_back(f);
-    for (NodeUID f : funs2)
+    for (NodeUID f : valueOfSet)
       if (PKRGlobalState::nodeHasActionClosure(f))
         valueOfFns.push_back(f);
 
     // I am unsure about that to do here, for a later day ~ Meetesh
     ASSERT(!toStringFns.empty() || !valueOfFns.empty());
 
-    // Its sound only under all execution ordered,
-    // in the spec its under a loop, so some ordering exists,
-    // cannot Karma and forget here...
+    // 7.1.1.1 tries the methods in order, so within one ordering the second
+    // call must observe the first's effects - this threading is deliberate.
+    // Both orderings are explored as branches and joined.
+    auto step = [&](ECMAGraph &H, const std::vector<NodeUID> &fns,
+                    std::vector<NodeUID> &out) {
+      std::vector<ECMAGraph> branches;
+      // Call(method, O)
+      auto call = makeCall({ctx}, {});
+      Karma(&H, fns, {NULL, call.L, call.A}, out, branches);
+      KarmaJoin(&H, branches);
+    };
+
+    std::vector<NodeUID> resA, resB;
     ECMAGraph GA = G->clone();
-    auto resA1 = KarmaBindu(&GA, toStringFns, {NULL, {ctx}});
-    auto resA2 = KarmaBindu(&GA, valueOfFns, {NULL, {ctx}});
+    step(GA, toStringFns, resA);
+    step(GA, valueOfFns, resA);
 
     ECMAGraph GB = G->clone();
-    auto resB1 = KarmaBindu(&GB, valueOfFns, {NULL, {ctx}});
-    auto resB2 = KarmaBindu(&GB, toStringFns, {NULL, {ctx}});
+    step(GB, valueOfFns, resB);
+    step(GB, toStringFns, resB);
 
-    GA.mutateMergeUnion({GB});
-    *G = std::move(GA);
+    KarmaJoin(G, std::vector<ECMAGraph>{GA, GB});
 
-    std::set<NodeUID> allResults;
-    for (auto *s : {&resA1, &resA2, &resB1, &resB2})
-      allResults.insert(s->begin(), s->end());
+    std::set<NodeUID> allResults(resA.begin(), resA.end());
+    allResults.insert(resB.begin(), resB.end());
 
     std::vector<NodeUID> finRes;
     for (NodeUID r : allResults)
@@ -2477,8 +2526,12 @@ inline bool initBinaryOperators = []() {
       return {{val}};
 
     auto getActs = G->getPointees(val, PKRGlobalState::EdgeIntern(PKR_Get));
-    auto funcs =
-        KarmaBindu(G, getActs, {NULL, {val, val}, {PKR_SYM_toPrimitive}});
+    std::vector<NodeUID> funcVec;
+    std::vector<ECMAGraph> lookupBranches;
+    Karma(G, getActs, {NULL, {val, val}, {PKR_SYM_toPrimitive}}, funcVec,
+          lookupBranches);
+    KarmaJoin(G, lookupBranches);
+    std::set<NodeUID> funcs(funcVec.begin(), funcVec.end());
 
     bool sawUndefined = false;
     std::vector<NodeUID> callable;
@@ -2497,7 +2550,12 @@ inline bool initBinaryOperators = []() {
     ASSERT(!(sawUndefined && !callable.empty()));
 
     if (!callable.empty()) {
-      auto results = KarmaBindu(G, callable, {NULL, {val}});
+      std::vector<NodeUID> results;
+      std::vector<ECMAGraph> callBranches;
+      // Call(exoticToPrim, input, [hint]) - the hint is not modelled.
+      auto call = makeCall({val}, {});
+      Karma(G, callable, {NULL, call.L, call.A}, results, callBranches);
+      KarmaJoin(G, callBranches);
       return {{results.begin(), results.end()}};
     }
 
@@ -2700,8 +2758,9 @@ inline void AllocClosure(ECMAGraph *G, NodeUID id,
 #define ALLOC_CTR(id, func, protoField)                                        \
   AllocClosure(G, id, func, PKRGlobalState::getTRUE(),                         \
                PKRGlobalState::getGFOBJ_Function_prototype());                 \
-  KarmaBindu(G, G->getPointees(id, PKRGlobalState::EdgeIntern(PKR_Set)),       \
-             {NULL, {id, protoField}, {"prototype"}});
+  KarmaJoin(                                                                   \
+      G, Karma(G, G->getPointees(id, PKRGlobalState::EdgeIntern(PKR_Set)),      \
+               {NULL, {id, protoField}, {"prototype"}}));
 
 namespace Prakriti {
 
@@ -2717,8 +2776,10 @@ inline void defineStubMethod(ECMAGraph *G, NodeUID target,
       });
   AllocClosure(G, methodID, ac, PKRGlobalState::getTRUE(),
                PKRGlobalState::getGFOBJ_Function_prototype());
-  KarmaBindu(G, G->getPointees(target, PKRGlobalState::EdgeIntern(PKR_Set)),
-             {NULL, {target, methodID}, {propName}});
+  KarmaJoin(G,
+            Karma(G,
+                  G->getPointees(target, PKRGlobalState::EdgeIntern(PKR_Set)),
+                  {NULL, {target, methodID}, {propName}}));
 }
 
 inline void defineStubMethods(ECMAGraph *G, NodeUID target,
@@ -2734,8 +2795,10 @@ inline void defineNoopMethod(ECMAGraph *G, NodeUID target,
   auto ac = DEFINE_ACTION() { return {{PKRGlobalState::getUNDEF()}}; });
   AllocClosure(G, methodID, ac, PKRGlobalState::getTRUE(),
                PKRGlobalState::getGFOBJ_Function_prototype());
-  KarmaBindu(G, G->getPointees(target, PKRGlobalState::EdgeIntern(PKR_Set)),
-             {NULL, {target, methodID}, {propName}});
+  KarmaJoin(G,
+            Karma(G,
+                  G->getPointees(target, PKRGlobalState::EdgeIntern(PKR_Set)),
+                  {NULL, {target, methodID}, {propName}}));
 }
 
 inline void defineNoopMethods(ECMAGraph *G, NodeUID target,
@@ -2746,8 +2809,10 @@ inline void defineNoopMethods(ECMAGraph *G, NodeUID target,
 
 inline void linkPrototypeConstructor(ECMAGraph *G, NodeUID ctorID,
                                      NodeUID protoID) {
-  KarmaBindu(G, G->getPointees(protoID, PKRGlobalState::EdgeIntern(PKR_Set)),
-             {NULL, {protoID, ctorID}, {"constructor"}});
+  KarmaJoin(G,
+            Karma(G,
+                  G->getPointees(protoID, PKRGlobalState::EdgeIntern(PKR_Set)),
+                  {NULL, {protoID, ctorID}, {"constructor"}}));
 }
 
 inline void
@@ -2809,10 +2874,11 @@ inline void AllocStackObject(ECMAGraph *G, NodeUID id) {
 
 #define ALLOC_STKN(name) AllocStackObject(G, PKRGlobalState::getGlobal(name))
 #define GSTK_BIND(src, dest)                                                   \
-  KarmaBindu(G,                                                                \
-             G->getPointees(PKRGlobalState::getGlobal(src),                    \
-                            PKRGlobalState::EdgeIntern(PKR_Set)),              \
-             {NULL, {PKRGlobalState::getGlobal(src), dest}});
+  KarmaJoin(G,                                                                 \
+            Karma(G,                                                           \
+                  G->getPointees(PKRGlobalState::getGlobal(src),               \
+                                 PKRGlobalState::EdgeIntern(PKR_Set)),         \
+                  {NULL, {PKRGlobalState::getGlobal(src), dest}}));
 
 namespace Prakriti {
 
@@ -2924,7 +2990,10 @@ inline void initObjectPrototypeProtoAccessor(ECMAGraph *G) {
     NodeUID O = args.L[0];
     auto acts =
         G->getPointees(O, PKRGlobalState::EdgeIntern(PKR_GetPrototypeOf));
-    auto protos = KarmaBindu(G, acts, {NULL, {O}});
+    std::vector<NodeUID> protos;
+    std::vector<ECMAGraph> branches;
+    Karma(G, acts, {NULL, {O}}, protos, branches);
+    KarmaJoin(G, branches);
     if (protos.empty()) // primitive receiver; ToObject wrappers not modeled
       return {{PKRGlobalState::getUNDEF()}};
     return {{protos.begin(), protos.end()}};
@@ -2940,7 +3009,7 @@ inline void initObjectPrototypeProtoAccessor(ECMAGraph *G) {
       return {};
     auto acts =
         G->getPointees(O, PKRGlobalState::EdgeIntern(PKR_SetPrototypeOf));
-    KarmaBindu(G, acts, {NULL, {O, proto}});
+    KarmaJoin(G, Karma(G, acts, {NULL, {O, proto}}));
     return {};
   });
   AllocClosure(G, setter, set, PKRGlobalState::getTRUE(),
@@ -2952,10 +3021,11 @@ inline void initObjectPrototypeProtoAccessor(ECMAGraph *G) {
   fd->addEnumerable(PKRGlobalState::getFALSE());
   fd->addConfigurable(PKRGlobalState::getTRUE());
   NodeUID objProto = PKRGlobalState::getGOOBJ_Object_prototype();
-  KarmaBindu(G,
-             G->getPointees(objProto,
-                            PKRGlobalState::EdgeIntern(PKR_DefineOwnProperty)),
-             {NULL, {objProto}, {"__proto__"}, {fd}});
+  KarmaJoin(G, Karma(G,
+                     G->getPointees(
+                         objProto,
+                         PKRGlobalState::EdgeIntern(PKR_DefineOwnProperty)),
+                     {NULL, {objProto}, {"__proto__"}, {fd}}));
 }
 
 inline void initFunctionConstructor(ECMAGraph *G) {
@@ -3012,21 +3082,21 @@ inline void initECMAEnvironment(ECMAGraph *G) {
                       PKRGlobalState::getGOOBJ_Object_prototype(),
                       {"for", "keyFor"}, {"toString", "valueOf"}, "Symbol");
   // Add Symbol.toPrimitive -> SYMBOL_TOPRIMITIVE_VAL
-  KarmaBindu(G,
-             G->getPointees(PKRGlobalState::getGFOBJ_Symbol(),
-                            PKRGlobalState::EdgeIntern(PKR_Set)),
-             {NULL,
-              {PKRGlobalState::getGFOBJ_Symbol(),
-               PKRGlobalState::getSYMBOL_TOPRIMITIVE()},
-              {"toPrimitive"}});
+  KarmaJoin(G, Karma(G,
+                     G->getPointees(PKRGlobalState::getGFOBJ_Symbol(),
+                                    PKRGlobalState::EdgeIntern(PKR_Set)),
+                     {NULL,
+                      {PKRGlobalState::getGFOBJ_Symbol(),
+                       PKRGlobalState::getSYMBOL_TOPRIMITIVE()},
+                      {"toPrimitive"}}));
   // Add Symbol.toStringTag -> SYMBOL_TOSTRINGTAG_VAL
-  KarmaBindu(G,
-             G->getPointees(PKRGlobalState::getGFOBJ_Symbol(),
-                            PKRGlobalState::EdgeIntern(PKR_Set)),
-             {NULL,
-              {PKRGlobalState::getGFOBJ_Symbol(),
-               PKRGlobalState::getSYMBOL_TOSTRINGTAG()},
-              {"toStringTag"}});
+  KarmaJoin(G, Karma(G,
+                     G->getPointees(PKRGlobalState::getGFOBJ_Symbol(),
+                                    PKRGlobalState::EdgeIntern(PKR_Set)),
+                     {NULL,
+                      {PKRGlobalState::getGFOBJ_Symbol(),
+                       PKRGlobalState::getSYMBOL_TOSTRINGTAG()},
+                      {"toStringTag"}}));
 
   defineStubIntrinsic(G, PKRGlobalState::getGFOBJ_Error(),
                       PKRGlobalState::getGOOBJ_Error_prototype(),
@@ -3078,8 +3148,9 @@ namespace Prakriti {
 inline void initGSTK_console(ECMAGraph *G) {
   NodeUID ref = PKRGlobalState::getGlobal(GSTK_console);
   AllocStackObject(G, ref);
-  KarmaBindu(G, G->getPointees(ref, PKRGlobalState::EdgeIntern(PKR_Set)),
-             {NULL, {ref, PKRGlobalState::getGOOBJ_console()}});
+  KarmaJoin(G, Karma(G,
+                     G->getPointees(ref, PKRGlobalState::EdgeIntern(PKR_Set)),
+                     {NULL, {ref, PKRGlobalState::getGOOBJ_console()}}));
 }
 
 inline const GlobalInitTable &consoleGlobalInitializers() {
