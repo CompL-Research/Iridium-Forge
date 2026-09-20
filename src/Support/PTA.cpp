@@ -243,16 +243,34 @@ setupClosureFrame(IRICFG *calleeCFG, ECMAGraph *G,
         Prakriti::PKRGlobalState::EdgeIntern("JSCTX" + std::to_string(slot)));
   };
 
+  // Every JSCTX slot is a stack cell, so a JSCTX read is uniformly a [[Get]] on
+  // the cell. A slot whose value is an object allocates it beside the cell and
+  // points the cell at it; slots 2-8 keep the WIPStackObject that throws on any
+  // use, which is cell-shaped too.
+  auto slotCell = [&](int slot) {
+    Prakriti::NodeUID cell = sentinel(slot);
+    if (!G->hasNode(cell))
+      Prakriti::AllocStackObject(G, cell);
+    return cell;
+  };
+  auto slotValue = [&](Prakriti::NodeUID cell) {
+    return Prakriti::PKRGlobalState::generateSentinel(
+        cell, Prakriti::PKRGlobalState::EdgeIntern("JSCTXValue"));
+  };
+
   if (usedSlots.contains(0)) {
-    Prakriti::NodeUID argsID = sentinel(0);
+    Prakriti::NodeUID cell = slotCell(0);
+    Prakriti::NodeUID argsID = slotValue(cell);
     if (!G->hasNode(argsID))
       Prakriti::AllocArgumentsObject(
           G, argsID, Prakriti::PKRGlobalState::getTRUE(),
           Prakriti::PKRGlobalState::getGOOBJ_Object_prototype());
+    setCell(G, cell, {argsID});
   }
 
   if (usedSlots.contains(1)) {
-    Prakriti::NodeUID margsID = sentinel(1);
+    Prakriti::NodeUID cell = slotCell(1);
+    Prakriti::NodeUID margsID = slotValue(cell);
     if (!G->hasNode(margsID)) {
       Prakriti::AllocMappedArgumentsObject(
           G, margsID, Prakriti::PKRGlobalState::getTRUE(),
@@ -262,6 +280,7 @@ setupClosureFrame(IRICFG *calleeCFG, ECMAGraph *G,
             margsID, param,
             Prakriti::PKRGlobalState::EdgeIntern(std::to_string((long)refidx)));
     }
+    setCell(G, cell, {margsID});
   }
 
   // TODO: Added WIPStackObject Nodes, will need to implement these later...
@@ -274,12 +293,8 @@ setupClosureFrame(IRICFG *calleeCFG, ECMAGraph *G,
   }
 
   // 'this'
-  if (usedSlots.contains(9)) {
-    Prakriti::NodeUID thisID = sentinel(9);
-    if (!G->hasNode(thisID))
-      Prakriti::AllocStackObject(G, thisID);
-    setCell(G, thisID, thisVal);
-  }
+  if (usedSlots.contains(9))
+    setCell(G, slotCell(9), thisVal);
 
   return owned;
 }
