@@ -86,6 +86,8 @@ struct MTDZSPass {
 
     // Since a transformation pass modifies the IR/CFG, invalidate all cached analysis results
     am.invalidateAll();
+    if (changed)
+      cfg.markDirty();
     return changed;
   }
 };

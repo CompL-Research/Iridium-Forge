@@ -163,6 +163,7 @@ struct EffectPropPass {
 
     if (changed) {
       am.invalidateAll();
+      cfg.markDirty();
     }
     return changed;
   }
