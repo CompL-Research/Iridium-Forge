@@ -334,7 +334,8 @@ public:
   V(NAC_ToString)                                                             \
   V(NAC_ToNumeric)                                                            \
   V(NAC_HandleBinop)                                                         \
-  V(NAC_HandleRelop)
+  V(NAC_HandleRelop)                                                          \
+  V(NAC_HandleJSBinop)
 
 // Global object identities. PKRGlobalState (ECMAGraph.hpp) turns each of
 // these into a NodeUID field + getter + Init() reservation.
@@ -2704,6 +2705,51 @@ inline bool initBinaryOperators = []() {
         PKRGlobalState::getActionNode(PKRGlobalState::NAC_ToPrimitive);
     invokeAction(tpAct, {G, {lval}});
     invokeAction(tpAct, {G, {rval}});
+
+    return {{PKRGlobalState::getTRUE(), PKRGlobalState::getFALSE()}};
+  });
+
+  // ECMA-262 7.2.13, 7.2.16, 13.10.1
+  PKRGlobalState::NAC_HandleJSBinop = DEFINE_ACTION() {
+    ECMAGraph *G = args.G;
+    auto &L = args.L;
+    auto &A = args.A;
+
+    ASSERT(L.size() == 2 && A.size() == 1);
+    NodeUID lval = L[0];
+    NodeUID rval = L[1];
+    std::string op = A[0];
+
+    const std::set<std::string> validOps = {
+        "==", "!=", "===", "!==", "in", "instanceof"};
+    ASSERT(validOps.count(op) > 0);
+
+    NodeUID tpAct =
+        PKRGlobalState::getActionNode(PKRGlobalState::NAC_ToPrimitive);
+
+    if (op == "==" || op == "!=") {
+      // Steps 11-12 coerce exactly one side, and only when the other is
+      // already primitive. Two objects take step 1 and compare by identity,
+      // so they never reach valueOf. ToNumber, in steps 5-10, only ever sees
+      // a String or a Boolean and is pure.
+      bool lIsObj = isObjectNode(G, lval);
+      bool rIsObj = isObjectNode(G, rval);
+      if (lIsObj && !rIsObj)
+        invokeAction(tpAct, {G, {lval}});
+      else if (rIsObj && !lIsObj)
+        invokeAction(tpAct, {G, {rval}});
+    } else if (op == "in") {
+      // ToPropertyKey on the left; [[HasProperty]] runs no user code.
+      invokeAction(tpAct, {G, {lval}});
+    } else if (op == "instanceof") {
+      // 13.10.2 WIP
+      ASSERT(false && "TODO::PKR instanceof 13.10.2");
+      // OrdinaryHasInstance reads C.prototype, which may be an accessor.
+      // Symbol.hasInstance is not modelled.
+      auto acts = G->getPointees(rval, PKRGlobalState::EdgeIntern(PKR_Get));
+      KarmaJoin(G, Karma(G, acts, {NULL, {rval, rval}, {"prototype"}}));
+    }
+    // "===" and "!==" do not coerce at all.
 
     return {{PKRGlobalState::getTRUE(), PKRGlobalState::getFALSE()}};
   });
