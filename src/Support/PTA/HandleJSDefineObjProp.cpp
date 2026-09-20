@@ -65,6 +65,9 @@ void handleJSDefineObjProp(const PTAStatementContext &ptactx) {
       desc->addWritable(Prakriti::PKRGlobalState::getTRUE());
       desc->addEnumerable(Prakriti::PKRGlobalState::getTRUE());
       desc->addConfigurable(Prakriti::PKRGlobalState::getTRUE());
+      // A literal's defines are straight-line after its allocation, so every
+      // object from this site has this property on every path.
+      desc->addDefinite(Prakriti::PKRGlobalState::getTRUE());
       for (auto kr : Prakriti::Karma(
                G, targetClosures,
                {nullptr, {A_a}, {field}, {desc}})) {
@@ -73,7 +76,9 @@ void handleJSDefineObjProp(const PTAStatementContext &ptactx) {
     }
   }
 
-  G->mutateMergeUnion(finalRes);
+  // Each receiver's write lands in its own clone; their union is the new
+  // state. Merging into G instead would keep the pre-write values alive.
+  Prakriti::KarmaJoin(G, finalRes);
 }
 
 } // namespace IRI_STRUCTURAL

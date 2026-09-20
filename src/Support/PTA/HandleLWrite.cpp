@@ -38,7 +38,7 @@ void handleLWrite(const PTAStatementContext &ptactx) {
   auto setClosures =
       G->getPointees(target, Prakriti::PKRGlobalState::EdgeIntern(PKR_Set));
   assert(!setClosures.empty());
-  Prakriti::KarmaBindu(G, setClosures, {nullptr, setArgs});
+  Prakriti::KarmaJoin(G, Prakriti::Karma(G, setClosures, {nullptr, setArgs}));
 }
 
 } // namespace IRI_STRUCTURAL

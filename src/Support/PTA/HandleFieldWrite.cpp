@@ -60,7 +60,9 @@ void handleFieldWrite(const PTAStatementContext &ptactx) {
     }
   }
 
-  G->mutateMergeUnion(finalRes);
+  // Each receiver's write lands in its own clone; their union is the new
+  // state. Merging into G instead would keep the pre-write values alive.
+  Prakriti::KarmaJoin(G, finalRes);
 }
 
 } // namespace IRI_STRUCTURAL
