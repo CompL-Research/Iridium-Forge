@@ -8,7 +8,6 @@
 #include "Support/PTA/PTADispatch.hpp"
 #include "external/Prakriti.hpp"
 #include "external/pta_trace.hpp"
-#include <algorithm>
 #include <memory>
 #include <set>
 #include <sstream>
@@ -93,30 +92,35 @@ void setupTraceWriter(IRIContext &ctx) {
 
 void initGlobalBindings(IRIContext &ctx, IRICFG *rootCFG, ECMAGraph *G,
                         const Prakriti::GlobalInitTable &globals) {
-  for (const auto ref : rootCFG->ptaAssertGlobals()) {
+  for (const auto ref : rootCFG->ptaInfo().globals) {
     GlobalBindingSEXP gb(ref, ctx);
     Prakriti::initNamedGlobal(G, gb.getNAME(), globals);
   }
 }
 
-std::vector<Prakriti::NodeUID> initStackLocals(IRICFG *rootCFG, ECMAGraph *G) {
-  std::vector<Prakriti::NodeUID> locals;
-  for (const auto b : rootCFG->ptaGenStack()) {
+void allocStackCells(IRICFG *cfg, ECMAGraph *G) {
+  for (const auto b : cfg->ptaInfo().stack)
     if (!G->hasNode(b))
       Prakriti::AllocStackObject(G, b);
-    locals.push_back(b);
-  }
-  for (const auto b : rootCFG->ptaGenTStack()) {
+  for (const auto b : cfg->ptaInfo().tstack)
     if (!G->hasNode(b))
       Prakriti::AllocTransientStackObject(G, b);
-    locals.push_back(b);
-  }
-  return locals;
 }
 
-void pruneToReachable(ECMAGraph *G,
-                      const std::vector<Prakriti::NodeUID> &locals,
-                      const std::vector<Prakriti::NodeUID> &remoteRefs) {
+// Writes a stack cell through its own [[Set]], which decides strong vs weak.
+void setCell(ECMAGraph *G, Prakriti::NodeUID cell,
+             const std::set<Prakriti::NodeUID> &vals) {
+  std::vector<Prakriti::NodeUID> args = {cell};
+  if (vals.empty())
+    args.push_back(Prakriti::PKRGlobalState::getUNDEF());
+  else
+    args.insert(args.end(), vals.begin(), vals.end());
+  auto setClosures =
+      G->getPointees(cell, Prakriti::PKRGlobalState::EdgeIntern(PKR_Set));
+  Prakriti::KarmaBindu(G, setClosures, {nullptr, args});
+}
+
+void pruneToReachable(ECMAGraph *G, const PTAClosureInfo &info) {
   std::vector<Prakriti::NodeUID> roots = {
       Prakriti::PKRGlobalState::getINF(),
       Prakriti::PKRGlobalState::getNAN(),
@@ -133,8 +137,8 @@ void pruneToReachable(ECMAGraph *G,
   };
   for (const auto name : Prakriti::PKRGlobalState::getGlobals())
     roots.push_back(Prakriti::PKRGlobalState::getGlobal(name));
-  roots.insert(roots.end(), locals.begin(), locals.end());
-  roots.insert(roots.end(), remoteRefs.begin(), remoteRefs.end());
+  for (const auto *cells : {&info.stack, &info.tstack, &info.remoteRefs})
+    roots.insert(roots.end(), cells->begin(), cells->end());
   G->pruneUnreachable(roots);
 }
 
@@ -143,7 +147,7 @@ void pruneToReachable(ECMAGraph *G,
 // open, drops to weak updates, and leaves the unwind to the frame that owns it.
 std::vector<Prakriti::NodeUID> openTransientCells(IRICFG *cfg, ECMAGraph *G) {
   std::vector<Prakriti::NodeUID> owned;
-  for (const auto b : cfg->ptaGenTStack()) {
+  for (const auto b : cfg->ptaInfo().tstack) {
     if (TransientCell::isExecuting(G, b)) {
       TransientCell::setStrong(G, b, false);
       continue;
@@ -170,15 +174,13 @@ void closeTransientCells(ECMAGraph *G,
 // whose owning frame is still live: this body is about to read a cell that
 // frame has been strongly updating, so its parked values have to come back
 // before the read.
-std::vector<Prakriti::NodeUID> bindRemoteRefs(IRICFG *cfg, ECMAGraph *G) {
-  auto refs = cfg->ptaGenRemoteRefs();
-  for (const auto ref : refs) {
+void bindRemoteRefs(IRICFG *cfg, ECMAGraph *G) {
+  for (const auto ref : cfg->ptaInfo().remoteRefs) {
     if (!G->hasNode(ref))
       throw std::runtime_error("Remote binding not found!");
     if (TransientCell::isExecuting(G, ref))
       TransientCell::close(G, ref);
   }
-  return refs;
 }
 
 std::vector<Prakriti::NodeUID>
@@ -186,16 +188,16 @@ setupFileFrame(IRIContext &ctx, IRICFG *rootCFG, ECMAGraph *G,
                const Prakriti::GlobalInitTable &globals) {
   initGlobalBindings(ctx, rootCFG, G, globals);
 
-  auto remoteRefs = bindRemoteRefs(rootCFG, G);
+  bindRemoteRefs(rootCFG, G);
 
-  auto locals = initStackLocals(rootCFG, G);
-  pruneToReachable(G, locals, remoteRefs);
+  allocStackCells(rootCFG, G);
+  pruneToReachable(G, rootCFG->ptaInfo());
   return openTransientCells(rootCFG, G);
 }
 
 // Runs the file's entry closure to a dataflow fixpoint.
 void runFile(IRIContext &ctx, IRICFG *rootCFG, ECMAGraph *G,
-            const Prakriti::GlobalInitTable &globals) {
+             const Prakriti::GlobalInitTable &globals) {
   auto owned = setupFileFrame(ctx, rootCFG, G, globals);
 
   PTATransfer transferFunction;
@@ -207,48 +209,33 @@ void runFile(IRIContext &ctx, IRICFG *rootCFG, ECMAGraph *G,
   closeTransientCells(G, owned);
 }
 
-// Allocate Stack bindings, JSCTX, bind arguments, etc.. some assertions like
-// captured existing...
-std::vector<Prakriti::NodeUID> setupClosureFrame(
-    IRIContext &ctx, IRICFG *calleeCFG, ECMAGraph *G,
-    const std::set<Prakriti::NodeUID> &thisVal,
-    const std::vector<std::set<Prakriti::NodeUID>> &actualArgs) {
-  std::vector<Prakriti::NodeUID> locals;
-  for (const auto b : calleeCFG->ptaGenStack()) {
-    if (!G->hasNode(b))
-      Prakriti::AllocStackObject(G, b);
-    locals.push_back(b);
-  }
-  for (const auto b : calleeCFG->ptaGenTStack()) {
-    if (!G->hasNode(b))
-      Prakriti::AllocTransientStackObject(G, b);
-    locals.push_back(b);
-  }
+// Allocates the frame's stack cells and JSCTX slots, binds the parameters and
+// `this`, and opens the strong-update window on the captured cells.
+std::vector<Prakriti::NodeUID>
+setupClosureFrame(IRICFG *calleeCFG, ECMAGraph *G,
+                  const std::set<Prakriti::NodeUID> &thisVal,
+                  const std::vector<std::set<Prakriti::NodeUID>> &actualArgs) {
+  allocStackCells(calleeCFG, G);
 
   auto owned = openTransientCells(calleeCFG, G);
   bindRemoteRefs(calleeCFG, G);
 
-  std::vector<std::pair<double, Prakriti::NodeUID>> formals;
-  for (const auto b : locals) {
-    IRI_GEN::EnvBindingSEXP eb(b, ctx);
-    if (eb.hasJSARG())
-      formals.push_back({eb.getREFIDX(), b});
-  }
-  std::sort(formals.begin(), formals.end());
+  const auto &info = calleeCFG->ptaInfo();
+  const auto &usedSlots = info.usedJSCTXSlots;
+  const auto &formals = info.formals;
 
-  for (size_t i = 0; i < formals.size(); i++) {
-    Prakriti::NodeUID param = formals[i].second;
-    // First arg is the ctx... I keep forgetting that, keeping this here just
-    // for reference...
-    std::vector<Prakriti::NodeUID> setArgs = {param};
-    if (i < actualArgs.size())
-      setArgs.insert(setArgs.end(), actualArgs[i].begin(), actualArgs[i].end());
-    else
-      setArgs.push_back(Prakriti::PKRGlobalState::getUNDEF());
-    auto setClosures =
-        G->getPointees(param, Prakriti::PKRGlobalState::EdgeIntern(PKR_Set));
-    Prakriti::KarmaBindu(G, setClosures, {nullptr, setArgs});
-  }
+  // The mapped arguments object reaches these cells straight through the
+  // graph, and no closure invocation happens on that path to close their
+  // window, so they stay weak for the whole activation -- including the
+  // binding below, which an older activation's arguments object can still see.
+  if (usedSlots.contains(1))
+    for (const auto &[refidx, param] : formals)
+      TransientCell::close(G, param);
+
+  for (size_t i = 0; i < formals.size(); i++)
+    setCell(G, formals[i].second,
+            i < actualArgs.size() ? actualArgs[i]
+                                  : std::set<Prakriti::NodeUID>{});
 
   auto sentinel = [&](int slot) {
     return Prakriti::PKRGlobalState::generateSentinel(
@@ -256,42 +243,42 @@ std::vector<Prakriti::NodeUID> setupClosureFrame(
         Prakriti::PKRGlobalState::EdgeIntern("JSCTX" + std::to_string(slot)));
   };
 
-  Prakriti::NodeUID argsID = sentinel(0);
-  if (!G->hasNode(argsID))
-    Prakriti::AllocArgumentsObject(
-        G, argsID, Prakriti::PKRGlobalState::getTRUE(),
-        Prakriti::PKRGlobalState::getGOOBJ_Object_prototype());
+  if (usedSlots.contains(0)) {
+    Prakriti::NodeUID argsID = sentinel(0);
+    if (!G->hasNode(argsID))
+      Prakriti::AllocArgumentsObject(
+          G, argsID, Prakriti::PKRGlobalState::getTRUE(),
+          Prakriti::PKRGlobalState::getGOOBJ_Object_prototype());
+  }
 
-  Prakriti::NodeUID margsID = sentinel(1);
-  if (!G->hasNode(margsID)) {
-    Prakriti::AllocMappedArgumentsObject(
-        G, margsID, Prakriti::PKRGlobalState::getTRUE(),
-        Prakriti::PKRGlobalState::getGOOBJ_Object_prototype());
-    for (const auto &[refidx, param] : formals)
-      G->addEdge(
-          margsID, param,
-          Prakriti::PKRGlobalState::EdgeIntern(std::to_string((long)refidx)));
+  if (usedSlots.contains(1)) {
+    Prakriti::NodeUID margsID = sentinel(1);
+    if (!G->hasNode(margsID)) {
+      Prakriti::AllocMappedArgumentsObject(
+          G, margsID, Prakriti::PKRGlobalState::getTRUE(),
+          Prakriti::PKRGlobalState::getGOOBJ_Object_prototype());
+      for (const auto &[refidx, param] : formals)
+        G->addEdge(
+            margsID, param,
+            Prakriti::PKRGlobalState::EdgeIntern(std::to_string((long)refidx)));
+    }
   }
 
   // TODO: Added WIPStackObject Nodes, will need to implement these later...
   for (int slot = 2; slot <= 8; slot++) {
+    if (!usedSlots.contains(slot))
+      continue;
     Prakriti::NodeUID id = sentinel(slot);
     if (!G->hasNode(id))
       Prakriti::AllocWIPStackObject(G, id);
   }
 
-  Prakriti::NodeUID thisID = sentinel(9);
-  if (!G->hasNode(thisID))
-    Prakriti::AllocStackObject(G, thisID);
-  {
-    std::vector<Prakriti::NodeUID> setArgs = {thisID};
-    if (!thisVal.empty())
-      setArgs.insert(setArgs.end(), thisVal.begin(), thisVal.end());
-    else
-      setArgs.push_back(Prakriti::PKRGlobalState::getUNDEF());
-    auto setClosures =
-        G->getPointees(thisID, Prakriti::PKRGlobalState::EdgeIntern(PKR_Set));
-    Prakriti::KarmaBindu(G, setClosures, {nullptr, setArgs});
+  // 'this'
+  if (usedSlots.contains(9)) {
+    Prakriti::NodeUID thisID = sentinel(9);
+    if (!G->hasNode(thisID))
+      Prakriti::AllocStackObject(G, thisID);
+    setCell(G, thisID, thisVal);
   }
 
   return owned;
@@ -307,7 +294,7 @@ using StackSnapshot =
 // still need what this activation left behind.
 StackSnapshot snapshotStackCells(IRICFG *calleeCFG, ECMAGraph *G) {
   StackSnapshot snapshot;
-  for (const auto b : calleeCFG->ptaGenStack())
+  for (const auto b : calleeCFG->ptaInfo().stack)
     if (G->hasNode(b))
       snapshot[b] =
           G->getPointees(b, Prakriti::PKRGlobalState::EdgeIntern(PKR_STK));
@@ -316,7 +303,7 @@ StackSnapshot snapshotStackCells(IRICFG *calleeCFG, ECMAGraph *G) {
 
 void restoreStackCells(IRICFG *calleeCFG, ECMAGraph *G,
                        const StackSnapshot &snapshot) {
-  for (const auto b : calleeCFG->ptaGenStack()) {
+  for (const auto b : calleeCFG->ptaInfo().stack) {
     if (!G->hasNode(b))
       continue;
     G->removeAllOutgoingEdgesByLabel(
@@ -371,11 +358,12 @@ void PTASolver::solve(IRIContext &ctx) {
       std::function<ECMAGraph::PJSSL_RET(ECMAGraph::PJSSL_ARG)>;
 
   auto env = Prakriti::QJSScriptFile();
-  env.alloc(&currState, rootCFG->id,
-           std::make_shared<ActionClosureTarget>([&](ECMAGraph::PJSSL_ARG arg) {
-             runFile(ctx, rootCFG, arg.G, env.globals);
-             return ECMAGraph::PJSSL_RET();
-           }));
+  env.alloc(
+      &currState, rootCFG->id,
+      std::make_shared<ActionClosureTarget>([&](ECMAGraph::PJSSL_ARG arg) {
+        runFile(ctx, rootCFG, arg.G, env.globals);
+        return ECMAGraph::PJSSL_RET();
+      }));
 
   // Repeatedly drain pending Eval-like actions off JSFILE nodes until the
   // set of live files stops changing.
@@ -403,11 +391,11 @@ void PTASolver::solve(IRIContext &ctx) {
 }
 
 std::set<Prakriti::NodeUID> PTASolver::invokeClosure(
-    IRIContext &ctx, IRICFG *calleeCFG, Prakriti::NodeUID closureID,
-    ECMAGraph *G, const std::set<Prakriti::NodeUID> &thisVal,
+    IRICFG *calleeCFG, Prakriti::NodeUID closureID, ECMAGraph *G,
+    const std::set<Prakriti::NodeUID> &thisVal,
     const std::vector<std::set<Prakriti::NodeUID>> &actualArgs) {
   auto snapshot = snapshotStackCells(calleeCFG, G);
-  auto owned = setupClosureFrame(ctx, calleeCFG, G, thisVal, actualArgs);
+  auto owned = setupClosureFrame(calleeCFG, G, thisVal, actualArgs);
 
   // Recursion guard, for each closure we store a vector of tuples
   // (code, value_ctx|null). If the closure is recursively reached again with
