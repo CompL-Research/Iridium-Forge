@@ -46,12 +46,12 @@ void handleFieldWrite(const PTAStatementContext &ptactx) {
   for (auto A_a : objs) {
     for (auto B_b : values) {
       assert(G->hasNode(A_a));
+      // [[Set]] belongs to the target, not the value being written.
       auto setClosures =
-          G->getPointees(B_b, Prakriti::PKRGlobalState::EdgeIntern(PKR_Set));
+          G->getPointees(A_a, Prakriti::PKRGlobalState::EdgeIntern(PKR_Set));
 
       if (setClosures.empty())
-        continue; // o1 can be null right? Dont quote me on this
-                  // :p ~ Meetesh
+        continue; // A_a can be a primitive, which has no [[Set]]
 
       for (auto kr :
            Prakriti::Karma(G, setClosures, {nullptr, {A_a, B_b}, {field}})) {

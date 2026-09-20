@@ -53,23 +53,21 @@ void handleJSDefineObjProp(const PTAStatementContext &ptactx) {
   for (auto A_a : objs) {
     for (auto B_b : values) {
       assert(G->hasNode(A_a));
+      // [[DefineOwnProperty]] belongs to the target, not the value.
       auto targetClosures = G->getPointees(
-          B_b, Prakriti::PKRGlobalState::EdgeIntern(PKR_DefineOwnProperty));
+          A_a, Prakriti::PKRGlobalState::EdgeIntern(PKR_DefineOwnProperty));
 
       if (targetClosures.empty())
         continue; // Same reasoning as FieldWrite...
-                  // :p ~ Meetesh
 
       auto desc = std::make_shared<Prakriti::TempFieldDescriptor>();
       desc->addValue(B_b);
       desc->addWritable(Prakriti::PKRGlobalState::getTRUE());
       desc->addEnumerable(Prakriti::PKRGlobalState::getTRUE());
       desc->addConfigurable(Prakriti::PKRGlobalState::getTRUE());
-      auto res =
-          Prakriti::ECMAGraph::PJSSL_ARG{nullptr, {A_a}, {field}, {desc}};
-
-      for (auto kr :
-           Prakriti::Karma(G, targetClosures, {nullptr, {A_a, B_b}, {field}})) {
+      for (auto kr : Prakriti::Karma(
+               G, targetClosures,
+               {nullptr, {A_a}, {field}, {desc}})) {
         finalRes.push_back(kr.clonedG);
       }
     }
