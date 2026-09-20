@@ -7,7 +7,6 @@
 #include <cassert>
 #include <memory>
 #include <set>
-#include <stdexcept>
 #include <string>
 
 namespace IRI_STRUCTURAL {
@@ -25,20 +24,19 @@ void handleJSDefineObjProp(const PTAStatementContext &ptactx) {
   IRI_GEN::JSDefineObjPropSEXP sexp(ptactx.stmt.id, ptactx.ctx);
   Prakriti::ECMAGraph *G = ptactx.incomingState;
 
-  IRID keyNode = sexp.getArg_Key();
-  if (IRI_NODE(ptactx.ctx, keyNode).tag != IRI_GEN::IRI_TAG::String)
-    throw std::runtime_error(
-        "PTA unhandled case JSDefineObjProp: computed key");
-
   std::set<Prakriti::NodeUID> objs, values;
   resolvePKRRVal(ptactx, sexp.getArg_TargetObj(), objs);
   resolvePKRRVal(ptactx, sexp.getArg_Value(), values);
   assert(!objs.empty());
   assert(!values.empty());
 
-  IRI_GEN::StringSEXP keySexp(keyNode, ptactx.ctx);
-  std::string field(
-      Prakriti::PKRGlobalState::EdgeGet(keySexp.getIridiumPrimitive()));
+  // A key ReduceComputedFieldOpsPass could not turn into a literal is a key
+  // nothing knows; see *Computed access* in PTA_PLAN.md.
+  IRID keyNode = sexp.getArg_Key();
+  std::string field = PKR_UNKNOWN_FIELD;
+  if (IRI_NODE(ptactx.ctx, keyNode).tag == IRI_GEN::IRI_TAG::String)
+    field = Prakriti::PKRGlobalState::EdgeGet(
+        IRI_GEN::StringSEXP(keyNode, ptactx.ctx).getIridiumPrimitive());
 
   defineProperty(G, objs, field, values);
 }

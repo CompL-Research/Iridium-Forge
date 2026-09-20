@@ -45,7 +45,9 @@ inline void defineProperty(Prakriti::ECMAGraph *G,
       desc->addWritable(Prakriti::PKRGlobalState::getTRUE());
       desc->addEnumerable(Prakriti::PKRGlobalState::getTRUE());
       desc->addConfigurable(Prakriti::PKRGlobalState::getTRUE());
-      desc->addDefinite(Prakriti::PKRGlobalState::getTRUE());
+      // An unknown key defines some property, never this one.
+      if (field != PKR_UNKNOWN_FIELD)
+        desc->addDefinite(Prakriti::PKRGlobalState::getTRUE());
       Prakriti::Karma(G, acts, {nullptr, {obj}, {field}, {desc}}, discarded,
                       branches);
     }
