@@ -1892,6 +1892,8 @@ namespace OOHelpers {
 
 // Some action closures are meant to be pure, mutation here most likely means
 // broken implementation logic, not always enabled
+// PRECISION: discarding the branches asserts the queried action is pure.
+// Build with PKR_PARANOID to check it.
 inline static std::set<NodeUID> pureQuery(const ECMAGraph *G,
                                           const std::vector<NodeUID> &acts,
                                           const ECMAGraph::PJSSL_ARG &args) {
@@ -1934,13 +1936,18 @@ inline static std::vector<NodeUID> collectOwnFieldFPs(const ECMAGraph *G,
   return res;
 }
 
-inline static NodeUID getOwnProperty(ECMAGraph *G, NodeUID ctx,
-                                     const std::string &field) {
-  auto acts =
-      G->getPointees(ctx, PKRGlobalState::EdgeIntern(PKR_GetOwnProperty));
-  auto result = pureQuery(G, acts, {NULL, {ctx}, {field}});
-  ASSERT(result.size() == 1);
-  return *result.begin();
+// The FieldProxy node for an own key, or undefined. This is the internal
+// lookup Get/Set/Delete want; the [[GetOwnProperty]] action is the spec
+// operation and may legitimately answer with two values.
+// ~ Meetesh - I had earlier tried to squash both these into the same, but this
+// is much less error prone way to handle this query
+inline static NodeUID findOwnFP(ECMAGraph *G, NodeUID ctx,
+                                const std::string &field) {
+  auto fps = G->getPointees(ctx, PKRGlobalState::EdgeIntern(field.c_str()));
+  if (fps.empty())
+    return PKRGlobalState::getUNDEF();
+  ASSERT(fps.size() == 1);
+  return fps[0];
 }
 
 inline static std::set<NodeUID> getPrototypes(ECMAGraph *G, NodeUID ctx) {
@@ -1949,12 +1956,50 @@ inline static std::set<NodeUID> getPrototypes(ECMAGraph *G, NodeUID ctx) {
   return pureQuery(G, acts, {NULL, {ctx}});
 }
 
-inline static bool hasProperty(ECMAGraph *G, NodeUID ctx,
-                               const std::string &field) {
-  auto acts = G->getPointees(ctx, PKRGlobalState::EdgeIntern(PKR_HasProperty));
-  auto result = pureQuery(G, acts, {NULL, {ctx}, {field}});
-  ASSERT(result.size() == 1);
-  return *result.begin() != PKRGlobalState::getUNDEF();
+// Whether the key may exist anywhere on the chain, and whether it must.
+// Presence is a may-fact unless [[Definite]] says otherwise, so only `must`
+// licenses answering [[HasProperty]] with a single value.
+struct Presence {
+  bool may = false;
+  bool must = false;
+};
+
+inline static Presence presence(ECMAGraph *G, NodeUID ctx,
+                                const std::string &field) {
+  Presence p;
+  if (ctx == PKRGlobalState::getNULL())
+    return p;
+
+  if (field == PKR_UNKNOWN_FIELD) {
+    // Any own field could be the one named, but none of them proves it is.
+    if (!collectOwnFieldFPs(G, ctx).empty())
+      p.may = true;
+  } else {
+    NodeUID fp = findOwnFP(G, ctx, field);
+    if (fp != PKRGlobalState::getUNDEF()) {
+      p.may = true;
+      if (isDefinite(G, fp))
+        p.must = true;
+    }
+    // An earlier unknown-keyed write may have targeted this very key.
+    if (!isFieldSensitive(G, ctx))
+      p.may = true;
+  }
+  // PRECISION: a definite own property settles it; the chain cannot remove it.
+  if (p.must)
+    return p;
+
+  // The prototype is itself a may-set, so it only proves presence when every
+  // candidate has the key.
+  auto protos = getPrototypes(G, ctx);
+  bool allMust = !protos.empty();
+  for (auto proto : protos) {
+    Presence q = presence(G, proto, field);
+    p.may |= q.may;
+    allMust &= q.must;
+  }
+  p.must = allMust;
+  return p;
 }
 
 // Unknown-key case: the real key could be any own field at any level of the
@@ -2018,10 +2063,16 @@ inline bool initOOBJ = []() {
     NodeUID V = L[1];
     if (!OOHelpers::isExtensible(G, ctx))
       return {{PKRGlobalState::getFALSE()}};
-    G->removeAllOutgoingEdgesByLabel(ctx,
-                                     PKRGlobalState::EdgeIntern(PKR_PROTOTYPE));
+    // Weak: the node may stand for several objects, so the new prototype joins
+    // the existing ones instead of replacing them. [[Get]] already walks the
+    // whole may-set.
     G->addEdge(ctx, V, PKRGlobalState::EdgeIntern(PKR_PROTOTYPE));
-    return {{PKRGlobalState::getTRUE()}};
+
+    auto ext = G->getPointees(ctx, PKRGlobalState::EdgeIntern(PKR_EXTENSIBLE));
+    // PRECISION: only a must-extensible receiver makes the result certain.
+    if (!ext.empty() && isOnlyTrue(ext))
+      return {{PKRGlobalState::getTRUE()}};
+    return {{PKRGlobalState::getTRUE(), PKRGlobalState::getFALSE()}};
   });
 
   PKRGlobalState::NAC_OOBJ_IsExtensible = DEFINE_ACTION() {
@@ -2040,10 +2091,8 @@ inline bool initOOBJ = []() {
 
     ASSERT(L.size() == 1);
     NodeUID ctx = L[0];
-    if (!OOHelpers::isExtensible(G, ctx))
-      return {};
-    G->removeAllOutgoingEdgesByLabel(
-        ctx, PKRGlobalState::EdgeIntern(PKR_EXTENSIBLE));
+    // Weak: some objects the node stands for may still be extensible, so
+    // [[Extensible]] accumulates rather than being replaced.
     G->addEdge(ctx, PKRGlobalState::getFALSE(),
                PKRGlobalState::EdgeIntern(PKR_EXTENSIBLE));
     return {};
@@ -2063,7 +2112,11 @@ inline bool initOOBJ = []() {
     // Assertions, We dont expect more than one field proxies at a node...
     ASSERT(fps.size() == 1);
     ASSERT(G->getNodeTAG(fps[0]) == TAG::FOX);
-    return {fps};
+    // PRECISION: the node may stand for objects that lack the key, so the
+    // descriptor is the whole answer only when the FieldProxy is [[Definite]].
+    if (OOHelpers::isDefinite(G, fps[0]))
+      return {fps};
+    return {{fps[0], PKRGlobalState::getUNDEF()}};
   });
 
   PKRGlobalState::NAC_OOBJ_DefineOwnProperty = DEFINE_ACTION() {
@@ -2078,7 +2131,7 @@ inline bool initOOBJ = []() {
     std::shared_ptr<FieldDescriptor> rhsPtr =
         std::dynamic_pointer_cast<FieldDescriptor>(X[0]);
     ASSERT(rhsPtr);
-    NodeUID currentFP = OOHelpers::getOwnProperty(G, ctx, field);
+    NodeUID currentFP = OOHelpers::findOwnFP(G, ctx, field);
     auto isExtensible = OOHelpers::isExtensible(G, ctx);
 
     if (currentFP == PKRGlobalState::getUNDEF()) {
@@ -2142,33 +2195,12 @@ inline bool initOOBJ = []() {
     NodeUID ctx = L[0];
     std::string field = A[0];
 
-    if (field == PKR_UNKNOWN_FIELD) {
-      if (!OOHelpers::collectOwnFieldFPs(G, ctx).empty())
-        return {{PKRGlobalState::getTRUE()}};
-      for (auto p : OOHelpers::getPrototypes(G, ctx)) {
-        if (p == PKRGlobalState::getNULL())
-          continue;
-        if (OOHelpers::hasProperty(G, p, field))
-          return {{PKRGlobalState::getTRUE()}};
-      }
-      return {{PKRGlobalState::getFALSE()}};
-    }
-
-    NodeUID currentFP = OOHelpers::getOwnProperty(G, ctx, field);
-    if (currentFP != PKRGlobalState::getUNDEF())
+    OOHelpers::Presence pr = OOHelpers::presence(G, ctx, field);
+    // PRECISION: `must` is the only thing that rules out the FALSE branch.
+    if (pr.must)
       return {{PKRGlobalState::getTRUE()}};
-    for (auto p : OOHelpers::getPrototypes(G, ctx)) {
-      if (p == PKRGlobalState::getNULL())
-        continue;
-      if (OOHelpers::hasProperty(G, p, field))
-        return {{PKRGlobalState::getTRUE()}};
-    }
-    if (!OOHelpers::isFieldSensitive(G, ctx)) {
-      // An earlier unknown-keyed write may have targeted this very key.
-      ASSERT(OOHelpers::getOwnProperty(G, ctx, PKR_UNKNOWN_FIELD) !=
-             PKRGlobalState::getUNDEF());
-      return {{PKRGlobalState::getTRUE()}};
-    }
+    if (pr.may)
+      return {{PKRGlobalState::getTRUE(), PKRGlobalState::getFALSE()}};
     return {{PKRGlobalState::getFALSE()}};
   });
 
@@ -2189,14 +2221,16 @@ inline bool initOOBJ = []() {
     if (field == PKR_UNKNOWN_FIELD) {
       fps = OOHelpers::collectOwnFieldFPs(G, ctx);
     } else {
-      NodeUID currentFP = OOHelpers::getOwnProperty(G, ctx, field);
+      NodeUID currentFP = OOHelpers::findOwnFP(G, ctx, field);
       if (currentFP != PKRGlobalState::getUNDEF()) {
         fps.push_back(currentFP);
         ownIsDefinite = OOHelpers::isDefinite(G, currentFP);
       }
+      // PRECISION: a must-field-sensitive object has no unknown-keyed writes to
+      // account for, so the bucket is skipped.
       if (!OOHelpers::isFieldSensitive(G, ctx)) {
         // An earlier unknown-keyed write may have targeted this very key.
-        NodeUID bucketFP = OOHelpers::getOwnProperty(G, ctx, PKR_UNKNOWN_FIELD);
+        NodeUID bucketFP = OOHelpers::findOwnFP(G, ctx, PKR_UNKNOWN_FIELD);
         ASSERT(bucketFP != PKRGlobalState::getUNDEF());
         fps.push_back(bucketFP);
       }
@@ -2210,12 +2244,17 @@ inline bool initOOBJ = []() {
       auto vals = G->getPointees(fp, PKRGlobalState::EdgeIntern(PKR_VALUE));
       res.insert(res.end(), vals.begin(), vals.end());
       auto getters = G->getPointees(fp, PKRGlobalState::EdgeIntern(PKR_Get));
+      // 10.1.8.1 step 8: an accessor whose [[Get]] is absent reads as
+      // undefined, and it is the only value such a property can produce.
+      auto setters = G->getPointees(fp, PKRGlobalState::EdgeIntern(PKR_Set));
+      if (getters.empty() && !setters.empty())
+        res.push_back(PKRGlobalState::getUNDEF());
       auto call = makeCall({rcvr}, {});
       Karma(G, getters, {NULL, call.L, call.A}, res, branches);
     }
 
-    // OrdinaryGet consults the prototype only when the own property is
-    // absent; skipping is sound only when its presence is a must-fact.
+    // PRECISION: OrdinaryGet consults the prototype only when the own property
+    // is absent, so [[Definite]] - a must-fact - is what licenses skipping it.
     if (!ownIsDefinite) {
       for (auto &p : OOHelpers::getPrototypes(G, ctx)) {
         if (p == PKRGlobalState::getNULL()) {
@@ -2264,9 +2303,23 @@ inline bool initOOBJ = []() {
       Karma(G, acts, {NULL, call.L, call.A}, discarded, branches);
     }
 
+    auto currentFP = OOHelpers::findOwnFP(G, ctx, field);
+
+    // PRECISION: 10.1.9.2 step 3 writes an accessor own property through its
+    // setter and nothing else. Skipping the data write needs [[Definite]] and
+    // no [[Value]] -- an FP that merged accessor and data shapes is ambiguous,
+    // so it still gets the write.
+    if (currentFP != PKRGlobalState::getUNDEF()) {
+      auto accessorFD = FieldDescriptor(G, currentFP);
+      if (IsAccessorDescriptor(&accessorFD) && GetValue(&accessorFD).empty() &&
+          OOHelpers::isDefinite(G, currentFP)) {
+        KarmaJoin(G, branches);
+        return {{}};
+      }
+    }
+
     // Setters may not exist in every merged branch, so the data write always
     // happens as well.
-    auto currentFP = OOHelpers::getOwnProperty(G, ctx, field);
     auto tmp = std::make_shared<TempFieldDescriptor>();
     tmp->addValue(valToSet);
     if (currentFP == PKRGlobalState::getUNDEF()) {
@@ -2275,8 +2328,14 @@ inline bool initOOBJ = []() {
       tmp->addConfigurable(PKRGlobalState::getTRUE());
     } else {
       auto currentFD = FieldDescriptor(G, currentFP);
-      tmp->addWritable(!IsNotWritable(&currentFD) ? PKRGlobalState::getTRUE()
-                                                  : PKRGlobalState::getFALSE());
+      // An accessor descriptor has no [[Writable]] and IsNotWritable asserts on
+      // an empty set, so only a data property can answer the question.
+      bool hasWritable =
+          !G->getPointees(currentFP, PKRGlobalState::EdgeIntern(PKR_WRITABLE))
+               .empty();
+      tmp->addWritable(!hasWritable || !IsNotWritable(&currentFD)
+                           ? PKRGlobalState::getTRUE()
+                           : PKRGlobalState::getFALSE());
       tmp->addEnumerable(!IsNotEnumerable(&currentFD)
                              ? PKRGlobalState::getTRUE()
                              : PKRGlobalState::getFALSE());
@@ -2303,18 +2362,40 @@ inline bool initOOBJ = []() {
     NodeUID ctx = L[0];
     std::string field = A[0];
 
-    if (!OOHelpers::isFieldSensitive(G, ctx))
-      return {{PKRGlobalState::getTRUE()}};
+    // A delete on a summary node is weak: leave the FieldProxy in place and
+    // record that the property may now be absent. Removing it is a strong
+    // update, legal only once allocation nodes are singletons.
+    auto markMayBeAbsent = [&](NodeUID fp) {
+      G->addEdge(fp, PKRGlobalState::getFALSE(),
+                 PKRGlobalState::EdgeIntern(PKR_DEFINITE));
+    };
 
-    NodeUID currentFP = OOHelpers::getOwnProperty(G, ctx, field);
+    if (!OOHelpers::isFieldSensitive(G, ctx)) {
+      // An unknown key may name any own field, so none of them stays definite
+      // - otherwise [[Get]] would keep skipping the prototype walk for a
+      // property this delete may have removed.
+      for (auto fp : OOHelpers::collectOwnFieldFPs(G, ctx))
+        markMayBeAbsent(fp);
+      return {{PKRGlobalState::getTRUE(), PKRGlobalState::getFALSE()}};
+    }
+
+    NodeUID currentFP = OOHelpers::findOwnFP(G, ctx, field);
     if (currentFP == PKRGlobalState::getUNDEF())
       return {{PKRGlobalState::getTRUE()}};
 
     FieldDescriptor currentFD(G, currentFP);
     if (IsNotConfigurable(&currentFD))
       return {{PKRGlobalState::getFALSE()}};
-    G->removeAllOutgoingEdgesByLabel(ctx, PKRGlobalState::EdgeIntern(field));
-    return {{PKRGlobalState::getTRUE()}};
+
+    auto cfg =
+        G->getPointees(currentFP, PKRGlobalState::EdgeIntern(PKR_CONFIGURABLE));
+    bool mustBeConfigurable = !cfg.empty() && isOnlyTrue(cfg);
+    markMayBeAbsent(currentFP);
+    // PRECISION: the delete can only be reported as certain to succeed when
+    // every object the node stands for has a configurable property.
+    if (mustBeConfigurable)
+      return {{PKRGlobalState::getTRUE()}};
+    return {{PKRGlobalState::getTRUE(), PKRGlobalState::getFALSE()}};
   });
 
   PKRGlobalState::NAC_OOBJ_OwnPropertyKeys = DEFINE_ACTION() {
@@ -2394,11 +2475,13 @@ inline bool initARGSOBJ = []() {
     auto targets =
         G->getPointees(ctx, PKRGlobalState::EdgeIntern(field.c_str()));
     ASSERT(!targets.empty());
-    NodeUID stackCell = targets[0];
-    auto acts = G->getPointees(stackCell, PKRGlobalState::EdgeIntern(PKR_Get));
     std::vector<NodeUID> res;
     std::vector<ECMAGraph> branches;
-    Karma(G, acts, {NULL, {stackCell}}, res, branches);
+    for (NodeUID stackCell : targets) {
+      auto acts =
+          G->getPointees(stackCell, PKRGlobalState::EdgeIntern(PKR_Get));
+      Karma(G, acts, {NULL, {stackCell}}, res, branches);
+    }
     KarmaJoin(G, branches);
     return {res};
   });
@@ -2413,9 +2496,14 @@ inline bool initARGSOBJ = []() {
     auto targets =
         G->getPointees(ctx, PKRGlobalState::EdgeIntern(field.c_str()));
     ASSERT(!targets.empty());
-    NodeUID stackCell = targets[0];
-    auto acts = G->getPointees(stackCell, PKRGlobalState::EdgeIntern(PKR_Set));
-    KarmaJoin(G, Karma(G, acts, {NULL, {stackCell, val}}));
+    std::vector<NodeUID> discarded;
+    std::vector<ECMAGraph> branches;
+    for (NodeUID stackCell : targets) {
+      auto acts =
+          G->getPointees(stackCell, PKRGlobalState::EdgeIntern(PKR_Set));
+      Karma(G, acts, {NULL, {stackCell, val}}, discarded, branches);
+    }
+    KarmaJoin(G, branches);
     return {};
   });
 
@@ -2584,6 +2672,12 @@ inline bool initBinaryOperators = []() {
     case TAG::STRING_VAL:
       return {{PKRGlobalState::getNUMBER(), PKRGlobalState::getNAN()}};
     default:
+      // 7.1.4 sends an object through ToPrimitive first. Nothing reaches here
+      // with one today, and returning NUMBER would drop that coercion's
+      // effects, so refuse instead of answering wrongly.
+      if (isObjectNode(G, v))
+        throw std::runtime_error(
+            "PKR: ToNumber on an object requires ToPrimitive");
       return {{PKRGlobalState::getNUMBER()}};
     }
   });
@@ -2684,23 +2778,35 @@ inline bool initBinaryOperators = []() {
             false); // non-callable [Symbol.toPrimitive]: TypeError, unmodeled
     }
 
-    // Do I really wanna throw an error with undefined or just move on... its a
-    // corner case I hope... ~ Meetesh
-    ASSERT(!(sawUndefined && !callable.empty()));
+    // The lookup may be undefined on one path and a method on another. Both
+    // readings are live, so each forks and the results union.
+    std::set<NodeUID> results;
+    std::vector<ECMAGraph> branches;
 
     if (!callable.empty()) {
-      std::vector<NodeUID> results;
+      ECMAGraph H = G->clone();
+      std::vector<NodeUID> r;
       std::vector<ECMAGraph> callBranches;
       // Call(exoticToPrim, input, [hint]) - the hint is not modelled.
       auto call = makeCall({val}, {});
-      Karma(G, callable, {NULL, call.L, call.A}, results, callBranches);
-      KarmaJoin(G, callBranches);
-      return {{results.begin(), results.end()}};
+      Karma(&H, callable, {NULL, call.L, call.A}, r, callBranches);
+      KarmaJoin(&H, callBranches);
+      results.insert(r.begin(), r.end());
+      branches.push_back(std::move(H));
     }
 
-    NodeUID otpAct =
-        PKRGlobalState::getActionNode(PKRGlobalState::NAC_OrdinaryToPrimitive);
-    return invokeAction(otpAct, {G, {val}});
+    if (sawUndefined || callable.empty()) {
+      ECMAGraph H = G->clone();
+      NodeUID otpAct = PKRGlobalState::getActionNode(
+          PKRGlobalState::NAC_OrdinaryToPrimitive);
+      auto r = invokeAction(otpAct, {&H, {val}});
+      results.insert(r.L.begin(), r.L.end());
+      branches.push_back(std::move(H));
+    }
+
+    KarmaJoin(G, branches);
+    ASSERT(!results.empty());
+    return {{results.begin(), results.end()}};
   });
 
   // ECMA-262 7.1.17 ToString
@@ -2771,6 +2877,7 @@ inline bool initBinaryOperators = []() {
 
     std::set<NodeUID> lvalSet = {lval};
     std::set<NodeUID> rvalSet = {rval};
+    std::vector<ECMAGraph> stringBranches, numBranches;
 
     if (op == "+") {
       NodeUID tpAct =
@@ -2780,20 +2887,39 @@ inline bool initBinaryOperators = []() {
       auto vv2Ret = invokeAction(tpAct, {G, {rval}});
       std::set<NodeUID> vv2(vv2Ret.L.begin(), vv2Ret.L.end());
 
-      bool anyString = false;
-      for (NodeUID v : vv1)
-        anyString |= (G->getNodeTAG(v) == TAG::STRING_VAL);
-      for (NodeUID v : vv2)
-        anyString |= (G->getNodeTAG(v) == TAG::STRING_VAL);
+      // 13.15.3 picks the string concatenation only when an operand really is
+      // a String. Being a String is a may-fact here, so it prunes the numeric
+      // branch only when every operand must be one.
+      bool anyString = false, allString = true;
+      for (NodeUID v : vv1) {
+        bool isStr = G->getNodeTAG(v) == TAG::STRING_VAL;
+        anyString |= isStr;
+        allString &= isStr;
+      }
+      for (NodeUID v : vv2) {
+        bool isStr = G->getNodeTAG(v) == TAG::STRING_VAL;
+        anyString |= isStr;
+        allString &= isStr;
+      }
 
       if (anyString) {
         NodeUID tsAct =
             PKRGlobalState::getActionNode(PKRGlobalState::NAC_ToString);
+        // The string and numeric readings are alternatives over the same
+        // incoming state, so the coercions fork and join once.
+        std::vector<ECMAGraph> strBranches;
+        ECMAGraph GS = G->clone();
         for (NodeUID v : vv1)
-          invokeAction(tsAct, {G, {v}}); // side effects only
+          invokeAction(tsAct, {&GS, {v}}); // side effects only
         for (NodeUID v : vv2)
-          invokeAction(tsAct, {G, {v}}); // side effects only
-        return {{PKRGlobalState::getSTRING()}};
+          invokeAction(tsAct, {&GS, {v}}); // side effects only
+        strBranches.push_back(std::move(GS));
+        // PRECISION: only an all-Strings must-fact excludes the numeric reading.
+        if (allString) {
+          KarmaJoin(G, strBranches);
+          return {{PKRGlobalState::getSTRING()}};
+        }
+        stringBranches = std::move(strBranches);
       }
 
       lvalSet = vv1;
@@ -2802,27 +2928,68 @@ inline bool initBinaryOperators = []() {
 
     NodeUID tnumAct =
         PKRGlobalState::getActionNode(PKRGlobalState::NAC_ToNumeric);
+    // Each operand value is an alternative, so each coercion reads the same
+    // incoming state; threading G would let one observe another's effects.
     std::set<NodeUID> v1, v2;
     for (NodeUID v : lvalSet) {
-      auto r = invokeAction(tnumAct, {G, {v}});
+      ECMAGraph H = G->clone();
+      auto r = invokeAction(tnumAct, {&H, {v}});
       v1.insert(r.L.begin(), r.L.end());
+      numBranches.push_back(std::move(H));
     }
     for (NodeUID v : rvalSet) {
-      auto r = invokeAction(tnumAct, {G, {v}});
+      ECMAGraph H = G->clone();
+      auto r = invokeAction(tnumAct, {&H, {v}});
       v2.insert(r.L.begin(), r.L.end());
+      numBranches.push_back(std::move(H));
     }
 
-    if (v1.size() == 1 && v2.size() == 1) {
-      TAG t1 = G->getNodeTAG(*v1.begin());
-      TAG t2 = G->getNodeTAG(*v2.begin());
-      if (t1 == TAG::BIGINT_VAL && t2 == TAG::BIGINT_VAL)
-        return {{PKRGlobalState::getBIGINT()}};
-      if (t1 == TAG::NUMBER_VAL && t2 == TAG::NUMBER_VAL)
-        return {{PKRGlobalState::getNUMBER()}};
+    {
+      std::vector<ECMAGraph> all;
+      all.reserve(stringBranches.size() + numBranches.size());
+      for (auto &b : stringBranches)
+        all.push_back(std::move(b));
+      for (auto &b : numBranches)
+        all.push_back(std::move(b));
+      KarmaJoin(G, all);
+    }
+
+    std::set<NodeUID> res;
+    // A may-String operand keeps the concatenation reading alive beside the
+    // numeric one; allString returned above.
+    if (!stringBranches.empty())
+      res.insert(PKRGlobalState::getSTRING());
+
+    // NaN carries its own tag but is a Number, so both count as numeric.
+    auto allNumeric = [&](const std::set<NodeUID> &vs, bool bigint) {
+      if (vs.empty())
+        return false;
+      for (NodeUID v : vs) {
+        TAG t = G->getNodeTAG(v);
+        bool ok = bigint ? (t == TAG::BIGINT_VAL)
+                         : (t == TAG::NUMBER_VAL || t == TAG::NAN_VAL);
+        if (!ok)
+          return false;
+      }
+      return true;
+    };
+
+    // PRECISION: 13.15.3 step 4 coerces both operands to the same numeric type,
+    // so one type can be dropped - but only when every value on both sides must
+    // have it. A mixed set keeps both.
+    if (allNumeric(v1, true) && allNumeric(v2, true)) {
+      res.insert(PKRGlobalState::getBIGINT());
+      return {{res.begin(), res.end()}};
+    }
+    if (allNumeric(v1, false) && allNumeric(v2, false)) {
+      res.insert(PKRGlobalState::getNUMBER());
+      return {{res.begin(), res.end()}};
     }
 
     // Over-approximated
-    return {{PKRGlobalState::getNUMBER(), PKRGlobalState::getBIGINT()}};
+    res.insert(PKRGlobalState::getNUMBER());
+    res.insert(PKRGlobalState::getBIGINT());
+    return {{res.begin(), res.end()}};
   });
 
   // ECMA-262 13.10
@@ -2882,8 +3049,6 @@ inline bool initBinaryOperators = []() {
       // ToPropertyKey on the left; [[HasProperty]] runs no user code.
       invokeAction(tpAct, {G, {lval}});
     } else if (op == "instanceof") {
-      // 13.10.2 WIP
-      ASSERT(false && "TODO::PKR instanceof 13.10.2");
       // OrdinaryHasInstance reads C.prototype, which may be an accessor.
       // Symbol.hasInstance is not modelled.
       auto acts = G->getPointees(rval, PKRGlobalState::EdgeIntern(PKR_Get));
@@ -3023,6 +3188,8 @@ inline bool initSOBJ = []() {
 
     ASSERT(L.size() >= 2);
     NodeUID ctx = L[0];
+    // PRECISION: an uncaptured cell is unreachable outside its frame, so the
+    // strong update is always legal. ptaInfo() is what establishes that.
     G->removeAllOutgoingEdgesByLabel(ctx, PKRGlobalState::EdgeIntern(PKR_STK));
     for (auto i = 1; i < L.size(); i++) {
       G->addEdge(ctx, L[i], PKRGlobalState::EdgeIntern(PKR_STK));
@@ -3535,9 +3702,9 @@ inline bool initTSOBJ = []() {
     ASSERT(L.size() >= 2);
     NodeUID ctx = L[0];
 
-    // Strong only inside the window the owning frame opened. A mixed set is
-    // the join of a branch that closed the window with one that did not, and
-    // falls to weak, which is the safe direction.
+    // PRECISION: strong only inside the window the owning frame opened. A mixed
+    // set is the join of a branch that closed the window with one that did not,
+    // and falls to weak, which is the safe direction.
     auto transience =
         G->getPointees(ctx, PKRGlobalState::EdgeIntern(PKR_TRANSIENCE));
     if (transience.size() == 1 && transience[0] == PKRGlobalState::getTRUE())
