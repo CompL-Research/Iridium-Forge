@@ -46,7 +46,8 @@
   V(STRING_VAL)                                                                \
   V(BIGINT_VAL)                                                                \
   V(SYMBOL_TOPRIMITIVE_VAL)                                                   \
-  V(SYMBOL_TOSTRINGTAG_VAL)
+  V(SYMBOL_TOSTRINGTAG_VAL)                                                    \
+  V(SYMBOL_HASINSTANCE_VAL)
 
 #define DEF_NODE_TYPES(V)                                                      \
   DEF_NODE_EVAL(V)                                                             \
@@ -335,7 +336,8 @@ public:
   V(NAC_ToNumeric)                                                            \
   V(NAC_HandleBinop)                                                         \
   V(NAC_HandleRelop)                                                          \
-  V(NAC_HandleJSBinop)
+  V(NAC_HandleJSBinop)                                                          \
+  V(NAC_OrdinaryHasInstance)
 
 // Global object identities. PKRGlobalState (ECMAGraph.hpp) turns each of
 // these into a NodeUID field + getter + Init() reservation.
@@ -655,6 +657,7 @@ private:
   inline static NodeUID BIGINT_VAL = 0;
   inline static NodeUID SYMBOL_TOPRIMITIVE_VAL = 0;
   inline static NodeUID SYMBOL_TOSTRINGTAG_VAL = 0;
+  inline static NodeUID SYMBOL_HASINSTANCE_VAL = 0;
 
   // See list-globals.hpp.
 #define AS_GLOBAL_FIELDS(name) inline static NodeUID name = 0;
@@ -734,6 +737,11 @@ public:
     return SYMBOL_TOSTRINGTAG_VAL;
   }
 
+  static NodeUID getSYMBOL_HASINSTANCE() {
+    ASSERT(isInitialized);
+    return SYMBOL_HASINSTANCE_VAL;
+  }
+
 #define AS_GLOBAL_GETTERS(name)                                                \
   static NodeUID get##name() { return name; }
   DEF_GLOBAL_IDENTITIES(AS_GLOBAL_GETTERS)
@@ -791,6 +799,7 @@ public:
     BIGINT_VAL = reserveNodeUID();
     SYMBOL_TOPRIMITIVE_VAL = reserveNodeUID();
     SYMBOL_TOSTRINGTAG_VAL = reserveNodeUID();
+    SYMBOL_HASINSTANCE_VAL = reserveNodeUID();
 
 #define AS_GLOBAL_INIT(name) name = reserveNodeUID();
     DEF_GLOBAL_IDENTITIES(AS_GLOBAL_INIT)
@@ -955,6 +964,8 @@ public:
       return "Symbol.toPrimitive";
     if (uid == SYMBOL_TOSTRINGTAG_VAL)
       return "Symbol.toStringTag";
+    if (uid == SYMBOL_HASINSTANCE_VAL)
+      return "Symbol.hasInstance";
 
     // Global Identities
 #define AS_GLOBAL_NAME(name)                                                   \
@@ -1481,6 +1492,7 @@ public:
 #define PKR_MAPPED_ARGUMENTS "[[MappedArguments]]"
 #define PKR_SYM_toPrimitive "[[Symbol.toPrimitive]]"
 #define PKR_SYM_toStringTag "[[Symbol.toStringTag]]"
+#define PKR_SYM_hasInstance "[[Symbol.hasInstance]]"
 #define PKR_TRANSIENCE_BACKUP "[[transience-backup]]"
 #define PKR_IS_EXECUTING "[[is-executing]]"
 #define PKR_DEFINITE "[[Definite]]"
@@ -1965,9 +1977,12 @@ struct Presence {
 };
 
 inline static Presence presence(ECMAGraph *G, NodeUID ctx,
-                                const std::string &field) {
+                                const std::string &field,
+                                std::set<NodeUID> &visited) {
   Presence p;
   if (ctx == PKRGlobalState::getNULL())
+    return p;
+  if (!visited.insert(ctx).second)
     return p;
 
   if (field == PKR_UNKNOWN_FIELD) {
@@ -1994,7 +2009,7 @@ inline static Presence presence(ECMAGraph *G, NodeUID ctx,
   auto protos = getPrototypes(G, ctx);
   bool allMust = !protos.empty();
   for (auto proto : protos) {
-    Presence q = presence(G, proto, field);
+    Presence q = presence(G, proto, field, visited);
     p.may |= q.may;
     allMust &= q.must;
   }
@@ -2006,22 +2021,28 @@ inline static Presence presence(ECMAGraph *G, NodeUID ctx,
 // chain, so (unlike searchFPNodes) never stop early - collect every own
 // field FP, at every level, unconditionally.
 inline static void collectAllFPsUpChain(ECMAGraph *G, NodeUID ctx,
-                                        std::vector<NodeUID> &res) {
+                                        std::vector<NodeUID> &res,
+                                        std::set<NodeUID> &visited) {
   if (ctx == PKRGlobalState::getNULL())
+    return;
+  if (!visited.insert(ctx).second)
     return;
   auto own = collectOwnFieldFPs(G, ctx);
   res.insert(res.end(), own.begin(), own.end());
   auto pp = G->getPointees(ctx, PKRGlobalState::EdgeIntern(PKR_PROTOTYPE));
   for (auto p : pp)
-    collectAllFPsUpChain(G, p, res);
+    collectAllFPsUpChain(G, p, res, visited);
 }
 
 // Known-key setter search: the field's FP (and the bucket, if insensitive) at
 // every level of the chain. No match stops the walk, see readPrototypes.
 inline static void searchFPNodes(ECMAGraph *G, NodeUID ctx,
                                  const std::string &field,
-                                 std::vector<NodeUID> &res) {
+                                 std::vector<NodeUID> &res,
+                                 std::set<NodeUID> &visited) {
   if (ctx == PKRGlobalState::getNULL())
+    return;
+  if (!visited.insert(ctx).second)
     return;
 
   auto r = G->getPointees(ctx, PKRGlobalState::EdgeIntern(field.c_str()));
@@ -2036,7 +2057,7 @@ inline static void searchFPNodes(ECMAGraph *G, NodeUID ctx,
       res.push_back(rb[0]);
   }
   for (auto p : G->getPointees(ctx, PKRGlobalState::EdgeIntern(PKR_PROTOTYPE)))
-    searchFPNodes(G, p, field, res);
+    searchFPNodes(G, p, field, res, visited);
 }
 
 } // namespace OOHelpers
@@ -2195,7 +2216,8 @@ inline bool initOOBJ = []() {
     NodeUID ctx = L[0];
     std::string field = A[0];
 
-    OOHelpers::Presence pr = OOHelpers::presence(G, ctx, field);
+    std::set<NodeUID> seen;
+    OOHelpers::Presence pr = OOHelpers::presence(G, ctx, field, seen);
     // PRECISION: `must` is the only thing that rules out the FALSE branch.
     if (pr.must)
       return {{PKRGlobalState::getTRUE()}};
@@ -2284,10 +2306,11 @@ inline bool initOOBJ = []() {
 
     // Setter search: an unknown key may match any field at any level.
     std::vector<NodeUID> fpNodes;
+    std::set<NodeUID> seen;
     if (field == PKR_UNKNOWN_FIELD)
-      OOHelpers::collectAllFPsUpChain(G, ctx, fpNodes);
+      OOHelpers::collectAllFPsUpChain(G, ctx, fpNodes, seen);
     else
-      OOHelpers::searchFPNodes(G, ctx, field, fpNodes);
+      OOHelpers::searchFPNodes(G, ctx, field, fpNodes, seen);
     // Every setter and the data write are alternatives over the same incoming
     // state, so each forks and the whole operation joins once at the end.
     std::vector<NodeUID> discarded;
@@ -2914,7 +2937,8 @@ inline bool initBinaryOperators = []() {
         for (NodeUID v : vv2)
           invokeAction(tsAct, {&GS, {v}}); // side effects only
         strBranches.push_back(std::move(GS));
-        // PRECISION: only an all-Strings must-fact excludes the numeric reading.
+        // PRECISION: only an all-Strings must-fact excludes the numeric
+        // reading.
         if (allString) {
           KarmaJoin(G, strBranches);
           return {{PKRGlobalState::getSTRING()}};
@@ -3016,6 +3040,63 @@ inline bool initBinaryOperators = []() {
     return {{PKRGlobalState::getTRUE(), PKRGlobalState::getFALSE()}};
   });
 
+  // 7.3.21 OrdinaryHasInstance
+  PKRGlobalState::NAC_OrdinaryHasInstance = DEFINE_ACTION() {
+    ECMAGraph *G = args.G;
+    auto &L = args.L;
+    ASSERT(L.size() == 2);
+    NodeUID ctor = L[0];
+    NodeUID instance = L[1];
+
+    if (!PKRGlobalState::nodeHasActionClosure(ctor))
+      return {{PKRGlobalState::getFALSE()}};
+
+    if (!isObjectNode(G, instance))
+      return {{PKRGlobalState::getFALSE()}};
+
+    std::vector<NodeUID> protoVals;
+    std::vector<ECMAGraph> branches;
+    auto getActs = G->getPointees(ctor, PKRGlobalState::EdgeIntern(PKR_Get));
+    Karma(G, getActs, {NULL, {ctor, ctor}, {"prototype"}}, protoVals, branches);
+    KarmaJoin(G, branches);
+
+    std::set<NodeUID> protos;
+    for (NodeUID p : protoVals)
+      if (isObjectNode(G, p))
+        protos.insert(p);
+    if (protos.empty())
+      return {{PKRGlobalState::getTRUE(), PKRGlobalState::getFALSE()}};
+
+    std::set<NodeUID> chain;
+    std::vector<NodeUID> work{instance};
+    while (!work.empty()) {
+      NodeUID cur = work.back();
+      work.pop_back();
+      if (cur == PKRGlobalState::getNULL())
+        continue;
+      auto acts =
+          G->getPointees(cur, PKRGlobalState::EdgeIntern(PKR_GetPrototypeOf));
+      if (acts.empty())
+        continue;
+      std::vector<NodeUID> out;
+      std::vector<ECMAGraph> pb;
+      Karma(G, acts, {NULL, {cur}}, out, pb);
+      KarmaJoin(G, pb);
+      for (NodeUID p : out)
+        // The visited set doubles as the cycle guard.
+        if (p != PKRGlobalState::getNULL() && chain.insert(p).second)
+          work.push_back(p);
+    }
+
+    // PRECISION: distinct nodes never denote the same concrete object and the
+    // chain is a complete may-superset, so no overlap means no concrete match.
+    // Proving TRUE alone would need singleton allocation nodes.
+    for (NodeUID p : protos)
+      if (chain.count(p))
+        return {{PKRGlobalState::getTRUE(), PKRGlobalState::getFALSE()}};
+    return {{PKRGlobalState::getFALSE()}};
+  });
+
   // ECMA-262 7.2.13, 7.2.16, 13.10.1
   PKRGlobalState::NAC_HandleJSBinop = DEFINE_ACTION() {
     ECMAGraph *G = args.G;
@@ -3049,10 +3130,36 @@ inline bool initBinaryOperators = []() {
       // ToPropertyKey on the left; [[HasProperty]] runs no user code.
       invokeAction(tpAct, {G, {lval}});
     } else if (op == "instanceof") {
-      // OrdinaryHasInstance reads C.prototype, which may be an accessor.
-      // Symbol.hasInstance is not modelled.
-      auto acts = G->getPointees(rval, PKRGlobalState::EdgeIntern(PKR_Get));
-      KarmaJoin(G, Karma(G, acts, {NULL, {rval, rval}, {"prototype"}}));
+      // 13.10.2: v instanceof F === F[PKR_SYM_hasInstance](v).
+      std::vector<NodeUID> handlers;
+      std::vector<ECMAGraph> lookupBranches;
+      auto getActs = G->getPointees(rval, PKRGlobalState::EdgeIntern(PKR_Get));
+      Karma(G, getActs, {NULL, {rval, rval}, {PKR_SYM_hasInstance}}, handlers,
+            lookupBranches);
+      KarmaJoin(G, lookupBranches);
+
+      std::vector<NodeUID> callable;
+      for (NodeUID h : std::set<NodeUID>(handlers.begin(), handlers.end()))
+        if (PKRGlobalState::nodeHasActionClosure(h))
+          callable.push_back(h);
+
+      if (callable.empty())
+        return {{PKRGlobalState::getTRUE(), PKRGlobalState::getFALSE()}};
+
+      std::vector<NodeUID> resultVec;
+      std::vector<ECMAGraph> callBranches;
+      auto call = makeCall({rval}, {{lval}});
+      Karma(G, callable, {NULL, call.L, call.A}, resultVec, callBranches);
+      KarmaJoin(G, callBranches);
+      std::set<NodeUID> results(resultVec.begin(), resultVec.end());
+
+      // 7.1.2 ToBoolean. PRECISION: an all-true or all-false result settles it,
+      // which is what carries OrdinaryHasInstance's definite FALSE through to
+      // the caller. Anything else falls to boolean top below.
+      if (!results.empty() && isOnlyTrue(results))
+        return {{PKRGlobalState::getTRUE()}};
+      if (!results.empty() && isOnlyFalse(results))
+        return {{PKRGlobalState::getFALSE()}};
     }
     // "===" and "!==" do not coerce at all.
 
@@ -3338,6 +3445,57 @@ inline void initFunctionPrototype(ECMAGraph *G) {
                PKRGlobalState::getGOOBJ_Object_prototype());
 }
 
+// 20.2.3.6 Function.prototype[PKR_SYM_hasInstance].
+inline void initFunctionHasInstance(ECMAGraph *G) {
+  NodeUID fn = PKRGlobalState::ReserveNodeUID();
+  auto ac = DEFINE_ACTION() {
+    ECMAGraph *G = args.G;
+    ASSERT(args.A.size() == 2);
+
+    auto thisSlots = decodeArgRanges(args.L, args.A[0]);
+    auto argSlots = decodeArgRanges(args.L, args.A[1]);
+
+    if (thisSlots.empty() || argSlots.empty())
+      return {{PKRGlobalState::getFALSE()}};
+    const std::set<NodeUID> &ctors = thisSlots[0];
+    const std::set<NodeUID> &instances = argSlots[0];
+
+    NodeUID ohi =
+        PKRGlobalState::getActionNode(PKRGlobalState::NAC_OrdinaryHasInstance);
+
+    std::set<NodeUID> res;
+    std::vector<ECMAGraph> branches;
+    for (NodeUID ctor : ctors) {
+      for (NodeUID inst : instances) {
+        ECMAGraph H = G->clone();
+        auto r = invokeAction(ohi, {&H, {ctor, inst}});
+        res.insert(r.L.begin(), r.L.end());
+        branches.push_back(std::move(H));
+      }
+    }
+    KarmaJoin(G, branches);
+    ASSERT(!res.empty());
+    return {{res.begin(), res.end()}};
+  });
+  AllocClosure(G, fn, ac, PKRGlobalState::getTRUE(),
+               PKRGlobalState::getGFOBJ_Function_prototype());
+
+  auto fd = std::make_shared<TempFieldDescriptor>();
+  fd->addValue(fn);
+  fd->addWritable(PKRGlobalState::getFALSE());
+  fd->addEnumerable(PKRGlobalState::getFALSE());
+  fd->addConfigurable(PKRGlobalState::getFALSE());
+  // PRECISION: every concrete Function.prototype carries this, so a lookup that
+  // reaches here stops instead of walking on to Object.prototype.
+  fd->addDefinite(PKRGlobalState::getTRUE());
+
+  NodeUID funProto = PKRGlobalState::getGFOBJ_Function_prototype();
+  KarmaJoin(G, Karma(G,
+                     G->getPointees(funProto, PKRGlobalState::EdgeIntern(
+                                                  PKR_DefineOwnProperty)),
+                     {NULL, {funProto}, {PKR_SYM_hasInstance}, {fd}}));
+}
+
 // B.2.2.1: __proto__
 inline void initObjectPrototypeProtoAccessor(ECMAGraph *G) {
   NodeUID getter = PKRGlobalState::ReserveNodeUID();
@@ -3396,6 +3554,7 @@ inline void initECMAEnvironment(ECMAGraph *G) {
   AllocOrdinaryObject(G, PKRGlobalState::getGOOBJ_Object_prototype(),
                       PKRGlobalState::getTRUE(), PKRGlobalState::getNULL());
   initFunctionPrototype(G);
+  initFunctionHasInstance(G);
   initObjectPrototypeProtoAccessor(G);
 
   defineStubIntrinsic(
@@ -3452,6 +3611,14 @@ inline void initECMAEnvironment(ECMAGraph *G) {
                       {PKRGlobalState::getGFOBJ_Symbol(),
                        PKRGlobalState::getSYMBOL_TOSTRINGTAG()},
                       {"toStringTag"}}));
+  // Add Symbol.hasInstance -> SYMBOL_HASINSTANCE_VAL
+  KarmaJoin(G, Karma(G,
+                     G->getPointees(PKRGlobalState::getGFOBJ_Symbol(),
+                                    PKRGlobalState::EdgeIntern(PKR_Set)),
+                     {NULL,
+                      {PKRGlobalState::getGFOBJ_Symbol(),
+                       PKRGlobalState::getSYMBOL_HASINSTANCE()},
+                      {"hasInstance"}}));
 
   defineStubIntrinsic(G, PKRGlobalState::getGFOBJ_Error(),
                       PKRGlobalState::getGOOBJ_Error_prototype(),
@@ -3600,6 +3767,8 @@ inline void initLeaves(ECMAGraph *G) {
              TAG::SYMBOL_TOPRIMITIVE_VAL);
   G->addNode(PKRGlobalState::getSYMBOL_TOSTRINGTAG(),
              TAG::SYMBOL_TOSTRINGTAG_VAL);
+  G->addNode(PKRGlobalState::getSYMBOL_HASINSTANCE(),
+             TAG::SYMBOL_HASINSTANCE_VAL);
 }
 
 #define DEF_JSFILE_EVAL(NACName, envInitFn)                                    \
