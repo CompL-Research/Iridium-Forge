@@ -21,7 +21,7 @@ namespace IRI_STRUCTURAL {
  *   - double StartBBIDX -> sexp.getStartBBIDX()
  */
 void computeLambdaVals(const PTAStatementContext &ptactx, IRID node,
-                      std::set<Prakriti::NodeUID> &res_) {
+                       std::set<Prakriti::NodeUID> &res_) {
   Prakriti::TraceHelperAuto th("LambdaRVal", node);
 
   Prakriti::ECMAGraph *G = ptactx.incomingState;
@@ -48,14 +48,16 @@ void computeLambdaVals(const PTAStatementContext &ptactx, IRID node,
                                                   thisVal, positional);
 
           Prakriti::ECMAGraph::PJSSL_RET ret;
-          ret.L = std::vector<Prakriti::NodeUID>(retVals.begin(), retVals.end());
+          ret.L =
+              std::vector<Prakriti::NodeUID>(retVals.begin(), retVals.end());
           return ret;
         });
 
     {
       Prakriti::TraceHelperAuto th("LambdaRVal::Alloc", node);
-      Prakriti::AllocClosure(G, node, action, Prakriti::PKRGlobalState::getTRUE(),
-                             Prakriti::PKRGlobalState::getGFOBJ_Function_prototype());
+      Prakriti::AllocClosure(
+          G, node, action, Prakriti::PKRGlobalState::getTRUE(),
+          Prakriti::PKRGlobalState::getGFOBJ_Function_prototype());
     }
 
     // 10.2.5 MakeConstructor, for the closures the frontend marked PROTO.
@@ -70,8 +72,8 @@ void computeLambdaVals(const PTAStatementContext &ptactx, IRID node,
         Prakriti::AllocOrdinaryObject(
             G, protoID, Prakriti::PKRGlobalState::getTRUE(),
             Prakriti::PKRGlobalState::getGOOBJ_Object_prototype());
-      defineProperty(G, {node}, "prototype", {protoID});
-      defineProperty(G, {protoID}, "constructor", {node});
+      definePropertyValue(G, {node}, "prototype", {protoID});
+      definePropertyValue(G, {protoID}, "constructor", {node});
     }
   }
 

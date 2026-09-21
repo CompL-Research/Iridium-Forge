@@ -1,7 +1,7 @@
 #include "Generated/IridiumTypes.h"
 #include "Support/PTA/PTAContext.hpp"
-#include "Support/PTA/PTAObjectHelpers.hpp"
 #include "Support/PTA/PTAHandlers.hpp"
+#include "Support/PTA/PTAObjectHelpers.hpp"
 #include "Support/PTA/PTARVALDispatch.hpp"
 #include "external/Prakriti.hpp"
 #include <cassert>
@@ -33,8 +33,7 @@ void handleJSDefineObjProp(const PTAStatementContext &ptactx) {
     resolvePKRRVal(ptactx, sexp.getArg_TargetObj(), objs);
   }
   {
-    Prakriti::TraceHelperAuto th("JSDefineObjProp::Value",
-                                 sexp.getArg_Value());
+    Prakriti::TraceHelperAuto th("JSDefineObjProp::Value", sexp.getArg_Value());
     resolvePKRRVal(ptactx, sexp.getArg_Value(), values);
   }
   assert(!objs.empty());
@@ -51,7 +50,7 @@ void handleJSDefineObjProp(const PTAStatementContext &ptactx) {
   {
     Prakriti::TraceHelperAuto th("JSDefineObjProp::Define",
                                  sexp.getArg_TargetObj());
-    defineProperty(G, objs, field, values);
+    definePropertyValue(G, objs, field, values);
   }
 }
 

@@ -28,10 +28,10 @@ inline void setProperty(Prakriti::ECMAGraph *G,
 }
 
 // A[[DefineOwnProperty]] F = VALS
-inline void defineProperty(Prakriti::ECMAGraph *G,
-                           const std::set<Prakriti::NodeUID> &objs,
-                           const std::string &field,
-                           const std::set<Prakriti::NodeUID> &vals) {
+inline void definePropertyValue(Prakriti::ECMAGraph *G,
+                                const std::set<Prakriti::NodeUID> &objs,
+                                const std::string &field,
+                                const std::set<Prakriti::NodeUID> &vals) {
   std::vector<Prakriti::NodeUID> discarded;
   std::vector<Prakriti::ECMAGraph> branches;
   for (const auto obj : objs) {
@@ -53,6 +53,51 @@ inline void defineProperty(Prakriti::ECMAGraph *G,
     }
   }
   Prakriti::KarmaJoin(G, branches);
+}
+
+// A[[DefineOwnProperty | Set,Get]] F = VALS
+inline void definePropertySetterGetter(Prakriti::ECMAGraph *G,
+                                       const std::set<Prakriti::NodeUID> &objs,
+                                       const std::string &field,
+                                       const std::set<Prakriti::NodeUID> &vals,
+                                       bool setter) {
+  std::vector<Prakriti::NodeUID> discarded;
+  std::vector<Prakriti::ECMAGraph> branches;
+  for (const auto obj : objs) {
+    auto acts = G->getPointees(
+        obj, Prakriti::PKRGlobalState::EdgeIntern(PKR_DefineOwnProperty));
+    if (acts.empty())
+      continue;
+    for (const auto v : vals) {
+      auto desc = std::make_shared<Prakriti::TempFieldDescriptor>();
+      if (setter)
+        desc->addSet(v);
+      else
+        desc->addGet(v);
+      desc->addWritable(Prakriti::PKRGlobalState::getTRUE());
+      desc->addEnumerable(Prakriti::PKRGlobalState::getTRUE());
+      desc->addConfigurable(Prakriti::PKRGlobalState::getTRUE());
+      // An unknown key defines some property, never this one.
+      if (field != PKR_UNKNOWN_FIELD)
+        desc->addDefinite(Prakriti::PKRGlobalState::getTRUE());
+      Prakriti::Karma(G, acts, {nullptr, {obj}, {field}, {desc}}, discarded,
+                      branches);
+    }
+  }
+  Prakriti::KarmaJoin(G, branches);
+}
+
+inline void definePropertySetter(Prakriti::ECMAGraph *G,
+                                 const std::set<Prakriti::NodeUID> &objs,
+                                 const std::string &field,
+                                 const std::set<Prakriti::NodeUID> &vals) {
+  definePropertySetterGetter(G, objs, field, vals, true);
+}
+inline void definePropertyGetter(Prakriti::ECMAGraph *G,
+                                 const std::set<Prakriti::NodeUID> &objs,
+                                 const std::string &field,
+                                 const std::set<Prakriti::NodeUID> &vals) {
+  definePropertySetterGetter(G, objs, field, vals, false);
 }
 
 // A[[Get]] F

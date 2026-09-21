@@ -2,10 +2,9 @@
 #include "Generated/IridiumTypes.h"
 #include "Support/PTA/PTAContext.hpp"
 #include "Support/PTA/PTAObjectHelpers.hpp"
-#include "Support/PTA/PTARVALHandlers.hpp"
 #include "Support/PTA/PTARVALDispatch.hpp"
+#include "Support/PTA/PTARVALHandlers.hpp"
 #include "external/Prakriti.hpp"
-#include <set>
 #include <cassert>
 #include <set>
 #include <string>
@@ -19,7 +18,7 @@ namespace IRI_STRUCTURAL {
  * Flags: (none)
  */
 void computeJSArrayVals(const PTAStatementContext &ptactx, IRID node,
-                       std::set<Prakriti::NodeUID> &res_) {
+                        std::set<Prakriti::NodeUID> &res_) {
   Prakriti::TraceHelperAuto th("JSArrayRVal", node);
 
   Prakriti::ECMAGraph *G = ptactx.incomingState;
@@ -39,7 +38,7 @@ void computeJSArrayVals(const PTAStatementContext &ptactx, IRID node,
       resolvePKRRVal(ptactx, elems[i], vals);
       if (vals.empty())
         continue;
-      defineProperty(G, {node}, std::to_string(i), vals);
+      definePropertyValue(G, {node}, std::to_string(i), vals);
     }
   }
 
