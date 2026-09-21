@@ -16,6 +16,8 @@ namespace IRI_STRUCTURAL {
  */
 void computeJSCTXVals(const PTAStatementContext &ptactx, IRID node,
                       std::set<Prakriti::NodeUID> &res_) {
+  Prakriti::TraceHelperAuto th("JSCTXRVal", node);
+
   IRI_GEN::JSCTXSEXP sexp(node, ptactx.ctx);
   Prakriti::ECMAGraph *G = ptactx.incomingState;
 
@@ -26,13 +28,16 @@ void computeJSCTXVals(const PTAStatementContext &ptactx, IRID node,
                      "JSCTX" + std::to_string((long)sexp.getOPID())));
   assert(G->hasNode(target));
 
-  auto getClosures =
-      G->getPointees(target, Prakriti::PKRGlobalState::EdgeIntern(PKR_Get));
-  assert(!getClosures.empty());
   std::vector<Prakriti::NodeUID> vals;
-  std::vector<Prakriti::ECMAGraph> branches;
-  Prakriti::Karma(G, getClosures, {nullptr, {target}}, vals, branches);
-  Prakriti::KarmaJoin(G, branches);
+  {
+    Prakriti::TraceHelperAuto th("JSCTXRVal::Get", target);
+    auto getClosures =
+        G->getPointees(target, Prakriti::PKRGlobalState::EdgeIntern(PKR_Get));
+    assert(!getClosures.empty());
+    std::vector<Prakriti::ECMAGraph> branches;
+    Prakriti::Karma(G, getClosures, {nullptr, {target}}, vals, branches);
+    Prakriti::KarmaJoin(G, branches);
+  }
   res_.insert(vals.begin(), vals.end());
 }
 

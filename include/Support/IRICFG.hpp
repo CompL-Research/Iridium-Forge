@@ -40,6 +40,9 @@ struct IRIStatement {
   explicit IRIStatement(IRID, IRIBB *);
 
   std::string getDebugID();
+
+  void dumpFlat(std::ostream &oss, IRIContext *ctx, int depth = 0,
+                bool full = true) const;
 };
 
 // 2. The Basic Block

@@ -25,6 +25,8 @@ namespace IRI_STRUCTURAL {
  */
 void computeCallSiteVals(const PTAStatementContext &ptactx, IRID node,
                          std::set<Prakriti::NodeUID> &res_) {
+  Prakriti::TraceHelperAuto th("CallSiteRVal", node);
+
   IRI_GEN::CallSiteSEXP sexp(node, ptactx.ctx);
   if (sexp.hasPrivateCall() || sexp.hasImport() || sexp.hasSuper() ||
       sexp.hasV8Intrinsic())
@@ -38,13 +40,17 @@ void computeCallSiteVals(const PTAStatementContext &ptactx, IRID node,
   std::set<Prakriti::NodeUID> thisVal;
   size_t calleeIdx = 0;
   if (sexp.hasCCall()) {
+    Prakriti::TraceHelperAuto th("CallSiteRVal::This", rawArgs[0]);
     resolvePKRRVal(ptactx, rawArgs[0], thisVal);
     assert(!thisVal.empty());
     calleeIdx = 1;
   }
 
   std::set<Prakriti::NodeUID> callees;
-  resolvePKRRVal(ptactx, rawArgs[calleeIdx], callees);
+  {
+    Prakriti::TraceHelperAuto th("CallSiteRVal::Callee", rawArgs[calleeIdx]);
+    resolvePKRRVal(ptactx, rawArgs[calleeIdx], callees);
+  }
   assert(!callees.empty());
   std::vector<Prakriti::NodeUID> calleeVec(callees.begin(), callees.end());
 
@@ -52,15 +58,19 @@ void computeCallSiteVals(const PTAStatementContext &ptactx, IRID node,
     // Allocation site abstraction, reciever is created here
     // CallSite IRID itself becomes the allocation site abstraction :)
     std::vector<Prakriti::NodeUID> protos;
-    std::vector<Prakriti::ECMAGraph> branches;
-    for (const auto callee : calleeVec) {
-      auto getClosures =
-          G->getPointees(callee, Prakriti::PKRGlobalState::EdgeIntern(PKR_Get));
-      Prakriti::Karma(G, getClosures,
-                      {nullptr, {callee, callee}, {"prototype"}}, protos,
-                      branches);
+    {
+      Prakriti::TraceHelperAuto th("CallSiteRVal::GetPrototype",
+                                   rawArgs[calleeIdx]);
+      std::vector<Prakriti::ECMAGraph> branches;
+      for (const auto callee : calleeVec) {
+        auto getClosures = G->getPointees(
+            callee, Prakriti::PKRGlobalState::EdgeIntern(PKR_Get));
+        Prakriti::Karma(G, getClosures,
+                        {nullptr, {callee, callee}, {"prototype"}}, protos,
+                        branches);
+      }
+      Prakriti::KarmaJoin(G, branches);
     }
-    Prakriti::KarmaJoin(G, branches);
 
     // OrdinaryCreateFromConstructor: a callee whose `prototype` is not an
     // object contributes %Object.prototype% instead.
@@ -76,28 +86,38 @@ void computeCallSiteVals(const PTAStatementContext &ptactx, IRID node,
       objProtos.insert(Prakriti::PKRGlobalState::getGOOBJ_Object_prototype());
 
     Prakriti::NodeUID thisID = node;
-    if (!G->hasNode(thisID))
-      Prakriti::AllocOrdinaryObject(
-          G, thisID, Prakriti::PKRGlobalState::getTRUE(), *objProtos.begin());
-    for (const auto p : objProtos)
-      G->addEdge(thisID, p, Prakriti::PKRGlobalState::EdgeIntern(PKR_PROTOTYPE));
+    {
+      Prakriti::TraceHelperAuto th("CallSiteRVal::Alloc", thisID);
+      if (!G->hasNode(thisID))
+        Prakriti::AllocOrdinaryObject(
+            G, thisID, Prakriti::PKRGlobalState::getTRUE(), *objProtos.begin());
+      for (const auto p : objProtos)
+        G->addEdge(thisID, p,
+                   Prakriti::PKRGlobalState::EdgeIntern(PKR_PROTOTYPE));
+    }
     thisVal = {thisID};
   }
 
   std::vector<std::set<Prakriti::NodeUID>> positional;
-  for (size_t i = calleeIdx + 1; i < rawArgs.size(); i++) {
-    std::set<Prakriti::NodeUID> a;
-    resolvePKRRVal(ptactx, rawArgs[i], a);
-    assert(!a.empty());
-    positional.push_back(a);
+  {
+    Prakriti::TraceHelperAuto th("CallSiteRVal::ArgList", node);
+    for (size_t i = calleeIdx + 1; i < rawArgs.size(); i++) {
+      std::set<Prakriti::NodeUID> a;
+      resolvePKRRVal(ptactx, rawArgs[i], a);
+      assert(!a.empty());
+      positional.push_back(a);
+    }
   }
 
-  auto call = Prakriti::makeCall(thisVal, positional);
   std::vector<Prakriti::NodeUID> valVec;
-  std::vector<Prakriti::ECMAGraph> callBranches;
-  Prakriti::Karma(G, calleeVec, {nullptr, call.L, call.A}, valVec,
-                  callBranches);
-  Prakriti::KarmaJoin(G, callBranches);
+  {
+    Prakriti::TraceHelperAuto th("CallSiteRVal::Call", rawArgs[calleeIdx]);
+    auto call = Prakriti::makeCall(thisVal, positional);
+    std::vector<Prakriti::ECMAGraph> callBranches;
+    Prakriti::Karma(G, calleeVec, {nullptr, call.L, call.A}, valVec,
+                    callBranches);
+    Prakriti::KarmaJoin(G, callBranches);
+  }
   std::set<Prakriti::NodeUID> vals(valVec.begin(), valVec.end());
 
   if (!sexp.hasConstructorCall()) {

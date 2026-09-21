@@ -20,12 +20,20 @@ namespace IRI_STRUCTURAL {
  * Flags: (none)
  */
 void handleFieldWrite(const PTAStatementContext &ptactx) {
+  Prakriti::TraceHelperAuto th("FieldWrite", ptactx.stmt.id);
+
   IRI_GEN::FieldWriteSEXP sexp(ptactx.stmt.id, ptactx.ctx);
   Prakriti::ECMAGraph *G = ptactx.incomingState;
 
   std::set<Prakriti::NodeUID> objs, values;
-  resolvePKRRVal(ptactx, sexp.getArg_Obj(), objs);
-  resolvePKRRVal(ptactx, sexp.getArg_Value(), values);
+  {
+    Prakriti::TraceHelperAuto th("FieldWrite::Obj", sexp.getArg_Obj());
+    resolvePKRRVal(ptactx, sexp.getArg_Obj(), objs);
+  }
+  {
+    Prakriti::TraceHelperAuto th("FieldWrite::Value", sexp.getArg_Value());
+    resolvePKRRVal(ptactx, sexp.getArg_Value(), values);
+  }
   assert(!objs.empty());
   assert(!values.empty());
 
@@ -33,7 +41,10 @@ void handleFieldWrite(const PTAStatementContext &ptactx) {
   std::string field(
       Prakriti::PKRGlobalState::EdgeGet(fieldSexp.getIridiumPrimitive()));
 
-  setProperty(G, objs, field, values);
+  {
+    Prakriti::TraceHelperAuto th("FieldWrite::Set", sexp.getArg_Obj());
+    setProperty(G, objs, field, values);
+  }
 }
 
 } // namespace IRI_STRUCTURAL

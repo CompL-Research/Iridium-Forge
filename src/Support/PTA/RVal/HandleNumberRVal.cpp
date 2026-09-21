@@ -13,6 +13,8 @@ namespace IRI_STRUCTURAL {
  */
 void computeNumberVals(const PTAStatementContext &ptactx, IRID node,
                        std::set<Prakriti::NodeUID> &res_) {
+  Prakriti::TraceHelperAuto th("NumberRVal", node);
+
   res_.insert(Prakriti::PKRGlobalState::getNUMBER());
 }
 

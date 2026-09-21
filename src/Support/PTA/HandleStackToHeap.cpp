@@ -14,6 +14,8 @@ namespace IRI_STRUCTURAL {
  * Flags: (none)
  */
 void handleStackToHeap(const PTAStatementContext &ptactx) {
+  Prakriti::TraceHelperAuto th("StackToHeap", ptactx.stmt.id);
+
   Prakriti::ECMAGraph *G = ptactx.incomingState;
 
   // We can retain more precision by parking, instead of closing transience in

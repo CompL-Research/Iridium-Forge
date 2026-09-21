@@ -3,6 +3,7 @@
 #include "Support/PTA/PTAContext.hpp"
 #include "Support/PTA/PTAHandlers.hpp"
 #include "Support/PTA/PTARVALDispatch.hpp"
+#include "external/Prakriti.hpp"
 #include <set>
 
 namespace IRI_STRUCTURAL {
@@ -17,6 +18,8 @@ namespace IRI_STRUCTURAL {
  * its side effects and discard the produced value.
  */
 void handleJSTemplate(const PTAStatementContext &ptactx) {
+  Prakriti::TraceHelperAuto th("JSTemplate", ptactx.stmt.id);
+
   std::set<Prakriti::NodeUID> discarded;
   resolvePKRRVal(ptactx, ptactx.stmt.id, discarded);
 }

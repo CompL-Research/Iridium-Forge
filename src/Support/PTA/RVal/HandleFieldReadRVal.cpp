@@ -18,11 +18,16 @@ namespace IRI_STRUCTURAL {
  */
 void computeFieldReadVals(const PTAStatementContext &ptactx, IRID node,
                         std::set<Prakriti::NodeUID> &res_) {
+  Prakriti::TraceHelperAuto th("FieldReadRVal", node);
+
   IRI_GEN::FieldReadSEXP sexp(node, ptactx.ctx);
   Prakriti::ECMAGraph *G = ptactx.incomingState;
 
   std::set<Prakriti::NodeUID> objs;
-  resolvePKRRVal(ptactx, sexp.getArg_Obj(), objs);
+  {
+    Prakriti::TraceHelperAuto th("FieldReadRVal::Obj", sexp.getArg_Obj());
+    resolvePKRRVal(ptactx, sexp.getArg_Obj(), objs);
+  }
   assert(!objs.empty());
 
   IRI_GEN::StringSEXP fieldSexp(sexp.getArg_Field(), ptactx.ctx);
@@ -33,15 +38,18 @@ void computeFieldReadVals(const PTAStatementContext &ptactx, IRID node,
   // state; threading G through the loop would let one observe another.
   std::vector<Prakriti::NodeUID> vals;
   std::vector<Prakriti::ECMAGraph> branches;
-  for (auto obj : objs) {
-    assert(G->hasNode(obj));
-    auto getClosures =
-        G->getPointees(obj, Prakriti::PKRGlobalState::EdgeIntern(PKR_Get));
-    assert(!getClosures.empty());
-    Prakriti::Karma(G, getClosures, {nullptr, {obj, obj}, {field}}, vals,
-                    branches);
+  {
+    Prakriti::TraceHelperAuto th("FieldReadRVal::Get", sexp.getArg_Obj());
+    for (auto obj : objs) {
+      assert(G->hasNode(obj));
+      auto getClosures =
+          G->getPointees(obj, Prakriti::PKRGlobalState::EdgeIntern(PKR_Get));
+      assert(!getClosures.empty());
+      Prakriti::Karma(G, getClosures, {nullptr, {obj, obj}, {field}}, vals,
+                      branches);
+    }
+    Prakriti::KarmaJoin(G, branches);
   }
-  Prakriti::KarmaJoin(G, branches);
   res_.insert(vals.begin(), vals.end());
 }
 

@@ -21,14 +21,22 @@ namespace IRI_STRUCTURAL {
  */
 void computeJSBinopVals(const PTAStatementContext &ptactx, IRID node,
                         std::set<Prakriti::NodeUID> &res_) {
+  Prakriti::TraceHelperAuto th("JSBinopRVal", node);
+
   IRI_GEN::JSBinopSEXP sexp(node, ptactx.ctx);
   Prakriti::ECMAGraph *G = ptactx.incomingState;
 
   std::string op(ptactx.ctx.storage.strings.get(sexp.getOP()));
 
   std::set<Prakriti::NodeUID> lvals, rvals;
-  resolvePKRRVal(ptactx, sexp.getArg_LBinop(), lvals);
-  resolvePKRRVal(ptactx, sexp.getArg_RBinop(), rvals);
+  {
+    Prakriti::TraceHelperAuto th("JSBinopRVal::LBinop", sexp.getArg_LBinop());
+    resolvePKRRVal(ptactx, sexp.getArg_LBinop(), lvals);
+  }
+  {
+    Prakriti::TraceHelperAuto th("JSBinopRVal::RBinop", sexp.getArg_RBinop());
+    resolvePKRRVal(ptactx, sexp.getArg_RBinop(), rvals);
+  }
   assert(!lvals.empty() && !rvals.empty());
 
   Prakriti::NodeUID act = Prakriti::PKRGlobalState::getActionNode(
@@ -36,10 +44,13 @@ void computeJSBinopVals(const PTAStatementContext &ptactx, IRID node,
 
   std::vector<Prakriti::NodeUID> vals;
   std::vector<Prakriti::ECMAGraph> branches;
-  for (const auto lval : lvals)
-    for (const auto rval : rvals)
-      Prakriti::Karma(G, {act}, {nullptr, {lval, rval}, {op}}, vals, branches);
-  Prakriti::KarmaJoin(G, branches);
+  {
+    Prakriti::TraceHelperAuto th("JSBinopRVal::Karma", act);
+    for (const auto lval : lvals)
+      for (const auto rval : rvals)
+        Prakriti::Karma(G, {act}, {nullptr, {lval, rval}, {op}}, vals, branches);
+    Prakriti::KarmaJoin(G, branches);
+  }
 
   res_.insert(vals.begin(), vals.end());
 }

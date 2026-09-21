@@ -311,6 +311,11 @@ static std::string escapeDoubleQuotes(const std::string &input) {
   return ss.str();
 }
 
+void IRIStatement::dumpFlat(std::ostream &oss, IRIContext *ctx, int depth,
+                            bool full) const {
+  IRI_NODE(bb->ctx, id).dumpFlat(oss, &bb->ctx, depth, full);
+}
+
 void IRIBB::dumpFlat(std::ostream &oss) const {
   IRIStatement *curr = head;
   while (curr != nullptr) {

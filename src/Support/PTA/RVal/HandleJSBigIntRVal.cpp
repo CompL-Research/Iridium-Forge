@@ -13,6 +13,8 @@ namespace IRI_STRUCTURAL {
  */
 void computeJSBigIntVals(const PTAStatementContext &ptactx, IRID node,
                        std::set<Prakriti::NodeUID> &res_) {
+  Prakriti::TraceHelperAuto th("JSBigIntRVal", node);
+
   res_.insert(Prakriti::PKRGlobalState::getBIGINT());
 }
 

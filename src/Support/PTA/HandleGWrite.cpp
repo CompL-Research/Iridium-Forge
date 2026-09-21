@@ -22,11 +22,16 @@ namespace IRI_STRUCTURAL {
  *   - void   DECLFUN -> sexp.hasDECLFUN()
  */
 void handleGWrite(const PTAStatementContext &ptactx) {
+  Prakriti::TraceHelperAuto th("GWrite", ptactx.stmt.id);
+
   IRI_GEN::GWriteSEXP sexp(ptactx.stmt.id, ptactx.ctx);
   Prakriti::ECMAGraph *G = ptactx.incomingState;
 
   std::set<Prakriti::NodeUID> values;
-  resolvePKRRVal(ptactx, sexp.getArg_RVal(), values);
+  {
+    Prakriti::TraceHelperAuto th("GWrite::RVal", sexp.getArg_RVal());
+    resolvePKRRVal(ptactx, sexp.getArg_RVal(), values);
+  }
   if (values.empty())
     return;
 
@@ -43,10 +48,13 @@ void handleGWrite(const PTAStatementContext &ptactx) {
   std::vector<Prakriti::NodeUID> setArgs = {target};
   setArgs.insert(setArgs.end(), values.begin(), values.end());
 
-  auto setClosures =
-      G->getPointees(target, Prakriti::PKRGlobalState::EdgeIntern(PKR_Set));
-  assert(!setClosures.empty());
-  Prakriti::KarmaJoin(G, Prakriti::Karma(G, setClosures, {nullptr, setArgs}));
+  {
+    Prakriti::TraceHelperAuto th("GWrite::LVal=RVal", target);
+    auto setClosures =
+        G->getPointees(target, Prakriti::PKRGlobalState::EdgeIntern(PKR_Set));
+    assert(!setClosures.empty());
+    Prakriti::KarmaJoin(G, Prakriti::Karma(G, setClosures, {nullptr, setArgs}));
+  }
 }
 
 } // namespace IRI_STRUCTURAL

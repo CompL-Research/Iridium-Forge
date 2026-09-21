@@ -22,6 +22,9 @@ using Prakriti::ECMAGraph;
 ECMAGraph PTATransfer::transferStatement(const IRIStatement &stmt,
                                          const ECMAGraph &incomingState) {
   auto nextState = incomingState.clone();
+  // std::cerr << "[PTA] STMT: ";
+  // stmt.dumpFlat(std::cerr, &stmt.bb->ctx);
+  // std::cerr << std::endl;
   dispatchPTAStatement(stmt, &nextState, stmt.bb->ctx);
   return nextState;
 }

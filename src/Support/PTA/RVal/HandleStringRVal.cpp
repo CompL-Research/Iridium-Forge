@@ -13,6 +13,8 @@ namespace IRI_STRUCTURAL {
  */
 void computeStringVals(const PTAStatementContext &ptactx, IRID node,
                        std::set<Prakriti::NodeUID> &res_) {
+  Prakriti::TraceHelperAuto th("StringRVal", node);
+
   res_.insert(Prakriti::PKRGlobalState::getSTRING());
 }
 

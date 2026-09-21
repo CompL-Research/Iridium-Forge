@@ -21,6 +21,8 @@ namespace IRI_STRUCTURAL {
  */
 void computeBinopVals(const PTAStatementContext &ptactx, IRID node,
                       std::set<Prakriti::NodeUID> &res_) {
+  Prakriti::TraceHelperAuto th("BinopRVal", node);
+
   IRI_GEN::BinopSEXP sexp(node, ptactx.ctx);
   Prakriti::ECMAGraph *G = ptactx.incomingState;
 
@@ -49,17 +51,26 @@ void computeBinopVals(const PTAStatementContext &ptactx, IRID node,
   }
 
   std::set<Prakriti::NodeUID> lvals, rvals;
-  resolvePKRRVal(ptactx, sexp.getArg_LBinop(), lvals);
-  resolvePKRRVal(ptactx, sexp.getArg_RBinop(), rvals);
+  {
+    Prakriti::TraceHelperAuto th("BinopRVal::LBinop", sexp.getArg_LBinop());
+    resolvePKRRVal(ptactx, sexp.getArg_LBinop(), lvals);
+  }
+  {
+    Prakriti::TraceHelperAuto th("BinopRVal::RBinop", sexp.getArg_RBinop());
+    resolvePKRRVal(ptactx, sexp.getArg_RBinop(), rvals);
+  }
   assert(!lvals.empty() && !rvals.empty());
 
   Prakriti::NodeUID binopAct =
       Prakriti::PKRGlobalState::getActionNode(handlerClosure);
 
-  for (Prakriti::NodeUID lval : lvals) {
-    for (Prakriti::NodeUID rval : rvals) {
-      auto ret = Prakriti::invokeAction(binopAct, {G, {lval, rval}, {op}});
-      res_.insert(ret.L.begin(), ret.L.end());
+  {
+    Prakriti::TraceHelperAuto th("BinopRVal::Invoke", binopAct);
+    for (Prakriti::NodeUID lval : lvals) {
+      for (Prakriti::NodeUID rval : rvals) {
+        auto ret = Prakriti::invokeAction(binopAct, {G, {lval, rval}, {op}});
+        res_.insert(ret.L.begin(), ret.L.end());
+      }
     }
   }
 }

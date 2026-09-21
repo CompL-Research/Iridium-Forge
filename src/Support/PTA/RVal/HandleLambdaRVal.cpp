@@ -22,6 +22,8 @@ namespace IRI_STRUCTURAL {
  */
 void computeLambdaVals(const PTAStatementContext &ptactx, IRID node,
                       std::set<Prakriti::NodeUID> &res_) {
+  Prakriti::TraceHelperAuto th("LambdaRVal", node);
+
   Prakriti::ECMAGraph *G = ptactx.incomingState;
 
   if (!G->hasNode(node)) {
@@ -50,11 +52,16 @@ void computeLambdaVals(const PTAStatementContext &ptactx, IRID node,
           return ret;
         });
 
-    Prakriti::AllocClosure(G, node, action, Prakriti::PKRGlobalState::getTRUE(),
-                           Prakriti::PKRGlobalState::getGFOBJ_Function_prototype());
+    {
+      Prakriti::TraceHelperAuto th("LambdaRVal::Alloc", node);
+      Prakriti::AllocClosure(G, node, action, Prakriti::PKRGlobalState::getTRUE(),
+                             Prakriti::PKRGlobalState::getGFOBJ_Function_prototype());
+    }
 
     // 10.2.5 MakeConstructor, for the closures the frontend marked PROTO.
     if (IRI_GEN::BBContainerSEXP(calleeCFG->id, ptactx.ctx).hasPROTO()) {
+      Prakriti::TraceHelperAuto th("LambdaRVal::Define", node);
+
       // A reserved label: sentinels keyed on a plain field name are already
       // taken by that field's FieldProxy.
       Prakriti::NodeUID protoID = Prakriti::PKRGlobalState::generateSentinel(

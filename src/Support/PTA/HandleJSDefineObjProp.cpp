@@ -21,12 +21,22 @@ namespace IRI_STRUCTURAL {
  * Flags: (none)
  */
 void handleJSDefineObjProp(const PTAStatementContext &ptactx) {
+  Prakriti::TraceHelperAuto th("JSDefineObjProp", ptactx.stmt.id);
+
   IRI_GEN::JSDefineObjPropSEXP sexp(ptactx.stmt.id, ptactx.ctx);
   Prakriti::ECMAGraph *G = ptactx.incomingState;
 
   std::set<Prakriti::NodeUID> objs, values;
-  resolvePKRRVal(ptactx, sexp.getArg_TargetObj(), objs);
-  resolvePKRRVal(ptactx, sexp.getArg_Value(), values);
+  {
+    Prakriti::TraceHelperAuto th("JSDefineObjProp::TargetObj",
+                                 sexp.getArg_TargetObj());
+    resolvePKRRVal(ptactx, sexp.getArg_TargetObj(), objs);
+  }
+  {
+    Prakriti::TraceHelperAuto th("JSDefineObjProp::Value",
+                                 sexp.getArg_Value());
+    resolvePKRRVal(ptactx, sexp.getArg_Value(), values);
+  }
   assert(!objs.empty());
   assert(!values.empty());
 
@@ -38,7 +48,11 @@ void handleJSDefineObjProp(const PTAStatementContext &ptactx) {
     field = Prakriti::PKRGlobalState::EdgeGet(
         IRI_GEN::StringSEXP(keyNode, ptactx.ctx).getIridiumPrimitive());
 
-  defineProperty(G, objs, field, values);
+  {
+    Prakriti::TraceHelperAuto th("JSDefineObjProp::Define",
+                                 sexp.getArg_TargetObj());
+    defineProperty(G, objs, field, values);
+  }
 }
 
 } // namespace IRI_STRUCTURAL

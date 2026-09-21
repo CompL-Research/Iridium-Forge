@@ -1,5 +1,6 @@
 #pragma once
 #include "Generated/IridiumEnums.h"
+#include "Storage/Config.h"
 #include <cstdint>
 #include <sstream>
 #include <string_view>
@@ -26,7 +27,7 @@ public:
   void dump(std::ostream &oss, IRIContext *ctx, bool compressed = false,
             int indent = 0) const;
 
-  void dumpFlat(std::ostream &oss, IRIContext *ctx,
-                int depth = 0, bool full = true) const;
+  void dumpFlat(std::ostream &oss, IRIContext *ctx, int depth = 0,
+                bool full = true, IRI_STORAGE::IRID id = 0) const;
 };
 } // namespace IRI_STORAGE

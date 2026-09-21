@@ -128,7 +128,8 @@ void IridiumSEXP::dump(std::ostream &oss, IRIContext *ctx, bool compressed,
     for (uint32_t i = 0; i < num_args; ++i) {
       IRID child_id = args_span[i];
 
-      ctx->storage.nodes.get_node(child_id).dump(oss, ctx, compressed, indent + 4);
+      ctx->storage.nodes.get_node(child_id).dump(oss, ctx, compressed,
+                                                 indent + 4);
 
       if (i + 1 < num_args)
         oss << "," << nl;
@@ -173,7 +174,7 @@ void IridiumSEXP::dump(std::ostream &oss, IRIContext *ctx, bool compressed,
 }
 
 void IridiumSEXP::dumpFlat(std::ostream &oss, IRIContext *ctx, int depth,
-                           bool full) const {
+                           bool full, IRI_STORAGE::IRID id) const {
   // 1. Setup Indentation
   std::string indent(depth, ' ');
 
@@ -207,6 +208,9 @@ void IridiumSEXP::dumpFlat(std::ostream &oss, IRIContext *ctx, int depth,
 
   // 2. Resolve Tag Name
   oss << indent << IRI_GEN::dump_tag(tag);
+  if (id != 0) {
+    oss << " [" << id << "]";
+  }
 
   // 3. Handle Flags
   bool first_flag = true;
@@ -253,8 +257,8 @@ void IridiumSEXP::dumpFlat(std::ostream &oss, IRIContext *ctx, int depth,
   auto args_span = ctx->storage.nodes.get_args_view(this);
   for (uint32_t i = 0; i < num_args; ++i) {
     IRID child_id = args_span[i];
-    ctx->storage.nodes.get_node(child_id).dumpFlat(oss, ctx, depth + 2,
-                                             tag == IRI_GEN::BB ? false : full);
+    ctx->storage.nodes.get_node(child_id).dumpFlat(
+        oss, ctx, depth + 2, tag == IRI_GEN::BB ? false : full, child_id);
   }
 }
 

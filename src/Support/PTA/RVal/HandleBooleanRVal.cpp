@@ -14,6 +14,8 @@ namespace IRI_STRUCTURAL {
  */
 void computeBooleanVals(const PTAStatementContext &ptactx, IRID node,
                        std::set<Prakriti::NodeUID> &res_) {
+  Prakriti::TraceHelperAuto th("BooleanRVal", node);
+
   IRI_GEN::BooleanSEXP sexp(node, ptactx.ctx);
   res_.insert(sexp.getIridiumPrimitive() ? Prakriti::PKRGlobalState::getTRUE()
                                          : Prakriti::PKRGlobalState::getFALSE());
