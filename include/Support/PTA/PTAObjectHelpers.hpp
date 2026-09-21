@@ -3,6 +3,7 @@
 #include "external/Prakriti.hpp"
 #include <memory>
 #include <set>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -45,7 +46,8 @@ inline void definePropertyValue(Prakriti::ECMAGraph *G,
       desc->addWritable(Prakriti::PKRGlobalState::getTRUE());
       desc->addEnumerable(Prakriti::PKRGlobalState::getTRUE());
       desc->addConfigurable(Prakriti::PKRGlobalState::getTRUE());
-      // An unknown key defines some property, never this one.
+      // PRECISION: [[Definite]] is the must-fact the read paths prune on. An
+      // unknown key defines some property, never this one, so it is withheld.
       if (field != PKR_UNKNOWN_FIELD)
         desc->addDefinite(Prakriti::PKRGlobalState::getTRUE());
       Prakriti::Karma(G, acts, {nullptr, {obj}, {field}, {desc}}, discarded,
@@ -74,10 +76,12 @@ inline void definePropertySetterGetter(Prakriti::ECMAGraph *G,
         desc->addSet(v);
       else
         desc->addGet(v);
-      desc->addWritable(Prakriti::PKRGlobalState::getTRUE());
+      // No [[Writable]]: ECMA 6.1.7.1 makes accessor and data descriptors
+      // disjoint, and adding it makes the FieldProxy read as both.
       desc->addEnumerable(Prakriti::PKRGlobalState::getTRUE());
       desc->addConfigurable(Prakriti::PKRGlobalState::getTRUE());
-      // An unknown key defines some property, never this one.
+      // PRECISION: [[Definite]] is the must-fact the read paths prune on. An
+      // unknown key defines some property, never this one, so it is withheld.
       if (field != PKR_UNKNOWN_FIELD)
         desc->addDefinite(Prakriti::PKRGlobalState::getTRUE());
       Prakriti::Karma(G, acts, {nullptr, {obj}, {field}, {desc}}, discarded,
@@ -109,8 +113,11 @@ getProperty(Prakriti::ECMAGraph *G, const std::set<Prakriti::NodeUID> &objs,
   for (const auto obj : objs) {
     auto acts =
         G->getPointees(obj, Prakriti::PKRGlobalState::EdgeIntern(PKR_Get));
+    // See HandleFieldReadRVal: a primitive receiver would silently contribute
+    // no values, which under-reports the result.
     if (acts.empty())
-      continue;
+      throw std::runtime_error(
+          "PTA: property read on a primitive receiver is not modelled");
     Prakriti::Karma(G, acts, {nullptr, {obj, obj}, {field}}, vals, branches);
   }
   Prakriti::KarmaJoin(G, branches);
