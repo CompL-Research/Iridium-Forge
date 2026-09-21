@@ -2,6 +2,9 @@
 #include "Generated/IridiumTypes.h"
 #include "Support/PTA/PTAContext.hpp"
 #include "Support/PTA/PTAHandlers.hpp"
+#include "Support/PTA/PTAObjectHelpers.hpp"
+#include "Support/PTA/PTARVALDispatch.hpp"
+#include "external/Prakriti.hpp"
 #include <stdexcept>
 
 namespace IRI_STRUCTURAL {
@@ -20,19 +23,53 @@ namespace IRI_STRUCTURAL {
  *   - void   SET -> sexp.hasSET()
  */
 void handleJSDefineObjMethod(const PTAStatementContext &ptactx) {
-  throw std::runtime_error("PTA unhandled case JSDefineObjMethod");
-  // IRI_GEN::JSDefineObjMethodSEXP sexp(ptactx.stmt.id, ptactx.ctx);
 
-  // === TODO : JSDefineObjMethod ===
-  // if (sexp.hasArg_TargetObj()) { IRID arg_TargetObj = sexp.getArg_TargetObj(); }
-  // if (sexp.hasArg_Key()) { IRID arg_Key = sexp.getArg_Key(); }
-  // if (sexp.hasArg_Value()) { IRID arg_Value = sexp.getArg_Value(); }
-  // bool has_NOENUM = sexp.hasNOENUM();
-  // bool has_METHOD = sexp.hasMETHOD();
-  // bool has_GET = sexp.hasGET();
-  // bool has_SET = sexp.hasSET();
+  Prakriti::TraceHelperAuto th("JSDefineObjMethod", ptactx.stmt.id);
 
-  return;
+  IRI_GEN::JSDefineObjMethodSEXP sexp(ptactx.stmt.id, ptactx.ctx);
+  Prakriti::ECMAGraph *G = ptactx.incomingState;
+
+  std::set<Prakriti::NodeUID> objs, values;
+  {
+    Prakriti::TraceHelperAuto th("JSDefineObjMethod::TargetObj",
+                                 sexp.getArg_TargetObj());
+    resolvePKRRVal(ptactx, sexp.getArg_TargetObj(), objs);
+  }
+  {
+    Prakriti::TraceHelperAuto th("JSDefineObjMethod::Value",
+                                 sexp.getArg_Value());
+    resolvePKRRVal(ptactx, sexp.getArg_Value(), values);
+    for (auto acID : values) {
+      // Assert that the RVal is infact callable
+      Prakriti::PKRGlobalState::getActionClosure(acID);
+    }
+  }
+  assert(!objs.empty());
+  assert(!values.empty());
+
+  // A key ReduceComputedFieldOpsPass could not turn into a literal is a key
+  // nothing knows; see *Computed access* in PTA_PLAN.md.
+  IRID keyNode = sexp.getArg_Key();
+  std::string field = PKR_UNKNOWN_FIELD;
+  if (IRI_NODE(ptactx.ctx, keyNode).tag == IRI_GEN::IRI_TAG::String)
+    field = Prakriti::PKRGlobalState::EdgeGet(
+        IRI_GEN::StringSEXP(keyNode, ptactx.ctx).getIridiumPrimitive());
+
+  {
+    if (sexp.hasGET()) {
+      Prakriti::TraceHelperAuto th("JSDefineObjMethod::DefineGETTER",
+                                   sexp.getArg_TargetObj());
+      definePropertyGetter(G, objs, field, values);
+    } else if (sexp.hasSET()) {
+      Prakriti::TraceHelperAuto th("JSDefineObjMethod::DefineSETTER",
+                                   sexp.getArg_TargetObj());
+      definePropertySetter(G, objs, field, values);
+    } else {
+      Prakriti::TraceHelperAuto th("JSDefineObjMethod::DefineVALUE",
+                                   sexp.getArg_TargetObj());
+      definePropertyValue(G, objs, field, values);
+    }
+  }
 }
 
 } // namespace IRI_STRUCTURAL
