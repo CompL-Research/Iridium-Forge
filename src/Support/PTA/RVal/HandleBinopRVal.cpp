@@ -7,6 +7,7 @@
 #include <set>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 namespace IRI_STRUCTURAL {
 
@@ -66,12 +67,16 @@ void computeBinopVals(const PTAStatementContext &ptactx, IRID node,
 
   {
     Prakriti::TraceHelperAuto th("BinopRVal::Invoke", binopAct);
+    std::vector<Prakriti::ECMAGraph> branches;
     for (Prakriti::NodeUID lval : lvals) {
       for (Prakriti::NodeUID rval : rvals) {
-        auto ret = Prakriti::invokeAction(binopAct, {G, {lval, rval}, {op}});
+        Prakriti::ECMAGraph H = G->clone();
+        auto ret = Prakriti::invokeAction(binopAct, {&H, {lval, rval}, {op}});
         res_.insert(ret.L.begin(), ret.L.end());
+        branches.push_back(std::move(H));
       }
     }
+    Prakriti::KarmaJoin(G, branches);
   }
 }
 

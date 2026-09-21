@@ -4,6 +4,7 @@
 #include "external/Prakriti.hpp"
 #include <cassert>
 #include <set>
+#include <stdexcept>
 #include <string>
 
 namespace IRI_STRUCTURAL {
@@ -17,7 +18,7 @@ namespace IRI_STRUCTURAL {
  * Flags: (none)
  */
 void computeFieldReadVals(const PTAStatementContext &ptactx, IRID node,
-                        std::set<Prakriti::NodeUID> &res_) {
+                          std::set<Prakriti::NodeUID> &res_) {
   Prakriti::TraceHelperAuto th("FieldReadRVal", node);
 
   IRI_GEN::FieldReadSEXP sexp(node, ptactx.ctx);
@@ -44,7 +45,9 @@ void computeFieldReadVals(const PTAStatementContext &ptactx, IRID node,
       assert(G->hasNode(obj));
       auto getClosures =
           G->getPointees(obj, Prakriti::PKRGlobalState::EdgeIntern(PKR_Get));
-      assert(!getClosures.empty());
+      if (getClosures.empty())
+        throw std::runtime_error(
+            "PTA: property read on a primitive receiver is not modelled");
       Prakriti::Karma(G, getClosures, {nullptr, {obj, obj}, {field}}, vals,
                       branches);
     }
