@@ -1307,6 +1307,145 @@ inline ECMAGraph::ActionClosure makeTracedAction(std::string_view file,
       });
 }
 
+//
+// Public tracing API
+//
+// Everything above is wired into Prakriti's own internals (action closures,
+// Karma). TraceHelper is the surface for code outside those internals that
+// wants its own events on the same call-graph output: they nest inside
+// Prakriti's spans, share the sink, and are gated by the same PRAKRITI_TRACE
+// env var / setTraceEnabled() switch.
+//
+//   {
+//     TraceHelper th("My Event");
+//     th.start();
+//     ...
+//     th.end();            // or just let the destructor close it
+//   }
+//
+//   { TraceHelperAuto th("Scoped"); ... }   // starts on construction
+//
+// Optional detail, all of it a no-op when tracing is off:
+//
+//   TraceHelper th("Lookup", {nodeId}, {"propName"});  // enter-line args
+//   th.setExtra("hit=1");        // free-form context on the exit line
+//   if (th.enabled()) ...        // skip building an expensive extra
+//
+// Unlike TraceSpan the args are copied, so nothing has to outlive the helper.
+// Spans are expected to close in LIFO order; an early return or a throw is
+// fine, the destructor closes whatever is still open.
+class TraceHelper {
+public:
+  explicit TraceHelper(std::string name,
+                       std::optional<NodeUID> node = std::nullopt)
+      : node_(node), name_(std::move(name)) {}
+
+  TraceHelper(std::string name, std::vector<NodeUID> args,
+              std::vector<std::string> argsStr = {},
+              std::optional<NodeUID> node = std::nullopt)
+      : node_(node), name_(std::move(name)), args_(std::move(args)),
+        argsStr_(std::move(argsStr)) {}
+
+  ~TraceHelper() { end(); }
+
+  // Args are printed on the enter line only, so they have to be set before
+  // start(); afterwards they are ignored.
+  TraceHelper &arg(NodeUID node) {
+    args_.push_back(node);
+    return *this;
+  }
+  TraceHelper &arg(std::string str) {
+    argsStr_.push_back(std::move(str));
+    return *this;
+  }
+  TraceHelper &setNode(NodeUID node) {
+    node_ = node;
+    return *this;
+  }
+
+  // Free-form context. Set before start() it lands on the enter line, after
+  // it on the exit line; the last value set before each line wins.
+  TraceHelper &setExtra(std::string extra) {
+    extra_ = std::move(extra);
+    return *this;
+  }
+
+  void start() {
+    if (running_ || !isTraceEnabled())
+      return;
+    running_ = true;
+    depth_ = g_TraceDepth++;
+    start_ = std::chrono::steady_clock::now();
+    g_TraceSink(
+        TraceEvent{node_, name_, depth_, args_, argsStr_, extra_, true, {}});
+    extra_.clear();
+  }
+
+  void start(std::string enterExtra) {
+    extra_ = std::move(enterExtra);
+    start();
+  }
+
+  void end() {
+    if (!running_)
+      return;
+    running_ = false;
+    auto elapsed = std::chrono::steady_clock::now() - start_;
+    // Restore rather than decrement: for the expected LIFO use this is the
+    // same thing, and it keeps a stray out-of-order end() from underflowing
+    // the shared depth counter.
+    g_TraceDepth = depth_;
+    g_TraceSink(TraceEvent{node_, name_, depth_, args_, argsStr_, extra_, false,
+                           std::chrono::duration_cast<std::chrono::nanoseconds>(
+                               elapsed)});
+    extra_.clear();
+  }
+
+  void end(std::string exitExtra) {
+    extra_ = std::move(exitExtra);
+    end();
+  }
+
+  // True between the enter line and the exit line.
+  bool running() const { return running_; }
+  // False when tracing is off, i.e. when building extras would be wasted work.
+  bool enabled() const { return isTraceEnabled(); }
+  const std::string &name() const { return name_; }
+
+  TraceHelper(const TraceHelper &) = delete;
+  TraceHelper &operator=(const TraceHelper &) = delete;
+
+private:
+  std::optional<NodeUID> node_;
+  std::string name_;
+  std::vector<NodeUID> args_;
+  std::vector<std::string> argsStr_;
+  std::string extra_;
+  bool running_ = false;
+  size_t depth_ = 0;
+  std::chrono::steady_clock::time_point start_;
+};
+
+// TraceHelper that opens on construction and closes at the end of the scope.
+// Args have to go through the constructor here, since start() has already
+// run by the time the caller gets the object.
+class TraceHelperAuto : public TraceHelper {
+public:
+  explicit TraceHelperAuto(std::string name,
+                           std::optional<NodeUID> node = std::nullopt)
+      : TraceHelper(std::move(name), node) {
+    start();
+  }
+
+  TraceHelperAuto(std::string name, std::vector<NodeUID> args,
+                  std::vector<std::string> argsStr = {},
+                  std::optional<NodeUID> node = std::nullopt)
+      : TraceHelper(std::move(name), std::move(args), std::move(argsStr),
+                    node) {
+    start();
+  }
+};
+
 } // namespace Prakriti
 
 //
@@ -1356,6 +1495,7 @@ inline ECMAGraph::ActionClosure makeTracedAction(std::string_view file,
 
 #define SET_AC(src, ac, edge)                                                  \
   temp = PKRGlobalState::getActionNode(PKRGlobalState::ac);                    \
+  G->removeAllOutgoingEdgesByLabel(src, PKRGlobalState::EdgeIntern(edge));     \
   G->addNode(temp, TAG::ACT);                                                  \
   G->addEdge(src, temp, PKRGlobalState::EdgeIntern(edge))
 
@@ -2918,11 +3058,10 @@ inline void AllocStackObject(ECMAGraph *G, NodeUID id) {
 
 #define ALLOC_STKN(name) AllocStackObject(G, PKRGlobalState::getGlobal(name))
 #define GSTK_BIND(src, dest)                                                   \
-  KarmaJoin(G,                                                                 \
-            Karma(G,                                                           \
-                  G->getPointees(PKRGlobalState::getGlobal(src),               \
-                                 PKRGlobalState::EdgeIntern(PKR_Set)),         \
-                  {NULL, {PKRGlobalState::getGlobal(src), dest}}));
+  KarmaJoin(G, Karma(G,                                                        \
+                     G->getPointees(PKRGlobalState::getGlobal(src),            \
+                                    PKRGlobalState::EdgeIntern(PKR_Set)),      \
+                     {NULL, {PKRGlobalState::getGlobal(src), dest}}));
 
 namespace Prakriti {
 
@@ -3032,7 +3171,7 @@ inline void initFunctionPrototype(ECMAGraph *G) {
                PKRGlobalState::getGOOBJ_Object_prototype());
 }
 
-// B.2.2.1
+// B.2.2.1: __proto__
 inline void initObjectPrototypeProtoAccessor(ECMAGraph *G) {
   NodeUID getter = PKRGlobalState::ReserveNodeUID();
   auto get = DEFINE_ACTION() {
@@ -3072,9 +3211,8 @@ inline void initObjectPrototypeProtoAccessor(ECMAGraph *G) {
   fd->addConfigurable(PKRGlobalState::getTRUE());
   NodeUID objProto = PKRGlobalState::getGOOBJ_Object_prototype();
   KarmaJoin(G, Karma(G,
-                     G->getPointees(
-                         objProto,
-                         PKRGlobalState::EdgeIntern(PKR_DefineOwnProperty)),
+                     G->getPointees(objProto, PKRGlobalState::EdgeIntern(
+                                                  PKR_DefineOwnProperty)),
                      {NULL, {objProto}, {"__proto__"}, {fd}}));
 }
 
