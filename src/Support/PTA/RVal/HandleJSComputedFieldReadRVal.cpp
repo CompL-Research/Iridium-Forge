@@ -48,7 +48,7 @@ void computeJSComputedFieldReadVals(const PTAStatementContext &ptactx,
 
   {
     Prakriti::TraceHelperAuto th("JSComputedFieldReadRVal::Get", node);
-    auto vals = getProperty(G, objs, PKR_UNKNOWN_FIELD);
+    auto vals = getProperty(G, objs, computedFieldName(keys));
     res_.insert(vals.begin(), vals.end());
   }
 }

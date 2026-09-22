@@ -48,7 +48,7 @@ void handleJSComputedFieldWrite(const PTAStatementContext &ptactx) {
   {
     Prakriti::TraceHelperAuto th("JSComputedFieldWrite::Set",
                                  sexp.getArg_Obj());
-    setProperty(G, objs, PKR_UNKNOWN_FIELD, vals);
+    setProperty(G, objs, computedFieldName(keys), vals);
   }
 }
 

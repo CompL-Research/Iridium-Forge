@@ -104,6 +104,14 @@ inline void definePropertyGetter(Prakriti::ECMAGraph *G,
   definePropertySetterGetter(G, objs, field, vals, false);
 }
 
+inline std::string computedFieldName(const std::set<Prakriti::NodeUID> &keys) {
+  if (keys.size() == 1)
+    if (const std::string *label =
+            Prakriti::PKRGlobalState::wellKnownSymbolLabel(*keys.begin()))
+      return *label;
+  return PKR_UNKNOWN_FIELD;
+}
+
 // A[[Get]] F
 inline std::set<Prakriti::NodeUID>
 getProperty(Prakriti::ECMAGraph *G, const std::set<Prakriti::NodeUID> &objs,

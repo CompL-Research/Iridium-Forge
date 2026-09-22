@@ -5,6 +5,7 @@
 #include "Support/PTA/PTARVALDispatch.hpp"
 #include "external/Prakriti.hpp"
 #include <set>
+#include <stdexcept>
 
 namespace IRI_STRUCTURAL {
 
@@ -21,10 +22,8 @@ namespace IRI_STRUCTURAL {
  * its side effects and discard the produced value.
  */
 void handleJSAppend(const PTAStatementContext &ptactx) {
-  Prakriti::TraceHelperAuto th("JSAppend", ptactx.stmt.id);
-
-  std::set<Prakriti::NodeUID> discarded;
-  resolvePKRRVal(ptactx, ptactx.stmt.id, discarded);
+  throw std::runtime_error(
+      "We only expect JSAppend to only occur as an RVAL of a CompoundAssn");
 }
 
 } // namespace IRI_STRUCTURAL
