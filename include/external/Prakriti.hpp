@@ -4,6 +4,24 @@
 #include <string>
 #include <vector>
 
+// Global Symbols, these appear as leaf nodes in the global environment of
+// Prakriti, this takes care of auto init of such symbols.
+// These symbols are paired with special Edges, when used in field reference
+// context these nodes are meant to resolve to a unique symbol, for Prakriti, we
+// are maintaining the convention of [[Symbol]], one may draw a correlation
+// between these symbols and %Symbol.XYZ% stuff in ECMA. 
+//
+// ~ Meetesh
+//
+#define DEF_WELL_KNOWN_SYMBOLS(V)                                              \
+  V(toPrimitive)                                                               \
+  V(toStringTag)                                                               \
+  V(hasInstance)                                                               \
+  V(iterator)
+
+#define PKR_SYMBOL_TAG(name) SYMBOL_##name##_VAL
+#define PKR_SYMBOL_LABEL(name) "[[Symbol." #name "]]"
+
 #include <cstdint>
 #include <iostream>
 
@@ -44,10 +62,7 @@
   V(STATE_VAL)                                                                 \
   V(NUMBER_VAL)                                                                \
   V(STRING_VAL)                                                                \
-  V(BIGINT_VAL)                                                                \
-  V(SYMBOL_TOPRIMITIVE_VAL)                                                   \
-  V(SYMBOL_TOSTRINGTAG_VAL)                                                    \
-  V(SYMBOL_HASINSTANCE_VAL)
+  V(BIGINT_VAL)
 
 #define DEF_NODE_TYPES(V)                                                      \
   DEF_NODE_EVAL(V)                                                             \
@@ -61,6 +76,9 @@ enum class TAG : uint8_t {
 #define NODE_TYPES(name) name,
   DEF_NODE_TYPES(NODE_TYPES)
 #undef NODE_TYPES
+#define SYM_TAG(name) PKR_SYMBOL_TAG(name),
+      DEF_WELL_KNOWN_SYMBOLS(SYM_TAG)
+#undef SYM_TAG
 };
 
 inline const char *dumpPKRTagToString(TAG tag) {
@@ -70,6 +88,11 @@ inline const char *dumpPKRTagToString(TAG tag) {
     return #name;
     DEF_NODE_TYPES(NODE_TYPES)
 #undef NODE_TYPES
+#define SYM_TAG(name)                                                          \
+  case TAG::PKR_SYMBOL_TAG(name):                                              \
+    return "Symbol." #name;
+    DEF_WELL_KNOWN_SYMBOLS(SYM_TAG)
+#undef SYM_TAG
   default:
     return "<UNKNOWN_TAG>";
   }
@@ -331,12 +354,12 @@ public:
   V(NAC_MARGSOBJ_Unsupported)                                                  \
   V(NAC_ToNumber)                                                              \
   V(NAC_OrdinaryToPrimitive)                                                   \
-  V(NAC_ToPrimitive)                                                          \
-  V(NAC_ToString)                                                             \
-  V(NAC_ToNumeric)                                                            \
-  V(NAC_HandleBinop)                                                         \
-  V(NAC_HandleRelop)                                                          \
-  V(NAC_HandleJSBinop)                                                          \
+  V(NAC_ToPrimitive)                                                           \
+  V(NAC_ToString)                                                              \
+  V(NAC_ToNumeric)                                                             \
+  V(NAC_HandleBinop)                                                           \
+  V(NAC_HandleRelop)                                                           \
+  V(NAC_HandleJSBinop)                                                         \
   V(NAC_OrdinaryHasInstance)
 
 // Global object identities. PKRGlobalState (ECMAGraph.hpp) turns each of
@@ -655,9 +678,9 @@ private:
   inline static NodeUID NUMBER_VAL = 0;
   inline static NodeUID STRING_VAL = 0;
   inline static NodeUID BIGINT_VAL = 0;
-  inline static NodeUID SYMBOL_TOPRIMITIVE_VAL = 0;
-  inline static NodeUID SYMBOL_TOSTRINGTAG_VAL = 0;
-  inline static NodeUID SYMBOL_HASINSTANCE_VAL = 0;
+#define AS_SYM_FIELD(name) inline static NodeUID PKR_SYMBOL_TAG(name) = 0;
+  DEF_WELL_KNOWN_SYMBOLS(AS_SYM_FIELD)
+#undef AS_SYM_FIELD
 
   // See list-globals.hpp.
 #define AS_GLOBAL_FIELDS(name) inline static NodeUID name = 0;
@@ -673,6 +696,9 @@ public:
   inline static std::function<EdgeUID(std::string_view)> EdgeIntern = nullptr;
   inline static std::function<std::string_view(EdgeUID)> EdgeGet = nullptr;
   inline static boost::bimap<NodeUID, ActionClosure> ActionClosureMap;
+
+  // Populated by Init from DEF_WELL_KNOWN_SYMBOLS: symbol node -> edge label.
+  inline static std::unordered_map<NodeUID, std::string> WellKnownSymbolEdges;
   inline static std::unordered_map<NodeUID, std::string> ActionNameMap;
   inline static std::unordered_map<StateHash, std::vector<ECMAGraph>>
       StateHashToState;
@@ -727,19 +753,19 @@ public:
     return BIGINT_VAL;
   }
 
-  static NodeUID getSYMBOL_TOPRIMITIVE() {
-    ASSERT(isInitialized);
-    return SYMBOL_TOPRIMITIVE_VAL;
+#define AS_SYM_GETTER(name)                                                    \
+  static NodeUID getSYMBOL_##name() {                                          \
+    ASSERT(isInitialized);                                                     \
+    return PKR_SYMBOL_TAG(name);                                               \
   }
+  DEF_WELL_KNOWN_SYMBOLS(AS_SYM_GETTER)
+#undef AS_SYM_GETTER
 
-  static NodeUID getSYMBOL_TOSTRINGTAG() {
-    ASSERT(isInitialized);
-    return SYMBOL_TOSTRINGTAG_VAL;
-  }
-
-  static NodeUID getSYMBOL_HASINSTANCE() {
-    ASSERT(isInitialized);
-    return SYMBOL_HASINSTANCE_VAL;
+  // A well-known symbol used as a property key names a real edge, so a computed
+  // key that resolves to one does not have to fall back to the bucket.
+  static const std::string *wellKnownSymbolLabel(NodeUID node) {
+    auto it = WellKnownSymbolEdges.find(node);
+    return it == WellKnownSymbolEdges.end() ? nullptr : &it->second;
   }
 
 #define AS_GLOBAL_GETTERS(name)                                                \
@@ -797,9 +823,12 @@ public:
     NUMBER_VAL = reserveNodeUID();
     STRING_VAL = reserveNodeUID();
     BIGINT_VAL = reserveNodeUID();
-    SYMBOL_TOPRIMITIVE_VAL = reserveNodeUID();
-    SYMBOL_TOSTRINGTAG_VAL = reserveNodeUID();
-    SYMBOL_HASINSTANCE_VAL = reserveNodeUID();
+#define AS_SYM_INIT(name)                                                      \
+  PKR_SYMBOL_TAG(name) = reserveNodeUID();                                     \
+  WellKnownSymbolEdges.emplace(PKR_SYMBOL_TAG(name),                           \
+                               PKR_SYMBOL_LABEL(name));
+    DEF_WELL_KNOWN_SYMBOLS(AS_SYM_INIT)
+#undef AS_SYM_INIT
 
 #define AS_GLOBAL_INIT(name) name = reserveNodeUID();
     DEF_GLOBAL_IDENTITIES(AS_GLOBAL_INIT)
@@ -960,12 +989,11 @@ public:
       return "String";
     if (uid == BIGINT_VAL)
       return "BigInt";
-    if (uid == SYMBOL_TOPRIMITIVE_VAL)
-      return "Symbol.toPrimitive";
-    if (uid == SYMBOL_TOSTRINGTAG_VAL)
-      return "Symbol.toStringTag";
-    if (uid == SYMBOL_HASINSTANCE_VAL)
-      return "Symbol.hasInstance";
+#define AS_SYM_NAME(name)                                                      \
+  if (uid == PKR_SYMBOL_TAG(name))                                             \
+    return "Symbol." #name;
+    DEF_WELL_KNOWN_SYMBOLS(AS_SYM_NAME)
+#undef AS_SYM_NAME
 
     // Global Identities
 #define AS_GLOBAL_NAME(name)                                                   \
@@ -1490,9 +1518,7 @@ public:
 #define PKR_TRANSIENCE "[[transience]]"
 #define PKR_ARGUMENTS "[[Arguments]]"
 #define PKR_MAPPED_ARGUMENTS "[[MappedArguments]]"
-#define PKR_SYM_toPrimitive "[[Symbol.toPrimitive]]"
-#define PKR_SYM_toStringTag "[[Symbol.toStringTag]]"
-#define PKR_SYM_hasInstance "[[Symbol.hasInstance]]"
+#define PKR_ITERATED "[[IteratedObject]]"
 #define PKR_TRANSIENCE_BACKUP "[[transience-backup]]"
 #define PKR_IS_EXECUTING "[[is-executing]]"
 #define PKR_DEFINITE "[[Definite]]"
@@ -2560,6 +2586,141 @@ inline void AllocMappedArgumentsObject(ECMAGraph *G, NodeUID id, NodeUID ext,
 
 namespace Prakriti {
 
+inline bool initClosure = []() { return true; }();
+
+inline void AllocClosure(ECMAGraph *G, NodeUID id,
+                         ECMAGraph::ActionClosure clos, NodeUID ext,
+                         NodeUID proto) {
+  // Declare FOBJ node
+  G->addNode(id, TAG::FOBJ);
+  PKRGlobalState::associateActionClosure(id, clos);
+
+  NodeUID temp;
+  SET_AC(id, NAC_OOBJ_GetPrototypeOf, PKR_GetPrototypeOf);
+  SET_AC(id, NAC_OOBJ_SetPrototypeOf, PKR_SetPrototypeOf);
+  SET_AC(id, NAC_OOBJ_IsExtensible, PKR_IsExtensible);
+  SET_AC(id, NAC_OOBJ_PreventExtensions, PKR_PreventExtensions);
+  SET_AC(id, NAC_OOBJ_GetOwnProperty, PKR_GetOwnProperty);
+  SET_AC(id, NAC_OOBJ_DefineOwnProperty, PKR_DefineOwnProperty);
+  SET_AC(id, NAC_OOBJ_HasProperty, PKR_HasProperty);
+  SET_AC(id, NAC_OOBJ_Get, PKR_Get);
+  SET_AC(id, NAC_OOBJ_Set, PKR_Set);
+  SET_AC(id, NAC_OOBJ_Delete, PKR_Delete);
+  SET_AC(id, NAC_OOBJ_OwnPropertyKeys, PKR_OwnPropertyKeys);
+
+  G->addEdge(id, proto, PKRGlobalState::EdgeIntern(PKR_PROTOTYPE));
+  G->addEdge(id, ext, PKRGlobalState::EdgeIntern(PKR_EXTENSIBLE));
+  G->addEdge(id, PKRGlobalState::getTRUE(),
+             PKRGlobalState::EdgeIntern(PKR_SENSITIVE));
+}
+
+} // namespace Prakriti
+
+namespace Prakriti {
+
+// 23.1.5.2 %ArrayIteratorPrototype%.next, uses the PKR_ITERATED node to get the
+// context of the object being iterated, gets all its keys,
+inline const ECMAGraph::ActionClosure arrayIteratorNextAC = DEFINE_ACTION() {
+  ECMAGraph *G = args.G;
+  ASSERT(args.A.size() == 2);
+  auto thisSlots = decodeArgRanges(args.L, args.A[0]);
+  if (thisSlots.empty() || thisSlots[0].empty())
+    return {{PKRGlobalState::getUNDEF()}};
+
+  std::set<NodeUID> out;
+  std::vector<ECMAGraph> branches;
+  std::vector<NodeUID> discardedL;
+
+  for (NodeUID self : thisSlots[0]) {
+    NodeUID res = PKRGlobalState::generateSentinel(
+        self, PKRGlobalState::EdgeIntern("[[IterResult]]"));
+    if (!G->hasNode(res))
+      AllocOrdinaryObject(G, res, PKRGlobalState::getTRUE(),
+                          PKRGlobalState::getGOOBJ_Object_prototype());
+    auto resSet = G->getPointees(res, PKRGlobalState::EdgeIntern(PKR_Set));
+
+    for (NodeUID arr :
+         G->getPointees(self, PKRGlobalState::EdgeIntern(PKR_ITERATED))) {
+      std::set<std::string> keys;
+      for (auto &r : Karma(G,
+                           G->getPointees(arr, PKRGlobalState::EdgeIntern(
+                                                   PKR_OwnPropertyKeys)),
+                           {NULL, {arr}}))
+        for (auto &k : r.ret.A)
+          if (OOHelpers::isOwnFieldLabel(k) && k != "length")
+            keys.insert(k);
+
+      std::vector<NodeUID> vals;
+      std::vector<ECMAGraph> valBranches;
+      auto getActs = G->getPointees(arr, PKRGlobalState::EdgeIntern(PKR_Get));
+      for (const auto &k : keys)
+        Karma(G, getActs, {NULL, {arr, arr}, {k}}, vals, valBranches);
+      KarmaJoin(G, valBranches);
+
+      for (NodeUID v : std::set<NodeUID>(vals.begin(), vals.end()))
+        Karma(G, resSet, {NULL, {res, v}, {"value"}}, discardedL, branches);
+    }
+
+    Karma(G, resSet, {NULL, {res, PKRGlobalState::getUNDEF()}, {"value"}},
+          discardedL, branches);
+    Karma(G, resSet, {NULL, {res, PKRGlobalState::getTRUE()}, {"done"}},
+          discardedL, branches);
+    Karma(G, resSet, {NULL, {res, PKRGlobalState::getFALSE()}, {"done"}},
+          discardedL, branches);
+    out.insert(res);
+  }
+  KarmaJoin(G, branches);
+  ASSERT(!out.empty());
+  return {{out.begin(), out.end()}};
+});
+
+// 23.1.3.40 Array.prototype[%Symbol.iterator%] = () => { next() {} }
+inline const ECMAGraph::ActionClosure arrayIteratorAC = DEFINE_ACTION() {
+  ECMAGraph *G = args.G;
+  ASSERT(args.A.size() == 2);
+  auto thisSlots = decodeArgRanges(args.L, args.A[0]);
+  if (thisSlots.empty() || thisSlots[0].empty())
+    return {{PKRGlobalState::getUNDEF()}};
+
+  std::set<NodeUID> out;
+  for (NodeUID arr : thisSlots[0]) {
+    NodeUID it = PKRGlobalState::generateSentinel(
+        arr, PKRGlobalState::EdgeIntern("[[ArrayIterator]]"));
+    if (!G->hasNode(it))
+      AllocOrdinaryObject(G, it, PKRGlobalState::getTRUE(),
+                          PKRGlobalState::getGOOBJ_Object_prototype());
+
+    // Iterator ---[[IteratedObject]]-> arrObj
+    //     |
+    //     |-------------next---------> arrayIteratorNextAC
+    G->addEdge(it, arr, PKRGlobalState::EdgeIntern(PKR_ITERATED));
+
+    NodeUID nextFn = PKRGlobalState::generateSentinel(
+        PKRGlobalState::getGOOBJ_Array_prototype(),
+        PKRGlobalState::EdgeIntern("[[ArrayIteratorNext]]"));
+
+    if (!G->hasNode(nextFn))
+      AllocClosure(G, nextFn, arrayIteratorNextAC, PKRGlobalState::getTRUE(),
+                   PKRGlobalState::getGFOBJ_Function_prototype());
+
+    auto fd = std::make_shared<TempFieldDescriptor>();
+    fd->addValue(nextFn);
+    fd->addWritable(PKRGlobalState::getTRUE());
+    fd->addEnumerable(PKRGlobalState::getFALSE());
+    fd->addConfigurable(PKRGlobalState::getTRUE());
+    // PRECISION: every iterator object this node stands for carries next(),
+    // so a lookup stops here instead of walking to Object.prototype.
+    fd->addDefinite(PKRGlobalState::getTRUE());
+    KarmaJoin(G, Karma(G,
+                       G->getPointees(it, PKRGlobalState::EdgeIntern(
+                                              PKR_DefineOwnProperty)),
+                       {NULL, {it}, {"next"}, {fd}}));
+    out.insert(it);
+  }
+  ASSERT(!out.empty());
+  return {{out.begin(), out.end()}};
+});
+
 inline void AllocArrayObject(ECMAGraph *G, NodeUID id) {
   G->addNode(id, TAG::ARRAYOBJ);
 
@@ -2583,8 +2744,8 @@ inline void AllocArrayObject(ECMAGraph *G, NodeUID id) {
   G->addEdge(id, PKRGlobalState::getTRUE(),
              PKRGlobalState::EdgeIntern(PKR_SENSITIVE));
 
-  NodeUID lengthFP =
-      PKRGlobalState::generateSentinel(id, PKRGlobalState::EdgeIntern("length"));
+  NodeUID lengthFP = PKRGlobalState::generateSentinel(
+      id, PKRGlobalState::EdgeIntern("length"));
   AllocFieldProxyObject(G, lengthFP);
   G->addEdge(id, lengthFP, PKRGlobalState::EdgeIntern("length"));
   G->addEdge(lengthFP, PKRGlobalState::getNUMBER(),
@@ -2784,7 +2945,7 @@ inline bool initBinaryOperators = []() {
     auto getActs = G->getPointees(val, PKRGlobalState::EdgeIntern(PKR_Get));
     std::vector<NodeUID> funcVec;
     std::vector<ECMAGraph> lookupBranches;
-    Karma(G, getActs, {NULL, {val, val}, {PKR_SYM_toPrimitive}}, funcVec,
+    Karma(G, getActs, {NULL, {val, val}, {PKR_SYMBOL_LABEL(toPrimitive)}}, funcVec,
           lookupBranches);
     KarmaJoin(G, lookupBranches);
     std::set<NodeUID> funcs(funcVec.begin(), funcVec.end());
@@ -3130,11 +3291,11 @@ inline bool initBinaryOperators = []() {
       // ToPropertyKey on the left; [[HasProperty]] runs no user code.
       invokeAction(tpAct, {G, {lval}});
     } else if (op == "instanceof") {
-      // 13.10.2: v instanceof F === F[PKR_SYM_hasInstance](v).
+      // 13.10.2: v instanceof F === F[%Symbol.hasInstance%](v).
       std::vector<NodeUID> handlers;
       std::vector<ECMAGraph> lookupBranches;
       auto getActs = G->getPointees(rval, PKRGlobalState::EdgeIntern(PKR_Get));
-      Karma(G, getActs, {NULL, {rval, rval}, {PKR_SYM_hasInstance}}, handlers,
+      Karma(G, getActs, {NULL, {rval, rval}, {PKR_SYMBOL_LABEL(hasInstance)}}, handlers,
             lookupBranches);
       KarmaJoin(G, lookupBranches);
 
@@ -3168,38 +3329,6 @@ inline bool initBinaryOperators = []() {
 
   return true;
 }();
-
-} // namespace Prakriti
-
-namespace Prakriti {
-
-inline bool initClosure = []() { return true; }();
-
-inline void AllocClosure(ECMAGraph *G, NodeUID id,
-                         ECMAGraph::ActionClosure clos, NodeUID ext,
-                         NodeUID proto) {
-  // Declare FOBJ node
-  G->addNode(id, TAG::FOBJ);
-  PKRGlobalState::associateActionClosure(id, clos);
-
-  NodeUID temp;
-  SET_AC(id, NAC_OOBJ_GetPrototypeOf, PKR_GetPrototypeOf);
-  SET_AC(id, NAC_OOBJ_SetPrototypeOf, PKR_SetPrototypeOf);
-  SET_AC(id, NAC_OOBJ_IsExtensible, PKR_IsExtensible);
-  SET_AC(id, NAC_OOBJ_PreventExtensions, PKR_PreventExtensions);
-  SET_AC(id, NAC_OOBJ_GetOwnProperty, PKR_GetOwnProperty);
-  SET_AC(id, NAC_OOBJ_DefineOwnProperty, PKR_DefineOwnProperty);
-  SET_AC(id, NAC_OOBJ_HasProperty, PKR_HasProperty);
-  SET_AC(id, NAC_OOBJ_Get, PKR_Get);
-  SET_AC(id, NAC_OOBJ_Set, PKR_Set);
-  SET_AC(id, NAC_OOBJ_Delete, PKR_Delete);
-  SET_AC(id, NAC_OOBJ_OwnPropertyKeys, PKR_OwnPropertyKeys);
-
-  G->addEdge(id, proto, PKRGlobalState::EdgeIntern(PKR_PROTOTYPE));
-  G->addEdge(id, ext, PKRGlobalState::EdgeIntern(PKR_EXTENSIBLE));
-  G->addEdge(id, PKRGlobalState::getTRUE(),
-             PKRGlobalState::EdgeIntern(PKR_SENSITIVE));
-}
 
 } // namespace Prakriti
 
@@ -3445,7 +3574,27 @@ inline void initFunctionPrototype(ECMAGraph *G) {
                PKRGlobalState::getGOOBJ_Object_prototype());
 }
 
-// 20.2.3.6 Function.prototype[PKR_SYM_hasInstance].
+inline void initArrayPrototype(ECMAGraph *G) {
+  // Array.prototype
+  NodeUID arrProtoID = PKRGlobalState::getGOOBJ_Array_prototype();
+
+  // Array.prototype.values == Array.prototype[%Symbol.iterator%]
+  NodeUID apvID = PKRGlobalState::ReserveNodeUID();
+  AllocClosure(G, apvID, arrayIteratorAC, PKRGlobalState::getTRUE(),
+               PKRGlobalState::getGFOBJ_Function_prototype());
+
+  KarmaJoin(
+      G,
+      Karma(G, G->getPointees(arrProtoID, PKRGlobalState::EdgeIntern(PKR_Set)),
+            {NULL, {arrProtoID, apvID}, {"values"}}));
+
+  KarmaJoin(
+      G,
+      Karma(G, G->getPointees(arrProtoID, PKRGlobalState::EdgeIntern(PKR_Set)),
+            {NULL, {arrProtoID, apvID}, {PKR_SYMBOL_LABEL(iterator)}}));
+}
+
+// 20.2.3.6 Function.prototype[@@hasInstance].
 inline void initFunctionHasInstance(ECMAGraph *G) {
   NodeUID fn = PKRGlobalState::ReserveNodeUID();
   auto ac = DEFINE_ACTION() {
@@ -3490,10 +3639,11 @@ inline void initFunctionHasInstance(ECMAGraph *G) {
   fd->addDefinite(PKRGlobalState::getTRUE());
 
   NodeUID funProto = PKRGlobalState::getGFOBJ_Function_prototype();
-  KarmaJoin(G, Karma(G,
-                     G->getPointees(funProto, PKRGlobalState::EdgeIntern(
-                                                  PKR_DefineOwnProperty)),
-                     {NULL, {funProto}, {PKR_SYM_hasInstance}, {fd}}));
+  KarmaJoin(
+      G, Karma(G,
+               G->getPointees(
+                   funProto, PKRGlobalState::EdgeIntern(PKR_DefineOwnProperty)),
+               {NULL, {funProto}, {PKR_SYMBOL_LABEL(hasInstance)}, {fd}}));
 }
 
 // B.2.2.1: __proto__
@@ -3595,30 +3745,28 @@ inline void initECMAEnvironment(ECMAGraph *G) {
                       PKRGlobalState::getGOOBJ_Symbol_prototype(),
                       PKRGlobalState::getGOOBJ_Object_prototype(),
                       {"for", "keyFor"}, {"toString", "valueOf"}, "Symbol");
-  // Add Symbol.toPrimitive -> SYMBOL_TOPRIMITIVE_VAL
-  KarmaJoin(G, Karma(G,
-                     G->getPointees(PKRGlobalState::getGFOBJ_Symbol(),
-                                    PKRGlobalState::EdgeIntern(PKR_Set)),
-                     {NULL,
-                      {PKRGlobalState::getGFOBJ_Symbol(),
-                       PKRGlobalState::getSYMBOL_TOPRIMITIVE()},
-                      {"toPrimitive"}}));
-  // Add Symbol.toStringTag -> SYMBOL_TOSTRINGTAG_VAL
-  KarmaJoin(G, Karma(G,
-                     G->getPointees(PKRGlobalState::getGFOBJ_Symbol(),
-                                    PKRGlobalState::EdgeIntern(PKR_Set)),
-                     {NULL,
-                      {PKRGlobalState::getGFOBJ_Symbol(),
-                       PKRGlobalState::getSYMBOL_TOSTRINGTAG()},
-                      {"toStringTag"}}));
-  // Add Symbol.hasInstance -> SYMBOL_HASINSTANCE_VAL
-  KarmaJoin(G, Karma(G,
-                     G->getPointees(PKRGlobalState::getGFOBJ_Symbol(),
-                                    PKRGlobalState::EdgeIntern(PKR_Set)),
-                     {NULL,
-                      {PKRGlobalState::getGFOBJ_Symbol(),
-                       PKRGlobalState::getSYMBOL_HASINSTANCE()},
-                      {"hasInstance"}}));
+// ECMA defines these as non-configurable, also making them definite is a good
+// idea as there are two parent protos above, so this might be useful too
+#define AS_SYM_PROP(name)                                                      \
+  {                                                                            \
+    auto symFD = std::make_shared<TempFieldDescriptor>();                      \
+    symFD->addValue(PKRGlobalState::getSYMBOL_##name());                       \
+    symFD->addWritable(PKRGlobalState::getFALSE());                            \
+    symFD->addEnumerable(PKRGlobalState::getFALSE());                          \
+    symFD->addConfigurable(PKRGlobalState::getFALSE());                        \
+    symFD->addDefinite(PKRGlobalState::getTRUE());                             \
+    KarmaJoin(G, Karma(G,                                                      \
+                       G->getPointees(                                         \
+                           PKRGlobalState::getGFOBJ_Symbol(),                  \
+                           PKRGlobalState::EdgeIntern(PKR_DefineOwnProperty)), \
+                       {                                                       \
+                         NULL, {PKRGlobalState::getGFOBJ_Symbol()}, {#name}, { \
+                           symFD                                               \
+                         }                                                     \
+                       }));                                                    \
+  }
+  DEF_WELL_KNOWN_SYMBOLS(AS_SYM_PROP)
+#undef AS_SYM_PROP
 
   defineStubIntrinsic(G, PKRGlobalState::getGFOBJ_Error(),
                       PKRGlobalState::getGOOBJ_Error_prototype(),
@@ -3637,9 +3785,9 @@ inline void initECMAEnvironment(ECMAGraph *G) {
                        "pop",       "push",     "reduce",         "reduceRight",
                        "reverse",   "shift",    "slice",          "some",
                        "sort",      "splice",   "toLocaleString", "toString",
-                       "unshift",   "values"},
+                       "unshift"},
                       "Array");
-
+  initArrayPrototype(G);
   initFunctionConstructor(G);
 }
 
@@ -3763,12 +3911,11 @@ inline void initLeaves(ECMAGraph *G) {
   G->addNode(PKRGlobalState::getNUMBER(), TAG::NUMBER_VAL);
   G->addNode(PKRGlobalState::getSTRING(), TAG::STRING_VAL);
   G->addNode(PKRGlobalState::getBIGINT(), TAG::BIGINT_VAL);
-  G->addNode(PKRGlobalState::getSYMBOL_TOPRIMITIVE(),
-             TAG::SYMBOL_TOPRIMITIVE_VAL);
-  G->addNode(PKRGlobalState::getSYMBOL_TOSTRINGTAG(),
-             TAG::SYMBOL_TOSTRINGTAG_VAL);
-  G->addNode(PKRGlobalState::getSYMBOL_HASINSTANCE(),
-             TAG::SYMBOL_HASINSTANCE_VAL);
+#define AS_SYM_NODE(name)                                                      \
+  G->addNode(PKRGlobalState::getSYMBOL_##name(),                               \
+             TAG::PKR_SYMBOL_TAG(name));
+  DEF_WELL_KNOWN_SYMBOLS(AS_SYM_NODE)
+#undef AS_SYM_NODE
 }
 
 #define DEF_JSFILE_EVAL(NACName, envInitFn)                                    \
