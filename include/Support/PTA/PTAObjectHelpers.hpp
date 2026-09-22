@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Generated/IridiumTypes.h"
+#include "Storage/IRIContext.h"
 #include "external/Prakriti.hpp"
 #include <memory>
 #include <set>
@@ -8,6 +10,32 @@
 #include <vector>
 
 namespace IRI_STRUCTURAL {
+
+inline void stackWrite(Prakriti::ECMAGraph *G, IRI_STORAGE::IRIContext &ctx, IRI_STORAGE::IRID dest,
+               const std::set<Prakriti::NodeUID> &vals) {
+  if (vals.empty())
+    return;
+  IRI_GEN::LWriteSEXP write(dest, ctx);
+  Prakriti::NodeUID target = write.getArg_LValTarget();
+  assert(G->hasNode(target));
+
+  std::vector<Prakriti::NodeUID> setArgs = {target};
+  setArgs.insert(setArgs.end(), vals.begin(), vals.end());
+  auto setClosures =
+      G->getPointees(target, Prakriti::PKRGlobalState::EdgeIntern(PKR_Set));
+  assert(!setClosures.empty());
+  Prakriti::KarmaJoin(G, Prakriti::Karma(G, setClosures, {nullptr, setArgs}));
+}
+
+inline std::vector<Prakriti::NodeUID>
+callablesOf(const std::vector<Prakriti::NodeUID> &nodes) {
+  std::vector<Prakriti::NodeUID> out;
+  for (Prakriti::NodeUID n :
+       std::set<Prakriti::NodeUID>(nodes.begin(), nodes.end()))
+    if (Prakriti::PKRGlobalState::nodeHasActionClosure(n))
+      out.push_back(n);
+  return out;
+}
 
 // A[[Set]] F = VALS
 inline void setProperty(Prakriti::ECMAGraph *G,
