@@ -2618,6 +2618,32 @@ inline void AllocClosure(ECMAGraph *G, NodeUID id,
 
 namespace Prakriti {
 
+inline void collectArrayElementValues(ECMAGraph *G, NodeUID arr,
+                                      std::vector<NodeUID> &vals,
+                                      std::vector<ECMAGraph> &branches) {
+  std::set<std::string> keys;
+  for (auto &r :
+       Karma(G,
+             G->getPointees(arr, PKRGlobalState::EdgeIntern(PKR_OwnPropertyKeys)),
+             {NULL, {arr}}))
+    for (auto &k : r.ret.A)
+      if (OOHelpers::isOwnFieldLabel(k) && k != "length")
+        keys.insert(k);
+
+  for (const auto &k : keys) {
+    NodeUID fp = OOHelpers::findOwnFP(G, arr, k);
+    if (fp == PKRGlobalState::getUNDEF())
+      continue;
+    auto direct = G->getPointees(fp, PKRGlobalState::EdgeIntern(PKR_VALUE));
+    vals.insert(vals.end(), direct.begin(), direct.end());
+    auto getters = G->getPointees(fp, PKRGlobalState::EdgeIntern(PKR_Get));
+    if (!getters.empty()) {
+      auto call = makeCall({arr}, {});
+      Karma(G, getters, {NULL, call.L, call.A}, vals, branches);
+    }
+  }
+}
+
 // 23.1.5.2 %ArrayIteratorPrototype%.next, uses the PKR_ITERATED node to get the
 // context of the object being iterated, gets all its keys,
 inline const ECMAGraph::ActionClosure arrayIteratorNextAC = DEFINE_ACTION() {
@@ -2641,20 +2667,9 @@ inline const ECMAGraph::ActionClosure arrayIteratorNextAC = DEFINE_ACTION() {
 
     for (NodeUID arr :
          G->getPointees(self, PKRGlobalState::EdgeIntern(PKR_ITERATED))) {
-      std::set<std::string> keys;
-      for (auto &r : Karma(G,
-                           G->getPointees(arr, PKRGlobalState::EdgeIntern(
-                                                   PKR_OwnPropertyKeys)),
-                           {NULL, {arr}}))
-        for (auto &k : r.ret.A)
-          if (OOHelpers::isOwnFieldLabel(k) && k != "length")
-            keys.insert(k);
-
       std::vector<NodeUID> vals;
       std::vector<ECMAGraph> valBranches;
-      auto getActs = G->getPointees(arr, PKRGlobalState::EdgeIntern(PKR_Get));
-      for (const auto &k : keys)
-        Karma(G, getActs, {NULL, {arr, arr}, {k}}, vals, valBranches);
+      collectArrayElementValues(G, arr, vals, valBranches);
       KarmaJoin(G, valBranches);
 
       for (NodeUID v : std::set<NodeUID>(vals.begin(), vals.end()))
@@ -2718,6 +2733,49 @@ inline const ECMAGraph::ActionClosure arrayIteratorAC = DEFINE_ACTION() {
     out.insert(it);
   }
   ASSERT(!out.empty());
+  return {{out.begin(), out.end()}};
+});
+
+// 23.1.3.23 Array.prototype.push
+inline const ECMAGraph::ActionClosure arrayPushAC = DEFINE_ACTION() {
+  ECMAGraph *G = args.G;
+  ASSERT(args.A.size() == 2);
+  auto thisSlots = decodeArgRanges(args.L, args.A[0]);
+  auto argSlots = decodeArgRanges(args.L, args.A[1]);
+  if (thisSlots.empty() || thisSlots[0].empty())
+    return {{PKRGlobalState::getNUMBER()}};
+
+  std::vector<NodeUID> discarded;
+  std::vector<ECMAGraph> branches;
+  for (NodeUID recv : thisSlots[0]) {
+    auto setActs = G->getPointees(recv, PKRGlobalState::EdgeIntern(PKR_Set));
+    if (setActs.empty())
+      continue;
+    for (const auto &slot : argSlots)
+      for (NodeUID v : slot)
+        Karma(G, setActs, {NULL, {recv, v}, {PKR_UNKNOWN_FIELD}}, discarded,
+              branches);
+  }
+  KarmaJoin(G, branches);
+  return {{PKRGlobalState::getNUMBER()}};
+});
+
+// 23.1.3.22 Array.prototype.pop
+inline const ECMAGraph::ActionClosure arrayPopAC = DEFINE_ACTION() {
+  ECMAGraph *G = args.G;
+  ASSERT(args.A.size() == 2);
+  auto thisSlots = decodeArgRanges(args.L, args.A[0]);
+
+  std::set<NodeUID> out{PKRGlobalState::getUNDEF()};
+  std::vector<ECMAGraph> branches;
+  if (!thisSlots.empty()) {
+    for (NodeUID recv : thisSlots[0]) {
+      std::vector<NodeUID> vals;
+      collectArrayElementValues(G, recv, vals, branches);
+      out.insert(vals.begin(), vals.end());
+    }
+  }
+  KarmaJoin(G, branches);
   return {{out.begin(), out.end()}};
 });
 
@@ -3071,20 +3129,23 @@ inline bool initBinaryOperators = []() {
       auto vv2Ret = invokeAction(tpAct, {G, {rval}});
       std::set<NodeUID> vv2(vv2Ret.L.begin(), vv2Ret.L.end());
 
-      // 13.15.3 picks the string concatenation only when an operand really is
-      // a String. Being a String is a may-fact here, so it prunes the numeric
-      // branch only when every operand must be one.
-      bool anyString = false, allString = true;
-      for (NodeUID v : vv1) {
-        bool isStr = G->getNodeTAG(v) == TAG::STRING_VAL;
-        anyString |= isStr;
-        allString &= isStr;
-      }
-      for (NodeUID v : vv2) {
-        bool isStr = G->getNodeTAG(v) == TAG::STRING_VAL;
-        anyString |= isStr;
-        allString &= isStr;
-      }
+      // 13.15.3 step 2 concatenates when *either* operand is a String, so the
+      // question is per side: one side that must be a String settles it, whoever
+      // the other side is. Asking whether every value on both sides is a String
+      // would be far too strong - "a" + 1 would keep a spurious numeric reading.
+      auto stringness = [&](const std::set<NodeUID> &vs, bool &may, bool &must) {
+        must = !vs.empty();
+        for (NodeUID v : vs) {
+          bool isStr = G->getNodeTAG(v) == TAG::STRING_VAL;
+          may |= isStr;
+          must &= isStr;
+        }
+      };
+      bool lMay = false, lMust = false, rMay = false, rMust = false;
+      stringness(vv1, lMay, lMust);
+      stringness(vv2, rMay, rMust);
+      bool anyString = lMay || rMay;
+      bool mustString = lMust || rMust;
 
       if (anyString) {
         NodeUID tsAct =
@@ -3098,9 +3159,9 @@ inline bool initBinaryOperators = []() {
         for (NodeUID v : vv2)
           invokeAction(tsAct, {&GS, {v}}); // side effects only
         strBranches.push_back(std::move(GS));
-        // PRECISION: only an all-Strings must-fact excludes the numeric
-        // reading.
-        if (allString) {
+        // PRECISION: one side that must be a String excludes the numeric
+        // reading outright.
+        if (mustString) {
           KarmaJoin(G, strBranches);
           return {{PKRGlobalState::getSTRING()}};
         }
@@ -3592,6 +3653,101 @@ inline void initArrayPrototype(ECMAGraph *G) {
       G,
       Karma(G, G->getPointees(arrProtoID, PKRGlobalState::EdgeIntern(PKR_Set)),
             {NULL, {arrProtoID, apvID}, {PKR_SYMBOL_LABEL(iterator)}}));
+
+  // 23.1.3.22/23 push and pop, real rather than throwing stubs.
+  auto defineArrayMethod = [&](const char *name,
+                               const ECMAGraph::ActionClosure &ac) {
+    NodeUID fn = PKRGlobalState::ReserveNodeUID();
+    AllocClosure(G, fn, ac, PKRGlobalState::getTRUE(),
+                 PKRGlobalState::getGFOBJ_Function_prototype());
+    auto fd = std::make_shared<TempFieldDescriptor>();
+    fd->addValue(fn);
+    fd->addWritable(PKRGlobalState::getTRUE());
+    fd->addEnumerable(PKRGlobalState::getFALSE());
+    fd->addConfigurable(PKRGlobalState::getTRUE());
+    // PRECISION: every Array.prototype carries these, so a lookup stops here
+    // instead of walking on to Object.prototype and contributing undefined.
+    fd->addDefinite(PKRGlobalState::getTRUE());
+    KarmaJoin(G, Karma(G,
+                       G->getPointees(arrProtoID, PKRGlobalState::EdgeIntern(
+                                                      PKR_DefineOwnProperty)),
+                       {NULL, {arrProtoID}, {name}, {fd}}));
+  };
+  defineArrayMethod("push", arrayPushAC);
+  defineArrayMethod("pop", arrayPopAC);
+}
+
+// 20.1.3.6 Object.prototype.toString and 20.1.3.7 Object.prototype.valueOf
+inline void initObjectPrototypeCoercion(ECMAGraph *G) {
+  NodeUID objProto = PKRGlobalState::getGOOBJ_Object_prototype();
+
+  // toString: the result is always a String, but step 14 reads %toStringTag%,
+  // which may be a user accessor, so the read has to happen for its effects.
+  NodeUID toStringFn = PKRGlobalState::ReserveNodeUID();
+  auto toStringAC = DEFINE_ACTION() {
+    ECMAGraph *G = args.G;
+    ASSERT(args.A.size() == 2);
+    auto thisSlots = decodeArgRanges(args.L, args.A[0]);
+    if (!thisSlots.empty()) {
+      std::vector<NodeUID> discarded;
+      std::vector<ECMAGraph> branches;
+      for (NodeUID recv : thisSlots[0]) {
+        auto getActs =
+            G->getPointees(recv, PKRGlobalState::EdgeIntern(PKR_Get));
+
+        if (getActs.empty())
+          continue;
+        Karma(G, getActs, {NULL, {recv, recv}, {PKR_SYMBOL_LABEL(toStringTag)}},
+              discarded, branches);
+      }
+      KarmaJoin(G, branches);
+    }
+    return {{PKRGlobalState::getSTRING()}};
+  });
+  AllocClosure(G, toStringFn, toStringAC, PKRGlobalState::getTRUE(),
+               PKRGlobalState::getGFOBJ_Function_prototype());
+
+  // valueOf: ToObject(this), which for an object receiver is the receiver.
+  NodeUID valueOfFn = PKRGlobalState::ReserveNodeUID();
+  auto valueOfAC = DEFINE_ACTION() {
+    const ECMAGraph *G = args.G;
+    ASSERT(args.A.size() == 2);
+    auto thisSlots = decodeArgRanges(args.L, args.A[0]);
+    if (thisSlots.empty() || thisSlots[0].empty())
+      return {{PKRGlobalState::getUNDEF()}};
+
+    std::set<NodeUID> out;
+    for (NodeUID recv : thisSlots[0]) {
+      if (!isObjectNode(G, recv))
+        // ToObject would box the primitive into a wrapper object, which is not
+        // modelled. Refuse rather than answer with the primitive, which is a
+        // different value.
+        throw std::runtime_error("PKR: Object.prototype.valueOf on a primitive "
+                                 "receiver needs ToObject, unmodelled");
+      out.insert(recv);
+    }
+    return {{out.begin(), out.end()}};
+  });
+  AllocClosure(G, valueOfFn, valueOfAC, PKRGlobalState::getTRUE(),
+               PKRGlobalState::getGFOBJ_Function_prototype());
+
+  // 20.1.3.x: both are writable, non-enumerable, configurable.
+  auto define = [&](const char *name, NodeUID fn) {
+    auto fd = std::make_shared<TempFieldDescriptor>();
+    fd->addValue(fn);
+    fd->addWritable(PKRGlobalState::getTRUE());
+    fd->addEnumerable(PKRGlobalState::getFALSE());
+    fd->addConfigurable(PKRGlobalState::getTRUE());
+    // PRECISION: every Object.prototype carries these, so a lookup that reaches
+    // here stops instead of walking on to null and contributing undefined.
+    fd->addDefinite(PKRGlobalState::getTRUE());
+    KarmaJoin(G, Karma(G,
+                       G->getPointees(objProto, PKRGlobalState::EdgeIntern(
+                                                    PKR_DefineOwnProperty)),
+                       {NULL, {objProto}, {name}, {fd}}));
+  };
+  define("toString", toStringFn);
+  define("valueOf", valueOfFn);
 }
 
 // 20.2.3.6 Function.prototype[@@hasInstance].
@@ -3733,8 +3889,9 @@ inline void initECMAEnvironment(ECMAGraph *G) {
        "setPrototypeOf",
        "values"},
       {"hasOwnProperty", "isPrototypeOf", "propertyIsEnumerable",
-       "toLocaleString", "toString", "valueOf"},
+       "toLocaleString"},
       "Object");
+  initObjectPrototypeCoercion(G);
 
   defineStubIntrinsic(G, PKRGlobalState::getGFOBJ_Boolean(),
                       PKRGlobalState::getGOOBJ_Boolean_prototype(),
@@ -3782,7 +3939,7 @@ inline void initECMAEnvironment(ECMAGraph *G) {
                        "findIndex", "findLast", "findLastIndex",  "flat",
                        "flatMap",   "forEach",  "includes",       "indexOf",
                        "join",      "keys",     "lastIndexOf",    "map",
-                       "pop",       "push",     "reduce",         "reduceRight",
+                       "reduce",    "reduceRight",
                        "reverse",   "shift",    "slice",          "some",
                        "sort",      "splice",   "toLocaleString", "toString",
                        "unshift"},
