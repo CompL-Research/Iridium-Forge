@@ -1,4 +1,4 @@
-// Generated: 2026-09-20 21:50:13
+// Generated: 2026-09-23 13:45:10
 #pragma once
 #include <functional>
 #include <string>
@@ -15,6 +15,7 @@ struct PassFlags {
   bool dumpIrisInfo = false; // Dump IRIS scope-resolution info to stdout after optimization passes run
   bool debugStorage = false; // Dump IRIStorage pool memory diagnostics after optimization passes run
   bool pta = false; // Run the Points-To Analysis solver after optimization passes run
+  bool dumpCFG = false; // Write each closure's CFG to out.cfg as DOT, and a PNG if dot is on PATH
   bool dumpPTA = false; // Write the PTA solver trace to out.pta (requires --pta)
 };
 
@@ -32,6 +33,7 @@ inline void forEachPassFlag(
   fn("dumpIrisInfo", flags.dumpIrisInfo);
   fn("debugStorage", flags.debugStorage);
   fn("pta", flags.pta);
+  fn("dumpCFG", flags.dumpCFG);
   fn("dumpPTA", flags.dumpPTA);
 }
 

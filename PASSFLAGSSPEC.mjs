@@ -45,6 +45,11 @@ export default [
     desc: "Run the Points-To Analysis solver after optimization passes run",
   },
   {
+    name: "dumpCFG",
+    default: false,
+    desc: "Write each closure's CFG to out.cfg as DOT, and a PNG if dot is on PATH",
+  },
+  {
     name: "dumpPTA",
     default: false,
     desc: "Write the PTA solver trace to out.pta (requires --pta)",

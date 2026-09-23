@@ -1,4 +1,4 @@
-/** Generated: 2026-09-20 21:50:13 */
+/** Generated: 2026-09-23 13:45:10 */
 
 export interface PassFlags {
   dumpForgePasses?: boolean; // Dump Forge Passes
@@ -10,6 +10,7 @@ export interface PassFlags {
   dumpIrisInfo?: boolean; // Dump IRIS scope-resolution info to stdout after optimization passes run
   debugStorage?: boolean; // Dump IRIStorage pool memory diagnostics after optimization passes run
   pta?: boolean; // Run the Points-To Analysis solver after optimization passes run
+  dumpCFG?: boolean; // Write each closure's CFG to out.cfg as DOT, and a PNG if dot is on PATH
   dumpPTA?: boolean; // Write the PTA solver trace to out.pta (requires --pta)
 }
 
@@ -23,6 +24,7 @@ export const DEFAULT_PASS_FLAGS: Required<PassFlags> = {
   dumpIrisInfo: false,
   debugStorage: false,
   pta: false,
+  dumpCFG: false,
   dumpPTA: false,
 };
 
@@ -43,5 +45,6 @@ export const PASS_FLAGS_SPEC: Array<{
   { name: "dumpIrisInfo", default: false, desc: "Dump IRIS scope-resolution info to stdout after optimization passes run" },
   { name: "debugStorage", default: false, desc: "Dump IRIStorage pool memory diagnostics after optimization passes run" },
   { name: "pta", default: false, desc: "Run the Points-To Analysis solver after optimization passes run" },
+  { name: "dumpCFG", default: false, desc: "Write each closure's CFG to out.cfg as DOT, and a PNG if dot is on PATH" },
   { name: "dumpPTA", default: false, desc: "Write the PTA solver trace to out.pta (requires --pta)" },
 ];

@@ -1,4 +1,7 @@
 #include "Entrypoint.h"
+#include <system_error>
+#include <filesystem>
+#include <cstdlib>
 #include "Analysis/ConstantProp.h"
 #include "Analysis/DCE.h"
 #include "Analysis/EffectProp.h"
@@ -155,11 +158,42 @@ void runOptimizationPasses(IRIContext &ctx) {
   }
 }
 
+// One DOT file per closure in out.cfg, rendered to PNG when graphviz is around.
+void dumpCFGs(IRIContext &ctx) {
+  const std::string dir = "out.cfg";
+  std::error_code ec;
+  std::filesystem::create_directories(dir, ec);
+  if (ec) {
+    std::cerr << "[dumpCFG] cannot create " << dir << ": " << ec.message()
+              << std::endl;
+    return;
+  }
+
+  // Probed once: without graphviz the DOT files are still written.
+  static const bool haveDot =
+      std::system("command -v dot > /dev/null 2>&1") == 0;
+
+  size_t n = 0;
+  ctx.closureTree->preorderTraversal([&](IRICFG *cfg) {
+    std::string stem = dir + "/c" + std::to_string(n++);
+    cfg->dumpDOT(stem + ".dot");
+    if (haveDot)
+      std::system(("dot -Tpng " + stem + ".dot -o " + stem + ".png"
+                   " 2> /dev/null")
+                      .c_str());
+  });
+  std::cout << "[dumpCFG] wrote " << n << " CFG" << (n == 1 ? "" : "s")
+            << " to " << dir << (haveDot ? " (.dot + .png)" : " (.dot only)")
+            << std::endl;
+}
+
 void commitAndDump(IRIContext &ctx, IRID sexp) {
   ctx.closureTree->commit();
   ctx.iris->commit();
 
   dumpIfEnabled(ctx, sexp, "AFTER_OPT_PASSES");
+  if (ctx.flags.dumpCFG)
+    dumpCFGs(ctx);
   if (ctx.flags.dumpClosureTree)
     ctx.closureTree->dumpFlat(std::cout);
   if (ctx.flags.dumpIrisInfo)
