@@ -85,17 +85,35 @@ void computeCallSiteVals(const PTAStatementContext &ptactx, IRID node,
     if (fallback)
       objProtos.insert(Prakriti::PKRGlobalState::getGOOBJ_Object_prototype());
 
-    Prakriti::NodeUID thisID = node;
     {
-      Prakriti::TraceHelperAuto th("CallSiteRVal::Alloc", thisID);
-      if (!G->hasNode(thisID))
-        Prakriti::AllocOrdinaryObject(
-            G, thisID, Prakriti::PKRGlobalState::getTRUE(), *objProtos.begin());
-      for (const auto p : objProtos)
-        G->addEdge(thisID, p,
-                   Prakriti::PKRGlobalState::EdgeIntern(PKR_PROTOTYPE));
+      Prakriti::TraceHelperAuto th("CallSiteRVal::Alloc", node);
+      bool anyString = false, anyOrdinary = false;
+      for (const auto callee : calleeVec) {
+        if (callee == Prakriti::PKRGlobalState::getGFOBJ_String())
+          anyString = true;
+        else
+          anyOrdinary = true;
+      }
+
+      if (anyString) {
+        Prakriti::NodeUID strID = Prakriti::PKRGlobalState::generateSentinel(
+            node, Prakriti::PKRGlobalState::EdgeIntern("[[StringObject]]"));
+        if (!G->hasNode(strID))
+          Prakriti::AllocStringObject(G, strID);
+        thisVal.insert(strID);
+      }
+
+      if (anyOrdinary) {
+        if (!G->hasNode(node))
+          Prakriti::AllocOrdinaryObject(G, node,
+                                        Prakriti::PKRGlobalState::getTRUE(),
+                                        *objProtos.begin());
+        for (const auto p : objProtos)
+          G->addEdge(node, p, Prakriti::PKRGlobalState::EdgeIntern(PKR_PROTOTYPE));
+        thisVal.insert(node);
+      }
     }
-    thisVal = {thisID};
+    assert(!thisVal.empty());
   }
 
   std::vector<std::set<Prakriti::NodeUID>> positional;
