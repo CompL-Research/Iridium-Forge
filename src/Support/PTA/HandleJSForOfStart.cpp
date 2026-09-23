@@ -1,8 +1,7 @@
-// Generated Stub for IRI_TAG::JSForOfStart
 #include "Generated/IridiumTypes.h"
 #include "Support/PTA/PTAContext.hpp"
 #include "Support/PTA/PTAHandlers.hpp"
-#include <stdexcept>
+#include "external/Prakriti.hpp"
 
 namespace IRI_STRUCTURAL {
 
@@ -15,14 +14,8 @@ namespace IRI_STRUCTURAL {
  *   - bool   AWAIT -> sexp.getAWAIT()
  */
 void handleJSForOfStart(const PTAStatementContext &ptactx) {
-  throw std::runtime_error("PTA unhandled case JSForOfStart");
-  // IRI_GEN::JSForOfStartSEXP sexp(ptactx.stmt.id, ptactx.ctx);
-
-  // === TODO : JSForOfStart ===
-  // if (sexp.hasArg_Obj()) { IRID arg_Obj = sexp.getArg_Obj(); }
-  // if (sexp.hasAWAIT()) { bool val_AWAIT = sexp.getAWAIT(); }
-
-  return;
+  // Basically jusa no-op
+  Prakriti::TraceHelperAuto th("JSForOfStart", ptactx.stmt.id);
 }
 
 } // namespace IRI_STRUCTURAL
