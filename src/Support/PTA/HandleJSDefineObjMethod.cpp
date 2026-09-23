@@ -47,13 +47,17 @@ void handleJSDefineObjMethod(const PTAStatementContext &ptactx) {
   assert(!objs.empty());
   assert(!values.empty());
 
-  // A key ReduceComputedFieldOpsPass could not turn into a literal is a key
-  // nothing knows; see *Computed access* in PTA_PLAN.md.
   IRID keyNode = sexp.getArg_Key();
-  std::string field = PKR_UNKNOWN_FIELD;
-  if (IRI_NODE(ptactx.ctx, keyNode).tag == IRI_GEN::IRI_TAG::String)
+  std::string field;
+  if (IRI_NODE(ptactx.ctx, keyNode).tag == IRI_GEN::IRI_TAG::String) {
     field = Prakriti::PKRGlobalState::EdgeGet(
         IRI_GEN::StringSEXP(keyNode, ptactx.ctx).getIridiumPrimitive());
+  } else {
+    std::set<Prakriti::NodeUID> keys;
+    Prakriti::TraceHelperAuto thk("JSDefineObjMethod::Key", keyNode);
+    resolvePKRRVal(ptactx, keyNode, keys);
+    field = computedFieldName(keys);
+  }
 
   {
     if (sexp.hasGET()) {
