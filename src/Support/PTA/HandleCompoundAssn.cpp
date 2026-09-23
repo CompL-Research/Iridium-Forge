@@ -190,6 +190,22 @@ void handleCompoundAssn(const PTAStatementContext &ptactx) {
 
     stackWrite(G, ctx, args[1], dones);
     stackWrite(G, ctx, args[2], values);
+  } else if (IRI_NODE(ctx, rval).tag == IRI_GEN::JSForInNext) {
+    // Case 3 - Trivial
+    IRI_GEN::JSForInNextSEXP jfn(rval, ctx);
+
+    std::set<Prakriti::NodeUID> iterators;
+    {
+      Prakriti::TraceHelperAuto thi("JSForInNext::IteratorObj",
+                                    jfn.getArg_IteratorObj());
+      resolvePKRRVal(ptactx, jfn.getArg_IteratorObj(), iterators);
+    }
+    assert(!iterators.empty());
+
+    stackWrite(G, ctx, args[1],
+               {Prakriti::PKRGlobalState::getTRUE(),
+                Prakriti::PKRGlobalState::getFALSE()});
+    stackWrite(G, ctx, args[2], {Prakriti::PKRGlobalState::getSTRING()});
   } else {
     throw std::runtime_error("PTA unhandled case CompoundAssn over " +
                              IRI_GEN::dump_tag(IRI_NODE(ctx, rval).tag));

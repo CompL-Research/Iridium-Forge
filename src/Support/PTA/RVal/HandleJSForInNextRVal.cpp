@@ -1,7 +1,6 @@
-// Generated Stub for IRI_TAG::JSForInNext (RVal)
-#include "Generated/IridiumTypes.h"
 #include "Support/PTA/PTAContext.hpp"
 #include "Support/PTA/PTARVALHandlers.hpp"
+#include "external/Prakriti.hpp"
 #include <set>
 #include <stdexcept>
 
@@ -15,14 +14,9 @@ namespace IRI_STRUCTURAL {
  * Flags: (none)
  */
 void computeJSForInNextVals(const PTAStatementContext &ptactx, IRID node,
-                       std::set<Prakriti::NodeUID> &res_) {
-  throw std::runtime_error("PTA RVal unhandled case JSForInNext");
-  // IRI_GEN::JSForInNextSEXP sexp(node, ptactx.ctx);
-
-  // === TODO : JSForInNext ===
-  // if (sexp.hasArg_IteratorObj()) { IRID arg_IteratorObj = sexp.getArg_IteratorObj(); }
-
-  return;
+                            std::set<Prakriti::NodeUID> &res_) {
+  throw std::runtime_error(
+      "PTA unhandled case JSForInNext: only reachable under a CompoundAssn");
 }
 
 } // namespace IRI_STRUCTURAL
