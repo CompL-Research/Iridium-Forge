@@ -35,6 +35,7 @@
 #define GSTK_Error "Error"
 #define GSTK_Object "Object"
 #define GSTK_Array "Array"
+#define GSTK_String "String"
 #define GSTK_console "console"
 
 #define DEF_NODE_EVAL(V) V(JSFILE)
@@ -49,6 +50,7 @@
   V(ARGSOBJ)                                                                   \
   V(MARGSOBJ)                                                                  \
   V(ARRAYOBJ)                                                                  \
+  V(STROBJ)                                                                  \
   V(ACT)                                                                       \
   V(AWAIT)
 
@@ -371,12 +373,14 @@ public:
   V(GFOBJ_Symbol)                                                             \
   V(GFOBJ_Error)                                                              \
   V(GFOBJ_Array)                                                              \
+  V(GFOBJ_String)                                                              \
   V(GFOBJ_Function_prototype)                                                 \
   V(GOOBJ_Object_prototype)                                                   \
   V(GOOBJ_Boolean_prototype)                                                  \
   V(GOOBJ_Symbol_prototype)                                                   \
   V(GOOBJ_Error_prototype)                                                    \
   V(GOOBJ_Array_prototype)                                                    \
+  V(GOOBJ_String_prototype)                                                    \
   V(GOOBJ_console)
 
 #include <algorithm>
@@ -1519,6 +1523,8 @@ public:
 #define PKR_ARGUMENTS "[[Arguments]]"
 #define PKR_MAPPED_ARGUMENTS "[[MappedArguments]]"
 #define PKR_ITERATED "[[IteratedObject]]"
+// The primitive a String exotic object wraps.
+#define PKR_STRING_DATA "[[StringData]]"
 #define PKR_TRANSIENCE_BACKUP "[[transience-backup]]"
 #define PKR_IS_EXECUTING "[[is-executing]]"
 #define PKR_DEFINITE "[[Definite]]"
@@ -2892,6 +2898,7 @@ inline bool isObjectNode(const ECMAGraph *G, NodeUID v) {
   case TAG::OOBJ:
   case TAG::FOBJ:
   case TAG::ARRAYOBJ:
+  case TAG::STROBJ:
   case TAG::ARGSOBJ:
   case TAG::MARGSOBJ:
     return true;
@@ -3015,9 +3022,10 @@ inline bool initBinaryOperators = []() {
         sawUndefined = true;
       else if (PKRGlobalState::nodeHasActionClosure(f))
         callable.push_back(f);
-      else
-        ASSERT(
-            false); // non-callable [Symbol.toPrimitive]: TypeError, unmodeled
+      // A non-callable @@toPrimitive is a TypeError (7.1.1 via GetMethod), so
+      // that path has no normal completion and contributes no value - drop it
+      // rather than refuse the whole analysis. It is reached by any object with
+      // an [[Unknown-Field]] bucket, since a bucket answers every key.
     }
 
     // The lookup may be undefined on one path and a method on another. Both
@@ -3461,14 +3469,18 @@ inline void linkPrototypeConstructor(ECMAGraph *G, NodeUID ctorID,
                   {NULL, {protoID, ctorID}, {"constructor"}}));
 }
 
+// `ctorAC` is the constructor's own body. Pass PKR_STUB_FUN for one that is not
+// modelled yet - explicit at the call site, so an implemented constructor is
+// visible rather than hidden behind a default.
 inline void
 defineStubIntrinsic(ECMAGraph *G, NodeUID ctorID, NodeUID protoID,
                     NodeUID protoParent,
                     std::initializer_list<const char *> staticMethodNames,
                     std::initializer_list<const char *> protoMethodNames,
-                    const std::string &name) {
+                    const std::string &name,
+                    ECMAGraph::ActionClosure ctorAC) {
   AllocOrdinaryObject(G, protoID, PKRGlobalState::getTRUE(), protoParent);
-  ALLOC_CTR(ctorID, PKR_STUB_FUN, protoID);
+  ALLOC_CTR(ctorID, ctorAC, protoID);
   linkPrototypeConstructor(G, ctorID, protoID);
   defineStubMethods(G, ctorID, name + ".", staticMethodNames);
   defineStubMethods(G, protoID, name + ".prototype.", protoMethodNames);
@@ -3610,6 +3622,11 @@ inline void initGSTK_Array(ECMAGraph *G) {
   GSTK_BIND(GSTK_Array, PKRGlobalState::getGFOBJ_Array());
 }
 
+inline void initGSTK_String(ECMAGraph *G) {
+  ALLOC_STKN(GSTK_String);
+  GSTK_BIND(GSTK_String, PKRGlobalState::getGFOBJ_String());
+}
+
 // Base named globals every ECMA environment provides.
 inline const GlobalInitTable &ecmaGlobalInitializers() {
   static const GlobalInitTable table = {
@@ -3623,6 +3640,7 @@ inline const GlobalInitTable &ecmaGlobalInitializers() {
       {GSTK_Error, initGSTK_Error},
       {GSTK_Object, initGSTK_Object},
       {GSTK_Array, initGSTK_Array},
+      {GSTK_String, initGSTK_String},
   };
   return table;
 }
@@ -3748,6 +3766,44 @@ inline void initObjectPrototypeCoercion(ECMAGraph *G) {
   };
   define("toString", toStringFn);
   define("valueOf", valueOfFn);
+}
+
+// 22.1.3.32 String.prototype.valueOf and 22.1.3.29 toString both return the
+// receiver's [[StringData]]. Left as stubs they would shadow Object.prototype's
+// real ones for a String object, so coercing `new String(x)` would refuse where
+// it used to answer.
+inline void initStringPrototypeCoercion(ECMAGraph *G) {
+  NodeUID strProto = PKRGlobalState::getGOOBJ_String_prototype();
+
+  auto define = [&](const char *name) {
+    // ThisStringValue: the receiver is a String primitive or a String object,
+    // and either way the answer is a String.
+    //
+    // A fresh closure per method: ActionClosureMap is a bimap, so binding one
+    // closure object to a second node silently fails and leaves that function
+    // object uncallable - which OrdinaryToPrimitive then skips, falling through
+    // to Object.prototype's.
+    auto thisStringValueAC = DEFINE_ACTION() {
+      return {{PKRGlobalState::getSTRING()}};
+    });
+    NodeUID fn = PKRGlobalState::ReserveNodeUID();
+    AllocClosure(G, fn, thisStringValueAC, PKRGlobalState::getTRUE(),
+                 PKRGlobalState::getGFOBJ_Function_prototype());
+    auto fd = std::make_shared<TempFieldDescriptor>();
+    fd->addValue(fn);
+    fd->addWritable(PKRGlobalState::getTRUE());
+    fd->addEnumerable(PKRGlobalState::getFALSE());
+    fd->addConfigurable(PKRGlobalState::getTRUE());
+    // PRECISION: every String.prototype carries these, so a lookup stops here
+    // rather than walking on to Object.prototype.
+    fd->addDefinite(PKRGlobalState::getTRUE());
+    KarmaJoin(G, Karma(G,
+                       G->getPointees(strProto, PKRGlobalState::EdgeIntern(
+                                                    PKR_DefineOwnProperty)),
+                       {NULL, {strProto}, {name}, {fd}}));
+  };
+  define("valueOf");
+  define("toString");
 }
 
 // 20.2.3.6 Function.prototype[@@hasInstance].
@@ -3890,18 +3946,20 @@ inline void initECMAEnvironment(ECMAGraph *G) {
        "values"},
       {"hasOwnProperty", "isPrototypeOf", "propertyIsEnumerable",
        "toLocaleString"},
-      "Object");
+      "Object", PKR_STUB_FUN);
   initObjectPrototypeCoercion(G);
 
   defineStubIntrinsic(G, PKRGlobalState::getGFOBJ_Boolean(),
                       PKRGlobalState::getGOOBJ_Boolean_prototype(),
                       PKRGlobalState::getGOOBJ_Object_prototype(), {},
-                      {"toString", "valueOf"}, "Boolean");
+                      {"toString", "valueOf"}, "Boolean",
+                      PKR_STUB_FUN);
 
   defineStubIntrinsic(G, PKRGlobalState::getGFOBJ_Symbol(),
                       PKRGlobalState::getGOOBJ_Symbol_prototype(),
                       PKRGlobalState::getGOOBJ_Object_prototype(),
-                      {"for", "keyFor"}, {"toString", "valueOf"}, "Symbol");
+                      {"for", "keyFor"}, {"toString", "valueOf"}, "Symbol",
+                      PKR_STUB_FUN);
 // ECMA defines these as non-configurable, also making them definite is a good
 // idea as there are two parent protos above, so this might be useful too
 #define AS_SYM_PROP(name)                                                      \
@@ -3928,7 +3986,7 @@ inline void initECMAEnvironment(ECMAGraph *G) {
   defineStubIntrinsic(G, PKRGlobalState::getGFOBJ_Error(),
                       PKRGlobalState::getGOOBJ_Error_prototype(),
                       PKRGlobalState::getGOOBJ_Object_prototype(), {},
-                      {"toString"}, "Error");
+                      {"toString"}, "Error", PKR_STUB_FUN);
 
   defineStubIntrinsic(G, PKRGlobalState::getGFOBJ_Array(),
                       PKRGlobalState::getGOOBJ_Array_prototype(),
@@ -3943,8 +4001,58 @@ inline void initECMAEnvironment(ECMAGraph *G) {
                        "reverse",   "shift",    "slice",          "some",
                        "sort",      "splice",   "toLocaleString", "toString",
                        "unshift"},
-                      "Array");
+                      "Array", PKR_STUB_FUN);
   initArrayPrototype(G);
+
+  // 22.1.1.1 String(value). Called as a function it answers with a String
+  // primitive; ToString on the argument is what may run user code, via
+  // ToPrimitive, so it happens for its effects.
+  //
+  // `new String(x)` is not modelled faithfully: forge's ConstructorCall
+  // allocates an ordinary object with String.prototype, not a String exotic
+  // object, so it has no length and no index properties. Returning a primitive
+  // here means the receiver is what `new` yields, which is the same
+  // approximation every other constructor gets.
+  auto stringCtorAC = DEFINE_ACTION() {
+    ECMAGraph *G = args.G;
+    ASSERT(args.A.size() == 2);
+
+    // Step 1: String() with no argument is the empty string.
+    auto argSlots = decodeArgRanges(args.L, args.A[1]);
+    if (!argSlots.empty()) {
+      NodeUID tsAct =
+          PKRGlobalState::getActionNode(PKRGlobalState::NAC_ToString);
+      // Each value is an alternative, so each coercion reads the same incoming
+      // state rather than observing the previous one's effects.
+      std::vector<ECMAGraph> branches;
+      for (NodeUID v : argSlots[0]) {
+        ECMAGraph H = G->clone();
+        // A Symbol argument takes 22.1.1.1 step 2b, SymbolDescriptiveString,
+        // rather than ToString - both answer with a String here.
+        invokeAction(tsAct, {&H, {v}});
+        branches.push_back(std::move(H));
+      }
+      KarmaJoin(G, branches);
+    }
+    return {{PKRGlobalState::getSTRING()}};
+  });
+
+  defineStubIntrinsic(
+      G, PKRGlobalState::getGFOBJ_String(),
+      PKRGlobalState::getGOOBJ_String_prototype(),
+      PKRGlobalState::getGOOBJ_Object_prototype(),
+      {"fromCharCode", "fromCodePoint", "raw"},
+      {"at",          "charAt",      "charCodeAt",     "codePointAt",
+       "concat",      "endsWith",    "includes",       "indexOf",
+       "lastIndexOf", "localeCompare", "match",        "matchAll",
+       "normalize",   "padEnd",      "padStart",       "repeat",
+       "replace",     "replaceAll",  "search",         "slice",
+       "split",       "startsWith",  "substring",      "toLocaleLowerCase",
+       "toLocaleUpperCase", "toLowerCase", "toUpperCase",
+       "trim",        "trimEnd",     "trimStart"},
+      "String", stringCtorAC);
+  initStringPrototypeCoercion(G);
+
   initFunctionConstructor(G);
 }
 
@@ -4161,6 +4269,83 @@ inline JSFileAllocator QJSScriptFile() {
 }
 inline JSFileAllocator QJSModuleFile() {
   return {detail::allocQJSModuleFile, qjsModuleGlobalInitializers()};
+}
+
+} // namespace Prakriti
+
+namespace Prakriti {
+
+// 10.4.3 String exotic object, the thing `new String(x)` produces. Ordinary
+// internal methods throughout - what makes it exotic is the state below, the
+// same way AllocArrayObject differs from AllocOrdinaryObject.
+//
+// The wrapped primitive is the abstract STRING node, so its length is unknown.
+// That means the index properties cannot be enumerated, so they live in the
+// may-alias bucket rather than at literal indices - the same shape a
+// dynamically written array ends up with. Reading any index answers String, and
+// length answers Number; faithful in shape, capped in value.
+inline void AllocStringObject(ECMAGraph *G, NodeUID id) {
+  G->addNode(id, TAG::STROBJ);
+
+  NodeUID temp;
+  SET_AC(id, NAC_OOBJ_GetPrototypeOf, PKR_GetPrototypeOf);
+  SET_AC(id, NAC_OOBJ_SetPrototypeOf, PKR_SetPrototypeOf);
+  SET_AC(id, NAC_OOBJ_IsExtensible, PKR_IsExtensible);
+  SET_AC(id, NAC_OOBJ_PreventExtensions, PKR_PreventExtensions);
+  SET_AC(id, NAC_OOBJ_GetOwnProperty, PKR_GetOwnProperty);
+  SET_AC(id, NAC_OOBJ_DefineOwnProperty, PKR_DefineOwnProperty);
+  SET_AC(id, NAC_OOBJ_HasProperty, PKR_HasProperty);
+  SET_AC(id, NAC_OOBJ_Get, PKR_Get);
+  SET_AC(id, NAC_OOBJ_Set, PKR_Set);
+  SET_AC(id, NAC_OOBJ_Delete, PKR_Delete);
+  SET_AC(id, NAC_OOBJ_OwnPropertyKeys, PKR_OwnPropertyKeys);
+
+  G->addEdge(id, PKRGlobalState::getTRUE(),
+             PKRGlobalState::EdgeIntern(PKR_EXTENSIBLE));
+  G->addEdge(id, PKRGlobalState::getGOOBJ_String_prototype(),
+             PKRGlobalState::EdgeIntern(PKR_PROTOTYPE));
+  G->addEdge(id, PKRGlobalState::getSTRING(),
+             PKRGlobalState::EdgeIntern(PKR_STRING_DATA));
+
+  // Insensitive from the start: the index properties are in the bucket, so a
+  // named read has to consult it.
+  G->addEdge(id, PKRGlobalState::getFALSE(),
+             PKRGlobalState::EdgeIntern(PKR_SENSITIVE));
+
+  // 10.4.3: length is { [[Writable]]: false, [[Enumerable]]: false,
+  // [[Configurable]]: false }. [[Definite]] because every String object has it,
+  // which is what keeps a `.length` read off the prototype chain.
+  NodeUID lengthFP = PKRGlobalState::generateSentinel(
+      id, PKRGlobalState::EdgeIntern("length"));
+  AllocFieldProxyObject(G, lengthFP);
+  G->addEdge(id, lengthFP, PKRGlobalState::EdgeIntern("length"));
+  G->addEdge(lengthFP, PKRGlobalState::getNUMBER(),
+             PKRGlobalState::EdgeIntern(PKR_VALUE));
+  G->addEdge(lengthFP, PKRGlobalState::getFALSE(),
+             PKRGlobalState::EdgeIntern(PKR_WRITABLE));
+  G->addEdge(lengthFP, PKRGlobalState::getFALSE(),
+             PKRGlobalState::EdgeIntern(PKR_ENUMERABLE));
+  G->addEdge(lengthFP, PKRGlobalState::getFALSE(),
+             PKRGlobalState::EdgeIntern(PKR_CONFIGURABLE));
+  G->addEdge(lengthFP, PKRGlobalState::getTRUE(),
+             PKRGlobalState::EdgeIntern(PKR_DEFINITE));
+
+  // The index properties. StringGetOwnProperty makes each one
+  // { [[Writable]]: false, [[Enumerable]]: true, [[Configurable]]: false }, and
+  // every one of them reads as a String. No [[Definite]]: which indices exist
+  // depends on the length, which is unknown.
+  NodeUID idxFP = PKRGlobalState::generateSentinel(
+      id, PKRGlobalState::EdgeIntern(PKR_UNKNOWN_FIELD));
+  AllocFieldProxyObject(G, idxFP);
+  G->addEdge(id, idxFP, PKRGlobalState::EdgeIntern(PKR_UNKNOWN_FIELD));
+  G->addEdge(idxFP, PKRGlobalState::getSTRING(),
+             PKRGlobalState::EdgeIntern(PKR_VALUE));
+  G->addEdge(idxFP, PKRGlobalState::getFALSE(),
+             PKRGlobalState::EdgeIntern(PKR_WRITABLE));
+  G->addEdge(idxFP, PKRGlobalState::getTRUE(),
+             PKRGlobalState::EdgeIntern(PKR_ENUMERABLE));
+  G->addEdge(idxFP, PKRGlobalState::getFALSE(),
+             PKRGlobalState::EdgeIntern(PKR_CONFIGURABLE));
 }
 
 } // namespace Prakriti
