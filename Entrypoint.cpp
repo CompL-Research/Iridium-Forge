@@ -84,8 +84,12 @@ inline void normalizeIRIDIUM(
 
 #if DUMP_CORE_PASSES == 1
   std::cout << "\nAfter Core Passes :\n";
-  auto reach = pool.mark_reachable(sexp);
+  auto reach = pool.mark_reachable(pool.collect_roots(sexp));
   pool.print_reachability(reach);
+
+  std::cout << "\nArgs_pool size after core pass: " << pool.get_args_pool_size() << "\n";
+  std::cout << "\nFlags_pool size after core pass: " << pool.get_flags_pool_size() << "\n";
+
   {
     std::ofstream out("AFTER_CORE_PASSES_with_ids.iridump");
     pool[sexp].dumpFlat(out, &pool, sexp);
@@ -200,8 +204,11 @@ IRID sharedEntrypoint(
     IRIPerf &iriPerf) {
 
   std::cout << "\nBefore Normalization :\n";
-  auto reach = pool.mark_reachable(file);
+  auto reach = pool.mark_reachable(pool.collect_roots(file));
   pool.print_reachability(reach);
+
+  std::cout << "\nArgs_pool size before normalization: " << pool.get_args_pool_size() << "\n";
+  std::cout << "\nFlags_pool size before normalization: " << pool.get_flags_pool_size() << "\n";
 
 #if DUMP_CORE_PASSES == 1
   {
@@ -213,8 +220,11 @@ IRID sharedEntrypoint(
   normalizeIRIDIUM(pool, file, iridiumBuildContext, iriPerf);
   
   std::cout << "\nAfter Iris Commit :\n";
-  reach = pool.mark_reachable(file);
+  reach = pool.mark_reachable(pool.collect_roots(file));
   pool.print_reachability(reach);
+
+  std::cout << "\nArgs_pool size after iris commit: " << pool.get_args_pool_size() << "\n";
+  std::cout << "\nFlags_pool size after iris commit: " << pool.get_flags_pool_size() << "\n";
 
 #if DUMP_CORE_PASSES == 1
   {
@@ -222,6 +232,11 @@ IRID sharedEntrypoint(
     pool[file].dumpFlat(out, &pool, file);
   }
 #endif
+
+  std::cout << "\n-------- After Garbage Collection ------------\n";
+  auto compaction_result = pool.compact_pool(reach);
+  file = compaction_result.old_to_new_map[file];
+  pool.print_compaction_result(compaction_result);
 
   return file;
 }

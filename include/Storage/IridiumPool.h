@@ -18,9 +18,19 @@ namespace IRI_STRUCTURAL {
 }
 
 namespace IRI_STORAGE {
+
+// store result of Reachability analysis for doing GC
+// each index in visited tells whether node at that IRID is reachable
 struct ReachabilityResult {
   std::vector<bool> visited;  // vector indexed by IRID for nodes
-  size_t reachable_count = 0;
+  size_t reachable_count = 0; // total number of reachable nodes
+};
+
+// store old -> new IRID mappings
+struct CompactionResult {
+  // index: old IRID, element: new IRID
+  // old_to_new_map[old_irid] = new_irid
+  std::vector<IRID> old_to_new_map;
 };
 
 class IridiumPool {
@@ -103,11 +113,27 @@ public:
 
   void update_num_args(IRID id, uint32_t num_args);
 
-  // Reachability
-  ReachabilityResult mark_reachable(IRID root) const;
+  // collect roots to start reachability
+  std::vector<IRID> collect_roots(IRID entry) const;
 
-  // print reachability
-  void print_reachability(const ReachabilityResult &r) const;
+  // Reachability
+  // traverse nodes starting from the root (DFS) and mark them as reachable
+  ReachabilityResult mark_reachable(std::span<const IRID> roots) const;
+
+  // print reachability result
+  void print_reachability(const ReachabilityResult &reach) const;
+
+  // args_pool size
+  size_t get_args_pool_size() const;
+
+  // flags_pool size
+  size_t get_flags_pool_size() const;
+
+  // use Reachability result to compact nodes and args_pool
+  CompactionResult compact_pool(ReachabilityResult &reach);
+
+  // print compaction result
+  void print_compaction_result(const CompactionResult &compaction) const;
 
   ~IridiumPool();
   IridiumPool() = default;
