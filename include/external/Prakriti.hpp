@@ -36,6 +36,7 @@
 #define GSTK_Object "Object"
 #define GSTK_Array "Array"
 #define GSTK_String "String"
+#define GSTK_Math "Math"
 #define GSTK_console "console"
 
 #define DEF_NODE_EVAL(V) V(JSFILE)
@@ -50,7 +51,7 @@
   V(ARGSOBJ)                                                                   \
   V(MARGSOBJ)                                                                  \
   V(ARRAYOBJ)                                                                  \
-  V(STROBJ)                                                                  \
+  V(STROBJ)                                                                    \
   V(ACT)                                                                       \
   V(AWAIT)
 
@@ -314,8 +315,8 @@ public:
 #define ASSERT(condition)                                                      \
   do {                                                                         \
     if (!(condition))                                                          \
-      throw std::runtime_error("Assertion failed: " #condition                 \
-                               " at line " STRINGIFY(__LINE__));               \
+      throw std::runtime_error("Assertion failed: " #condition " at " __FILE__ \
+                               ":" STRINGIFY(__LINE__));               \
   } while (0)
 
 // Invariant checks too expensive for the hot path - graph comparisons and the
@@ -366,22 +367,23 @@ public:
 
 // Global object identities. PKRGlobalState (ECMAGraph.hpp) turns each of
 // these into a NodeUID field + getter + Init() reservation.
-#define DEF_GLOBAL_IDENTITIES(V)                                              \
-  V(GFOBJ_Object)                                                             \
-  V(GFOBJ_Function)                                                           \
-  V(GFOBJ_Boolean)                                                            \
-  V(GFOBJ_Symbol)                                                             \
-  V(GFOBJ_Error)                                                              \
-  V(GFOBJ_Array)                                                              \
+#define DEF_GLOBAL_IDENTITIES(V)                                               \
+  V(GFOBJ_Object)                                                              \
+  V(GFOBJ_Function)                                                            \
+  V(GFOBJ_Boolean)                                                             \
+  V(GFOBJ_Symbol)                                                              \
+  V(GFOBJ_Error)                                                               \
+  V(GFOBJ_Array)                                                               \
   V(GFOBJ_String)                                                              \
-  V(GFOBJ_Function_prototype)                                                 \
-  V(GOOBJ_Object_prototype)                                                   \
-  V(GOOBJ_Boolean_prototype)                                                  \
-  V(GOOBJ_Symbol_prototype)                                                   \
-  V(GOOBJ_Error_prototype)                                                    \
-  V(GOOBJ_Array_prototype)                                                    \
+  V(GFOBJ_Function_prototype)                                                  \
+  V(GOOBJ_Object_prototype)                                                    \
+  V(GOOBJ_Boolean_prototype)                                                   \
+  V(GOOBJ_Symbol_prototype)                                                    \
+  V(GOOBJ_Error_prototype)                                                     \
+  V(GOOBJ_Array_prototype)                                                     \
   V(GOOBJ_String_prototype)                                                    \
-  V(GOOBJ_console)
+  V(GOOBJ_console)                                                            \
+  V(GOOBJ_Math)
 
 #include <algorithm>
 #include <cstddef>
@@ -1523,7 +1525,6 @@ public:
 #define PKR_ARGUMENTS "[[Arguments]]"
 #define PKR_MAPPED_ARGUMENTS "[[MappedArguments]]"
 #define PKR_ITERATED "[[IteratedObject]]"
-// The primitive a String exotic object wraps.
 #define PKR_STRING_DATA "[[StringData]]"
 #define PKR_TRANSIENCE_BACKUP "[[transience-backup]]"
 #define PKR_IS_EXECUTING "[[is-executing]]"
@@ -2628,10 +2629,10 @@ inline void collectArrayElementValues(ECMAGraph *G, NodeUID arr,
                                       std::vector<NodeUID> &vals,
                                       std::vector<ECMAGraph> &branches) {
   std::set<std::string> keys;
-  for (auto &r :
-       Karma(G,
-             G->getPointees(arr, PKRGlobalState::EdgeIntern(PKR_OwnPropertyKeys)),
-             {NULL, {arr}}))
+  for (auto &r : Karma(
+           G,
+           G->getPointees(arr, PKRGlobalState::EdgeIntern(PKR_OwnPropertyKeys)),
+           {NULL, {arr}}))
     for (auto &k : r.ret.A)
       if (OOHelpers::isOwnFieldLabel(k) && k != "length")
         keys.insert(k);
@@ -2821,6 +2822,48 @@ inline void AllocArrayObject(ECMAGraph *G, NodeUID id) {
   G->addEdge(lengthFP, PKRGlobalState::getFALSE(),
              PKRGlobalState::EdgeIntern(PKR_CONFIGURABLE));
 }
+
+// Array(...)
+inline const ECMAGraph::ActionClosure arrayCtorAC = DEFINE_ACTION() {
+  ECMAGraph *G = args.G;
+  ASSERT(args.A.size() == 2);
+  auto thisSlots = decodeArgRanges(args.L, args.A[0]);
+  auto argSlots = decodeArgRanges(args.L, args.A[1]);
+
+  std::set<NodeUID> arrays;
+  if (!thisSlots.empty())
+    for (NodeUID recv : thisSlots[0])
+      if (G->getNodeTAG(recv) == TAG::ARRAYOBJ)
+        arrays.insert(recv);
+
+  if (arrays.empty())
+    throw std::runtime_error("[Prakriti] Not implemented: Array() without new");
+
+  std::vector<NodeUID> discarded;
+  std::vector<ECMAGraph> branches;
+  for (NodeUID arr : arrays) {
+    auto setActs = G->getPointees(arr, PKRGlobalState::EdgeIntern(PKR_Set));
+    if (setActs.empty())
+      continue;
+
+    if (argSlots.size() == 1) {
+      bool allNumber = !argSlots[0].empty();
+      for (NodeUID v : argSlots[0])
+        allNumber &= (G->getNodeTAG(v) == TAG::NUMBER_VAL);
+
+      if (!allNumber)
+        for (NodeUID v : argSlots[0])
+          Karma(G, setActs, {NULL, {arr, v}, {"0"}}, discarded, branches);
+    } else {
+      for (size_t i = 0; i < argSlots.size(); i++)
+        for (NodeUID v : argSlots[i])
+          Karma(G, setActs, {NULL, {arr, v}, {std::to_string(i)}}, discarded,
+                branches);
+    }
+  }
+  KarmaJoin(G, branches);
+  return {{PKRGlobalState::getUNDEF()}};
+});
 
 } // namespace Prakriti
 
@@ -3022,10 +3065,6 @@ inline bool initBinaryOperators = []() {
         sawUndefined = true;
       else if (PKRGlobalState::nodeHasActionClosure(f))
         callable.push_back(f);
-      // A non-callable @@toPrimitive is a TypeError (7.1.1 via GetMethod), so
-      // that path has no normal completion and contributes no value - drop it
-      // rather than refuse the whole analysis. It is reached by any object with
-      // an [[Unknown-Field]] bucket, since a bucket answers every key.
     }
 
     // The lookup may be undefined on one path and a method on another. Both
@@ -3401,22 +3440,36 @@ inline bool initBinaryOperators = []() {
 
 } // namespace Prakriti
 
-// A constructor body that just asserts if actually called.
+// A constructor body that just asserts if actually called. Prefer
+// PKR_STUB_CTOR, which says which constructor it was.
 #define PKR_STUB_FUN                                                           \
   DEFINE_ACTION() {                                                            \
     ASSERT(false);                                                             \
     return {};                                                                 \
   })
 
+// An unimplemented constructor, reported the way defineStubMethod reports an
+// unimplemented method. Better for debugging
+#define PKR_STUB_CTOR(name) Prakriti::makeStubCtor(name)
+
 // Builds constructor FOBJ `id` and sets its .prototype to `protoField`.
 #define ALLOC_CTR(id, func, protoField)                                        \
   AllocClosure(G, id, func, PKRGlobalState::getTRUE(),                         \
                PKRGlobalState::getGFOBJ_Function_prototype());                 \
-  KarmaJoin(                                                                   \
-      G, Karma(G, G->getPointees(id, PKRGlobalState::EdgeIntern(PKR_Set)),      \
-               {NULL, {id, protoField}, {"prototype"}}));
+  KarmaJoin(G,                                                                 \
+            Karma(G, G->getPointees(id, PKRGlobalState::EdgeIntern(PKR_Set)),  \
+                  {NULL, {id, protoField}, {"prototype"}}));
 
 namespace Prakriti {
+
+inline ECMAGraph::ActionClosure makeStubCtor(const std::string &name) {
+  return makeTracedAction(
+      __FILE__, __LINE__,
+      [name](const ECMAGraph::PJSSL_ARG &) -> ECMAGraph::PJSSL_RET {
+        throw std::runtime_error("[Prakriti] Not implemented: new " + name +
+                                 "()");
+      });
+}
 
 inline void defineStubMethod(ECMAGraph *G, NodeUID target,
                              const std::string &propName,
@@ -3430,10 +3483,9 @@ inline void defineStubMethod(ECMAGraph *G, NodeUID target,
       });
   AllocClosure(G, methodID, ac, PKRGlobalState::getTRUE(),
                PKRGlobalState::getGFOBJ_Function_prototype());
-  KarmaJoin(G,
-            Karma(G,
-                  G->getPointees(target, PKRGlobalState::EdgeIntern(PKR_Set)),
-                  {NULL, {target, methodID}, {propName}}));
+  KarmaJoin(
+      G, Karma(G, G->getPointees(target, PKRGlobalState::EdgeIntern(PKR_Set)),
+               {NULL, {target, methodID}, {propName}}));
 }
 
 inline void defineStubMethods(ECMAGraph *G, NodeUID target,
@@ -3449,10 +3501,9 @@ inline void defineNoopMethod(ECMAGraph *G, NodeUID target,
   auto ac = DEFINE_ACTION() { return {{PKRGlobalState::getUNDEF()}}; });
   AllocClosure(G, methodID, ac, PKRGlobalState::getTRUE(),
                PKRGlobalState::getGFOBJ_Function_prototype());
-  KarmaJoin(G,
-            Karma(G,
-                  G->getPointees(target, PKRGlobalState::EdgeIntern(PKR_Set)),
-                  {NULL, {target, methodID}, {propName}}));
+  KarmaJoin(
+      G, Karma(G, G->getPointees(target, PKRGlobalState::EdgeIntern(PKR_Set)),
+               {NULL, {target, methodID}, {propName}}));
 }
 
 inline void defineNoopMethods(ECMAGraph *G, NodeUID target,
@@ -3463,22 +3514,17 @@ inline void defineNoopMethods(ECMAGraph *G, NodeUID target,
 
 inline void linkPrototypeConstructor(ECMAGraph *G, NodeUID ctorID,
                                      NodeUID protoID) {
-  KarmaJoin(G,
-            Karma(G,
-                  G->getPointees(protoID, PKRGlobalState::EdgeIntern(PKR_Set)),
-                  {NULL, {protoID, ctorID}, {"constructor"}}));
+  KarmaJoin(
+      G, Karma(G, G->getPointees(protoID, PKRGlobalState::EdgeIntern(PKR_Set)),
+               {NULL, {protoID, ctorID}, {"constructor"}}));
 }
 
-// `ctorAC` is the constructor's own body. Pass PKR_STUB_FUN for one that is not
-// modelled yet - explicit at the call site, so an implemented constructor is
-// visible rather than hidden behind a default.
 inline void
 defineStubIntrinsic(ECMAGraph *G, NodeUID ctorID, NodeUID protoID,
                     NodeUID protoParent,
                     std::initializer_list<const char *> staticMethodNames,
                     std::initializer_list<const char *> protoMethodNames,
-                    const std::string &name,
-                    ECMAGraph::ActionClosure ctorAC) {
+                    const std::string &name, ECMAGraph::ActionClosure ctorAC) {
   AllocOrdinaryObject(G, protoID, PKRGlobalState::getTRUE(), protoParent);
   ALLOC_CTR(ctorID, ctorAC, protoID);
   linkPrototypeConstructor(G, ctorID, protoID);
@@ -3622,6 +3668,87 @@ inline void initGSTK_Array(ECMAGraph *G) {
   GSTK_BIND(GSTK_Array, PKRGlobalState::getGFOBJ_Array());
 }
 
+// Math - This is an object, not a constructor like the others
+inline void initMath(ECMAGraph *G) {
+  NodeUID mathID = PKRGlobalState::getGOOBJ_Math();
+  AllocOrdinaryObject(G, mathID, PKRGlobalState::getTRUE(),
+                      PKRGlobalState::getGOOBJ_Object_prototype());
+
+  auto defineOwn = [&](const char *name, NodeUID value, NodeUID writable,
+                       NodeUID configurable) {
+    auto fd = std::make_shared<TempFieldDescriptor>();
+    fd->addValue(value);
+    fd->addWritable(writable);
+    fd->addEnumerable(PKRGlobalState::getFALSE());
+    fd->addConfigurable(configurable);
+    // PRECISION: every Math carries these, so a lookup stops here instead of
+    // walking on to Object.prototype and contributing undefined.
+    fd->addDefinite(PKRGlobalState::getTRUE());
+    KarmaJoin(G, Karma(G,
+                       G->getPointees(mathID, PKRGlobalState::EdgeIntern(
+                                                  PKR_DefineOwnProperty)),
+                       {NULL, {mathID}, {name}, {fd}}));
+  };
+
+  // 21.3.1: the constants are non-writable, non-enumerable, non-configurable.
+  for (const char *c : {"E", "LN10", "LN2", "LOG10E", "LOG2E", "PI", "SQRT1_2",
+                        "SQRT2"})
+    defineOwn(c, PKRGlobalState::getNUMBER(), PKRGlobalState::getFALSE(),
+              PKRGlobalState::getFALSE());
+
+  auto defineFn = [&](const char *name, ECMAGraph::ActionClosure ac) {
+    NodeUID fn = PKRGlobalState::ReserveNodeUID();
+    AllocClosure(G, fn, ac, PKRGlobalState::getTRUE(),
+                 PKRGlobalState::getGFOBJ_Function_prototype());
+    defineOwn(name, fn, PKRGlobalState::getTRUE(), PKRGlobalState::getTRUE());
+  };
+
+  // 21.3.2: every one of these coerces its arguments and answers with a Number.
+  for (const char *m :
+       {"abs",   "acos",  "acosh", "asin",  "asinh", "atan",  "atan2",
+        "atanh", "cbrt",  "ceil",  "clz32", "cos",   "cosh",  "exp",
+        "expm1", "floor", "fround", "hypot", "imul", "log",   "log10",
+        "log1p", "log2",  "max",   "min",   "pow",   "round", "sign",
+        "sin",   "sinh",  "sqrt",  "tan",   "tanh",  "trunc"}) {
+    // A fresh closure per method: ActionClosureMap is a bimap, so one closure
+    // object cannot be bound to a second function object.
+    auto ac = DEFINE_ACTION() {
+      ECMAGraph *G = args.G;
+      ASSERT(args.A.size() == 2);
+
+      // ToNumber on each argument 
+      NodeUID tnAct =
+          PKRGlobalState::getActionNode(PKRGlobalState::NAC_ToNumeric);
+      std::vector<ECMAGraph> branches;
+      for (const auto &slot : decodeArgRanges(args.L, args.A[1]))
+        for (NodeUID v : slot) {
+          ECMAGraph H = G->clone();
+          invokeAction(tnAct, {&H, {v}});
+          branches.push_back(std::move(H));
+        }
+      KarmaJoin(G, branches);
+
+      // TODO: INF_VAL is unhandled rn
+      return {{PKRGlobalState::getNUMBER(), PKRGlobalState::getNAN()}};
+    });
+    defineFn(m, ac);
+  }
+
+  auto randomAC = DEFINE_ACTION() {
+    return {{PKRGlobalState::getNUMBER()}};
+  });
+  defineFn("random", randomAC);
+
+  // Math[%ToStringTag%]
+  defineOwn(PKR_SYMBOL_LABEL(toStringTag), PKRGlobalState::getSTRING(),
+            PKRGlobalState::getFALSE(), PKRGlobalState::getTRUE());
+}
+
+inline void initGSTK_Math(ECMAGraph *G) {
+  ALLOC_STKN(GSTK_Math);
+  GSTK_BIND(GSTK_Math, PKRGlobalState::getGOOBJ_Math());
+}
+
 inline void initGSTK_String(ECMAGraph *G) {
   ALLOC_STKN(GSTK_String);
   GSTK_BIND(GSTK_String, PKRGlobalState::getGFOBJ_String());
@@ -3641,6 +3768,7 @@ inline const GlobalInitTable &ecmaGlobalInitializers() {
       {GSTK_Object, initGSTK_Object},
       {GSTK_Array, initGSTK_Array},
       {GSTK_String, initGSTK_String},
+      {GSTK_Math, initGSTK_Math},
   };
   return table;
 }
@@ -3768,21 +3896,10 @@ inline void initObjectPrototypeCoercion(ECMAGraph *G) {
   define("valueOf", valueOfFn);
 }
 
-// 22.1.3.32 String.prototype.valueOf and 22.1.3.29 toString both return the
-// receiver's [[StringData]]. Left as stubs they would shadow Object.prototype's
-// real ones for a String object, so coercing `new String(x)` would refuse where
-// it used to answer.
 inline void initStringPrototypeCoercion(ECMAGraph *G) {
   NodeUID strProto = PKRGlobalState::getGOOBJ_String_prototype();
 
   auto define = [&](const char *name) {
-    // ThisStringValue: the receiver is a String primitive or a String object,
-    // and either way the answer is a String.
-    //
-    // A fresh closure per method: ActionClosureMap is a bimap, so binding one
-    // closure object to a second node silently fails and leaves that function
-    // object uncallable - which OrdinaryToPrimitive then skips, falling through
-    // to Object.prototype's.
     auto thisStringValueAC = DEFINE_ACTION() {
       return {{PKRGlobalState::getSTRING()}};
     });
@@ -3904,7 +4021,7 @@ inline void initObjectPrototypeProtoAccessor(ECMAGraph *G) {
 }
 
 inline void initFunctionConstructor(ECMAGraph *G) {
-  ALLOC_CTR(PKRGlobalState::getGFOBJ_Function(), PKR_STUB_FUN,
+  ALLOC_CTR(PKRGlobalState::getGFOBJ_Function(), PKR_STUB_CTOR("Function"),
             PKRGlobalState::getGFOBJ_Function_prototype());
   linkPrototypeConstructor(G, PKRGlobalState::getGFOBJ_Function(),
                            PKRGlobalState::getGFOBJ_Function_prototype());
@@ -3918,6 +4035,39 @@ inline void initECMAEnvironment(ECMAGraph *G) {
   initFunctionPrototype(G);
   initFunctionHasInstance(G);
   initObjectPrototypeProtoAccessor(G);
+
+  auto objectCtorAC = DEFINE_ACTION() {
+    const ECMAGraph *G = args.G;
+    ASSERT(args.A.size() == 2);
+    auto thisSlots = decodeArgRanges(args.L, args.A[0]);
+    auto argSlots = decodeArgRanges(args.L, args.A[1]);
+
+    if (argSlots.empty() || argSlots[0].empty())
+      return {{PKRGlobalState::getUNDEF()}};
+
+    std::set<NodeUID> out;
+    bool freshObject = false;
+    for (NodeUID v : argSlots[0]) {
+      if (isObjectNode(G, v)) {
+        out.insert(v);
+        continue;
+      }
+      TAG t = G->getNodeTAG(v);
+      if (t == TAG::UNDEF_VAL || t == TAG::NULL_VAL) {
+        freshObject = true;
+        continue;
+      }
+      // TODO: primitive castrs are left
+      throw std::runtime_error(
+          "[Prakriti] Not implemented: Object(primitive)");
+    }
+
+    if (freshObject && !thisSlots.empty())
+      out.insert(thisSlots[0].begin(), thisSlots[0].end());
+    if (out.empty())
+      return {{PKRGlobalState::getUNDEF()}};
+    return {{out.begin(), out.end()}};
+  });
 
   defineStubIntrinsic(
       G, PKRGlobalState::getGFOBJ_Object(),
@@ -3946,20 +4096,20 @@ inline void initECMAEnvironment(ECMAGraph *G) {
        "values"},
       {"hasOwnProperty", "isPrototypeOf", "propertyIsEnumerable",
        "toLocaleString"},
-      "Object", PKR_STUB_FUN);
+      "Object", objectCtorAC);
   initObjectPrototypeCoercion(G);
 
   defineStubIntrinsic(G, PKRGlobalState::getGFOBJ_Boolean(),
                       PKRGlobalState::getGOOBJ_Boolean_prototype(),
                       PKRGlobalState::getGOOBJ_Object_prototype(), {},
                       {"toString", "valueOf"}, "Boolean",
-                      PKR_STUB_FUN);
+                      PKR_STUB_CTOR("Boolean"));
 
   defineStubIntrinsic(G, PKRGlobalState::getGFOBJ_Symbol(),
                       PKRGlobalState::getGOOBJ_Symbol_prototype(),
                       PKRGlobalState::getGOOBJ_Object_prototype(),
                       {"for", "keyFor"}, {"toString", "valueOf"}, "Symbol",
-                      PKR_STUB_FUN);
+                      PKR_STUB_CTOR("Symbol"));
 // ECMA defines these as non-configurable, also making them definite is a good
 // idea as there are two parent protos above, so this might be useful too
 #define AS_SYM_PROP(name)                                                      \
@@ -3986,7 +4136,7 @@ inline void initECMAEnvironment(ECMAGraph *G) {
   defineStubIntrinsic(G, PKRGlobalState::getGFOBJ_Error(),
                       PKRGlobalState::getGOOBJ_Error_prototype(),
                       PKRGlobalState::getGOOBJ_Object_prototype(), {},
-                      {"toString"}, "Error", PKR_STUB_FUN);
+                      {"toString"}, "Error", PKR_STUB_CTOR("Error"));
 
   defineStubIntrinsic(G, PKRGlobalState::getGFOBJ_Array(),
                       PKRGlobalState::getGOOBJ_Array_prototype(),
@@ -4001,34 +4151,20 @@ inline void initECMAEnvironment(ECMAGraph *G) {
                        "reverse",   "shift",    "slice",          "some",
                        "sort",      "splice",   "toLocaleString", "toString",
                        "unshift"},
-                      "Array", PKR_STUB_FUN);
+                      "Array", arrayCtorAC);
   initArrayPrototype(G);
 
-  // 22.1.1.1 String(value). Called as a function it answers with a String
-  // primitive; ToString on the argument is what may run user code, via
-  // ToPrimitive, so it happens for its effects.
-  //
-  // `new String(x)` is not modelled faithfully: forge's ConstructorCall
-  // allocates an ordinary object with String.prototype, not a String exotic
-  // object, so it has no length and no index properties. Returning a primitive
-  // here means the receiver is what `new` yields, which is the same
-  // approximation every other constructor gets.
   auto stringCtorAC = DEFINE_ACTION() {
     ECMAGraph *G = args.G;
     ASSERT(args.A.size() == 2);
 
-    // Step 1: String() with no argument is the empty string.
     auto argSlots = decodeArgRanges(args.L, args.A[1]);
     if (!argSlots.empty()) {
       NodeUID tsAct =
           PKRGlobalState::getActionNode(PKRGlobalState::NAC_ToString);
-      // Each value is an alternative, so each coercion reads the same incoming
-      // state rather than observing the previous one's effects.
       std::vector<ECMAGraph> branches;
       for (NodeUID v : argSlots[0]) {
         ECMAGraph H = G->clone();
-        // A Symbol argument takes 22.1.1.1 step 2b, SymbolDescriptiveString,
-        // rather than ToString - both answer with a String here.
         invokeAction(tsAct, {&H, {v}});
         branches.push_back(std::move(H));
       }
@@ -4053,6 +4189,7 @@ inline void initECMAEnvironment(ECMAGraph *G) {
       "String", stringCtorAC);
   initStringPrototypeCoercion(G);
 
+  initMath(G);
   initFunctionConstructor(G);
 }
 
@@ -4275,15 +4412,6 @@ inline JSFileAllocator QJSModuleFile() {
 
 namespace Prakriti {
 
-// 10.4.3 String exotic object, the thing `new String(x)` produces. Ordinary
-// internal methods throughout - what makes it exotic is the state below, the
-// same way AllocArrayObject differs from AllocOrdinaryObject.
-//
-// The wrapped primitive is the abstract STRING node, so its length is unknown.
-// That means the index properties cannot be enumerated, so they live in the
-// may-alias bucket rather than at literal indices - the same shape a
-// dynamically written array ends up with. Reading any index answers String, and
-// length answers Number; faithful in shape, capped in value.
 inline void AllocStringObject(ECMAGraph *G, NodeUID id) {
   G->addNode(id, TAG::STROBJ);
 
@@ -4307,14 +4435,10 @@ inline void AllocStringObject(ECMAGraph *G, NodeUID id) {
   G->addEdge(id, PKRGlobalState::getSTRING(),
              PKRGlobalState::EdgeIntern(PKR_STRING_DATA));
 
-  // Insensitive from the start: the index properties are in the bucket, so a
-  // named read has to consult it.
+  // Insensitive from the start
   G->addEdge(id, PKRGlobalState::getFALSE(),
              PKRGlobalState::EdgeIntern(PKR_SENSITIVE));
 
-  // 10.4.3: length is { [[Writable]]: false, [[Enumerable]]: false,
-  // [[Configurable]]: false }. [[Definite]] because every String object has it,
-  // which is what keeps a `.length` read off the prototype chain.
   NodeUID lengthFP = PKRGlobalState::generateSentinel(
       id, PKRGlobalState::EdgeIntern("length"));
   AllocFieldProxyObject(G, lengthFP);
@@ -4330,10 +4454,6 @@ inline void AllocStringObject(ECMAGraph *G, NodeUID id) {
   G->addEdge(lengthFP, PKRGlobalState::getTRUE(),
              PKRGlobalState::EdgeIntern(PKR_DEFINITE));
 
-  // The index properties. StringGetOwnProperty makes each one
-  // { [[Writable]]: false, [[Enumerable]]: true, [[Configurable]]: false }, and
-  // every one of them reads as a String. No [[Definite]]: which indices exist
-  // depends on the length, which is unknown.
   NodeUID idxFP = PKRGlobalState::generateSentinel(
       id, PKRGlobalState::EdgeIntern(PKR_UNKNOWN_FIELD));
   AllocFieldProxyObject(G, idxFP);
