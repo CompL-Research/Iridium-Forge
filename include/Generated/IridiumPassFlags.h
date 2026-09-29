@@ -1,4 +1,4 @@
-// Generated: 2026-09-23 13:45:10
+// Generated: 2026-09-29 19:25:58
 #pragma once
 #include <functional>
 #include <string>
@@ -14,9 +14,9 @@ struct PassFlags {
   bool dumpClosureTree = false; // Dump the closure tree to stdout after optimization passes run
   bool dumpIrisInfo = false; // Dump IRIS scope-resolution info to stdout after optimization passes run
   bool debugStorage = false; // Dump IRIStorage pool memory diagnostics after optimization passes run
-  bool pta = false; // Run the Points-To Analysis solver after optimization passes run
+  bool pta = false; // (WIP) Run the Points-To Analysis solver after optimization passes run
   bool dumpCFG = false; // Write each closure's CFG to out.cfg as DOT, and a PNG if dot is on PATH
-  bool dumpPTA = false; // Write the PTA solver trace to out.pta (requires --pta)
+  bool dumpPTA = false; // (WIP) Write the PTA solver trace to out.pta (requires --pta)
 };
 
 // Lets embedders (e.g. the Node addon) populate PassFlags generically

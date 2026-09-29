@@ -42,7 +42,7 @@ export default [
   {
     name: "pta",
     default: false,
-    desc: "Run the Points-To Analysis solver after optimization passes run",
+    desc: "(WIP) Run the Points-To Analysis solver after optimization passes run",
   },
   {
     name: "dumpCFG",
@@ -52,6 +52,6 @@ export default [
   {
     name: "dumpPTA",
     default: false,
-    desc: "Write the PTA solver trace to out.pta (requires --pta)",
+    desc: "(WIP) Write the PTA solver trace to out.pta (requires --pta)",
   },
 ];
