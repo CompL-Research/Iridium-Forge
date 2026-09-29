@@ -4,9 +4,9 @@
   "main": "forge.ts",
   "license": "Apache-2.0",
   "config": {
-    "info": "DEBUG_TIME_IRIS;DEBUG_TDZ",
-    "dump": "DUMP_CORE_PASSES;DUMP_CFG_DOTS",
-    "others": "DEBUG_DECORATOR_PASS;PRINT_TAINT_TREE;DUMP_CFG_DOTS"
+    "info": "",
+    "dump": "",
+    "others": ""
   },
   "scripts": {
     "gen:types": "node gen/genTypes.mjs",

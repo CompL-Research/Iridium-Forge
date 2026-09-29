@@ -116,12 +116,6 @@ void ClosureTree::dumpFlat(std::ostream &oss) const {
   BBContainerSupport bbc(root, ctx);
 
   oss << "Root [BB" << bbc.getStartBBIDX() << "@" << bbc.getScopeIDX() << "]\n";
-
-#ifdef DUMP_CFG_DOTS
-  closures.at(root)->dumpDOT("BB" + std::to_string((int)bbc.getStartBBIDX()) +
-                             ".DOT");
-#endif
-
   // Fetch children of the root
   auto it = outEdges.find(root);
   if (it != outEdges.end()) {
@@ -142,11 +136,6 @@ void ClosureTree::dumpRecursive(std::ostream &oss, IRI_STORAGE::IRID current_id,
       << "@" << bbc.getScopeIDX() << "]";
 
   oss << "\n";
-
-#ifdef DUMP_CFG_DOTS
-  closures.at(current_id)
-      ->dumpDOT("BB" + std::to_string((int)bbc.getStartBBIDX()) + ".DOT");
-#endif
 
   // Check if this node has children
   auto edges_it = outEdges.find(current_id);

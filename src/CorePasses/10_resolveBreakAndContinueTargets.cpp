@@ -9,28 +9,8 @@
 #include "Support/IRIS.hpp"
 #include <stdexcept>
 #include <vector>
-
-#ifdef DEBUG_DECORATOR_PASS
-#include <iostream>
-
-// General logging macro
-#define DEC_LOG(msg) std::cout << msg << std::endl
-
-// Helper macro to conditionally print the @ scope if the index is valid
-#define DEC_LOG_IDX(label, idx)                                                \
-  do {                                                                         \
-    if ((idx) > -1) {                                                          \
-      std::cout << "    " << label << ": " << (idx) << "@"                     \
-                << BBSupport(bbc.getBBByIDX(idx), ctx).getScopeIDX()           \
-                << std::endl;                                                  \
-    } else {                                                                   \
-      std::cout << "    " << label << ": " << (idx) << std::endl;              \
-    }                                                                          \
-  } while (0)
-#else
 #define DEC_LOG(msg)
 #define DEC_LOG_IDX(label, idx)
-#endif
 
 namespace IRI_CORE_PASSES {
 using namespace IRI_PARSE;
@@ -102,10 +82,6 @@ std::unordered_map<IRID, double> _10_RBACT(
     std::unordered_map<int, std::shared_ptr<IRI_PARSE::IridiumBuildContext>>
         &iridiumBuildContext) {
   std::unordered_map<IRID, double> CONTINUE_TARGETS;
-#ifdef DEBUG_DECORATOR_PASS
-  std::cout << "::_10_RBACT::" << std::endl;
-  ctx.iris->dumpFlat(std::cout);
-#endif
   FileSupport fileSupport(fileSEXP, ctx);
   for (auto [bbContID, _] : fileSupport.containers()) {
     BBContainerSupport bbc(bbContID, ctx);
@@ -168,17 +144,6 @@ std::unordered_map<IRID, double> _10_RBACT(
 
         auto &element = e.first;
         auto &intermediateContexts = e.second;
-
-#ifdef DEBUG_DECORATOR_PASS
-        if (!intermediateContexts.empty()) {
-          std::cout << "::Decorator Map::\n"
-                    << "BB: " << bbSEXP.getIDX() << "@" << bbScopeIDX << "\n"
-                    << "Stmt: \n";
-          IRI_NODE(ctx, element).dumpFlat(std::cout, &ctx, 2);
-          std::cout << "\nIntermediate Contexts: \n";
-        }
-#endif
-
         for (auto &intermediateContext : intermediateContexts) {
           if (auto loopConfig = std::get_if<LoopConfig>(&intermediateContext)) {
 

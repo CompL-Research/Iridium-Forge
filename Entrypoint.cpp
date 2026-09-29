@@ -17,10 +17,6 @@
 #include "Support/PTA.hpp"
 #include <exception>
 #include <iostream>
-#if DUMP_CORE_PASSES == 1
-#include <fstream>
-#include <sstream>
-#endif
 #include <functional>
 #include <memory>
 #include <unordered_map>

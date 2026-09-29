@@ -1,5 +1,3 @@
-
-
 #include "CorePasses.h"
 #include "Generated/IridiumEnums.h"
 #include "Generated/IridiumTypes.h"
@@ -10,9 +8,6 @@
 #include "Support/BBSupport.hpp"
 #include "Support/FileSupport.hpp"
 #include "Support/IRIS.hpp"
-#ifdef PRINT_TAINT_TREE
-#include <iostream>
-#endif
 #include <stdexcept>
 
 namespace IRI_CORE_PASSES {
@@ -108,8 +103,6 @@ inline void patchNode(IRIContext &ctx, IRID node, double scopeToTaint,
             ctx.iris->addEvalRemoteBindingsToParentClosure(scopeToTaint);
             ctx.iris->registerDirectEval(node, scopeToTaint, containerScope);
 
-            // double evalREFIDX =
-            //     ctx.iris->getJSEvalLookupREFIDX(scopeToTaint, containerScope);
             callSite.setJSDirectEval(-3);
           }
         }
@@ -143,9 +136,5 @@ void _16_MDE(IRI_STORAGE::IRIContext &ctx, IRI_STORAGE::IRID fileSEXP,
     }
   }
 
-#ifdef PRINT_TAINT_TREE
-  std::cout << "Scope tree after eval tainting (†)" << std::endl;
-  ctx.iris->dumpFlat(std::cout);
-#endif
 }
 } // namespace IRI_CORE_PASSES
