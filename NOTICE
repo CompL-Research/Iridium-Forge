@@ -1,0 +1,17 @@
+Iridium Forge
+Copyright 2025-2026 The Iridium Authors
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+Third-party content
+-------------------
+
+This product bundles the following third-party software in include/external/:
+
+  Boost Graph Library 1.89.0 (graph-boost-1.89.0/)
+    Copyright the respective Boost authors, as stated in each file header.
+    Boost Software License, Version 1.0 (see graph-boost-1.89.0/LICENSE_1_0.txt).
+
+  JSON for Modern C++ 3.12.0 (json.hpp)
+    Copyright 2013-2025 Niels Lohmann <https://nlohmann.me>
+    MIT License (see json.LICENSE.MIT).
