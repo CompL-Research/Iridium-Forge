@@ -56,6 +56,11 @@ void _4_4_RFD(IRIContext &ctx, IRID fileID, BUILD_CTX &iridiumBuildContext) {
 
       bool isTopLevelClosureCTX = topLevelScope == containerScope;
       bool closureLevelDecl = localScope == containerScope;
+      // Top level of a VARBoundary inside a closure (function body with non-simple
+      // args, class static block), function declarations here are var scoped
+      bool varScopeLevelDecl =
+          closureLevelDecl ||
+          IRI_HELPERS::findVARHoistingScope(ctx, localScope, iridiumBuildContext) == localScope;
 
       for (auto [stmtID, stmtOffset] : bb.stmts()) {
         IRI_TAG currTag = IRI_NODE(ctx, stmtID).tag;
@@ -128,7 +133,7 @@ void _4_4_RFD(IRIContext &ctx, IRID fileID, BUILD_CTX &iridiumBuildContext) {
             }
           } else {
             // Function Level
-            if (closureLevelDecl) {
+            if (varScopeLevelDecl) {
               funcVarDecl();
             } else {
               if (isSloppy) {
