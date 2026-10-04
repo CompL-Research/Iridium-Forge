@@ -7,7 +7,7 @@
 
 namespace IRI_STORAGE {
 
-extern void append_escaped_json_string(std::ostringstream &oss,
+extern void append_escaped_json_string(std::ostream &oss,
                                        std::string_view s);
 class IRIContext;
 
