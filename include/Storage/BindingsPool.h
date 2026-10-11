@@ -4,6 +4,7 @@
 #include <cassert>   // for debug safety
 #include <cstdint>
 #include <small/vector.hpp>
+#include <span>
 
 namespace IRI_STORAGE {
 using namespace IRI_GEN;
@@ -82,6 +83,17 @@ public:
 
   // --- Pool Management ---
   BindingMeta & allocate(IridiumPool &pool, IRID id);
+
+  // IRIS can declare bindings during core passes
+  // which are not connected by args of any node until iris commit
+  // Add those reference IRIDs into the root set to include in reachability result
+  // so that bindingsPool->remap_irids don't see these IRIDs as garbage
+  std::vector<IRID> collect_referenced_irids() const;
+
+  // bPool holds BindingMeta per binding
+  // Remap IRIDs referenced by BindingMeta after compaction
+  // ID, defs, uses -> only these are IRIDs of IridiumPool
+  void remap_irids(std::span<const IRID> old_to_new_irid_map);
 
 private:
   void deallocate(uint32_t index) {

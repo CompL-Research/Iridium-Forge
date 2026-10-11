@@ -261,66 +261,6 @@ void IridiumPool::update_num_args(IRID id, uint32_t num_args) {
   node.num_args = num_args;
 }
 
-std::vector<IRID> IridiumPool::collect_roots(IRID entry) const {
-  std::vector<IRID> roots = {
-    entry,
-    NULL_SEXP, NOP_SEXP, NUBD_SEXP, TRUE_SEXP, FALSE_SEXP
-  };
-  return roots;
-}
-
-ReachabilityResult IridiumPool::mark_reachable(std::span<const IRID> roots) const {
-  ReachabilityResult result;
-  result.visited.assign(nodes.size(), false);
-
-  if (nodes.empty()) return result;
-
-  // worklist works like a stack
-  std::vector<IRID> worklist(roots.begin(), roots.end());
-
-  for (IRID node : roots) result.visited[node] = true;
-
-  // visit a node, mark it reachable, go to children (depth-first) and mark accordingly
-  while (!worklist.empty()) {
-    IRID id = worklist.back();
-    worklist.pop_back();
-    result.reachable_count++;
-
-    const IridiumSEXP &node = nodes[id];
-    for (IRID child : get_args_view(&node)) {
-      if (!result.visited[child]) {
-        worklist.push_back(child);
-        result.visited[child] = true;
-      }
-    }
-  }
-
-  return result;
-}
-
-void IridiumPool::print_reachability(const ReachabilityResult &reach) const {
-  size_t total = nodes.size();
-  size_t reachable = reach.reachable_count;
-  size_t unreachable = total - reachable;
-  double garbage_pct = total > 0
-      ? (static_cast<double>(unreachable) / total) * 100.0
-      : 0.0;
-
-  std::cout << "\n------- IridiumPool Reachability --------\n";
-  std::cout << "Total nodes:      " << total << std::endl;
-  std::cout << "Reachable:        " << reachable << std::endl;
-  std::cout << "Unreachable:      " << unreachable << std::endl;
-  std::cout << "Garbage %:        " << garbage_pct << "%" << std::endl;
-
-  std::cout << "\n-------- Reachable nodes -------------\n";
-  for (size_t i = 0; i < reach.visited.size(); i++) {
-    if (reach.visited[i] == true) {
-      std::cout << "[" << i << "], ";
-    }
-  }
-  std::cout << std::endl;
-}
-
 size_t IridiumPool::get_args_pool_size() const {
   return args_pool.size();
 }

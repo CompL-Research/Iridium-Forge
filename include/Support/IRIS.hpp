@@ -107,6 +107,18 @@ public:
     return exportedModuleBindings.contains(id);
   }
 
+  // IRIS can declare bindings during core passes
+  // which are not connected by args of any node until iris commit
+  // Add those reference IRIDs into the root set to include in reachability result
+  // so that iris->remap_irids don't see these IRIDs as garbage
+  std::vector<IRI_STORAGE::IRID> collect_referenced_irids() const;
+
+  // Remap IRID references after compaction by GC
+  // IRIDs in scopeHead, argsAtScope, scopeBindings, scriptBindings,
+  // globalBindings, closuresAtScope, directEvals
+  // bindingsPool -> handled by BindingsPool::remap_irids
+  void remap_irids(std::span<const IRI_STORAGE::IRID> old_to_new_irid_map);
+
 private:
   // Node Storage Pool
   IRI_STORAGE::IridiumPool &pool;

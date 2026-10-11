@@ -29,8 +29,8 @@ struct ReachabilityResult {
 // store old -> new IRID mappings
 struct CompactionResult {
   // index: old IRID, element: new IRID
-  // old_to_new_map[old_irid] = new_irid
-  std::vector<IRID> old_to_new_map;
+  // old_to_new_irid_map[old_irid] = new_irid
+  std::vector<IRID> old_to_new_irid_map;
 };
 
 class IridiumPool {
@@ -134,6 +134,9 @@ public:
 
   // print compaction result
   void print_compaction_result(const CompactionResult &compaction) const;
+
+  // wrapper for both reachability and compaction
+  CompactionResult garbage_collect(IRID &root, const std::string &label);
 
   ~IridiumPool();
   IridiumPool() = default;
