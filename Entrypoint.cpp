@@ -13,19 +13,37 @@
 #include "Analysis/EffectProp.h"
 #include "IRIPerf.h"
 #include "Storage/Config.h"
-#if DUMP_CORE_PASSES == 1
+#include "Storage/GCStats.h"
 #include <fstream>
+#include <iostream>
+#if DUMP_CORE_PASSES == 1
 #include <sstream>
 #endif
 #include <memory>
 #include <unordered_map>
-
 #include <cstdlib>
 
 namespace IRI_ENTRY {
 using namespace IRI_STORAGE;
 using namespace IRI_PARSE;
 using namespace IRI_STRUCTURAL;
+
+// 0 = no GC, 1 = GC only after core passes, 2 = GC only after iris commit, 3 = both (default)
+inline int gcMode() {
+  static const int m = [] {
+    const char *e = std::getenv("IRI_GC");
+    return e ? std::atoi(e) : 3;
+  }();
+  return m;
+}
+
+// record process VmRSS at a particular stage
+inline void emitPhase(IridiumPool &pool, const std::string &name) {
+  if (!statsOn()) return;
+  auto m = pool.memory_usage();
+  std::cerr << "IRI_PHASE," << name << "," << m.usedBytes << "," << m.capBytes
+            << "," << procStatusKb("VmRSS") << "\n";
+}
 
 inline void normalizeIRIDIUM(
     IridiumPool &pool, IRID &sexp,
@@ -47,6 +65,7 @@ inline void normalizeIRIDIUM(
     passFunc(pool, sexp, iridiumBuildContext);
     iriPerf.tock(name);
     dump(name);
+    emitPhase(pool, name);
   };
 
   dump("_0_BEFORE_NORMALIZAION");
@@ -87,7 +106,10 @@ inline void normalizeIRIDIUM(
   //   if (!reach.visited[id])
   //     std::cout << "IRIS holds an unreachable node: " << id << "\n";
 
-  auto compaction_result = pool.garbage_collect(sexp, "AFTER_CORE_PASSES");
+  if (gcMode() & 1) {
+    auto compaction_result = pool.garbage_collect(sexp, "AFTER_CORE_PASSES");
+  }
+  emitPhase(pool, "post_core_gc_point");
 
   // Initialize closure tree and create CFGs
   IRID treeRoot = IRI_HELPERS::getTopLevelContainer(pool, sexp);
@@ -196,24 +218,33 @@ IRID sharedEntrypoint(
         &iridiumBuildContext,
     IRIPerf &iriPerf) {
 
-  auto reach = pool.mark_reachable(pool.collect_roots(file));
+  // auto reach = pool.mark_reachable(pool.collect_roots(file));
 
-#if DUMP_CORE_PASSES == 1
-  std::cout << "\nBefore Normalization :\n";
-  pool.print_reachability(reach);
+  if (statsOn()) {
+    resetPeakRss();   // VmHWM measures peak for normalization + GC
 
-  std::cout << "\nArgs_pool size before normalization: " << pool.get_args_pool_size() << "\n";
-  std::cout << "\nFlags_pool size before normalization: " << pool.get_flags_pool_size() << "\n";
-
-  {
-    std::ofstream out("BEFORE_NORMALIZATION_with_ids.iridump");
-    pool[file].dumpFlat(out, &pool, file);
+    std::cerr << "IRI_SIZES," << sizeof(IRI_STORAGE::IridiumSEXP) << "," << sizeof(IRID)
+              << "," << sizeof(FlagValue) << "\n";
+    std::cerr << "IRI_START," << procStatusKb("VmRSS") << "," << procStatusKb("VmHWM") << "\n";
+    emitPhase(pool, "start");
   }
-#endif
   
   normalizeIRIDIUM(pool, file, iridiumBuildContext, iriPerf);
 
-  auto compaction_result = pool.garbage_collect(file, "AFTER_IRIS_COMMIT");
+  emitPhase(pool, "pre_final_gc_point");
+  if (gcMode() & 2) {
+    auto compaction_result = pool.garbage_collect(file, "AFTER_IRIS_COMMIT");
+  }
+  emitPhase(pool, "post_final_gc_point");
+
+  if (statsOn())
+    std::cerr << "IRI_FINAL," << procStatusKb("VmRSS") << "," << procStatusKb("VmHWM") << "\n";
+
+  // For correctness check across different GC modes
+  if (const char *p = std::getenv("IRI_DUMP_FINAL")) {
+    std::ofstream out(p);
+    pool[file].dump(out, &pool, true, 0);
+  }
 
   return file;
 }

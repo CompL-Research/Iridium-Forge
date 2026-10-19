@@ -1,7 +1,11 @@
 #include "Storage/IridiumPool.h"
 #include "Storage/Config.h"
+#include "Storage/GCStats.h"
 #include "Support/IRIS.hpp"
 #include <iostream>
+#include <chrono>
+#include <fstream>
+#include <iomanip>
 #if DUMP_CORE_PASSES == 1
 #include <fstream>
 #endif
@@ -81,8 +85,11 @@ void IridiumPool::print_reachability(const ReachabilityResult &reach) const {
   std::cout << std::endl;
 }
 
-CompactionResult IridiumPool::compact_pool(ReachabilityResult &reach)
-{
+CompactionResult IridiumPool::compact_pool(ReachabilityResult &reach) {
+  // For measurement: set IRI_GC_NOEARLYFREE to keep old storage alive until end,
+  // to measure old vs new peak RSS
+  static const bool earlyFree = std::getenv("IRI_GC_NOEARLYFREE") == nullptr;
+
   CompactionResult result;
   // initialize all IRID mappings to -1
   // at last -1 means that is unreachable
@@ -100,10 +107,8 @@ CompactionResult IridiumPool::compact_pool(ReachabilityResult &reach)
 
   // Pass 1
   // map old IRIDs to new IRIDs in the new_nodes
-  for (size_t old_id = 0; old_id < nodes.size(); old_id++)
-  {
-    if (reach.visited[old_id])
-    {
+  for (size_t old_id = 0; old_id < nodes.size(); old_id++) {
+    if (reach.visited[old_id]) {
       result.old_to_new_irid_map[old_id] = static_cast<IRID>(new_nodes.size());
       new_nodes.push_back(nodes[old_id]);
       reachable_args_count += nodes[old_id].num_args;
@@ -111,35 +116,46 @@ CompactionResult IridiumPool::compact_pool(ReachabilityResult &reach)
     }
   }
 
+  // release old nodes vector's allocated storage
+  if (earlyFree) {
+    std::vector<IridiumSEXP>().swap(nodes);
+  }
+
   std::vector<IRID> new_args_pool;
   new_args_pool.reserve(reachable_args_count);
+  
+  // Pass 2
+  // Walk new_nodes list and rewrite each node's args
+  for (size_t new_id = 0; new_id < new_nodes.size(); new_id++) {
+    IridiumSEXP &node = new_nodes[new_id];
+    
+    // Copying to new_args_pool
+    uint32_t start_index = node.args_start_index;
+    node.args_start_index = new_args_pool.size();
+    
+    for (uint32_t offset = 0; offset < node.num_args; offset++) {
+      IRID old_child_irid = args_pool[start_index + offset];
+      IRID new_child_irid = result.old_to_new_irid_map[old_child_irid];
+      new_args_pool.push_back(new_child_irid);
+    }
+  }
 
+  // release old args_pool vector's allocated storage
+  if (earlyFree) {
+    std::vector<IRID>().swap(args_pool);
+  }
+  
   std::vector<FlagValue> new_flags_pool;
   new_flags_pool.reserve(reachable_flags_upper_bound);
 
   std::unordered_map<std::vector<FlagValue>, uint32_t, FlagVectorHash, FlagVectorEq> new_flag_intern_map;
 
-  // Pass 2
-  // Walk new_nodes list and rewrite each node's args
-  // Also compacts the flags_pool
-  for (size_t new_id = 0; new_id < new_nodes.size(); new_id++)
-  {
+  // Pass 3
+  // Rebuild flags_pool and re-intern flags into the new pool
+  for (size_t new_id = 0; new_id < new_nodes.size(); new_id++) {
     IridiumSEXP &node = new_nodes[new_id];
-
-    // Copying to new_args_pool
-    uint32_t start_index = node.args_start_index;
-    node.args_start_index = new_args_pool.size();
-
-    for (uint32_t offset = 0; offset < node.num_args; offset++)
-    {
-      IRID old_child_irid = args_pool[start_index + offset];
-      IRID new_child_irid = result.old_to_new_irid_map[old_child_irid];
-      new_args_pool.push_back(new_child_irid);
-    }
-
-    // Do flags_pool compaction
-    if (node.num_flag_slots == 0)
-    {
+    
+    if (node.num_flag_slots == 0) {
       node.flags_start_index = 0;
       continue;
     }
@@ -151,12 +167,13 @@ CompactionResult IridiumPool::compact_pool(ReachabilityResult &reach)
 
     // check whether the flags flags_content is already present in the new_flags_pool
     auto it = new_flag_intern_map.find(flags_content);
-    if (it != new_flag_intern_map.end())
-    { // flags_content found, reuse it
+
+    if (it != new_flag_intern_map.end()) { 
+      // flags_content found, reuse it
       node.flags_start_index = it->second;
-    }
-    else
-    { // flags_content not found, put into new_flags_pool and in the intern map
+
+    } else { 
+      // flags_content not found, put into new_flags_pool and in the intern map
       uint32_t new_flags_start = static_cast<uint32_t>(new_flags_pool.size());
       new_flags_pool.insert(new_flags_pool.end(), flags_content.begin(), flags_content.end());
 
@@ -180,52 +197,155 @@ CompactionResult IridiumPool::compact_pool(ReachabilityResult &reach)
   return result;
 }
 
-void IridiumPool::print_compaction_result(const CompactionResult &compaction) const {
-  size_t initial_nodes_size = compaction.old_to_new_irid_map.size();
-  size_t compacted_nodes_size = nodes.size();
-  double garbage_pct = initial_nodes_size > 0
-                           ? (static_cast<double>(initial_nodes_size - compacted_nodes_size) / initial_nodes_size) * 100.0
-                           : 0.0;
+// b -> before, a -> after
+void IridiumPool::print_compaction_result(const std::string &label, const PoolMemory &b, const PoolMemory &a, double ms) const {
+  auto pct = [](size_t before, size_t after) {
+    return before ? 100.0 * (double(before) - double(after)) / double(before) : 0.0;
+  };
 
-  std::cout << "Nodes before GC:      " << initial_nodes_size << std::endl;
-  std::cout << "Nodes after GC:       " << compacted_nodes_size << std::endl;
-  std::cout << "Garbage collected:    " << garbage_pct << " %" << std::endl;
-  std::cout << "Args pool size:       " << args_pool.size() << std::endl;
-  std::cout << "Flags pool size:      " << flags_pool.size() << std::endl;
+  auto kb = [](size_t bytes) { return bytes / 1024.0; };
+
+  std::cout << "\n---- GC: " << label << " (" << std::fixed << std::setprecision(2)
+            << ms << " ms) ----\n"
+            << std::left << std::setw(16) << "structure" << std::right
+            << std::setw(10) << "count" << "    " << std::setw(10) << "count"
+            << std::setw(14) << "KB" << "    " << std::setw(10) << "KB"
+            << std::setw(9) << "saved" << "\n"
+            << std::left << std::setw(16) << "" << std::right
+            << std::setw(10) << "before" << "    " << std::setw(10) << "after"
+            << std::setw(14) << "before" << "    " << std::setw(10) << "after" << "\n";
+
+  std::cout << std::setprecision(1);
+  auto row = [&](const char *name, size_t cb, size_t ca, size_t bb, size_t ba) {
+    std::cout << std::left << std::setw(16) << name << std::right
+              << std::setw(10) << cb << " -> " << std::setw(10) << ca
+              << std::setw(14) << kb(bb) << " -> " << std::setw(10) << kb(ba)
+              << std::setw(8) << pct(bb, ba) << "%\n";
+  };
+
+  row("nodes",           b.nodeCount,     a.nodeCount,     b.nodesB,  a.nodesB);
+  row("args_pool",       b.argCount,      a.argCount,      b.argsB,   a.argsB);
+  row("flags_pool",      b.flagCount,     a.flagCount,     b.flagsB,  a.flagsB);
+  row("flag_intern_map", b.flagInternEntries, a.flagInternEntries, b.flagInternB, a.flagInternB);
+
+  std::cout << std::left << std::setw(16) << "total (used)" << std::right
+            << std::setw(24) << "" << std::setw(14) << kb(b.usedBytes) << " -> "
+            << std::setw(10) << kb(a.usedBytes) << std::setw(8)
+            << pct(b.usedBytes, a.usedBytes) << "%\n"
+            << std::left << std::setw(16) << "total (capacity)" << std::right
+            << std::setw(24) << "" << std::setw(14) << kb(b.capBytes) << " -> "
+            << std::setw(10) << kb(a.capBytes) << std::setw(8)
+            << pct(b.capBytes, a.capBytes) << "%\n";
+
+  std::cout.unsetf(std::ios::floatfield);
+  std::cout.precision(6);
 }
 
-CompactionResult IridiumPool::garbage_collect(IRID &root, const std::string &label)
-{
+CompactionResult IridiumPool::garbage_collect(IRID &root, const std::string &label) {
+  const bool stats = statsOn();
+  const bool verbose = std::getenv("IRI_GC_VERBOSE") != nullptr;
+  const bool measure = stats || verbose;
+
+  PoolMemory b;   // before GC
+  std::chrono::steady_clock::time_point t0;
+  if (measure) {
+    b = memory_usage();
+    t0 = std::chrono::steady_clock::now();
+  }
+  
   std::vector<IRID> roots = collect_roots(root);
   auto reach = mark_reachable(roots);
 
-#if DUMP_CORE_PASSES == 1
-  std::cout << "\n"
-            << label << " :\n";
-  print_reachability(reach);
-
-  std::cout << "\nArgs_pool size after iris commit: " << args_pool.size() << "\n";
-  std::cout << "\nFlags_pool size after iris commit: " << flags_pool.size() << "\n";
-
-  {
+  if (verbose) {
+    std::cout << "\n" << label << " :\n";
+    print_reachability(reach);
     std::ofstream out(label + "_with_ids.iridump");
     (*this)[root].dumpFlat(out, this, root);
   }
-#endif
 
   auto compaction_result = compact_pool(reach);
   root = compaction_result.old_to_new_irid_map[root];
-  if (iris)
-  {
+  if (iris) {
     iris->remap_irids(compaction_result.old_to_new_irid_map);
   }
 
-#if DUMP_CORE_PASSES == 1
-  std::cout << "\n-------- " + label + " Garbage Collection --------\n";
-  print_compaction_result(compaction_result);
-#endif
+  if (measure) {
+    double ms = std::chrono::duration<double, std::milli>(
+      std::chrono::steady_clock::now() - t0
+    ).count();
+
+    PoolMemory a = memory_usage();
+
+    if (verbose) {
+      print_compaction_result(label, b, a, ms);
+    }
+
+    if (stats) {
+      static bool headerDone = false;   // header for CSV once per process
+
+      if (!headerDone) {
+        // _b -> before GC, _a -> after GC
+        std::cerr << "IRI_STAT_HEADER,label,nodes_b,nodes_a,args_b,args_a,flags_b,flags_a,"
+                     "flagIntern_b,flagIntern_a,nodesB_b,nodesB_a,argsB_b,argsB_a,flagsB_b,flagsB_a,"
+                     "flagInternB_b,flagInternB_a,used_b,used_a,cap_b,cap_a,ms\n";
+        headerDone = true;
+      }
+
+      std::cerr << "IRI_STAT," << label
+        << "," << b.nodeCount << "," << a.nodeCount
+        << "," << b.argCount  << "," << a.argCount
+        << "," << b.flagCount << "," << a.flagCount
+        << "," << b.flagInternEntries << "," << a.flagInternEntries
+        << "," << b.nodesB << "," << a.nodesB
+        << "," << b.argsB  << "," << a.argsB
+        << "," << b.flagsB << "," << a.flagsB
+        << "," << b.flagInternB << "," << a.flagInternB
+        << "," << b.usedBytes << "," << a.usedBytes
+        << "," << b.capBytes  << "," << a.capBytes
+        << "," << ms << "\n";
+    }
+  }
 
   return compaction_result;
+}
+
+PoolMemory IridiumPool::memory_usage() const {
+  PoolMemory m;
+
+  // count of elements in each storage structure
+  m.nodeCount = nodes.size();
+  m.argCount = args_pool.size();
+  m.flagCount = flags_pool.size();
+  m.flagInternEntries = flag_intern_map.size();
+
+  // size in bytes of each storage structure
+  m.nodesB = m.nodeCount * sizeof(IridiumSEXP);
+  m.argsB = m.argCount * sizeof(IRID);
+  m.flagsB = m.flagCount * sizeof(FlagValue);
+
+  // hash map keeps an array of buckets, one pointer each (even empty buckets)
+  // this is the cost of bucket array itself
+  size_t flagInternB = flag_intern_map.bucket_count() * sizeof(void *);
+
+  // walk every entry in the map and add up bytes in flagInternB
+  for (const auto &[k, v] : flag_intern_map) {
+    flagInternB += k.capacity() * sizeof(FlagValue) // key's heap buffer
+                   + sizeof(k)  // vector object itself
+                   + sizeof(v)  // the value
+                   + 2 * sizeof(void *);   // approx per-entry overhead (next pointer, hash code)
+  }
+  m.flagInternB = flagInternB;
+
+  // capacity in bytes allocated for each storage structure
+  m.nodesCapB = nodes.capacity() * sizeof(IridiumSEXP);
+  m.argsCapB = args_pool.capacity() * sizeof(IRID);
+  m.flagsCapB = flags_pool.capacity() * sizeof(FlagValue);
+
+  // total bytes
+  m.usedBytes = m.nodesB + m.argsB + m.flagsB + m.flagInternB;
+  m.capBytes = m.nodesCapB + m.argsCapB + m.flagsCapB + m.flagInternB;
+  
+  return m;
 }
 
 }

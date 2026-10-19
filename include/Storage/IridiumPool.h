@@ -33,6 +33,14 @@ struct CompactionResult {
   std::vector<IRID> old_to_new_irid_map;
 };
 
+// pool memory statistics
+struct PoolMemory {
+  size_t nodeCount = 0, argCount = 0, flagCount = 0, flagInternEntries = 0;
+  size_t nodesB = 0, argsB = 0, flagsB = 0, flagInternB = 0;  // size in bytes
+  size_t nodesCapB = 0, argsCapB = 0, flagsCapB = 0;  // capacity in bytes
+  size_t usedBytes = 0, capBytes = 0;   // total
+};
+
 class IridiumPool {
 
 public:
@@ -133,10 +141,13 @@ public:
   CompactionResult compact_pool(ReachabilityResult &reach);
 
   // print compaction result
-  void print_compaction_result(const CompactionResult &compaction) const;
+  void print_compaction_result(const std::string &label, const PoolMemory &before, const PoolMemory &after, double ms) const;
 
   // wrapper for both reachability and compaction
   CompactionResult garbage_collect(IRID &root, const std::string &label);
+
+  // get pool memory stats
+  PoolMemory memory_usage() const;
 
   ~IridiumPool();
   IridiumPool() = default;
