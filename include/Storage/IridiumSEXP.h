@@ -1,6 +1,7 @@
 #pragma once
 #include "Storage/Config.h"
 #include "Generated/IridiumEnums.h"
+#include "Storage/Config.h"
 #include <cstdint>
 #include <sstream>
 #include <string_view>
@@ -9,7 +10,7 @@ namespace IRI_STORAGE {
 
 extern void append_escaped_json_string(std::ostringstream &oss,
                                        std::string_view s);
-class IridiumPool;
+class IRIContext;
 
 class IridiumSEXP {
 public:
@@ -24,13 +25,10 @@ public:
   uint32_t num_flag_slots = 0;
   uint32_t flags_start_index = 0; // Replaces the pointer
 
-  void dump(std::ostream &oss, IridiumPool *pool, bool compressed = false,
+  void dump(std::ostream &oss, IRIContext *ctx, bool compressed = false,
             int indent = 0) const;
 
-  void dumpFlat(std::ostream &oss, IridiumPool *pool,
-                int depth = 0, bool full = true) const;
-
-  void dumpFlat(std::ostream &oss, IridiumPool *pool, IRID id,
-                int depth = 0, bool full = true) const;
+  void dumpFlat(std::ostream &oss, IRIContext *ctx, int depth = 0,
+                bool full = true, IRI_STORAGE::IRID id = 0) const;
 };
 } // namespace IRI_STORAGE

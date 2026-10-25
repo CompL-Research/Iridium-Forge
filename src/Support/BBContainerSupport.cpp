@@ -11,16 +11,16 @@ using ITR_RET = IndexedIterator<std::vector<IRID>>;
 
 ITR_RET BBContainerSupport::bbs() const {
   IRID bbID = getArg_BB();
-  ListSEXP bbs(bbID, *pool); // Basically just for the assertion
-  return IndexedIterator(std::move(pool->get_args(bbID)));
+  ListSEXP bbs(bbID, *ctx); // Basically just for the assertion
+  return IndexedIterator(std::move(ctx->storage.nodes.get_args(bbID)));
 }
 
 IRID BBContainerSupport::getBBByIDX(double idx) {
   IRID bbID = getArg_BB();
-  ListSEXP bbs(bbID, *pool);
-  auto argsView = pool->get_args_view(bbID);
+  ListSEXP bbs(bbID, *ctx);
+  auto argsView = ctx->storage.nodes.get_args_view(bbID);
   for (auto bbID : argsView) {
-    BBSupport bb(bbID, *pool);
+    BBSupport bb(bbID, *ctx);
     if (bb.getIDX() == idx) return bbID;
   }
   throw std::runtime_error("Failed to fetch BB By ID");

@@ -7,6 +7,7 @@
 #include "Storage/Config.h"
 #include "Storage/StringPool.h"
 #include <cstddef>
+#include <iterator>
 #include <memory>
 #include <stdexcept>
 #include <tuple>
@@ -21,7 +22,7 @@ namespace IRI_STRUCTURAL {
 
 class IRIS {
 public:
-  IRIS(IRI_STORAGE::IridiumPool &,
+  IRIS(IRI_STORAGE::IRIContext &,
        std::unordered_map<int, std::shared_ptr<IRI_PARSE::IridiumBuildContext>>
            &,
        IRI_GEN::IRID);
@@ -30,40 +31,43 @@ public:
   double getTopLevelScope() { return topLevelScope; }
 
   // Binding Declaration
-  IRI_STORAGE::BindingMeta & declareScriptBinding(double, StringID, IRI_GEN::IRI_FLAG);
-  IRI_STORAGE::BindingMeta & declareLBinding(double, StringID, IRI_GEN::IRI_FLAG);
-  IRI_STORAGE::BindingMeta & declareRBinding(double, StringID, IRI_GEN::IRI_FLAG, IRI_GEN::IRI_FLAG);
+  IRI_STORAGE::BindingMeta &declareScriptBinding(double, StringID,
+                                                 IRI_GEN::IRI_FLAG);
+  IRI_STORAGE::BindingMeta &declareLBinding(double, StringID,
+                                            IRI_GEN::IRI_FLAG);
+  IRI_STORAGE::BindingMeta &declareRBinding(double, StringID, IRI_GEN::IRI_FLAG,
+                                            IRI_GEN::IRI_FLAG);
   void addClosureAtScope(double, IRI_STORAGE::IRID);
 
   bool isGlobal(StringID sid, double startScopeIDX);
 
-  IRI_STORAGE::BindingMeta &operator[](IRI_STORAGE::IRID bID) {
-    return bindingsPool->getMetaFromIRID(pool, bID);
+  IRI_STORAGE::BindingMeta &get_binding(IRI_STORAGE::IRID bID) {
+    return ctx.storage.bindings.getMetaFromIRID(ctx, bID);
   }
 
-  const IRI_STORAGE::BindingMeta &operator[](IRI_STORAGE::IRID bID) const {
-    return bindingsPool->getMetaFromIRID(pool, bID);
+  const IRI_STORAGE::BindingMeta &get_binding(IRI_STORAGE::IRID bID) const {
+    return ctx.storage.bindings.getMetaFromIRID(ctx, bID);
   }
 
   IRI_STORAGE::BindingMeta &getBindingMetaFromLINK(double LINK) {
-    return (*bindingsPool)[LINK];
+    return ctx.storage.bindings.get(LINK);
   }
 
   const IRI_STORAGE::BindingMeta &getBindingMetaFromLINK(double LINK) const {
-    return (*bindingsPool)[LINK];
+    return ctx.storage.bindings.get(LINK);
   }
 
   bool hasBinding(StringID, double);
   void removeBinding(StringID, double);
 
   double getLexicalScope(double);
-  IRI_STORAGE::BindingMeta & resolve(StringID, double);
+  IRI_STORAGE::BindingMeta &resolve(StringID, double);
 
   void registerDirectEval(IRI_STORAGE::IRID, double, double);
 
   void commit();
 
-  bool hasScopePath(double, double,  bool breakAtClosureBoundary = false);
+  bool hasScopePath(double, double, bool breakAtClosureBoundary = false);
 
   bool isTopLevelScope(double);
 
@@ -89,7 +93,8 @@ public:
 
   void populateCClosuresInTree();
 
-  std::vector<IRI_STORAGE::IRID> getBindingsToMoveToHeap(double startScope, double endScope);
+  std::vector<IRI_STORAGE::IRID> getBindingsToMoveToHeap(double startScope,
+                                                         double endScope);
 
   std::vector<IRI_STORAGE::IRID> getBindingsInClosure(double headScope);
 
@@ -97,7 +102,8 @@ public:
   std::vector<IRI_STORAGE::IRID> getRemoteEnvBindingsAtScope(double scope);
 
   std::vector<IRI_STORAGE::IRID> getEnvBindingsInClosure(double headScope);
-  std::vector<IRI_STORAGE::IRID> getRemoteEnvBindingsInClosure(double headScope);
+  std::vector<IRI_STORAGE::IRID>
+  getRemoteEnvBindingsInClosure(double headScope);
 
   void ensureExportedBindingIsModuleBinding(StringID id) {
     exportedModuleBindings.insert(id);
@@ -118,12 +124,28 @@ public:
   // globalBindings, closuresAtScope, directEvals
   // bindingsPool -> handled by BindingsPool::remap_irids
   void remap_irids(std::span<const IRI_STORAGE::IRID> old_to_new_irid_map);
+  
+  std::vector<IRI_STORAGE::IRID> getScriptBindings() {
+    std::vector<IRI_STORAGE::IRID> res;
+    res.reserve(scriptBindings.size());
+    std::transform(scriptBindings.begin(), scriptBindings.end(),
+                   std::back_inserter(res),
+                   [](const auto e) { return e.second; });
+    return res;
+  }
+
+  std::vector<IRI_STORAGE::IRID> getGlobalBindings() {
+    std::vector<IRI_STORAGE::IRID> res;
+    res.reserve(globalBindings.size());
+    std::transform(globalBindings.begin(), globalBindings.end(),
+                   std::back_inserter(res),
+                   [](const auto e) { return e.second; });
+    return res;
+  }
 
 private:
   // Node Storage Pool
-  IRI_STORAGE::IridiumPool &pool;
-  // Bindings Metadata Pool
-  std::unique_ptr<IRI_STORAGE::BindingsPool> bindingsPool = std::make_unique<IRI_STORAGE::BindingsPool>();
+  IRI_STORAGE::IRIContext &ctx;
 
   // Graph
   // In a scope tree, each node has atmost one outgoing edges, with -1 denoting
@@ -169,3 +191,7 @@ public:
   void dumpBindingsAtScope(std::ostream &oss, double node) const;
 };
 } // namespace IRI_STRUCTURAL
+
+// Readability shorthand for IRIS::get_binding, replacing the old
+// (*iris)[id] operator[] syntax.
+#define IRI_BINDING(iris, id) ((iris)->get_binding(id))

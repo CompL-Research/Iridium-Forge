@@ -5,7 +5,7 @@
 namespace IRI_STRUCTURAL {
 struct BBContainerSupport : IRI_GEN::BBContainerSEXP {
 public:
-  BBContainerSupport(IRI_GEN::IRID n, IRI_GEN::IridiumPool &p)
+  BBContainerSupport(IRI_GEN::IRID n, IRI_GEN::IRIContext &p)
       : IRI_GEN::BBContainerSEXP(n, p) {}
 
   IndexedIterator<std::vector<IRI_GEN::IRID>> bbs() const;

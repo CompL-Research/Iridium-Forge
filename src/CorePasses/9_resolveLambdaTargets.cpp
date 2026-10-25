@@ -17,22 +17,22 @@ using namespace IRI_STRUCTURAL;
 
 using BUILD_CTX = std::unordered_map<int, std::shared_ptr<IridiumBuildContext>>;
 
-inline void patchNode(FileSupport file, IridiumPool &pool, IRID node,
+inline void patchNode(FileSupport file, IRIContext &ctx, IRID node,
                       double startScopeIDX, BUILD_CTX &iridiumBuildContext,
                       size_t &unresolvedReferences, std::vector<IRID> &res) {
   if (unresolvedReferences == 0)
     return;
-  auto args = pool.get_args(node);
+  auto args = ctx.storage.nodes.get_args(node);
 
   for (int i = 0; i < args.size(); i++) {
     auto currID = args[i];
-    auto currTag = pool[currID].tag;
+    auto currTag = IRI_NODE(ctx, currID).tag;
 
     if (currTag == IRI_GEN::Lambda) {
       IRID pb =
-          PoolBindingSEXP::create(pool, currID, -1);
+          PoolBindingSEXP::create(ctx, currID, -1);
       res.push_back(pb);
-      pool.update_arg_inplace(node, i, pb);
+      ctx.storage.nodes.update_arg_inplace(node, i, pb);
       unresolvedReferences--;
       continue;
     }
@@ -40,30 +40,30 @@ inline void patchNode(FileSupport file, IridiumPool &pool, IRID node,
     if (unresolvedReferences == 0)
       return;
 
-    patchNode(file, pool, args[i], startScopeIDX, iridiumBuildContext,
+    patchNode(file, ctx, args[i], startScopeIDX, iridiumBuildContext,
               unresolvedReferences, res);
   }
 }
 
-void _9_RLT(IridiumPool &pool, IRID fileSEXP, BUILD_CTX &iridiumBuildContext) {
-  FileSupport fileSupport(fileSEXP, pool);
+void _9_RLT(IRIContext &ctx, IRID fileSEXP, BUILD_CTX &iridiumBuildContext) {
+  FileSupport fileSupport(fileSEXP, ctx);
   for (auto [bbContID, _] : fileSupport.containers()) {
-    BBContainerSupport container(bbContID, pool);
+    BBContainerSupport container(bbContID, ctx);
     double scopeIDX = container.getScopeIDX();
     std::vector<IRID> res;
 
     for (auto [bbID, _] : container.bbs()) {
-      BBSupport bb(bbID, pool);
+      BBSupport bb(bbID, ctx);
       auto bbScopeIDX = bb.getScopeIDX();
 
       for (auto [stmtID, _] : bb.stmts()) {
         size_t unresolvedReferences = 0;
         IRI_HELPERS::countNodeOccurenceWithPredicate(
-            stmtID, &pool,
-            [&](IRID arg) { return pool[arg].tag == IRI_GEN::Lambda; },
+            stmtID, &ctx,
+            [&](IRID arg) { return IRI_NODE(ctx, arg).tag == IRI_GEN::Lambda; },
             unresolvedReferences);
         if (unresolvedReferences > 0) {
-          patchNode(fileSupport, pool, stmtID, bbScopeIDX, iridiumBuildContext,
+          patchNode(fileSupport, ctx, stmtID, bbScopeIDX, iridiumBuildContext,
                     unresolvedReferences, res);
           assert(unresolvedReferences == 0);
         }
@@ -71,8 +71,8 @@ void _9_RLT(IridiumPool &pool, IRID fileSEXP, BUILD_CTX &iridiumBuildContext) {
     }
 
     for (size_t i = 0; i < res.size(); i++) {
-      PoolBindingSEXP pbSEXP(res[i], pool);
-      pool.iris->addClosureAtScope(scopeIDX, res[i]);
+      PoolBindingSEXP pbSEXP(res[i], ctx);
+      ctx.iris->addClosureAtScope(scopeIDX, res[i]);
     }
   }
 }

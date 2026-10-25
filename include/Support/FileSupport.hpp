@@ -5,7 +5,7 @@
 namespace IRI_STRUCTURAL {
 struct FileSupport : IRI_GEN::FileSEXP {
 public:
-  FileSupport(IRI_GEN::IRID n, IRI_GEN::IridiumPool &p)
+  FileSupport(IRI_GEN::IRID n, IRI_GEN::IRIContext &p)
       : IRI_GEN::FileSEXP(n, p) {}
 
   IndexedIterator<std::vector<IRI_GEN::IRID>> containers() const;

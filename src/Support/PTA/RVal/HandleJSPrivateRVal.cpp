@@ -1,0 +1,28 @@
+// Generated Stub for IRI_TAG::JSPrivate (RVal)
+#include "Generated/IridiumTypes.h"
+#include "Support/PTA/PTAContext.hpp"
+#include "Support/PTA/PTARVALHandlers.hpp"
+#include <set>
+#include <stdexcept>
+
+namespace IRI_STRUCTURAL {
+
+/**
+ * AST Tag: JSPrivate
+ * Meta:    RVAL
+ * Arguments: (none)
+ * Flags:
+ *   - string IridiumPrimitive -> sexp.getIridiumPrimitive()
+ */
+void computeJSPrivateVals(const PTAStatementContext &ptactx, IRID node,
+                       std::set<Prakriti::NodeUID> &res_) {
+  throw std::runtime_error("PTA RVal unhandled case JSPrivate");
+  // IRI_GEN::JSPrivateSEXP sexp(node, ptactx.ctx);
+
+  // === TODO : JSPrivate ===
+  // if (sexp.hasIridiumPrimitive()) { StringID str_IridiumPrimitive = sexp.getIridiumPrimitive(); }
+
+  return;
+}
+
+} // namespace IRI_STRUCTURAL

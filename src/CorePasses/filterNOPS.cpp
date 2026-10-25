@@ -3,7 +3,7 @@
 #include "Generated/IridiumTypes.h"
 #include "Helpers.h"
 #include "Parser/IridiumBuildContext.h"
-#include "Storage/IridiumPool.h"
+#include "Storage/IRIContext.h"
 #include "Support/BBContainerSupport.hpp"
 #include "Support/BBSupport.hpp"
 #include "Support/FileSupport.hpp"
@@ -22,16 +22,16 @@ using namespace IRI_STRUCTURAL;
 
 using BUILD_CTX = std::unordered_map<int, std::shared_ptr<IridiumBuildContext>>;
 
-void _FNOPS(IridiumPool &pool, IRID fileSEXP,
+void _FNOPS(IRIContext &ctx, IRID fileSEXP,
               BUILD_CTX &iridiumBuildContext) {
-  FileSupport fileSupport(fileSEXP, pool);
+  FileSupport fileSupport(fileSEXP, ctx);
   for (auto [bbContID, _] : fileSupport.containers()) {
-    BBContainerSupport container(bbContID, pool);
+    BBContainerSupport container(bbContID, ctx);
     double scopeIDX = container.getScopeIDX();
     std::vector<IRID> res;
 
     for (auto [bbID, _] : container.bbs()) {
-      pool.remove_args_matching_tag(bbID, IRI_TAG::NOP);
+      ctx.storage.nodes.remove_args_matching_tag(bbID, IRI_TAG::NOP);
     }
   }
 }

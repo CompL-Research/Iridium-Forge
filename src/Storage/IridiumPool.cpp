@@ -1,20 +1,14 @@
 #include "Storage/IridiumPool.h"
 #include "Generated/IridiumEnums.h"
 #include "Generated/IridiumMeta.h"
-#include "Generated/IridiumTypes.h"
 #include <algorithm>
 #include <cstdint>
 #include <iostream>
 #include <stdexcept>
 #include <string>
-#ifdef DEBUG_STORAGE
-#include <iostream>
-#endif
-namespace IRI_STORAGE {
+#include <type_traits>
 
-StringID IridiumPool::getTemp() {
-  return strings.intern("<iritemp-" + std::to_string(tempIDX++) + ">");
-}
+namespace IRI_STORAGE {
 
 //
 // Pool operations
@@ -61,7 +55,7 @@ IRID IridiumPool::add_node(IRI_GEN::IRI_TAG tag, const std::vector<IRID> &args,
                   << std::endl;
         std::cerr << "Vector max_size:   " << flags_pool.max_size()
                   << std::endl;
-        // This is where the length_error is born
+        throw std::runtime_error("[Forge-IridiumPool]: Pool limit reached");
       }
 
       // Check for "Garbage" sizes (e.g., if tag metadata is corrupted)
@@ -69,12 +63,10 @@ IRID IridiumPool::add_node(IRI_GEN::IRI_TAG tag, const std::vector<IRID> &args,
         std::cerr << "[WARNING] Extremely large flag count detected for tag: "
                   << IRI_GEN::dump_tag(tag) << " (" << flags.size() << ")"
                   << std::endl;
+        throw std::runtime_error("[Forge-IridiumPool]: Likely invalid flags");
       }
-      // -------------------
 
       flags_pool.insert(flags_pool.end(), flags.begin(), flags.end());
-
-      // Record it in the map for future nodes
       flag_intern_map[flags] = node.flags_start_index;
     }
   }
@@ -87,7 +79,7 @@ IRID IridiumPool::add_node(IRI_GEN::IRI_TAG tag, const std::vector<IRID> &args,
 //
 // Node operations
 //
-const IridiumSEXP &IridiumPool::operator[](IRID id) const { return nodes[id]; }
+const IridiumSEXP &IridiumPool::get_node(IRID id) const { return nodes[id]; }
 
 void IridiumPool::update_tag(IRID id, IRI_GEN::IRI_TAG tag) {
   nodes[id].tag = tag;
@@ -193,17 +185,10 @@ void IridiumPool::add_args_to_beginning(IRID id,
   if (args.empty())
     return;
 
-  // 1. Reserve FIRST to prevent iterator/span invalidation during copies.
   args_pool.reserve(args_pool.size() + args.size() + node.num_args);
-
-  // 2. Now safe to create a view of the old arguments.
   std::span old_args(args_pool.begin() + node.args_start_index, node.num_args);
-
-  // 3. Update metadata to point to the new end of the pool.
   node.args_start_index = args_pool.size();
   node.num_args += args.size();
-
-  // 4. Use C++20 ranges to elegantly append the new, then the old.
   std::ranges::copy(args, std::back_inserter(args_pool));
   std::ranges::copy(old_args, std::back_inserter(args_pool));
 }
@@ -238,10 +223,6 @@ void IridiumPool::remove_args_matching_tag(IRID id, IRI_GEN::IRI_TAG tag) {
 
   std::span node_args(args_pool.begin() + node.args_start_index, node.num_args);
 
-  // C++20 Magic: Using a "Projection".
-  // The algorithm automatically passes the IRID into the 3rd argument (the
-  // lambda), extracts the tag, and then compares it using the 2nd argument (the
-  // predicate).
   auto [removed_begin, removed_end] = std::ranges::remove_if(
       node_args, [tag](auto node_tag) { return node_tag == tag; }, // Predicate
       [this](IRID arg_id) { return nodes[arg_id].tag; }            // Projection
@@ -256,7 +237,8 @@ void IridiumPool::update_num_args(IRID id, uint32_t num_args) {
     return;
 
   if (node.num_args < num_args)
-    throw std::runtime_error("update_num_args is only expected to shrink args inplace, not extend it!");
+    throw std::runtime_error("update_num_args is only expected to shrink args "
+                             "inplace, not extend it!");
 
   node.num_args = num_args;
 }
@@ -269,47 +251,13 @@ size_t IridiumPool::get_flags_pool_size() const {
   return flags_pool.size();
 }
 
-IridiumPool::~IridiumPool() {
-#ifdef DEBUG_STORAGE
-  if (nodes.empty())
-    return;
-
-  // 1. Calculate Capacities (Memory reserved from the OS)
-  size_t node_cap = nodes.capacity() * sizeof(IridiumSEXP);
-  size_t arg_cap = args_pool.capacity() * sizeof(IRID);
-  size_t flag_cap = flags_pool.capacity() * sizeof(FlagValue);
-  size_t total_cap = node_cap + arg_cap + flag_cap;
-
-  // 2. Calculate Used Memory (Actual active data)
-  size_t node_used = nodes.size() * sizeof(IridiumSEXP);
-  size_t arg_used = args_pool.size() * sizeof(IRID);
-  size_t flag_used = flags_pool.size() * sizeof(FlagValue);
-  size_t total_used = node_used + arg_used + flag_used;
-
-  // 3. Overall Efficiency
-  double efficiency =
-      (total_cap > 0) ? (static_cast<double>(total_used) / total_cap) * 100.0
-                      : 0.0;
-
-  // 4. Print lightweight telemetry
-  std::cout << "\n--- IridiumPool Telemetry ---" << std::endl;
-  std::cout << "Nodes: " << nodes.size() << " (" << node_used / 1024
-            << " KB used / " << node_cap / 1024 << " KB alloc)\n";
-  std::cout << "Args:  " << args_pool.size() << " (" << arg_used / 1024
-            << " KB used / " << arg_cap / 1024 << " KB alloc)\n";
-  std::cout << "Flags: " << flags_pool.size() << " (" << flag_used / 1024
-            << " KB used / " << flag_cap / 1024 << " KB alloc)\n";
-
-  std::cout << "-----------------------------" << std::endl;
-  std::cout << "Total Allocation: " << total_cap / 1024 << " KB\n";
-  std::cout << "Usage Efficiency: " << efficiency << "%\n";
-
-  if (efficiency < 70.0 && total_cap > 128 * 1024) {
-    std::cout << ">> ADVICE: High vector fragmentation. "
-                 "Consider calling reserve() upfront.\n";
-  }
-  std::cout << "-----------------------------\n" << std::endl;
-#endif
+IridiumPoolTelemetry IridiumPool::telemetry() const {
+  auto stat = [](const auto &v) {
+    using T = typename std::decay_t<decltype(v)>::value_type;
+    return PoolMemStats{v.size(), v.size() * sizeof(T),
+                        v.capacity() * sizeof(T)};
+  };
+  return {stat(nodes), stat(args_pool), stat(flags_pool)};
 }
 
 } // namespace IRI_STORAGE

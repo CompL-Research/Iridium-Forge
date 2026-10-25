@@ -6,7 +6,7 @@
 #include "Parser/IridiumBuildContext.h"
 #include "Storage/BindingsPool.h"
 #include "Storage/Config.h"
-#include "Storage/IridiumPool.h"
+#include "Storage/IRIContext.h"
 #include "Support/BBContainerSupport.hpp"
 #include "Support/BBSupport.hpp"
 #include "Support/FileSupport.hpp"
@@ -22,62 +22,62 @@ using namespace IRI_STRUCTURAL;
 
 using BUILD_CTX = std::unordered_map<int, std::shared_ptr<IridiumBuildContext>>;
 
-inline void patchNode(IridiumPool &pool, IRID node) {
-  if (pool[node].tag == IRI_GEN::CallSite) {
-    CallSiteSEXP cs(node, pool);
+inline void patchNode(IRIContext &ctx, IRID node) {
+  if (IRI_NODE(ctx, node).tag == IRI_GEN::CallSite) {
+    CallSiteSEXP cs(node, ctx);
     if (cs.hasJSDirectEval()) {
-      auto args = pool.get_args(node);
+      auto args = ctx.storage.nodes.get_args(node);
       for (int i = 1; i < args.size(); i++) {
-        patchNode(pool, args[i]);
+        patchNode(ctx, args[i]);
       }
       return;
     }
   }
 
-  if (pool[node].tag == IRI_GEN::EnvRead) {
-    EnvReadSEXP ev(node, pool);
+  if (IRI_NODE(ctx, node).tag == IRI_GEN::EnvRead) {
+    EnvReadSEXP ev(node, ctx);
     IRID obj = ev.getArg_Obj();
-    if (pool[obj].tag == IRI_GEN::RemoteEnvBinding) {
+    if (IRI_NODE(ctx, obj).tag == IRI_GEN::RemoteEnvBinding) {
       ev.setTAINTED();
-      pool[obj].dumpFlat(std::cerr, &pool);
+      IRI_NODE(ctx, obj).dumpFlat(std::cerr, &ctx);
       throw std::runtime_error("IRI build failed ::TODO:: Eval Unstable EnvRead: ");
     }
 
-    if (pool[obj].tag == IRI_GEN::GlobalBinding) {
-      GlobalBindingSEXP gb(obj, pool);
+    if (IRI_NODE(ctx, obj).tag == IRI_GEN::GlobalBinding) {
+      GlobalBindingSEXP gb(obj, ctx);
       throw std::runtime_error("IRI build failed ::TODO:: Eval Unstable EnvRead: ");
     }
 
-    if (pool[obj].tag == IRI_GEN::ScriptBinding) {
+    if (IRI_NODE(ctx, obj).tag == IRI_GEN::ScriptBinding) {
       throw std::runtime_error("IRI build failed ::TODO:: Eval Unstable EnvRead: ");
     }
     return;
   }
-  auto args = pool.get_args(node);
+  auto args = ctx.storage.nodes.get_args(node);
   for (int i = 0; i < args.size(); i++) {
-    patchNode(pool, args[i]);
+    patchNode(ctx, args[i]);
   }
 }
 
-void _21_TER(IRI_STORAGE::IridiumPool &pool, IRI_STORAGE::IRID fileSEXP,
+void _21_TER(IRI_STORAGE::IRIContext &ctx, IRI_STORAGE::IRID fileSEXP,
              BUILD_CTX &iridiumBuildContext) {
 
-  FileSupport file(fileSEXP, pool);
+  FileSupport file(fileSEXP, ctx);
   for (auto [bbcID, _] : file.containers()) {
-    BBContainerSupport bbc(bbcID, pool);
-    if (bbc.hasSTRICT() || pool.iris->isTopLevelScope(bbc.getScopeIDX()))
+    BBContainerSupport bbc(bbcID, ctx);
+    if (bbc.hasSTRICT() || ctx.iris->isTopLevelScope(bbc.getScopeIDX()))
       continue;
 
     for (auto [bbID, _] : bbc.bbs()) {
-      BBSupport bb(bbID, pool);
+      BBSupport bb(bbID, ctx);
 
-      if (!pool.iris->mayReadFromATaintedScope(bb.getScopeIDX())) {
+      if (!ctx.iris->mayReadFromATaintedScope(bb.getScopeIDX())) {
         // std::cout << "mayReadFromATaintedScope fail:" << bb.getScopeIDX() << std::endl;
         continue;
       }
 
       for (auto [stmtID, stmtOffset] : bb.stmts()) {
-        IRI_TAG stmtTAG = pool[stmtID].tag;
+        IRI_TAG stmtTAG = IRI_NODE(ctx, stmtID).tag;
 
         if (stmtTAG == IRI_GEN::GWrite) {
           throw std::runtime_error("IRI build failed ::TODO:: Eval Unstable GWrite");
@@ -87,7 +87,7 @@ void _21_TER(IRI_STORAGE::IridiumPool &pool, IRI_STORAGE::IRID fileSEXP,
           throw std::runtime_error("IRI build failed ::TODO:: Eval Unstable RWrite");
         }
 
-        patchNode(pool, stmtID);
+        patchNode(ctx, stmtID);
       }
     }
   }

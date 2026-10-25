@@ -1,10 +1,10 @@
 #pragma once
 
-#include "Support/AbstractInterpretation.hpp"
 #include "Analysis/PassManager.h"
 #include "Generated/IridiumTypes.h"
-#include "Support/IRIS.hpp"
+#include "Support/AbstractInterpretation.hpp"
 #include "Support/BBContainerSupport.hpp"
+#include "Support/IRIS.hpp"
 #include <iostream>
 #include <memory>
 
@@ -14,11 +14,7 @@ namespace IRI_STRUCTURAL {
 // 1. TDZ Lattice Definition
 // ============================================================================
 struct TDZLattice {
-  enum Kind {
-    TOP,
-    TDZ,
-    SAFE
-  };
+  enum Kind { TOP, TDZ, SAFE };
 
   Kind kind = TOP;
 
@@ -29,25 +25,21 @@ struct TDZLattice {
   static TDZLattice top() { return TDZLattice(TOP); }
 
   // Lattice join operator (Least Upper Bound ⊔)
-  void joinWith(const TDZLattice& other) {
+  [[nodiscard]] TDZLattice joinWith(const TDZLattice &other) const {
     if (kind == TOP) {
-      kind = other.kind;
-      return;
+      return other;
     }
     if (other.kind == TOP) {
-      return;
+      return *this;
     }
     // If either path could be TDZ, the result must be TDZ (over-approximation)
     if (kind == TDZ || other.kind == TDZ) {
-      kind = TDZ;
-    } else {
-      kind = SAFE;
+      return TDZLattice(TDZ);
     }
+    return TDZLattice(SAFE);
   }
 
-  bool operator==(const TDZLattice& other) const {
-    return kind == other.kind;
-  }
+  bool operator==(const TDZLattice &other) const { return kind == other.kind; }
 };
 
 // ============================================================================
@@ -61,10 +53,12 @@ private:
 public:
   // Default constructor creates an unreachable/unvisited state
   TDZState() : is_unreachable(true) {}
-  explicit TDZState(ImmutableDataMap<IRID, TDZLattice> bindings, bool unreachable = false)
+  explicit TDZState(ImmutableDataMap<IRID, TDZLattice> bindings,
+                    bool unreachable = false)
       : envBindings(std::move(bindings)), is_unreachable(unreachable) {}
 
-  // Solver-required interface: Bottom of the join-semilattice represents unvisited/unreachable
+  // Solver-required interface: Bottom of the join-semilattice represents
+  // unvisited/unreachable
   static TDZState bottom() {
     return TDZState(); // Default constructor creates unreachable state
   }
@@ -75,42 +69,51 @@ public:
 
   bool isUnreachable() const { return is_unreachable; }
 
-  void dump(IRI_STORAGE::IridiumPool &pool, std::ostream &oss) const {
+  void dump(IRI_STORAGE::IRIContext &ctx, std::ostream &oss) const {
     if (is_unreachable) {
       oss << "<Unreachable>";
       return;
     }
     oss << "{";
     bool first = true;
-    for (const auto& [bID, lattice] : envBindings.getRawMap()) {
-      if (!first) oss << ", ";
+    for (const auto &[bID, lattice] : envBindings.getRawMap()) {
+      if (!first)
+        oss << ", ";
       first = false;
-      if (pool[bID].tag == IRI_GEN::EnvBinding) {
-        IRI_GEN::EnvBindingSEXP eb(bID, pool);
-        oss << pool.strings.get(eb.getNAME());
+      if (IRI_NODE(ctx, bID).tag == IRI_GEN::EnvBinding) {
+        IRI_GEN::EnvBindingSEXP eb(bID, ctx);
+        oss << ctx.storage.strings.get(eb.getNAME());
       } else {
         oss << "IRID(" << bID << ")";
       }
       oss << ": ";
-      if (lattice.kind == TDZLattice::TOP) oss << "TOP";
-      else if (lattice.kind == TDZLattice::TDZ) oss << "TDZ";
-      else if (lattice.kind == TDZLattice::SAFE) oss << "SAFE";
+      if (lattice.kind == TDZLattice::TOP)
+        oss << "TOP";
+      else if (lattice.kind == TDZLattice::TDZ)
+        oss << "TDZ";
+      else if (lattice.kind == TDZLattice::SAFE)
+        oss << "SAFE";
     }
     oss << "}";
   }
 
   // Lattice join for states
-  TDZState joinWith(const TDZState& other) const {
-    if (is_unreachable) return other;
-    if (other.is_unreachable) return *this;
-    if (*this == other) return *this;
+  [[nodiscard]] TDZState joinWith(const TDZState &other) const {
+    if (is_unreachable)
+      return other;
+    if (other.is_unreachable)
+      return *this;
+    if (*this == other)
+      return *this;
 
     return TDZState(envBindings.joinWith(other.envBindings), false);
   }
 
-  bool operator==(const TDZState& other) const {
-    if (is_unreachable != other.is_unreachable) return false;
-    if (is_unreachable) return true;
+  bool operator==(const TDZState &other) const {
+    if (is_unreachable != other.is_unreachable)
+      return false;
+    if (is_unreachable)
+      return true;
     return envBindings == other.envBindings;
   }
 
@@ -130,27 +133,29 @@ public:
 // ============================================================================
 class TDZATransfer : public TransferFunction<TDZState> {
 public:
-  TDZState transferStatement(const IRIStatement& stmt, const TDZState& incomingState) override {
+  TDZState transferStatement(const IRIStatement &stmt,
+                             const TDZState &incomingState) override {
     if (incomingState.isUnreachable()) {
       return TDZState::bottom(); // Unreachable block state propagation
     }
 
     TDZState nextState = incomingState;
 
-    auto &pool = stmt.bb->pool;
-    auto tag = pool[stmt.id].tag;
+    auto &ctx = stmt.bb->ctx;
+    auto tag = IRI_NODE(ctx, stmt.id).tag;
     // Predicates can probably be much simpler,
     // by construction setting a value to NUBD will
     // be at scope boundaries anyway.
     // So any write, which is not NUBD just transitions the state to SAFE.
     // Even if its a write in TDZ zone, subsequent writes can be assumed as safe
-    // because the check would need to pass for the following code to be valid anyway.
+    // because the check would need to pass for the following code to be valid
+    // anyway.
     if (tag == IRI_GEN::LWrite) {
-      IRI_GEN::LWriteSEXP lw(stmt.id, pool);
+      IRI_GEN::LWriteSEXP lw(stmt.id, ctx);
 
       auto rval = lw.getArg_RVal();
       auto lval = lw.getArg_LValTarget();
-      if (pool[rval].tag == IRI_GEN::JSNUBD) {
+      if (IRI_NODE(ctx, rval).tag == IRI_GEN::JSNUBD) {
         nextState = nextState.setLattice(lval, TDZLattice(TDZLattice::TDZ));
       } else {
         nextState = nextState.setLattice(lval, TDZLattice(TDZLattice::SAFE));
@@ -159,30 +164,34 @@ public:
       // if (lw.hasINIT()) {
       //   auto rval = lw.getArg_RVal();
       //   auto lval = lw.getArg_LValTarget();
-      //   if (pool[rval].tag == IRI_GEN::JSNUBD) {
-      //     nextState = nextState.setLattice(lval, TDZLattice(TDZLattice::TDZ));
+      //   if (IRI_NODE(ctx, rval).tag == IRI_GEN::JSNUBD) {
+      //     nextState = nextState.setLattice(lval,
+      //     TDZLattice(TDZLattice::TDZ));
       //   } else {
-      //     nextState = nextState.setLattice(lval, TDZLattice(TDZLattice::SAFE));
+      //     nextState = nextState.setLattice(lval,
+      //     TDZLattice(TDZLattice::SAFE));
       //   }
       // }
     } else if (tag == IRI_GEN::CompoundAssn) {
-      auto args = pool.get_args(stmt.id);
+      auto args = ctx.storage.nodes.get_args(stmt.id);
       assert(args.size() > 1);
       IRID rval = args[0];
       for (size_t i = 1; i < args.size(); i++) {
         IRID currWriteID = args[i];
-        if (pool[currWriteID].tag == IRI_GEN::LWrite) {
-          IRI_GEN::LWriteSEXP lw(currWriteID, pool);
+        if (IRI_NODE(ctx, currWriteID).tag == IRI_GEN::LWrite) {
+          IRI_GEN::LWriteSEXP lw(currWriteID, ctx);
 
           auto lval = lw.getArg_LValTarget();
           nextState = nextState.setLattice(lval, TDZLattice(TDZLattice::SAFE));
 
           // if (lw.hasINIT()) {
           //   auto lval = lw.getArg_LValTarget();
-          //   if (pool[rval].tag == IRI_GEN::JSNUBD) {
-          //     nextState = nextState.setLattice(lval, TDZLattice(TDZLattice::TDZ));
+          //   if (IRI_NODE(ctx, rval).tag == IRI_GEN::JSNUBD) {
+          //     nextState = nextState.setLattice(lval,
+          //     TDZLattice(TDZLattice::TDZ));
           //   } else {
-          //     nextState = nextState.setLattice(lval, TDZLattice(TDZLattice::SAFE));
+          //     nextState = nextState.setLattice(lval,
+          //     TDZLattice(TDZLattice::SAFE));
           //   }
           // }
         }
@@ -192,7 +201,8 @@ public:
     return nextState;
   }
 
-  TDZState transferEdge(BBIDX from, BBIDX to, const TDZState& exitState) override {
+  TDZState transferEdge(BBIDX from, BBIDX to,
+                        const TDZState &exitState) override {
     // Optionally refine state based on conditional branch targets
     return exitState;
   }
@@ -208,32 +218,35 @@ private:
 
 public:
   TDZAnalysisResult() = default;
-  TDZAnalysisResult(std::shared_ptr<TDZATransfer> t, std::shared_ptr<DataflowSolver<TDZState>> s)
+  TDZAnalysisResult(std::shared_ptr<TDZATransfer> t,
+                    std::shared_ptr<DataflowSolver<TDZState>> s)
       : transfer(std::move(t)), solver(std::move(s)) {}
 
-  std::string getAnalysisName() const override {
-    return "TDZ";
-  }
+  std::string getAnalysisName() const override { return "TDZ"; }
 
-  void dumpStateAtStatement(const IRIStatement& stmt, IRI_STORAGE::IridiumPool& pool, std::ostream& os) const override {
+  void dumpStateAtStatement(const IRIStatement &stmt,
+                            IRI_STORAGE::IRIContext &ctx,
+                            std::ostream &os) const override {
     TDZState state = queryStateAtStatement(stmt);
-    state.dump(pool, os);
+    state.dump(ctx, os);
   }
 
-  void dumpBlockEntryState(BBIDX block, IRI_STORAGE::IridiumPool& pool, std::ostream& os) const override {
-    const TDZState& state = getBlockEntryState(block);
-    state.dump(pool, os);
+  void dumpBlockEntryState(BBIDX block, IRI_STORAGE::IRIContext &ctx,
+                           std::ostream &os) const override {
+    const TDZState &state = getBlockEntryState(block);
+    state.dump(ctx, os);
   }
 
-  void dumpBlockExitState(BBIDX block, IRI_STORAGE::IridiumPool& pool, std::ostream& os) const override {
+  void dumpBlockExitState(BBIDX block, IRI_STORAGE::IRIContext &ctx,
+                          std::ostream &os) const override {
     os << "<ExitStateNotTracked>";
   }
 
-  const TDZState& getBlockEntryState(BBIDX block) const {
+  const TDZState &getBlockEntryState(BBIDX block) const {
     return solver->getBlockEntryState(block);
   }
 
-  TDZState queryStateAtStatement(const IRIStatement& stmt) const {
+  TDZState queryStateAtStatement(const IRIStatement &stmt) const {
     return solver->queryStateAtStatement(stmt);
   }
 };
@@ -242,13 +255,13 @@ struct TDZAnalysis {
   static inline char ID = 0;
   using Result = TDZAnalysisResult;
 
-  TDZAnalysisResult run(IRICFG& cfg, AnalysisManager& am) {
+  TDZAnalysisResult run(IRICFG &cfg, AnalysisManager &am) {
     auto transfer = std::make_shared<TDZATransfer>();
     auto solver = std::make_shared<DataflowSolver<TDZState>>(cfg, *transfer);
 
     // Initial State
     double headScope = cfg.nodeMap.at(cfg.entry_block)->SCOPE;
-    auto bindings = cfg.pool.iris->getEnvBindingsInClosure(headScope);
+    auto bindings = cfg.ctx.iris->getEnvBindingsInClosure(headScope);
     TDZState entryState = TDZState::reachableEmpty();
     for (auto bID : bindings) {
       entryState = entryState.setLattice(bID, TDZLattice::top());

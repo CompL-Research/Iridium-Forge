@@ -3,20 +3,20 @@
 #include "Generated/IridiumTypes.h"
 #include "Helpers.h"
 #include "Storage/Config.h"
-#include "Storage/IridiumPool.h"
+#include "Storage/IRIContext.h"
 #include "Support/BBContainerSupport.hpp"
 #include "Support/BBSupport.hpp"
 #include "Support/IRIS.hpp"
+#include <algorithm>
 #include <cassert> // For assert()
 #include <fstream>
 #include <functional>
 #include <iostream>
 #include <memory>
+#include <set>
 #include <stdexcept> // For std::runtime_error
 #include <string>
 #include <vector>
-#include <algorithm>
-#include <set>
 
 namespace IRI_STRUCTURAL {
 using namespace IRI_STORAGE;
@@ -24,8 +24,8 @@ using namespace IRI_GEN;
 
 IRIStatement::IRIStatement(IRID id, IRIBB *b) : id(id), bb(b) {}
 
-IRIBB::IRIBB(double ss, double i, IRICFG *c, IRI_STORAGE::IridiumPool &p)
-    : SCOPE(ss), IDX(i), closure(c), pool(p) {}
+IRIBB::IRIBB(double ss, double i, IRICFG *c, IRI_STORAGE::IRIContext &p)
+    : SCOPE(ss), IDX(i), closure(c), ctx(p) {}
 
 IRIBB::~IRIBB() {
   IRIStatement *curr = head;
@@ -40,6 +40,7 @@ IRIBB::~IRIBB() {
 }
 
 void IRIBB::append(IRIStatement *inst) {
+  closure->markDirty();
   if (head == nullptr) {
     head = inst;
     inst->prev = nullptr;
@@ -56,7 +57,9 @@ void IRIBB::append(IRIStatement *inst) {
 }
 
 void IRIBB::remove(IRIStatement *inst) {
-  if (inst == nullptr) return;
+  closure->markDirty();
+  if (inst == nullptr)
+    return;
   if (inst == tail) {
     tail = nullptr;
     delete inst;
@@ -74,7 +77,9 @@ void IRIBB::remove(IRIStatement *inst) {
 }
 
 void IRIBB::insertBefore(IRIStatement *inst, IRIStatement *before) {
-  if (inst == nullptr) return;
+  closure->markDirty();
+  if (inst == nullptr)
+    return;
   if (before == nullptr) {
     append(inst);
     return;
@@ -90,7 +95,9 @@ void IRIBB::insertBefore(IRIStatement *inst, IRIStatement *before) {
 }
 
 void IRIBB::insertAfter(IRIStatement *inst, IRIStatement *after) {
-  if (inst == nullptr) return;
+  closure->markDirty();
+  if (inst == nullptr)
+    return;
   if (after == nullptr) {
     inst->next = head;
     inst->prev = nullptr;
@@ -109,7 +116,9 @@ void IRIBB::insertAfter(IRIStatement *inst, IRIStatement *after) {
 }
 
 void IRIBB::replace(IRIStatement *oldInst, IRIStatement *newInst) {
-  if (oldInst == nullptr || newInst == nullptr) return;
+  closure->markDirty();
+  if (oldInst == nullptr || newInst == nullptr)
+    return;
   if (oldInst == tail) {
     tail = newInst;
     newInst->prev = nullptr;
@@ -130,7 +139,7 @@ void IRIBB::replace(IRIStatement *oldInst, IRIStatement *newInst) {
   delete oldInst;
 }
 
-static bool isValidBBTerminal(IRI_GEN::IRI_TAG tag, IridiumPool &pool) {
+static bool isValidBBTerminal(IRI_GEN::IRI_TAG tag, IRIContext &ctx) {
   if (ReturnAsync == tag)
     return true;
   if (Goto == tag)
@@ -148,56 +157,131 @@ static bool isValidBBTerminal(IRI_GEN::IRI_TAG tag, IridiumPool &pool) {
   return false;
 }
 
-void IRIBB::setTerminal(IRID stmtID) {
-  if (tail != nullptr) {
-    // Clear existing edges
-    for (auto & e : closure->successors[IDX]) {
-      closure->predecessors[e].erase(IDX);
-    }
-    closure->successors[IDX].clear();
-    // Updating a terminal deletes the existing
-    delete tail;
+void IRIBB::clearEdges() {
+  closure->markDirty();
+  for (auto &e : closure->successors[IDX]) {
+    closure->predecessors[e].erase(IDX);
+  }
+  closure->successors[IDX].clear();
+}
+
+void IRIBB::addEdge(BBIDX succ) {
+  closure->markDirty();
+  closure->successors[IDX].insert(succ);
+  closure->predecessors[succ].insert(IDX);
+}
+
+void IRIBB::moveTerminalTo(IRIBB *dst) {
+  closure->markDirty();
+  if (tail == nullptr) {
+    throw std::runtime_error("moveTerminalTo: source has no terminal");
+  }
+  if (dst->tail != nullptr) {
+    throw std::runtime_error("moveTerminalTo: dst already has a terminal");
   }
 
-  IRI_TAG stmtTAG = pool[stmtID].tag;
-  assert(isValidBBTerminal(stmtTAG, pool));
+  bool wasRet = IRI_NODE(ctx, tail->id).tag == IRI_GEN::Ret;
+
+  dst->tail = tail;
+  dst->tail->bb = dst;
+  dst->tail->prev = nullptr;
+  dst->tail->next = nullptr;
+  tail = nullptr;
+
+  auto succs = closure->successors[IDX];
+  clearEdges();
+  for (auto s : succs) {
+    dst->addEdge(s);
+  }
+
+  dst->FINTARGET = FINTARGET;
+  FINTARGET = -1;
+
+  // A finalizer body's Ret may be pushed into a fresh BB by a later split;
+  // whoever asks for that body's exit must now be told about the new owner.
+  if (wasRet) {
+    closure->retagFinalizerRet(IDX, dst->IDX);
+  }
+}
+
+IRIBB *IRICFG::makeBB(ScopeIDX scope) {
+  markDirty();
+  auto idx = ++ctx.lastBBIDX;
+  nodeMap[idx] = std::make_unique<IRIBB>(scope, idx, this, ctx);
+  IRIBB *bb = nodeMap[idx].get();
+  // Was missing on finalizer-split post-blocks: they inherit the scope, so
+  // they must inherit the handler too.
+  bb->EXCEPTION = ctx.iris->getExceptionTargetForScope(scope);
+  return bb;
+}
+
+BBIDX IRICFG::finalizerRetOf(BBIDX entryIDX) {
+  auto it = finalizerRetBB.find(entryIDX);
+  if (it != finalizerRetBB.end()) {
+    return it->second;
+  }
+  BBIDX ret = ctx.iris->getFinalizerRetBBIDX(entryIDX);
+  finalizerRetBB[entryIDX] = ret;
+  return ret;
+}
+
+void IRICFG::retagFinalizerRet(BBIDX from, BBIDX to) {
+  markDirty();
+  for (auto &e : finalizerRetBB) {
+    if (e.second == from) {
+      e.second = to;
+    }
+  }
+}
+
+void IRIBB::setTerminal(IRID stmtID) {
+  closure->markDirty();
+  if (tail != nullptr) {
+    clearEdges();
+    delete tail;
+    tail = nullptr;
+  }
+
+  IRI_TAG stmtTAG = IRI_NODE(ctx, stmtID).tag;
+  assert(isValidBBTerminal(stmtTAG, ctx));
   switch (stmtTAG) {
   case IRI_GEN::Return:
   case IRI_GEN::ReturnAsync: {
     IRID rValTarget;
     if (stmtTAG == Return) {
-      ReturnSEXP r(stmtID, pool);
+      ReturnSEXP r(stmtID, ctx);
       rValTarget = r.getArg_Obj();
     } else {
-      ReturnAsyncSEXP rAsync(stmtID, pool);
+      ReturnAsyncSEXP rAsync(stmtID, ctx);
       rValTarget = rAsync.getArg_RetVal();
     }
 
-    append(new IRIStatement(LWriteSEXP::create(pool, closure->retCTX,
-                                               rValTarget, false, true, false),
+    append(new IRIStatement(LWriteSEXP::create(ctx, closure->retCTX, rValTarget,
+                                               false, true, false),
                             this));
 
-    tail = new IRIStatement(GotoSEXP::create(pool, closure->exit_block), this);
-
-    closure->successors[IDX].insert(closure->exit_block);
-    closure->predecessors[closure->exit_block].insert(IDX);
+    tail = new IRIStatement(GotoSEXP::create(ctx, false, closure->exit_block),
+                            this);
+    addEdge(closure->exit_block);
     break;
   }
   case IRI_GEN::Goto: {
     tail = new IRIStatement(stmtID, this);
-    GotoSEXP gotoSEXP(stmtID, pool);
-    closure->successors[IDX].insert(gotoSEXP.getIDX());
-    closure->predecessors[gotoSEXP.getIDX()].insert(IDX);
+    GotoSEXP gotoSEXP(stmtID, ctx);
+    addEdge(gotoSEXP.getIDX());
     break;
   }
   case IRI_GEN::IfElseJump: {
     tail = new IRIStatement(stmtID, this);
-    IfElseJumpSEXP ieJump(stmtID, pool);
-    closure->successors[IDX].insert(ieJump.getTRUE());
-    closure->predecessors[ieJump.getTRUE()].insert(IDX);
-
-    closure->successors[IDX].insert(ieJump.getFALSE());
-    closure->predecessors[ieJump.getFALSE()].insert(IDX);
+    IfElseJumpSEXP ieJump(stmtID, ctx);
+    addEdge(ieJump.getTRUE());
+    addEdge(ieJump.getFALSE());
+    break;
+  }
+  case IRI_GEN::InvokeFinalizer: {
+    tail = new IRIStatement(stmtID, this);
+    InvokeFinalizerSEXP inv(stmtID, ctx);
+    addEdge(inv.getIDX());
     break;
   }
   case IRI_GEN::Ret: {
@@ -205,10 +289,6 @@ void IRIBB::setTerminal(IRID stmtID) {
     break;
   }
   case IRI_GEN::Throw: {
-    tail = new IRIStatement(stmtID, this);
-    break;
-  }
-  case IRI_GEN::InvokeFinalizer: {
     tail = new IRIStatement(stmtID, this);
     break;
   }
@@ -231,60 +311,113 @@ static std::string escapeDoubleQuotes(const std::string &input) {
   return ss.str();
 }
 
+void IRIStatement::dumpFlat(std::ostream &oss, IRIContext *ctx, int depth,
+                            bool full) const {
+  IRI_NODE(bb->ctx, id).dumpFlat(oss, &bb->ctx, depth, full);
+}
+
 void IRIBB::dumpFlat(std::ostream &oss) const {
   IRIStatement *curr = head;
   while (curr != nullptr) {
     std::stringstream ss;
-    pool[curr->id].dumpFlat(ss, &pool, 0, false);
+    IRI_NODE(ctx, curr->id).dumpFlat(ss, &ctx, 0, false);
     oss << escapeDoubleQuotes(ss.str()) << "\\l";
     curr = curr->next;
   }
 
   if (tail) {
     std::stringstream ss;
-    pool[tail->id].dumpFlat(ss, &pool, 0, false);
+    IRI_NODE(ctx, tail->id).dumpFlat(ss, &ctx, 0, false);
     oss << escapeDoubleQuotes(ss.str());
   }
 }
 
-IRICFG::IRICFG(IRI_STORAGE::IRID i, IRI_STORAGE::IridiumPool &p)
-    : id(i), pool(p) {
-  BBContainerSupport bbc(id, pool);
+void IRICFG::verify() {
+  for (auto &e : nodeMap) {
+    IRIBB *bb = e.second.get();
+
+    if (bb->tail == nullptr) {
+      throw std::runtime_error("BB has no terminal");
+    }
+
+    IRIStatement *curr = bb->head;
+    while (curr != nullptr) {
+      IRI_GEN::IRI_META currMeta =
+          IRI_GEN::get_meta(IRI_NODE(ctx, curr->id).tag);
+      if (currMeta != IRI_GEN::IRI_META::STMT &&
+          currMeta != IRI_GEN::IRI_META::AMP) {
+        std::cerr << IRI_GEN::dump_tag(IRI_NODE(ctx, curr->id).tag)
+                  << " expected STMT, found: " << std::to_string(currMeta)
+                  << std::endl;
+        throw std::runtime_error("STMT err");
+      }
+      if (curr->bb != bb) {
+        throw std::runtime_error("statement bb back-pointer is stale");
+      }
+      curr = curr->next;
+    }
+    if (bb->tail->bb != bb) {
+      throw std::runtime_error("terminal bb back-pointer is stale");
+    }
+
+    // This is the invariant that broke: a Ret with no dispatch set means its
+    // invoke sites became unreachable and commit() will silently drop them.
+    if (IRI_NODE(ctx, bb->tail->id).tag == IRI_GEN::Ret &&
+        successors[bb->IDX].empty()) {
+      throw std::runtime_error("Ret terminal with empty dispatch set");
+    }
+
+    for (auto s : successors[bb->IDX]) {
+      if (!nodeMap.contains(s)) {
+        throw std::runtime_error("successor missing from nodeMap");
+      }
+      if (!predecessors[s].contains(bb->IDX)) {
+        throw std::runtime_error("successor/predecessor asymmetry");
+      }
+    }
+    if (bb->FINTARGET > -1 && !nodeMap.contains(bb->FINTARGET)) {
+      throw std::runtime_error("FINTARGET missing from nodeMap");
+    }
+    if (bb->EXCEPTION > -1 && !nodeMap.contains(bb->EXCEPTION)) {
+      throw std::runtime_error("EXCEPTION missing from nodeMap");
+    }
+  }
+}
+
+IRICFG::IRICFG(IRI_STORAGE::IRID i, IRI_STORAGE::IRIContext &p)
+    : id(i), ctx(p) {
+  BBContainerSupport bbc(id, ctx);
   // Entry BBIDX
   bool wasEntrySet = false;
   entry_block = bbc.getStartBBIDX();
 
   // Common Return Path
-  IRI_STORAGE::StringID commonRet = pool.strings.intern("<common-ret>");
-  retCTX = pool.iris
+  IRI_STORAGE::StringID commonRet = ctx.storage.strings.intern("<common-ret>");
+  retCTX = ctx.iris
                ->declareLBinding(bbc.getScopeIDX(), commonRet,
                                  IRI_GEN::IRI_FLAG::JSVAR)
                .ID;
-  exit_block = ++pool.lastBBIDX;
-  nodeMap[exit_block] =
-      std::make_unique<IRIBB>(bbc.getScopeIDX(), exit_block, this, pool);
+  IRIBB *exitBB = makeBB(bbc.getScopeIDX());
+  exit_block = exitBB->IDX;
 
   if (bbc.hasASYNC() || bbc.hasGENERATOR()) {
-    IRIStatement *retStmt = new IRIStatement(
-        ReturnAsyncSEXP::create(pool,
-                                EnvReadSEXP::create(pool, retCTX, true, false)),
-        nodeMap[exit_block].get());
-    nodeMap[exit_block]->tail = retStmt;
+    exitBB->tail = new IRIStatement(
+        ReturnAsyncSEXP::create(ctx,
+                                EnvReadSEXP::create(ctx, retCTX, true, false)),
+        exitBB);
   } else {
-    IRIStatement *retStmt = new IRIStatement(
-        ReturnSEXP::create(pool,
-                           EnvReadSEXP::create(pool, retCTX, true, false)),
-        nodeMap[exit_block].get());
-    nodeMap[exit_block]->tail = retStmt;
+    exitBB->tail = new IRIStatement(
+        ReturnSEXP::create(ctx, EnvReadSEXP::create(ctx, retCTX, true, false)),
+        exitBB);
   }
 
   // Add all the basic blocks to the graph
   for (auto [bbID, bbOffset] : bbc.bbs()) {
-    BBSupport bb(bbID, pool);
+    BBSupport bb(bbID, ctx);
     auto currBBIDX = bb.getIDX();
 
     nodeMap[currBBIDX] =
-        std::make_unique<IRIBB>(bb.getScopeIDX(), currBBIDX, this, pool);
+        std::make_unique<IRIBB>(bb.getScopeIDX(), currBBIDX, this, ctx);
     if (currBBIDX == entry_block) {
       assert(!wasEntrySet);
       wasEntrySet = true;
@@ -295,14 +428,13 @@ IRICFG::IRICFG(IRI_STORAGE::IRID i, IRI_STORAGE::IridiumPool &p)
 
   // Populate statements and establish edges
   for (auto [bbID, bbOffset] : bbc.bbs()) {
-    BBSupport bbSupp(bbID, pool);
+    BBSupport bbSupp(bbID, ctx);
     auto currBBIDX = bbSupp.getIDX();
     IRIBB *bb = nodeMap[currBBIDX].get();
-    bb->EXCEPTION = pool.iris->getExceptionTargetForScope(bb->SCOPE);
+    bb->EXCEPTION = ctx.iris->getExceptionTargetForScope(bb->SCOPE);
     auto stmts = bbSupp.stmtsVec();
     for (size_t i = 0; i < stmts.size(); i++) {
       IRID stmtID = stmts[i];
-      IRI_TAG stmtTAG = pool[stmtID].tag;
       if (i + 1 == stmts.size()) {
         bb->setTerminal(stmtID);
       } else {
@@ -312,63 +444,51 @@ IRICFG::IRICFG(IRI_STORAGE::IRID i, IRI_STORAGE::IridiumPool &p)
   }
 
   // Split BBs at Finalizer Calls
-  std::set<IRIBB *> worklist;
-  for (auto & e : nodeMap) {
-    worklist.insert(e.second.get());
+  //
+  // Worklists are keyed on BBIDX, not IRIBB*: pointer ordering makes split
+  // order (and therefore every synthetic BBIDX) vary run to run.
+  std::set<BBIDX> worklist;
+  for (auto &e : nodeMap) {
+    worklist.insert(e.first);
   }
   while (!worklist.empty()) {
-    IRIBB *bb = *worklist.begin();
+    BBIDX bbIDX = *worklist.begin();
     worklist.erase(worklist.begin());
+    IRIBB *bb = nodeMap[bbIDX].get();
 
     IRIStatement *curr = bb->head;
     while (curr != nullptr) {
-      if (pool[curr->id].tag == IRI_GEN::InvokeFinalizer) {
+      if (IRI_NODE(ctx, curr->id).tag == IRI_GEN::InvokeFinalizer) {
         break;
       }
       curr = curr->next;
     }
 
     if (curr != nullptr) {
-      InvokeFinalizerSEXP ivTarget(curr->id, pool);
-      double finalizerEntryIDX = ivTarget.getIDX();
-      double finalizerExitIDX = pool.iris->getFinalizerRetBBIDX(finalizerEntryIDX);
+      InvokeFinalizerSEXP ivTarget(curr->id, ctx);
+      auto finalizerEntryIDX = ivTarget.getIDX();
+      auto finalizerExitIDX = finalizerRetOf(finalizerEntryIDX);
       if (!nodeMap.contains(finalizerEntryIDX)) {
         throw std::runtime_error("finalizerEntryIDX missing");
       }
-
       if (!nodeMap.contains(finalizerExitIDX)) {
         throw std::runtime_error("finalizerExitIDX missing");
       }
 
-      // Prep PostBB
-      auto postBBIDX = ++pool.lastBBIDX;
-      nodeMap[postBBIDX] =
-          std::make_unique<IRIBB>(bb->SCOPE, postBBIDX, this, pool);
-      IRIBB *postBB = nodeMap[postBBIDX].get();
-      worklist.insert(postBB);
-      postBB->head = curr->next;
-      postBB->tail = new IRIStatement(bb->tail->id, postBB); // Pass postBB, not bb
+      IRIBB *postBB = makeBB(bb->SCOPE);
+      auto postBBIDX = postBB->IDX;
+      worklist.insert(postBBIDX);
 
+      // Everything after the invoke moves to postBB...
+      postBB->head = curr->next;
       if (postBB->head != nullptr) {
         postBB->head->prev = nullptr;
         for (IRIStatement *s = postBB->head; s != nullptr; s = s->next) {
           s->bb = postBB;
         }
       }
-
-      // Forward successors of the currentBB to PostBB
-      for (auto & s : successors[bb->IDX]) {
-        successors[postBBIDX].insert(s);
-        predecessors[s].insert(postBBIDX);
-      }
-
-      bool finalizerDynamicRet = pool[nodeMap[finalizerExitIDX]->tail->id].tag == Ret;
-
-      // Create Edge from finalizer BB Exit to PostBB
-      if (finalizerDynamicRet) {
-        successors[finalizerExitIDX].insert(postBBIDX);
-        predecessors[postBBIDX].insert(finalizerExitIDX);
-      }
+      // ...including the terminal, its out-edges and its FINTARGET.
+      bb->moveTerminalTo(postBB);
 
       // Make the prev stmt the last
       if (curr->prev) {
@@ -377,32 +497,90 @@ IRICFG::IRICFG(IRI_STORAGE::IRID i, IRI_STORAGE::IridiumPool &p)
         bb->head = nullptr;
       }
 
-      // Set the invoke finalizer as the terminal
+      // Set the invoke finalizer as the terminal. The bb -> finalizerEntry
+      // edge is registered by setTerminal now, no manual fixup.
       bb->setTerminal(curr->id);
+      delete curr;
+
+      bool finalizerDynamicRet =
+          IRI_NODE(ctx, nodeMap[finalizerExitIDX]->tail->id).tag == Ret;
       if (finalizerDynamicRet) {
         bb->FINTARGET = postBBIDX;
+        // Edge from the finalizer body's Ret back to this invoke's post block.
+        nodeMap[finalizerExitIDX]->addEdge(postBBIDX);
       } else {
         bb->FINTARGET = -2;
       }
-      delete curr;
-      successors[bb->IDX].insert(finalizerEntryIDX);
-      predecessors[finalizerEntryIDX].insert(bb->IDX);
     }
   }
 
-  for (auto & e : nodeMap) {
-    IRIStatement *curr = e.second->head;
-    while (curr != nullptr) {
-      IRI_GEN::IRI_META currMeta = IRI_GEN::get_meta(pool[curr->id].tag);
-      if (currMeta == IRI_GEN::IRI_META::STMT || currMeta == IRI_GEN::IRI_META::AMP) {
-        // TYPE OK
-      } else {
-        std::cerr << IRI_GEN::dump_tag(pool[curr->id].tag) << " expected STMT, found: " << std::to_string(currMeta) << std::endl;
-        throw new std::runtime_error("STMT err");
-      }
-      curr = curr->next;
-    }
+  // Split BBs at await points
+  auto hasAwait = [&](IRID stmtID) {
+    return IRI_HELPERS::hasNodeWithPredicate(stmtID, &ctx, [&](IRID id) {
+      return IRI_NODE(ctx, id).tag == IRI_GEN::Await;
+    });
+  };
+
+  std::set<BBIDX> awaitWorklist;
+  for (auto &e : nodeMap) {
+    awaitWorklist.insert(e.first);
   }
+
+  while (!awaitWorklist.empty()) {
+    BBIDX bbIDX = *awaitWorklist.begin();
+    awaitWorklist.erase(awaitWorklist.begin());
+    IRIBB *bb = nodeMap[bbIDX].get();
+
+    if (bb->tail == nullptr) {
+      throw std::runtime_error("bb tail cannot be null before split");
+    }
+
+    IRIStatement *currStmt = bb->head;
+    while (currStmt != nullptr) {
+      if (hasAwait(currStmt->id)) {
+        break;
+      }
+      currStmt = currStmt->next;
+    }
+
+    if (currStmt == nullptr) {
+      if (hasAwait(bb->tail->id)) {
+        throw std::runtime_error(
+            "await inside terminal statement; this should not be possible");
+      }
+      continue;
+    }
+
+    IRIBB *postBB = makeBB(bb->SCOPE);
+    auto postBBIDX = postBB->IDX;
+    awaitWorklist.insert(postBBIDX);
+
+    IRIStatement *nextStmts = currStmt->next;
+    currStmt->next = nullptr;
+
+    postBB->head = nextStmts;
+    if (postBB->head != nullptr) {
+      postBB->head->prev = nullptr;
+      for (IRIStatement *s = postBB->head; s != nullptr; s = s->next) {
+        s->bb = postBB;
+      }
+    }
+
+    // Terminal + out-edges + FINTARGET all belong to the resumed half.
+    bb->moveTerminalTo(postBB);
+    if (postBB->tail == nullptr) {
+      throw std::runtime_error("postBB tail cannot be null");
+    }
+
+    // Deferred -> true ; this represents a GOTO may act as a early return
+    // (useful in analysis that care about suspension points, otherwise its a
+    // normal goto)
+    bb->setTerminal(GotoSEXP::create(ctx, true, postBBIDX));
+
+    continuationPoints.insert(postBBIDX);
+  }
+
+  verify();
 }
 
 void IRICFG::dumpDOT(const std::string &filePath) {
@@ -446,8 +624,15 @@ void IRICFG::dumpDOT(const std::string &filePath) {
     std::stringstream ss;
     auto &bb = nodeMap[currentBBIDX];
     bb->dumpFlat(ss);
+
+    bool isCont = continuationPoints.contains(currentBBIDX);
+    std::string xlabel = "BB" + std::to_string((int)currentBBIDX) +
+                         (isCont ? " (Continuation)" : "");
+    std::string extraStyle =
+        isCont ? ", fillcolor=\"#e1f5fe\", color=\"#0288d1\"" : "";
+
     outFile << "  " << (int)currentBBIDX << " [label=\"" << ss.str()
-            << "\", xlabel=\"BB" << currentBBIDX << "\"];\n";
+            << "\", xlabel=\"" << xlabel << "\"" << extraStyle << "];\n";
 
     for (auto succ : successors[currentBBIDX]) {
       outFile << "  " << (int)currentBBIDX << " -> " << (int)succ << ";\n";
@@ -455,17 +640,23 @@ void IRICFG::dumpDOT(const std::string &filePath) {
     }
 
     if (bb->EXCEPTION > -1) {
-      outFile << "  " << (int)currentBBIDX << " -> " << (int)bb->EXCEPTION << " [style=\"dotted\", color=\"red\"];\n";
+      outFile << "  " << (int)currentBBIDX << " -> " << (int)bb->EXCEPTION
+              << " [style=\"dotted\", color=\"red\"];\n";
       dumpRecurse(bb->EXCEPTION);
     }
 
     if (bb->FINTARGET > -1) {
-      outFile << "  " << (int)currentBBIDX << " -> " << (int)bb->FINTARGET << " [style=\"dotted\"];\n";
+      outFile << "  " << (int)currentBBIDX << " -> " << (int)bb->FINTARGET
+              << " [style=\"dotted\"];\n";
     }
   };
   dumpRecurse(entry_block);
 
-  for (auto & wasteBB : nodesTODO) {
+  for (auto contIDX : continuationPoints) {
+    dumpRecurse(contIDX);
+  }
+
+  for (auto &wasteBB : nodesTODO) {
     std::cerr << "  DeadBB: " << wasteBB << std::endl;
   }
 
@@ -474,8 +665,8 @@ void IRICFG::dumpDOT(const std::string &filePath) {
 
 void IRICFG::commit() {
   std::vector<IRID> newBBS;
-  BBContainerSupport bbc(id, pool);
-  IRID newBBList = ListSEXP::create(pool, pool.strings.intern("BB"));
+  BBContainerSupport bbc(id, ctx);
+  IRID newBBList = ListSEXP::create(ctx, ctx.storage.strings.intern("BB"));
   bbc.setArg_BB(newBBList);
 
   std::set<BBIDX> nodesTODO;
@@ -489,7 +680,7 @@ void IRICFG::commit() {
     nodesTODO.erase(currentBBIDX);
 
     auto &bb = nodeMap[currentBBIDX];
-    IRID currBBID = BBSEXP::create(pool, false, false, false, false, false,
+    IRID currBBID = BBSEXP::create(ctx, false, false, false, false, false,
                                    bb->IDX, bb->SCOPE);
     newBBS.push_back(currBBID);
 
@@ -504,12 +695,14 @@ void IRICFG::commit() {
       stmtList.push_back(bb->tail->id);
     }
     if (bb->FINTARGET == -2) {
-      stmtList.push_back(ThrowSEXP::create(pool, StringSEXP::create(pool, pool.strings.intern("Unreachable"))));
+      stmtList.push_back(ThrowSEXP::create(
+          ctx,
+          StringSEXP::create(ctx, ctx.storage.strings.intern("Unreachable"))));
     } else if (bb->FINTARGET > -1) {
-      stmtList.push_back(GotoSEXP::create(pool, bb->FINTARGET));
+      stmtList.push_back(GotoSEXP::create(ctx, false, bb->FINTARGET));
     }
 
-    pool.set_args(currBBID, stmtList);
+    ctx.storage.nodes.set_args(currBBID, stmtList);
 
     for (auto succ : successors[currentBBIDX]) {
       dumpRecurse(succ);
@@ -521,10 +714,96 @@ void IRICFG::commit() {
   };
   dumpRecurse(entry_block);
 
-  pool.set_args(newBBList, newBBS);
+  ctx.storage.nodes.set_args(newBBList, newBBS);
+}
+
+const PTAClosureInfo &IRICFG::ptaInfo() {
+  if (ptaInfoCache.has_value())
+    return *ptaInfoCache;
+
+  BBContainerSupport bbc(id, ctx);
+  PTAClosureInfo info;
+
+  // JSCTX only ever appears as the RVal of an LWrite
+  for (const auto &[bbID, bb] : nodeMap) {
+    for (IRIStatement *s = bb->head; s != nullptr; s = s->next) {
+      if (IRI_NODE(ctx, s->id).tag != IRI_GEN::LWrite)
+        continue;
+      IRID rval = IRI_GEN::LWriteSEXP(s->id, ctx).getArg_RVal();
+      if (IRI_NODE(ctx, rval).tag == IRI_GEN::JSCTX)
+        info.usedJSCTXSlots.insert(IRI_GEN::JSCTXSEXP(rval, ctx).getOPID());
+    }
+  }
+
+  // 0 - ArgumentsObject
+  // 1 - MappedArgumentsObject
+  bool argsEscape = info.usedJSCTXSlots.contains(1);
+  for (const auto b : ctx.iris->getEnvBindingsInClosure(bbc.getScopeIDX())) {
+    IRI_GEN::EnvBindingSEXP eb(b, ctx);
+    if (eb.hasJSARG())
+      info.formals.push_back({eb.getREFIDX(), b});
+
+    // Bindings can escape if they are either captured by an inner closure or
+    // the frame actually uses a mapped ArgumentsObject, in which case it holds
+    // references to argument bindings internally
+    bool captured =
+        IRI_BINDING(ctx.iris, b).isCaptured() || (argsEscape && eb.hasJSARG());
+    (captured ? info.tstack : info.stack).push_back(b);
+  }
+  std::sort(info.formals.begin(), info.formals.end());
+
+  auto remoteBindings =
+      ctx.iris->getRemoteEnvBindingsInClosure(bbc.getScopeIDX());
+  for (const auto rb : remoteBindings)
+    info.remoteRefs.push_back(IRI_HELPERS::resolveRemoteBinding(ctx, rb));
+
+  if (ctx.iris->isTopLevelScope(bbc.getScopeIDX())) {
+    // A module's top level owns its RemoteEnvBindings, a script its
+    // ScriptBindings; both are plain stack cells here.
+    for (const auto b : remoteBindings)
+      info.stack.push_back(b);
+    for (const auto b : ctx.iris->getScriptBindings())
+      info.stack.push_back(b);
+    info.globals = ctx.iris->getGlobalBindings();
+  }
+
+  ptaInfoCache = std::move(info);
+  return *ptaInfoCache;
+}
+
+std::string IRIBB::getDebugID() {
+  return closure->getDebugID() + "/bb" + std::to_string((int)IDX);
+}
+
+std::string IRIBB::getDebugName() {
+  if (IDX == closure->entry_block)
+    return "Entry";
+  else if (IDX == closure->exit_block)
+    return "Exit";
+  else
+    return getDebugID();
+}
+
+std::string IRIStatement::getDebugID() {
+  return bb->getDebugID() + "/i" + bb->getInstID(this);
+}
+
+std::string IRICFG::getDebugID() {
+  BBContainerSEXP bbc(id, ctx);
+  return "c" + std::to_string((int)bbc.getStartBBIDX());
+}
+
+std::string IRICFG::getDebugName() {
+  BBContainerSEXP bbc(id, ctx);
+  return std::string(ctx.storage.strings.get(bbc.getNAME()));
 }
 
 std::vector<BBIDX> IRICFG::getReversePostOrder(bool includeExceptions) const {
+  return getReversePostOrder(includeExceptions, entry_block);
+}
+
+std::vector<BBIDX> IRICFG::getReversePostOrder(bool includeExceptions,
+                                               double startBBIDX) const {
   std::vector<BBIDX> postOrder;
   std::set<BBIDX> visited;
 
@@ -550,7 +829,7 @@ std::vector<BBIDX> IRICFG::getReversePostOrder(bool includeExceptions) const {
     postOrder.push_back(u);
   };
 
-  dfs(entry_block);
+  dfs(startBBIDX);
 
   std::reverse(postOrder.begin(), postOrder.end());
   return postOrder;

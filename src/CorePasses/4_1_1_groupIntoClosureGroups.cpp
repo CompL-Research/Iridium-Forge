@@ -82,92 +82,92 @@ inline void setClosureFlags(double flag, BBContainerSEXP bbContainer) {
   }
 }
 
-inline IRID createBBContainerSEXP(IridiumPool &pool, double targetScopeIDX,
+inline IRID createBBContainerSEXP(IRIContext &ctx, double targetScopeIDX,
                                   BUILD_CTX &iridiumBuildContext) {
   auto parent =
-      IRI_HELPERS::getLexicalScope(pool, targetScopeIDX, iridiumBuildContext);
+      IRI_HELPERS::getLexicalScope(ctx, targetScopeIDX, iridiumBuildContext);
   bool isTopLevel = parent == -1;
 
   IRID localBindingsID =
-      ListSEXP::create(pool, pool.strings.intern("EnvBinding"));
+      ListSEXP::create(ctx, ctx.storage.strings.intern("EnvBinding"));
   IRID remoteBindingsID =
-      ListSEXP::create(pool, pool.strings.intern("RemoteEnvBinding"));
+      ListSEXP::create(ctx, ctx.storage.strings.intern("RemoteEnvBinding"));
   IRID poolBindingsID =
-      ListSEXP::create(pool, pool.strings.intern("PoolBinding"));
+      ListSEXP::create(ctx, ctx.storage.strings.intern("PoolBinding"));
 
-  IRID bindingsID = BindingsSEXP::create(pool, localBindingsID, remoteBindingsID, poolBindingsID);
+  IRID bindingsID = BindingsSEXP::create(ctx, localBindingsID, remoteBindingsID, poolBindingsID);
 
-  IRID BBListID = ListSEXP::create(pool, pool.strings.intern("BB"));
+  IRID BBListID = ListSEXP::create(ctx, ctx.storage.strings.intern("BB"));
 
   auto &currContext = iridiumBuildContext[targetScopeIDX];
 
   IRID bbContainer = BBContainerSEXP::create(
-      pool, bindingsID, BBListID, pool.strings.intern(currContext->name), false,
+      ctx, bindingsID, BBListID, ctx.storage.strings.intern(currContext->name), false,
       currContext->isAsync, currContext->isStrict, currContext->isGenerator,
       false, false, false, false, false, false, isTopLevel,
-      currContext->ecmaArgs, BBSEXP(currContext->BB[0], pool).getIDX(),
+      currContext->ecmaArgs, BBSEXP(currContext->BB[0], ctx).getIDX(),
       targetScopeIDX, -1);
 
-  setClosureFlags(currContext->kind, BBContainerSEXP(bbContainer, pool));
+  setClosureFlags(currContext->kind, BBContainerSEXP(bbContainer, ctx));
   return bbContainer;
 }
 
-void _4_1_1_GICG(IridiumPool &pool, IRID fileSEXP,
+void _4_1_1_GICG(IRIContext &ctx, IRID fileSEXP,
                  BUILD_CTX &iridiumBuildContext) {
 
   std::unordered_map<double, IRID> bbGroups;
   std::unordered_map<IRID, std::vector<IRID>> hhGroupArgs;
 
-  auto bbs = pool.get_args(fileSEXP);
+  auto bbs = ctx.storage.nodes.get_args(fileSEXP);
 
   for (auto &bbID : bbs) {
-    BBSEXP currBB(bbID, pool);
+    BBSEXP currBB(bbID, ctx);
 
     auto targetScopeIDX = IRI_HELPERS::findParentClosureScope(
-        pool, currBB.getScopeIDX(), iridiumBuildContext);
+        ctx, currBB.getScopeIDX(), iridiumBuildContext);
 
     if (bbGroups.find(targetScopeIDX) == bbGroups.end()) {
       bbGroups[targetScopeIDX] =
-          createBBContainerSEXP(pool, targetScopeIDX, iridiumBuildContext);
+          createBBContainerSEXP(ctx, targetScopeIDX, iridiumBuildContext);
     }
 
-    hhGroupArgs[BBContainerSEXP(bbGroups[targetScopeIDX], pool).getArg_BB()]
+    hhGroupArgs[BBContainerSEXP(bbGroups[targetScopeIDX], ctx).getArg_BB()]
         .push_back(bbID);
   }
 
   std::vector<IRID> bbContainers;
   for (auto &e : bbGroups)
     bbContainers.push_back(e.second);
-  pool.set_args(fileSEXP, bbContainers);
+  ctx.storage.nodes.set_args(fileSEXP, bbContainers);
 
   for (auto &e : hhGroupArgs) {
-    pool.set_args(e.first, e.second);
+    ctx.storage.nodes.set_args(e.first, e.second);
   }
 
   // Other files referenced by this module
   std::vector<IRID> moduleRequestsVec;
   auto moduleRequests =
-      ListSEXP::create(pool, pool.strings.intern("ModuleRequest"));
+      ListSEXP::create(ctx, ctx.storage.strings.intern("ModuleRequest"));
 
   // Objects imported by this module
   std::vector<IRID> staticImportsVec;
   auto staticImports =
-      ListSEXP::create(pool, pool.strings.intern("StaticImport"));
+      ListSEXP::create(ctx, ctx.storage.strings.intern("StaticImport"));
 
   // Objects exported by this module
   std::vector<IRID> staticExportsVec;
-  auto staticExports = ListSEXP::create(pool, pool.strings.intern(""));
+  auto staticExports = ListSEXP::create(ctx, ctx.storage.strings.intern(""));
 
   // Reexports by this module
   std::vector<IRID> staticStarExportsVec;
   auto staticStarExports =
-      ListSEXP::create(pool, pool.strings.intern("StarExport"));
+      ListSEXP::create(ctx, ctx.storage.strings.intern("StarExport"));
 
-  pool.set_args(moduleRequests, moduleRequestsVec);
-  pool.set_args(staticImports, staticImportsVec);
-  pool.set_args(staticExports, staticExportsVec);
-  pool.set_args(staticStarExports, staticStarExportsVec);
-  pool.add_args_to_beginning(fileSEXP, {moduleRequests, staticImports,
+  ctx.storage.nodes.set_args(moduleRequests, moduleRequestsVec);
+  ctx.storage.nodes.set_args(staticImports, staticImportsVec);
+  ctx.storage.nodes.set_args(staticExports, staticExportsVec);
+  ctx.storage.nodes.set_args(staticStarExports, staticStarExportsVec);
+  ctx.storage.nodes.add_args_to_beginning(fileSEXP, {moduleRequests, staticImports,
                                         staticExports, staticStarExports});
 
 }

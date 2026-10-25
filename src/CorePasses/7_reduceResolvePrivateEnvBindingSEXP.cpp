@@ -3,7 +3,7 @@
 #include "Generated/IridiumTypes.h"
 #include "Helpers.h"
 #include "Parser/IridiumBuildContext.h"
-#include "Storage/IridiumPool.h"
+#include "Storage/IRIContext.h"
 #include "Storage/StringPool.h"
 #include "Support/BBContainerSupport.hpp"
 #include "Support/BBSupport.hpp"
@@ -20,18 +20,18 @@ using namespace IRI_STORAGE;
 using namespace IRI_STRUCTURAL;
 using BUILD_CTX = std::unordered_map<int, std::shared_ptr<IridiumBuildContext>>;
 
-inline void patchNode(IridiumPool &pool, IRID node, double startScopeIDX,
+inline void patchNode(IRIContext &ctx, IRID node, double startScopeIDX,
                       BUILD_CTX &iridiumBuildContext) {
-  auto args = pool.get_args(node);
+  auto args = ctx.storage.nodes.get_args(node);
 
   for (int i = 0; i < args.size(); i++) {
     auto currID = args[i];
-    auto currTag = pool[currID].tag;
+    auto currTag = IRI_NODE(ctx, currID).tag;
 
     if (currTag == IRI_GEN::ResolvePrivateEnvBinding) {
-      ResolvePrivateEnvBindingSEXP pvt(currID, pool);
+      ResolvePrivateEnvBindingSEXP pvt(currID, ctx);
       auto pvtName = pvt.getNAME();
-      auto pvtNameStr = std::string(pool.strings.get(pvtName));
+      auto pvtNameStr = std::string(ctx.storage.strings.get(pvtName));
       double targetScopeIDX = startScopeIDX;
       while (true) {
         auto buildContext = iridiumBuildContext[targetScopeIDX];
@@ -39,12 +39,12 @@ inline void patchNode(IridiumPool &pool, IRID node, double startScopeIDX,
           auto privateMapping = buildContext->privateMapping.value();
           if (privateMapping.find(pvtNameStr) != privateMapping.end()) {
             auto pvtInfo = privateMapping[pvtNameStr];
-            pool.update_arg_inplace(
+            ctx.storage.nodes.update_arg_inplace(
                 node, i,
                 PVTEnvReadSEXP::create(
-                    pool,
+                    ctx,
                     IRI_HELPERS::createNoASWResolveEnvBindingSEXP(
-                        pool, pool.strings.intern(pvtInfo.first)),
+                        ctx, ctx.storage.strings.intern(pvtInfo.first)),
                     pvtInfo.second == "PROP", pvtInfo.second == "METHOD",
                     pvt.hasFULLY_RESOLVE()));
             break;
@@ -52,7 +52,7 @@ inline void patchNode(IridiumPool &pool, IRID node, double startScopeIDX,
         }
         // Move to parent lexical scope before finding the aprent closure scope,
         // otherwise we might end up in infinite loops
-        targetScopeIDX = pool.iris->getLexicalScope(targetScopeIDX);
+        targetScopeIDX = ctx.iris->getLexicalScope(targetScopeIDX);
         if (targetScopeIDX < 0)
           throw std::runtime_error("Failed to resolve private binding : " +
                                    pvtNameStr);
@@ -61,21 +61,21 @@ inline void patchNode(IridiumPool &pool, IRID node, double startScopeIDX,
   }
 
   for (int i = 0; i < args.size(); i++)
-    patchNode(pool, args[i], startScopeIDX, iridiumBuildContext);
+    patchNode(ctx, args[i], startScopeIDX, iridiumBuildContext);
 }
 
-void _7_RRPEBS(IridiumPool &pool, IRID fileSEXP,
+void _7_RRPEBS(IRIContext &ctx, IRID fileSEXP,
                BUILD_CTX &iridiumBuildContext) {
-  FileSupport file(fileSEXP, pool);
+  FileSupport file(fileSEXP, ctx);
   for (auto [bbcID, _] : file.containers()) {
-    BBContainerSupport bbc(bbcID, pool);
+    BBContainerSupport bbc(bbcID, ctx);
 
     auto currentScopeIDX = bbc.getScopeIDX();
 
     for (auto [bbID, _] : bbc.bbs()) {
-      BBSupport bb(bbID, pool);
+      BBSupport bb(bbID, ctx);
       for (auto [stmtID, _] : bb.stmts()) {
-        patchNode(pool, stmtID, bb.getScopeIDX(), iridiumBuildContext);
+        patchNode(ctx, stmtID, bb.getScopeIDX(), iridiumBuildContext);
       }
     }
   }

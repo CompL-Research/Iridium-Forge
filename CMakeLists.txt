@@ -21,7 +21,7 @@ endif()
 
 FetchContent_Declare(immer
     GIT_REPOSITORY https://github.com/arximboldi/immer.git
-    GIT_TAG v0.8.1
+    GIT_TAG v0.9.1
 )
 
 FetchContent_GetProperties(immer)
@@ -85,28 +85,16 @@ target_compile_definitions(iridiumForge PRIVATE ${DEBUG_FLAGS})
 set_target_properties(iridiumForge PROPERTIES PREFIX "" SUFFIX ".node")
 target_include_directories(iridiumForge PUBLIC ${CMAKE_SOURCE_DIR}/include)
 
-# ----------------------
-# Standalone executable
-# ----------------------
-add_executable(forge
-    ${IRIDIUM_SRC}
-    main.cpp
-    Entrypoint.cpp
-)
-
 target_compile_definitions(iridiumForge PRIVATE ${DEBUG_FLAGS})
-target_include_directories(forge PUBLIC ${CMAKE_SOURCE_DIR}/include)
 
 
 # ----------------------
 # Use Cpp+20 features
 # ----------------------
 target_compile_features(iridiumForge PRIVATE cxx_std_20)
-target_compile_features(forge PRIVATE cxx_std_20)
 
 
 # ----------------------
-# Link "small"
+# Link "small" and "immer"
 # ----------------------
 target_link_libraries(iridiumForge PUBLIC small::small immer)
-target_link_libraries(forge PUBLIC small::small immer)

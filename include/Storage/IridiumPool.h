@@ -3,19 +3,13 @@
 #include "FlagInterning.h"
 #include "Generated/IridiumEnums.h"
 #include "IridiumSEXP.h"
-#include "StringPool.h"
+#include "PoolMemStats.h"
+#include <cstddef>
 #include <cstdint>
-#include <memory>
-#include <optional>
 #include <set>
 #include <span>
 #include <unordered_map>
 #include <vector>
-
-namespace IRI_STRUCTURAL {
-  class IRIS;
-  class ClosureTree;
-}
 
 namespace IRI_STORAGE {
 
@@ -32,8 +26,7 @@ struct CompactionResult {
   // old_to_new_irid_map[old_irid] = new_irid
   std::vector<IRID> old_to_new_irid_map;
 };
-
-// pool memory statistics
+  
 struct PoolMemory {
   size_t nodeCount = 0, argCount = 0, flagCount = 0, flagInternEntries = 0;
   size_t nodesB = 0, argsB = 0, flagsB = 0, flagInternB = 0;  // size in bytes
@@ -41,31 +34,19 @@ struct PoolMemory {
   size_t usedBytes = 0, capBytes = 0;   // total
 };
 
+struct IridiumPoolTelemetry {
+  PoolMemStats nodes, args, flags;
+};
+
 class IridiumPool {
 
 public:
+  //
+  // Shared Globals
+  //
   IRID NULL_SEXP;
   IRID NOP_SEXP;
   IRID NUBD_SEXP;
-  IRID TRUE_SEXP;
-  IRID FALSE_SEXP;
-
-  double lastBBIDX = 0;
-
-  // Must be empty after stack->heap pass
-  // added here as creating a new flag just for this is very memory
-  // hungry
-  std::unordered_map<IRID, double> CONTINUE_TARGETS;
-
-  StringID getTemp();
-
-  std::shared_ptr<IRI_STRUCTURAL::IRIS> iris = nullptr;
-  std::shared_ptr<IRI_STRUCTURAL::ClosureTree> closureTree = nullptr;
-
-  //
-  // String interning
-  //
-  StringPool strings;
 
   //
   // Pool operations
@@ -80,7 +61,7 @@ public:
   //
 
   // Given an IRID, retrieve a node
-  const IridiumSEXP &operator[](IRID id) const;
+  const IridiumSEXP &get_node(IRID id) const;
   void update_tag(IRID id, IRI_GEN::IRI_TAG);
 
   // Given an IRID/IridiumSEXP return its args (immutable)
@@ -90,7 +71,6 @@ public:
   // Safe when new args may be added/removed
   std::vector<IRID> get_args(const IridiumSEXP *n);
   std::vector<IRID> get_args(IRID id);
-
 
   // Given an IRID/IridiumSEXP return its flags (immutable)
   std::span<const FlagValue> get_flags(const IridiumSEXP *n) const;
@@ -109,6 +89,7 @@ public:
   void set_args(IRID id, const std::vector<IRID> &args);
 
   // Update arg inplace
+  // TODO: I never got to improving these methods, maybe someday... ~Meetesh
   void update_arg_inplace(IRID id, IRID offset, IRID target);
 
   void poke_out_arg_at_index(IRID id, IRID offset);
@@ -148,8 +129,9 @@ public:
 
   // get pool memory stats
   PoolMemory memory_usage() const;
+  
+  IridiumPoolTelemetry telemetry() const;
 
-  ~IridiumPool();
   IridiumPool() = default;
   IridiumPool(const IridiumPool &) = delete;
   IridiumPool &operator=(const IridiumPool &) = delete;
@@ -162,7 +144,6 @@ private:
                      FlagVectorEq>
       flag_intern_map;
   std::set<IRID> mutatedFlags;
-  uint32_t tempIDX = 0;
 };
 
 } // namespace IRI_STORAGE

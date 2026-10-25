@@ -1,26 +1,27 @@
 #include "Entrypoint.h"
+#include <system_error>
+#include <filesystem>
+#include <cstdlib>
+#include "Analysis/ConstantProp.h"
+#include "Analysis/DCE.h"
+#include "Analysis/EffectProp.h"
+#include "Analysis/MTDZS.h"
+#include "Analysis/ReduceComputedFieldOps.h"
 #include "CorePasses.h"
 #include "Helpers.h"
-#include "Storage/IridiumPool.h"
+#include "Storage/Config.h"
+#include "Storage/IRIContext.h"
+#include "Support/ClosureTree.hpp"
 #include "Support/FileSupport.hpp"
 #include "Support/IRIS.hpp"
-#include "Support/ClosureTree.hpp"
-#include "Analysis/MTDZS.h"
-#include "Analysis/DCE.h"
-#include "Analysis/ConstantsAtStmt.h"
-#include "Analysis/ConstantProp.h"
-#include "Analysis/EffectAtStmt.h"
-#include "Analysis/EffectProp.h"
-#include "IRIPerf.h"
-#include "Storage/Config.h"
+#include "Support/PTA.hpp"
 #include "Storage/GCStats.h"
-#include <fstream>
+#include <exception>
 #include <iostream>
-#if DUMP_CORE_PASSES == 1
-#include <sstream>
-#endif
+#include <functional>
 #include <memory>
 #include <unordered_map>
+#include <vector>
 #include <cstdlib>
 
 namespace IRI_ENTRY {
@@ -45,191 +46,212 @@ inline void emitPhase(IridiumPool &pool, const std::string &name) {
             << "," << procStatusKb("VmRSS") << "," << procStatusKb("VmHWM") << "\n";
 }
 
-inline void normalizeIRIDIUM(
-    IridiumPool &pool, IRID &sexp,
-    std::unordered_map<int, std::shared_ptr<IridiumBuildContext>>
-        &iridiumBuildContext,
-    IRIPerf &iriPerf) {
-  // Helper to dump state
-  auto dump = [&](const std::string &name) {
-    #if DUMP_CORE_PASSES == 1
+using BuildContextMap =
+    std::unordered_map<int, std::shared_ptr<IridiumBuildContext>>;
+
+namespace {
+
+void dumpIfEnabled(IRIContext &ctx, IRID sexp, const std::string &name) {
+  if (ctx.flags.dumpForgePasses) {
     std::ofstream outFile(name + ".iridump");
-    // pool[sexp].dumpFlat(outFile, &pool);
-    pool[sexp].dumpFlat(outFile, &pool);
-    #endif
+    IRI_NODE(ctx, sexp).dumpFlat(outFile, &ctx);
+  }
+}
+
+void runCorePasses(IRIContext &ctx, IRID sexp, BuildContextMap &buildContext) {
+  dumpIfEnabled(ctx, sexp, "_0_BEFORE_NORMALIZAION");
+
+  IRI_CORE_PASSES::CTARGETS continueTargets;
+
+  struct CorePassEntry {
+    const char *name;
+    std::function<void()> run;
   };
 
-  // Helper to run a pass
-  auto runPass = [&](const std::string &name, auto passFunc) {
-    iriPerf.tick(name);
-    passFunc(pool, sexp, iridiumBuildContext);
-    iriPerf.tock(name);
-    dump(name);
-    emitPhase(pool, name);
+  std::vector<CorePassEntry> passes = {
+      {"_1_NBBF", [&] { IRI_CORE_PASSES::_1_NBBF(ctx, sexp, buildContext); }},
+      {"_2_HFD", [&] { IRI_CORE_PASSES::_2_HFD(ctx, sexp, buildContext); }},
+      {"_4_1_1_GICG",
+       [&] { IRI_CORE_PASSES::_4_1_1_GICG(ctx, sexp, buildContext); }},
+      {"_4_1_2_RUR",
+       [&] { IRI_CORE_PASSES::_4_1_2_RUR(ctx, sexp, buildContext); }},
+      {"_4_2_PMB", [&] { IRI_CORE_PASSES::_4_2_PMB(ctx, sexp, buildContext); }},
+      {"_4_3_PIB", [&] { IRI_CORE_PASSES::_4_3_PIB(ctx, sexp, buildContext); }},
+      {"_4_4_RFD", [&] { IRI_CORE_PASSES::_4_4_RFD(ctx, sexp, buildContext); }},
+      {"_4_5_PEB", [&] { IRI_CORE_PASSES::_4_5_PEB(ctx, sexp, buildContext); }},
+      {"_6_PHCSC", [&] { IRI_CORE_PASSES::_6_PHCSC(ctx, sexp, buildContext); }},
+      {"_7_RRPEBS",
+       [&] { IRI_CORE_PASSES::_7_RRPEBS(ctx, sexp, buildContext); }},
+      {"_8_RREBS", [&] { IRI_CORE_PASSES::_8_RREBS(ctx, sexp, buildContext); }},
+      {"_9_CER", [&] { IRI_CORE_PASSES::_9_RLT(ctx, sexp, buildContext); }},
+      {"_10_RBACT",
+       [&] {
+         continueTargets = IRI_CORE_PASSES::_10_RBACT(ctx, sexp, buildContext);
+       }},
+      {"_11_12_DAPRT",
+       [&] { IRI_CORE_PASSES::_11_12_DAPRT(ctx, sexp, buildContext); }},
+      {"_16_MDE", [&] { IRI_CORE_PASSES::_16_MDE(ctx, sexp, buildContext); }},
+      {"_17_RTDZ", [&] { IRI_CORE_PASSES::_17_RTDZ(ctx, sexp, buildContext); }},
+      {"_18_DELOP",
+       [&] { IRI_CORE_PASSES::_18_DELOP(ctx, sexp, buildContext); }},
+      {"_19_CBBAMTLA",
+       [&] { IRI_CORE_PASSES::_19_CBBAMTLA(ctx, sexp, buildContext); }},
+      {"_21_TER", [&] { IRI_CORE_PASSES::_21_TER(ctx, sexp, buildContext); }},
+      {"_22_ESTKTHM",
+       [&] {
+         IRI_CORE_PASSES::_22_ESTKTHM(ctx, sexp, buildContext, continueTargets);
+       }},
+      {"_AFTER_CORE_PASSES_",
+       [&] { IRI_CORE_PASSES::_FNOPS(ctx, sexp, buildContext); }},
   };
-
-  dump("_0_BEFORE_NORMALIZAION");
-
-  // Execute passes
-  runPass("_1_NBBF", IRI_CORE_PASSES::_1_NBBF);
-  runPass("_2_HFD", IRI_CORE_PASSES::_2_HFD);
-  // runPass("_3_FNOPS", IRI_CORE_PASSES::_3_FNOPS);
-  runPass("_4_1_1_GICG", IRI_CORE_PASSES::_4_1_1_GICG);
-  runPass("_4_1_2_RUR", IRI_CORE_PASSES::_4_1_2_RUR);
-  runPass("_4_2_PMB", IRI_CORE_PASSES::_4_2_PMB);
-  runPass("_4_3_PIB", IRI_CORE_PASSES::_4_3_PIB);
-  runPass("_4_4_RFD", IRI_CORE_PASSES::_4_4_RFD);
-  runPass("_4_5_PEB", IRI_CORE_PASSES::_4_5_PEB);
-  // runPass("_4_6_CBA", IRI_CORE_PASSES::_4_6_CBA);
-  // runPass("_5_INITSFRAME", IRI_CORE_PASSES::_5_INITSFRAME);
-  runPass("_6_PHCSC", IRI_CORE_PASSES::_6_PHCSC);
-  runPass("_7_RRPEBS", IRI_CORE_PASSES::_7_RRPEBS);
-  runPass("_8_RREBS", IRI_CORE_PASSES::_8_RREBS);
-  runPass("_9_CER", IRI_CORE_PASSES::_9_RLT);
-  runPass("_10_RBACT", IRI_CORE_PASSES::_10_RBACT);
-  runPass("_11_12_DAPRT", IRI_CORE_PASSES::_11_12_DAPRT);
-  // runPass("_13_MNSI", IRI_CORE_PASSES::_13_MNSI);
-  // runPass("_14_MSW", IRI_CORE_PASSES::_14_MSW);
-  // runPass("_15_LWTA", IRI_CORE_PASSES::_15_LWTA);
-  runPass("_16_MDE", IRI_CORE_PASSES::_16_MDE);
-  runPass("_17_RTDZ", IRI_CORE_PASSES::_17_RTDZ);
-  runPass("_18_DELOP", IRI_CORE_PASSES::_18_DELOP);
-  runPass("_19_CBBAMTLA", IRI_CORE_PASSES::_19_CBBAMTLA);
-  // runPass("_20_REW", IRI_CORE_PASSES::_20_REW);
-  runPass("_21_TER", IRI_CORE_PASSES::_21_TER);
-  runPass("_22_ESTKTHM", IRI_CORE_PASSES::_22_ESTKTHM);
-  // runPass("_23_RIB", IRI_CORE_PASSES::_23_RIB);
-  runPass("_AFTER_CORE_PASSES_", IRI_CORE_PASSES::_FNOPS);
-
+  
   // auto reach = pool.mark_reachable(pool.collect_roots(sexp));   // AST only, no IRIS roots
   // for (IRID id : pool.iris->collect_referenced_irids())
   //   if (!reach.visited[id])
   //     std::cout << "IRIS holds an unreachable node: " << id << "\n";
 
-  if (gcMode() & 1) {
-    auto compaction_result = pool.garbage_collect(sexp, "AFTER_CORE_PASSES");
-  }
-  emitPhase(pool, "post_core_gc_point");
+  // if (gcMode() & 1) {
+  //   auto compaction_result = pool.garbage_collect(sexp, "AFTER_CORE_PASSES");
+  // }
+  // emitPhase(pool, "post_core_gc_point");
 
-  // Initialize closure tree and create CFGs
-  IRID treeRoot = IRI_HELPERS::getTopLevelContainer(pool, sexp);
-  pool.closureTree = std::make_unique<ClosureTree>(pool, treeRoot);
-  FileSupport fs(sexp, pool);
+  for (auto &pass : passes) {
+    ctx.debugger.tick(pass.name);
+    pass.run();
+    ctx.debugger.tock(pass.name);
+    dumpIfEnabled(ctx, sexp, pass.name);
+  }
+}
+
+void buildClosureTree(IRIContext &ctx, IRID sexp) {
+  IRID treeRoot = IRI_HELPERS::getTopLevelContainer(ctx, sexp);
+  ctx.closureTree = std::make_unique<ClosureTree>(ctx, treeRoot);
+  FileSupport fs(sexp, ctx);
 
   for (auto [bbcID, _] : fs.containers()) {
-    if (bbcID == treeRoot) continue;
-    pool.closureTree->addClosure(bbcID);
+    if (bbcID == treeRoot)
+      continue;
+    ctx.closureTree->addClosure(bbcID);
   }
 
-  // Must happen after the tree is created and all closures have already been added
-  pool.iris->populateCClosuresInTree();
+  ctx.iris->populateCClosuresInTree();
+}
 
+void runOptimizationPasses(IRIContext &ctx) {
   AnalysisManager am;
   PassManager pm;
 
-  if (std::getenv("NOCP")) {
-    // Skip Pass
-  } else {
+  if (ctx.flags.constantProp) {
     pm.addPass(ConstantPropPass());
+    // After constant propagation, so a key that is only constant once folded
+    // still reduces. Before PTA, which relies on the static form.
+    pm.addPass(ReduceComputedFieldOpsPass());
   }
-
-  if (std::getenv("NOTDZ")) {
-    // Skip Pass
-  } else {
+  if (ctx.flags.tdz)
     pm.addPass(MTDZSPass());
-  }
-
-  if (std::getenv("NODCE")) {
-    // Skip Pass
-  } else {
+  if (ctx.flags.dce)
     pm.addPass(DCEPass());
+
+  ctx.debugger.tick("_23_OPT_MTDZS_DCE");
+  ctx.closureTree->preorderTraversal(
+      [&](IRICFG *cfgCTX) { pm.run(*cfgCTX, am); });
+  ctx.debugger.tock("_23_OPT_MTDZS_DCE");
+
+  if (ctx.flags.pta) {
+    ctx.debugger.tick("_25_PTA");
+    try {
+      PTASolver::solve(ctx);
+    } catch (const std::exception &e) {
+      std::cerr << "[PTA] " << e.what() << std::endl;
+    }
+    ctx.debugger.tock("_25_PTA");
   }
 
-  iriPerf.tick("_23_OPT_MTDZS_DCE");
-  pool.closureTree->preorderTraversal([&](IRICFG* cfgCTX) {
-    pm.run(*cfgCTX, am);
-  });
-  iriPerf.tock("_23_OPT_MTDZS_DCE");
-
-  if (std::getenv("NOEP")) {
-    // Skip Pass
-  } else {
-    iriPerf.tick("_24_OPT_EFFECT_PROP");
-    pool.closureTree->preorderTraversal([&](IRICFG* cfgCTX) {
+  if (ctx.flags.effectProp) {
+    ctx.debugger.tick("_24_OPT_EFFECT_PROP");
+    ctx.closureTree->preorderTraversal([&](IRICFG *cfgCTX) {
       EffectPropPass ep;
       bool changed = true;
       int iterations = 0;
       const int maxIterations = 50;
-      BBContainerSupport bbc(cfgCTX->id, cfgCTX->pool);
-      // std::cout << "[EffectProp] Optimization starting for closure " << bbc.getStartBBIDX() << "...\n";
       while (changed && iterations < maxIterations) {
-        // auto start = std::chrono::high_resolution_clock::now();
         changed = ep.run(*cfgCTX, am);
-        // auto end = std::chrono::high_resolution_clock::now();
-        // std::chrono::duration<double, std::milli> elapsed = end - start;
-        // std::cout << "  - Iteration " << (iterations + 1) << ": "
-        //           << (changed ? "changed" : "no change")
-        //           << " (" << elapsed.count() << " ms)\n";
         iterations++;
       }
     });
-    iriPerf.tock("_24_OPT_EFFECT_PROP");
+    ctx.debugger.tock("_24_OPT_EFFECT_PROP");
   }
-
-  // Commit closure level bindings
-  pool.closureTree->commit();
-  dump("AFTER_OPT_PASSES");
-
-#if DUMP_ANALYSIS_RESULTS == 1
-  {
-    std::ofstream outFile("ANALYSIS_DUMP.iridump");
-    pool.closureTree->preorderTraversal([&](IRICFG* cfgCTX) {
-      BBContainerSupport bbc(cfgCTX->id, cfgCTX->pool);
-      outFile << "Closure " << bbc.getStartBBIDX() << ":\n";
-
-      // Query both analyses to populate them in the cache
-      am.getResult<TDZAnalysis>(*cfgCTX);
-      am.getResult<LivenessAnalysis>(*cfgCTX);
-      am.getResult<ConstantsAtStmt>(*cfgCTX);
-      am.getResult<EffectAtStmtAnalysis>(*cfgCTX);
-
-      // Interleave and print all cached dataflow analyses dynamically
-      am.dumpDataflowStates(*cfgCTX, outFile);
-      outFile << "\n";
-    });
-  }
-#endif
-
-  pool.iris->commit();
-
-  // pool.closureTree->dumpFlat(std::cout);
-  // pool.iris->dumpFlat(std::cout);
 }
 
-// inline void voidPrepareForAnalysis(IridiumPool &pool) {
-//   pool.closureTree->preorderTraversal([&](IRICFG * cfgCTX) {
+// One DOT file per closure in out.cfg, rendered to PNG when graphviz is around.
+void dumpCFGs(IRIContext &ctx) {
+  const std::string dir = "out.cfg";
+  std::error_code ec;
+  std::filesystem::create_directories(dir, ec);
+  if (ec) {
+    std::cerr << "[dumpCFG] cannot create " << dir << ": " << ec.message()
+              << std::endl;
+    return;
+  }
 
-//   });
-// }
+  // Probed once: without graphviz the DOT files are still written.
+  static const bool haveDot =
+      std::system("command -v dot > /dev/null 2>&1") == 0;
 
-IRID sharedEntrypoint(
-    IridiumPool &pool, IRID file,
-    std::unordered_map<int, std::shared_ptr<IridiumBuildContext>>
-        &iridiumBuildContext,
-    IRIPerf &iriPerf) {
+  size_t n = 0;
+  ctx.closureTree->preorderTraversal([&](IRICFG *cfg) {
+    std::string stem = dir + "/c" + std::to_string(n++);
+    cfg->dumpDOT(stem + ".dot");
+    if (haveDot)
+      std::system(("dot -Tpng " + stem + ".dot -o " + stem + ".png"
+                   " 2> /dev/null")
+                      .c_str());
+  });
+  std::cout << "[dumpCFG] wrote " << n << " CFG" << (n == 1 ? "" : "s")
+            << " to " << dir << (haveDot ? " (.dot + .png)" : " (.dot only)")
+            << std::endl;
+}
 
+void commitAndDump(IRIContext &ctx, IRID sexp) {
+  ctx.closureTree->commit();
+  ctx.iris->commit();
+
+  dumpIfEnabled(ctx, sexp, "AFTER_OPT_PASSES");
+  if (ctx.flags.dumpCFG)
+    dumpCFGs(ctx);
+  if (ctx.flags.dumpClosureTree)
+    ctx.closureTree->dumpFlat(std::cout);
+  if (ctx.flags.dumpIrisInfo)
+    ctx.iris->dumpFlat(std::cout);
+  if (ctx.flags.debugStorage)
+    ctx.storage.dumpDiagnostics();
+}
+
+} // namespace
+
+void normalizeIRIDIUM(IRIContext &ctx, IRID sexp,
+                      BuildContextMap &iridiumBuildContext) {
+  runCorePasses(ctx, sexp, iridiumBuildContext);
+  buildClosureTree(ctx, sexp);
+  runOptimizationPasses(ctx);
+  commitAndDump(ctx, sexp);
+}
+
+IRID sharedEntrypoint(IRIContext &ctx, IRID file,
+                      BuildContextMap &iridiumBuildContext) {
+                      
   // auto reach = pool.mark_reachable(pool.collect_roots(file));
 
-  if (statsOn()) {
-    resetPeakRss();   // VmHWM measures peak for normalization + GC
+  // if (statsOn()) {
+  //    resetPeakRss();   // VmHWM measures peak for normalization + GC
 
-    std::cerr << "IRI_SIZES," << sizeof(IRI_STORAGE::IridiumSEXP) << "," << sizeof(IRID)
-              << "," << sizeof(FlagValue) << "\n";
-    std::cerr << "IRI_START," << procStatusKb("VmRSS") << "," << procStatusKb("VmHWM") << "\n";
-    emitPhase(pool, "start");
-  }
-  
-  normalizeIRIDIUM(pool, file, iridiumBuildContext, iriPerf);
+  //    std::cerr << "IRI_SIZES," << sizeof(IRI_STORAGE::IridiumSEXP) << "," << sizeof(IRID)
+  //              << "," << sizeof(FlagValue) << "\n";
+  //    std::cerr << "IRI_START," << procStatusKb("VmRSS") << "," << procStatusKb("VmHWM") << "\n";
+  //   emitPhase(pool, "start");
+  // }
+
+  normalizeIRIDIUM(ctx, file, iridiumBuildContext);
 
   emitPhase(pool, "pre_final_gc_point");
   if (gcMode() & 2) {

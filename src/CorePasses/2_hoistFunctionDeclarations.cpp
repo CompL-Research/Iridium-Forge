@@ -2,7 +2,7 @@
 #include "Generated/IridiumEnums.h"
 #include "Generated/IridiumTypes.h"
 #include "Parser/IridiumBuildContext.h"
-#include "Storage/IridiumPool.h"
+#include "Storage/IRIContext.h"
 
 namespace IRI_CORE_PASSES {
 using namespace IRI_PARSE;
@@ -10,24 +10,24 @@ using namespace IRI_GEN;
 using namespace IRI_STORAGE;
 using BUILD_CTX = std::unordered_map<int, std::shared_ptr<IridiumBuildContext>>;
 
-void _2_HFD(IridiumPool &pool, IRID sexp, BUILD_CTX &iridiumBuildContext) {
+void _2_HFD(IRIContext &ctx, IRID sexp, BUILD_CTX &iridiumBuildContext) {
   std::unordered_map<double, std::set<IRID>> toHoist;
 
-  FileSEXP fSEXP(sexp, pool);
+  FileSEXP fSEXP(sexp, ctx);
 
-  const auto bbs = pool.get_args(sexp);
+  const auto bbs = ctx.storage.nodes.get_args(sexp);
 
   for (auto &currBBID : bbs) {
-    BBSEXP currBB(currBBID, pool);
-    const auto args = pool.get_args(currBBID);
+    BBSEXP currBB(currBBID, ctx);
+    const auto args = ctx.storage.nodes.get_args(currBBID);
     auto scopeIDX = currBB.getScopeIDX();
 
     for (size_t idx = 0; const auto &stmtID : args) {
-      auto &stmt = pool[stmtID];
+      auto &stmt = IRI_NODE(ctx, stmtID);
 
       if (stmt.tag == IRI_TAG::JSFuncDecl) {
         toHoist[scopeIDX].insert(stmtID);
-        pool.update_arg_inplace(currBBID, idx, pool.NOP_SEXP);
+        ctx.storage.nodes.update_arg_inplace(currBBID, idx, ctx.storage.nodes.NOP_SEXP);
       }
 
       idx++;
@@ -40,7 +40,7 @@ void _2_HFD(IridiumPool &pool, IRID sexp, BUILD_CTX &iridiumBuildContext) {
     auto &buildContext = iridiumBuildContext.at(scope);
     auto &targetBB = buildContext->BB[0];
 
-    pool.add_args_to_beginning(
+    ctx.storage.nodes.add_args_to_beginning(
         targetBB, {funDeclarations.begin(), funDeclarations.end()});
   }
 }
