@@ -1,3 +1,4 @@
+#include "Storage/IRIContext.h"
 #include "Storage/IridiumPool.h"
 #include "Storage/Config.h"
 #include "Storage/GCStats.h"
@@ -12,15 +13,14 @@
 
 namespace IRI_STORAGE {
 
-std::vector<IRID> IridiumPool::collect_roots(IRID entry) const {
+std::vector<IRID> IridiumPool::collect_roots(IRIContext & ctx, IRID entry) const {
   std::vector<IRID> roots = {
-    entry,
-    NULL_SEXP, NOP_SEXP, NUBD_SEXP, TRUE_SEXP, FALSE_SEXP
+    entry, NULL_SEXP, NOP_SEXP, NUBD_SEXP
   };
 
   // if IRIS exists, put referenced IRIDS in root set
-  if (iris) {
-    auto iris_roots = iris->collect_referenced_irids();
+  if (ctx.iris) {
+    auto iris_roots =  ctx.iris->collect_referenced_irids();
     roots.insert(roots.end(), iris_roots.begin(), iris_roots.end());
   }
 
@@ -241,7 +241,7 @@ void IridiumPool::print_compaction_result(const std::string &label, const PoolMe
   std::cout.precision(6);
 }
 
-CompactionResult IridiumPool::garbage_collect(IRID &root, const std::string &label) {
+CompactionResult IridiumPool::garbage_collect(IRIContext &ctx, IRID &root, const std::string &label) {
   const bool stats = statsOn();
   const bool verbose = std::getenv("IRI_GC_VERBOSE") != nullptr;
   const bool measure = stats || verbose;
@@ -253,20 +253,20 @@ CompactionResult IridiumPool::garbage_collect(IRID &root, const std::string &lab
     t0 = std::chrono::steady_clock::now();
   }
   
-  std::vector<IRID> roots = collect_roots(root);
+  std::vector<IRID> roots = collect_roots(ctx, root);
   auto reach = mark_reachable(roots);
 
   if (verbose) {
     std::cout << "\n" << label << " :\n";
     print_reachability(reach);
     std::ofstream out(label + "_with_ids.iridump");
-    (*this)[root].dumpFlat(out, this, root);
+    get_node(root).dumpFlat(out, &ctx, 0, true, root);
   }
 
   auto compaction_result = compact_pool(reach);
   root = compaction_result.old_to_new_irid_map[root];
-  if (iris) {
-    iris->remap_irids(compaction_result.old_to_new_irid_map);
+  if (ctx.iris) {
+    ctx.iris->remap_irids(compaction_result.old_to_new_irid_map);
   }
 
   if (measure) {

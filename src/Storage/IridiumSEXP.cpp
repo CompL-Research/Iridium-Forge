@@ -178,34 +178,6 @@ void IridiumSEXP::dumpFlat(std::ostream &oss, IRIContext *ctx, int depth,
   // 1. Setup Indentation
   std::string indent(depth, ' ');
 
-  // if (tag == IRI_GEN::EnvBinding) {
-  //   auto flags_span = ctx->storage.nodes.get_flags(this);
-  //   const auto &v = flags_span[IRI_GEN::EnvBindingSEXP::FLAG_IDX_LINK];
-  //   if (!std::holds_alternative<double>(v)) {
-  //     throw std::runtime_error("Expected LINK to be a double");
-  //   }
-  //   double link = std::get<double>(v);
-  //   oss << indent;
-  //   ctx->iris->getBindingMetaFromLINK(link).dump(*ctx, oss, full);
-  //   oss << "\n";
-
-  //   return;
-  // }
-
-  // if (tag == IRI_GEN::RemoteEnvBinding) {
-  //   auto flags_span = ctx->storage.nodes.get_flags(this);
-  //   const auto &v = flags_span[IRI_GEN::RemoteEnvBindingSEXP::FLAG_IDX_LINK];
-  //   if (!std::holds_alternative<double>(v)) {
-  //     throw std::runtime_error("Expected LINK to be a double");
-  //   }
-  //   double link = std::get<double>(v);
-  //   oss << indent;
-  //   ctx->iris->getBindingMetaFromLINK(link).dump(*ctx, oss, full);
-  //   oss << "\n";
-
-  //   return;
-  // }
-
   // 2. Resolve Tag Name
   oss << indent << IRI_GEN::dump_tag(tag);
   if (id != 0) {
@@ -259,93 +231,6 @@ void IridiumSEXP::dumpFlat(std::ostream &oss, IRIContext *ctx, int depth,
     IRID child_id = args_span[i];
     ctx->storage.nodes.get_node(child_id).dumpFlat(
         oss, ctx, depth + 2, tag == IRI_GEN::BB ? false : full, child_id);
-  }
-}
-
-// dump tags with their IRID (for debugging Reachability)
-void IridiumSEXP::dumpFlat(std::ostream &oss, IridiumPool *pool, IRID id, int depth,
-                           bool full) const {
-  // 1. Setup Indentation
-  std::string indent(depth, ' ');
-
-  // if (tag == IRI_GEN::EnvBinding) {
-  //   auto flags_span = pool->get_flags(this);
-  //   const auto &v = flags_span[IRI_GEN::EnvBindingSEXP::FLAG_IDX_LINK];
-  //   if (!std::holds_alternative<double>(v)) {
-  //     throw std::runtime_error("Expected LINK to be a double");
-  //   }
-  //   double link = std::get<double>(v);
-  //   oss << indent;
-  //   pool->iris->getBindingMetaFromLINK(link).dump(*pool, oss, full);
-  //   oss << "\n";
-
-  //   return;
-  // }
-
-  // if (tag == IRI_GEN::RemoteEnvBinding) {
-  //   auto flags_span = pool->get_flags(this);
-  //   const auto &v = flags_span[IRI_GEN::RemoteEnvBindingSEXP::FLAG_IDX_LINK];
-  //   if (!std::holds_alternative<double>(v)) {
-  //     throw std::runtime_error("Expected LINK to be a double");
-  //   }
-  //   double link = std::get<double>(v);
-  //   oss << indent;
-  //   pool->iris->getBindingMetaFromLINK(link).dump(*pool, oss, full);
-  //   oss << "\n";
-
-  //   return;
-  // }
-
-  // 2. Resolve Tag Name
-  oss << indent << "[" << id << "] " << IRI_GEN::dump_tag(tag);
-
-  // 3. Handle Flags
-  bool first_flag = true;
-  auto flags_span = pool->get_flags(this);
-
-  for (uint32_t i = 0; i < num_flag_slots; ++i) {
-    const auto &v = flags_span[i];
-
-    IRI_GEN::IRI_FLAG flagEnum = IRI_GEN::IridiumMeta::get_flag_enum(tag, i);
-    if (flagEnum == IRI_GEN::IRI_FLAG::LINK ||
-        std::holds_alternative<std::monostate>(v))
-      continue;
-
-    if (first_flag) {
-      oss << " [";
-      first_flag = false;
-    } else {
-      oss << ", ";
-    }
-
-    // Stream the variant value
-    if (std::holds_alternative<double>(v)) {
-      oss << IRI_GEN::dump_flag(flagEnum) << ": ";
-      oss << std::setprecision(17) << std::get<double>(v);
-    } else if (std::holds_alternative<bool>(v)) {
-      oss << IRI_GEN::dump_flag(flagEnum) << ": ";
-      oss << std::boolalpha << std::get<bool>(v);
-    } else if (std::holds_alternative<StringID>(v)) {
-      oss << IRI_GEN::dump_flag(flagEnum) << ": ";
-      std::string_view str = pool->strings.get(std::get<StringID>(v));
-      append_escaped_json_string(oss, str);
-    } else if (std::holds_alternative<std::nullptr_t>(v)) {
-      oss << IRI_GEN::dump_flag(flagEnum);
-    }
-  }
-
-  if (!first_flag) {
-    oss << "]";
-  }
-
-  oss << "\n";
-
-  // 4. Handle Args (Children)
-  auto args_span = pool->get_args_view(this);
-  for (uint32_t i = 0; i < num_args; ++i) {
-    IRID child_id = args_span[i];
-    pool->operator[](child_id).dumpFlat(oss, pool, child_id, depth + 2,
-                                        tag == IRI_GEN::BB ? false : full);
   }
 }
 

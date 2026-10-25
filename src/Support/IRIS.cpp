@@ -10,6 +10,7 @@
 #include "Support/BBContainerSupport.hpp"
 #include "Support/BBSupport.hpp"
 #include "Support/ClosureTree.hpp"
+#include "Support/IRIS.hpp"
 #include "Support/FileSupport.hpp"
 #include <cassert>
 #include <memory>
@@ -881,11 +882,9 @@ std::vector<IRI_STORAGE::IRID> IRIS::collect_referenced_irids() const {
     ref_irids.push_back(id);
   }
 
-  if (bindingsPool) {
-    std::vector<IRI_STORAGE::IRID> bpool_ref_irids;
-    bpool_ref_irids = bindingsPool->collect_referenced_irids();
-    ref_irids.insert(ref_irids.end(), bpool_ref_irids.begin(), bpool_ref_irids.end());
-  }
+  std::vector<IRI_STORAGE::IRID> bpool_ref_irids;
+  bpool_ref_irids = ctx.storage.bindings.collect_referenced_irids();
+  ref_irids.insert(ref_irids.end(), bpool_ref_irids.begin(), bpool_ref_irids.end());
 
   return ref_irids;
 }
@@ -941,9 +940,7 @@ void IRIS::remap_irids(std::span<const IRID> old_to_new_irid_map) {
     id = remap(id);
   }
 
-  if (bindingsPool) {
-    bindingsPool->remap_irids(old_to_new_irid_map);
-  }
+  ctx.storage.bindings.remap_irids(old_to_new_irid_map);
 }
 
 void IRIS::dumpBindingsAtScope(std::ostream &oss, double currScope) const {

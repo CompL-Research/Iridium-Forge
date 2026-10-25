@@ -13,6 +13,8 @@
 
 namespace IRI_STORAGE {
 
+class IRIContext;
+
 // store result of Reachability analysis for doing GC
 // each index in visited tells whether node at that IRID is reachable
 struct ReachabilityResult {
@@ -103,7 +105,7 @@ public:
   void update_num_args(IRID id, uint32_t num_args);
 
   // collect roots to start reachability
-  std::vector<IRID> collect_roots(IRID entry) const;
+  std::vector<IRID> collect_roots(IRIContext &ctx, IRID entry) const;
 
   // Reachability
   // traverse nodes starting from the root (DFS) and mark them as reachable
@@ -125,7 +127,7 @@ public:
   void print_compaction_result(const std::string &label, const PoolMemory &before, const PoolMemory &after, double ms) const;
 
   // wrapper for both reachability and compaction
-  CompactionResult garbage_collect(IRID &root, const std::string &label);
+  CompactionResult garbage_collect(IRIContext &ctx, IRID &root, const std::string &label);
 
   // get pool memory stats
   PoolMemory memory_usage() const;
