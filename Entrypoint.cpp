@@ -42,7 +42,7 @@ inline void emitPhase(IridiumPool &pool, const std::string &name) {
   if (!statsOn()) return;
   auto m = pool.memory_usage();
   std::cerr << "IRI_PHASE," << name << "," << m.usedBytes << "," << m.capBytes
-            << "," << procStatusKb("VmRSS") << "\n";
+            << "," << procStatusKb("VmRSS") << "," << procStatusKb("VmHWM") << "\n";
 }
 
 inline void normalizeIRIDIUM(
