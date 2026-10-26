@@ -1,8 +1,13 @@
 export default [
   {
+    name: "dumpForgePassesSEXP",
+    default: false,
+    desc: "Dump Forge Passes (Raw SEXP)",
+  },
+  {
     name: "dumpForgePasses",
     default: false,
-    desc: "Dump Forge Passes",
+    desc: "Dump Forge Passes (Pretty Printing)",
   },
   {
     name: "constantProp",

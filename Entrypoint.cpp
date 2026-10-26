@@ -14,6 +14,7 @@
 #include "Support/ClosureTree.hpp"
 #include "Support/FileSupport.hpp"
 #include "Support/IRIS.hpp"
+#include "Support/PP.hpp"
 #include "Support/PTA.hpp"
 #include <exception>
 #include <iostream>
@@ -33,13 +34,27 @@ using BuildContextMap =
 namespace {
 
 void dumpIfEnabled(IRIContext &ctx, IRID sexp, const std::string &name) {
-  if (ctx.flags.dumpForgePasses) {
-    std::ofstream outFile(name + ".iridump");
+  if (ctx.flags.dumpForgePassesSEXP) {
+    std::ofstream outFile("out.iri/" + name + ".iri");
     IRI_NODE(ctx, sexp).dumpFlat(outFile, &ctx);
+  }
+
+  if (ctx.flags.dumpForgePasses) {
+    // Readable form of the snapshots worth reading by hand.
+    if (name == "AFTER_CORE_PASSES" || name == "AFTER_OPT_PASSES") {
+      std::ofstream ppFile("out.iri/" + name + ".pp.iri");
+      prettyPrint(ppFile, ctx, sexp);
+    }
   }
 }
 
 void runCorePasses(IRIContext &ctx, IRID sexp, BuildContextMap &buildContext) {
+  if (ctx.flags.dumpForgePasses || ctx.flags.dumpForgePassesSEXP) {
+    namespace fs = std::filesystem;
+    std::filesystem::path root_ = fs::path("out.iri");
+    fs::create_directories(root_);
+  }
+
   dumpIfEnabled(ctx, sexp, "_0_BEFORE_NORMALIZAION");
 
   IRI_CORE_PASSES::CTARGETS continueTargets;
@@ -82,7 +97,7 @@ void runCorePasses(IRIContext &ctx, IRID sexp, BuildContextMap &buildContext) {
        [&] {
          IRI_CORE_PASSES::_22_ESTKTHM(ctx, sexp, buildContext, continueTargets);
        }},
-      {"_AFTER_CORE_PASSES_",
+      {"AFTER_CORE_PASSES",
        [&] { IRI_CORE_PASSES::_FNOPS(ctx, sexp, buildContext); }},
   };
 

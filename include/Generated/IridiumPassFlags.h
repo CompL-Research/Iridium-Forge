@@ -1,4 +1,4 @@
-// Generated: 2026-09-29 23:00:46
+// Generated: 2026-10-04 08:44:09
 #pragma once
 #include <functional>
 #include <string>
@@ -6,7 +6,8 @@
 namespace IRI_GEN {
 
 struct PassFlags {
-  bool dumpForgePasses = false; // Dump Forge Passes
+  bool dumpForgePassesSEXP = false; // Dump Forge Passes (Raw SEXP)
+  bool dumpForgePasses = false; // Dump Forge Passes (Pretty Printing)
   bool constantProp = true; // Constant propagation optimization pass
   bool tdz = true; // TDZ-check elimination optimization pass (MTDZS)
   bool dce = true; // Dead code elimination optimization pass
@@ -24,6 +25,7 @@ struct PassFlags {
 inline void forEachPassFlag(
     PassFlags &flags,
     const std::function<void(const std::string &, bool &)> &fn) {
+  fn("dumpForgePassesSEXP", flags.dumpForgePassesSEXP);
   fn("dumpForgePasses", flags.dumpForgePasses);
   fn("constantProp", flags.constantProp);
   fn("tdz", flags.tdz);
