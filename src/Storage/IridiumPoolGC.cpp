@@ -13,21 +13,21 @@
 
 namespace IRI_STORAGE {
 
-std::vector<IRID> IridiumPool::collect_roots(IRIContext & ctx, IRID entry) const {
+std::vector<IRID> IridiumPool::collectRoots(IRIContext & ctx, IRID entry) const {
   std::vector<IRID> roots = {
     entry, NULL_SEXP, NOP_SEXP, NUBD_SEXP
   };
 
   // if IRIS exists, put referenced IRIDS in root set
   if (ctx.iris) {
-    auto iris_roots =  ctx.iris->collect_referenced_irids();
+    auto iris_roots =  ctx.iris->collectReferencedIrids();
     roots.insert(roots.end(), iris_roots.begin(), iris_roots.end());
   }
 
   return roots;
 }
 
-ReachabilityResult IridiumPool::mark_reachable(std::span<const IRID> roots) const {
+ReachabilityResult IridiumPool::markReachable(std::span<const IRID> roots) const {
   ReachabilityResult result;
   result.visited.assign(nodes.size(), false);
 
@@ -62,7 +62,7 @@ ReachabilityResult IridiumPool::mark_reachable(std::span<const IRID> roots) cons
   return result;
 }
 
-void IridiumPool::print_reachability(const ReachabilityResult &reach) const {
+void IridiumPool::printReachability(const ReachabilityResult &reach) const {
   size_t total = nodes.size();
   size_t reachable = reach.reachable_count;
   size_t unreachable = total - reachable;
@@ -85,7 +85,7 @@ void IridiumPool::print_reachability(const ReachabilityResult &reach) const {
   std::cout << std::endl;
 }
 
-CompactionResult IridiumPool::compact_pool(ReachabilityResult &reach) {
+CompactionResult IridiumPool::compactPool(ReachabilityResult &reach) {
   // For measurement: set IRI_GC_NOEARLYFREE to keep old storage alive until end,
   // to measure old vs new peak RSS
   static const bool earlyFree = std::getenv("IRI_GC_NOEARLYFREE") == nullptr;
@@ -198,7 +198,7 @@ CompactionResult IridiumPool::compact_pool(ReachabilityResult &reach) {
 }
 
 // b -> before, a -> after
-void IridiumPool::print_compaction_result(const std::string &label, const PoolMemory &b, const PoolMemory &a, double ms) const {
+void IridiumPool::printCompactionResult(const std::string &label, const PoolMemory &b, const PoolMemory &a, double ms) const {
   auto pct = [](size_t before, size_t after) {
     return before ? 100.0 * (double(before) - double(after)) / double(before) : 0.0;
   };
@@ -241,7 +241,7 @@ void IridiumPool::print_compaction_result(const std::string &label, const PoolMe
   std::cout.precision(6);
 }
 
-CompactionResult IridiumPool::garbage_collect(IRIContext &ctx, IRID &root, const std::string &label) {
+CompactionResult IridiumPool::garbageCollect(IRIContext &ctx, IRID &root, const std::string &label) {
   const bool stats = statsOn();
   const bool verbose = std::getenv("IRI_GC_VERBOSE") != nullptr;
   const bool measure = stats || verbose;
@@ -249,24 +249,24 @@ CompactionResult IridiumPool::garbage_collect(IRIContext &ctx, IRID &root, const
   PoolMemory b;   // before GC
   std::chrono::steady_clock::time_point t0;
   if (measure) {
-    b = memory_usage();
+    b = memoryUsage();
     t0 = std::chrono::steady_clock::now();
   }
   
-  std::vector<IRID> roots = collect_roots(ctx, root);
-  auto reach = mark_reachable(roots);
+  std::vector<IRID> roots = collectRoots(ctx, root);
+  auto reach = markReachable(roots);
 
   if (verbose) {
     std::cout << "\n" << label << " :\n";
-    print_reachability(reach);
+    printReachability(reach);
     std::ofstream out(label + "_with_ids.iridump");
     get_node(root).dumpFlat(out, &ctx, 0, true, root);
   }
 
-  auto compaction_result = compact_pool(reach);
+  auto compaction_result = compactPool(reach);
   root = compaction_result.old_to_new_irid_map[root];
   if (ctx.iris) {
-    ctx.iris->remap_irids(compaction_result.old_to_new_irid_map);
+    ctx.iris->remapIrids(compaction_result.old_to_new_irid_map);
   }
 
   if (measure) {
@@ -274,10 +274,10 @@ CompactionResult IridiumPool::garbage_collect(IRIContext &ctx, IRID &root, const
       std::chrono::steady_clock::now() - t0
     ).count();
 
-    PoolMemory a = memory_usage();
+    PoolMemory a = memoryUsage();
 
     if (verbose) {
-      print_compaction_result(label, b, a, ms);
+      printCompactionResult(label, b, a, ms);
     }
 
     if (stats) {
@@ -309,7 +309,7 @@ CompactionResult IridiumPool::garbage_collect(IRIContext &ctx, IRID &root, const
   return compaction_result;
 }
 
-PoolMemory IridiumPool::memory_usage() const {
+PoolMemory IridiumPool::memoryUsage() const {
   PoolMemory m;
 
   // count of elements in each storage structure

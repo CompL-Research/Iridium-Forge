@@ -105,14 +105,14 @@ public:
   void update_num_args(IRID id, uint32_t num_args);
 
   // collect roots to start reachability
-  std::vector<IRID> collect_roots(IRIContext &ctx, IRID entry) const;
+  std::vector<IRID> collectRoots(IRIContext &ctx, IRID entry) const;
 
   // Reachability
   // traverse nodes starting from the root (DFS) and mark them as reachable
-  ReachabilityResult mark_reachable(std::span<const IRID> roots) const;
+  ReachabilityResult markReachable(std::span<const IRID> roots) const;
 
   // print reachability result
-  void print_reachability(const ReachabilityResult &reach) const;
+  void printReachability(const ReachabilityResult &reach) const;
 
   // args_pool size
   size_t get_args_pool_size() const;
@@ -121,16 +121,16 @@ public:
   size_t get_flags_pool_size() const;
 
   // use Reachability result to compact nodes and args_pool
-  CompactionResult compact_pool(ReachabilityResult &reach);
+  CompactionResult compactPool(ReachabilityResult &reach);
 
   // print compaction result
-  void print_compaction_result(const std::string &label, const PoolMemory &before, const PoolMemory &after, double ms) const;
+  void printCompactionResult(const std::string &label, const PoolMemory &before, const PoolMemory &after, double ms) const;
 
   // wrapper for both reachability and compaction
-  CompactionResult garbage_collect(IRIContext &ctx, IRID &root, const std::string &label);
+  CompactionResult garbageCollect(IRIContext &ctx, IRID &root, const std::string &label);
 
   // get pool memory stats
-  PoolMemory memory_usage() const;
+  PoolMemory memoryUsage() const;
   
   IridiumPoolTelemetry telemetry() const;
 

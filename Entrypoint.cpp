@@ -41,7 +41,7 @@ inline int gcMode() {
 // record process VmRSS at a particular stage
 inline void emitPhase(IRIContext & ctx, const std::string &name) {
   if (!statsOn()) return;
-  auto m = ctx.storage.nodes.memory_usage();
+  auto m = ctx.storage.nodes.memoryUsage();
   std::cerr << "IRI_PHASE," << name << "," << m.usedBytes << "," << m.capBytes
             << "," << procStatusKb("VmRSS") << "," << procStatusKb("VmHWM") << "\n";
 }
@@ -114,7 +114,7 @@ void runCorePasses(IRIContext &ctx, IRID & sexpRef, BuildContextMap &buildContex
   }
 
   if (gcMode() & 1) {
-    auto compaction_result = ctx.storage.nodes.garbage_collect(ctx, sexpRef, "AFTER_CORE_PASSES");
+    auto compaction_result = ctx.storage.nodes.garbageCollect(ctx, sexpRef, "AFTER_CORE_PASSES");
   }
 
   emitPhase(ctx, "post_core_gc_point");
@@ -250,7 +250,7 @@ IRID sharedEntrypoint(IRIContext &ctx, IRID& file,
 
   emitPhase(ctx, "pre_final_gc_point");
   if (gcMode() & 2) {
-    auto compaction_result = ctx.storage.nodes.garbage_collect(ctx, file, "AFTER_IRIS_COMMIT");
+    auto compaction_result = ctx.storage.nodes.garbageCollect(ctx, file, "AFTER_IRIS_COMMIT");
   }
   emitPhase(ctx, "post_final_gc_point");
 

@@ -838,7 +838,7 @@ IRIS::getRemoteEnvBindingsInClosure(double headScope) {
   return res;
 }
 
-std::vector<IRI_STORAGE::IRID> IRIS::collect_referenced_irids() const {
+std::vector<IRI_STORAGE::IRID> IRIS::collectReferencedIrids() const {
   std::vector<IRI_STORAGE::IRID> ref_irids;
 
   // IRIDs in scopeHead
@@ -883,17 +883,17 @@ std::vector<IRI_STORAGE::IRID> IRIS::collect_referenced_irids() const {
   }
 
   std::vector<IRI_STORAGE::IRID> bpool_ref_irids;
-  bpool_ref_irids = ctx.storage.bindings.collect_referenced_irids();
+  bpool_ref_irids = ctx.storage.bindings.collectReferencedIrids();
   ref_irids.insert(ref_irids.end(), bpool_ref_irids.begin(), bpool_ref_irids.end());
 
   return ref_irids;
 }
 
-void IRIS::remap_irids(std::span<const IRID> old_to_new_irid_map) {
+void IRIS::remapIrids(std::span<const IRID> old_to_new_irid_map) {
   auto remap = [&](IRID old_irid) -> IRID {
     if (old_irid >= old_to_new_irid_map.size() || old_to_new_irid_map[old_irid] == static_cast<IRID>(-1)) {
       throw std::runtime_error(
-        "IRIS::remap_irids: garbage IRID in IRIS"
+        "IRIS::remapIrids: garbage IRID in IRIS"
       );
     }
     return old_to_new_irid_map[old_irid];
@@ -940,7 +940,7 @@ void IRIS::remap_irids(std::span<const IRID> old_to_new_irid_map) {
     id = remap(id);
   }
 
-  ctx.storage.bindings.remap_irids(old_to_new_irid_map);
+  ctx.storage.bindings.remapIrids(old_to_new_irid_map);
 }
 
 void IRIS::dumpBindingsAtScope(std::ostream &oss, double currScope) const {

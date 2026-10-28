@@ -115,7 +115,7 @@ BindingMeta &BindingsPool::allocate(IRIContext &ctx, IRID bID) {
   return get(storedIDX);
 }
 
-std::vector<IRID> BindingsPool::collect_referenced_irids() const {
+std::vector<IRID> BindingsPool::collectReferencedIrids() const {
   std::vector<IRID> ref_irids;
 
   for (size_t bPoolIndex = 1; bPoolIndex < bPool.size(); bPoolIndex++) {
@@ -138,11 +138,11 @@ std::vector<IRID> BindingsPool::collect_referenced_irids() const {
   return ref_irids;
 }
 
-void BindingsPool::remap_irids(std::span<const IRID> old_to_new_irid_map) {
+void BindingsPool::remapIrids(std::span<const IRID> old_to_new_irid_map) {
   auto remap = [&](IRID old_irid) -> IRID {
     if (old_irid >= old_to_new_irid_map.size() || old_to_new_irid_map[old_irid] == static_cast<IRID>(-1)) {
       throw std::runtime_error(
-        "BindingsPool::remap_irids: garbage IRID in BindingMeta"
+        "BindingsPool::remapIrids: garbage IRID in BindingMeta"
       );
     }
     return old_to_new_irid_map[old_irid];
