@@ -13,6 +13,29 @@
 
 namespace IRI_STORAGE {
 
+class IRIContext;
+
+// store result of Reachability analysis for doing GC
+// each index in visited tells whether node at that IRID is reachable
+struct ReachabilityResult {
+  std::vector<bool> visited;  // vector indexed by IRID for nodes
+  size_t reachable_count = 0; // total number of reachable nodes
+};
+
+// store old -> new IRID mappings
+struct CompactionResult {
+  // index: old IRID, element: new IRID
+  // old_to_new_irid_map[old_irid] = new_irid
+  std::vector<IRID> old_to_new_irid_map;
+};
+  
+struct PoolMemory {
+  size_t nodeCount = 0, argCount = 0, flagCount = 0, flagInternEntries = 0;
+  size_t nodesB = 0, argsB = 0, flagsB = 0, flagInternB = 0;  // size in bytes
+  size_t nodesCapB = 0, argsCapB = 0, flagsCapB = 0;  // capacity in bytes
+  size_t usedBytes = 0, capBytes = 0;   // total
+};
+
 struct IridiumPoolTelemetry {
   PoolMemStats nodes, args, flags;
 };
@@ -81,6 +104,34 @@ public:
 
   void update_num_args(IRID id, uint32_t num_args);
 
+  // collect roots to start reachability
+  std::vector<IRID> collectRoots(IRIContext &ctx, IRID entry) const;
+
+  // Reachability
+  // traverse nodes starting from the root (DFS) and mark them as reachable
+  ReachabilityResult markReachable(std::span<const IRID> roots) const;
+
+  // print reachability result
+  void printReachability(const ReachabilityResult &reach) const;
+
+  // args_pool size
+  size_t get_args_pool_size() const;
+
+  // flags_pool size
+  size_t get_flags_pool_size() const;
+
+  // use Reachability result to compact nodes and args_pool
+  CompactionResult compactPool(ReachabilityResult &reach);
+
+  // print compaction result
+  void printCompactionResult(const std::string &label, const PoolMemory &before, const PoolMemory &after, double ms) const;
+
+  // wrapper for both reachability and compaction
+  CompactionResult garbageCollect(IRIContext &ctx, IRID &root, const std::string &label);
+
+  // get pool memory stats
+  PoolMemory memoryUsage() const;
+  
   IridiumPoolTelemetry telemetry() const;
 
   IridiumPool() = default;

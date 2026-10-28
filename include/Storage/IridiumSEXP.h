@@ -1,4 +1,5 @@
 #pragma once
+#include "Storage/Config.h"
 #include "Generated/IridiumEnums.h"
 #include "Storage/Config.h"
 #include <cstdint>

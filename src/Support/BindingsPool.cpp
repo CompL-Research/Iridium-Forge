@@ -115,6 +115,58 @@ BindingMeta &BindingsPool::allocate(IRIContext &ctx, IRID bID) {
   return get(storedIDX);
 }
 
+std::vector<IRID> BindingsPool::collectReferencedIrids() const {
+  std::vector<IRID> ref_irids;
+
+  for (size_t bPoolIndex = 1; bPoolIndex < bPool.size(); bPoolIndex++) {
+    auto &meta = bPool[bPoolIndex];
+    
+    // IRID associated with BindingMeta
+    ref_irids.push_back(meta.ID);
+    
+    // defs IRIDs in BindingMeta
+    for (auto &d : meta.defs) {
+      ref_irids.push_back(d);
+    }
+
+    // uses IRIDs in BindingMeta
+    for (auto &u : meta.uses) {
+      ref_irids.push_back(u);
+    }
+  }
+
+  return ref_irids;
+}
+
+void BindingsPool::remapIrids(std::span<const IRID> old_to_new_irid_map) {
+  auto remap = [&](IRID old_irid) -> IRID {
+    if (old_irid >= old_to_new_irid_map.size() || old_to_new_irid_map[old_irid] == static_cast<IRID>(-1)) {
+      throw std::runtime_error(
+        "BindingsPool::remapIrids: garbage IRID in BindingMeta"
+      );
+    }
+    return old_to_new_irid_map[old_irid];
+  };
+
+  // Skipping first bPool meta because allocateStub stores an empty stub at 0th index
+  for (size_t bPoolIndex = 1; bPoolIndex < bPool.size(); bPoolIndex++) {
+    auto &meta = bPool[bPoolIndex];
+
+    // remap ID in BindingMeta
+    meta.ID = remap(meta.ID);
+
+    // remap defs IRIDs in BindingMeta
+    for (auto &d : meta.defs) {
+      d = remap(d);
+    }
+
+    // remap uses IRIDs in BindingMeta
+    for (auto &u : meta.uses) {
+      u = remap(u);
+    }
+  }
+}
+
 static void printEnvBindingDetails(IRIContext &ctx, std::ostream &oss,
                                    IRID ID) {
   EnvBindingSEXP eb(ID, ctx);
