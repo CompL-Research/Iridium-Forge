@@ -1,4 +1,4 @@
-// Generated: 2026-10-29 19:59:04
+// Generated: 2026-10-29 20:48:05
 #pragma once
 #include "Storage/Config.h"
 #include "Storage/IridiumSEXP.h"
@@ -3389,8 +3389,8 @@ using IRI_STORAGE::FlagValue;
       }
     }
 
-    static IRID create(IRIContext& p, IRID This, IRID Super, IRID Field) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSSuperFieldRead, {This, Super, Field}, {});
+    static IRID create(IRIContext& p, IRID This, IRID Home, IRID Field) {
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSSuperFieldRead, {This, Home, Field}, {});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 3;
@@ -3411,9 +3411,9 @@ using IRI_STORAGE::FlagValue;
     bool hasArg_This() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
     void setArg_This(IRID val) { assert(hasArg_This() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
-    IRID getArg_Super() const { return ctx->storage.nodes.get_args(id)[1]; }
-    bool hasArg_Super() const { return 1 < ctx->storage.nodes.get_args(id).size(); }
-    void setArg_Super(IRID val) { assert(hasArg_Super() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,1,val); }
+    IRID getArg_Home() const { return ctx->storage.nodes.get_args(id)[1]; }
+    bool hasArg_Home() const { return 1 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Home(IRID val) { assert(hasArg_Home() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,1,val); }
 
     IRID getArg_Field() const { return ctx->storage.nodes.get_args(id)[2]; }
     bool hasArg_Field() const { return 2 < ctx->storage.nodes.get_args(id).size(); }
@@ -3433,8 +3433,8 @@ using IRI_STORAGE::FlagValue;
       }
     }
 
-    static IRID create(IRIContext& p, IRID This, IRID Super, IRID Field, IRID Value) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSSuperFieldWrite, {This, Super, Field, Value}, {});
+    static IRID create(IRIContext& p, IRID This, IRID Home, IRID Field, IRID Value) {
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSSuperFieldWrite, {This, Home, Field, Value}, {});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 4;
@@ -3455,9 +3455,9 @@ using IRI_STORAGE::FlagValue;
     bool hasArg_This() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
     void setArg_This(IRID val) { assert(hasArg_This() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
-    IRID getArg_Super() const { return ctx->storage.nodes.get_args(id)[1]; }
-    bool hasArg_Super() const { return 1 < ctx->storage.nodes.get_args(id).size(); }
-    void setArg_Super(IRID val) { assert(hasArg_Super() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,1,val); }
+    IRID getArg_Home() const { return ctx->storage.nodes.get_args(id)[1]; }
+    bool hasArg_Home() const { return 1 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Home(IRID val) { assert(hasArg_Home() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,1,val); }
 
     IRID getArg_Field() const { return ctx->storage.nodes.get_args(id)[2]; }
     bool hasArg_Field() const { return 2 < ctx->storage.nodes.get_args(id).size(); }

@@ -18,6 +18,7 @@ std::string ppStringLit(std::string_view s);
 std::string ppNumber(double d);
 std::string ppBinding(const PPContext &pp, IRID binding);
 std::string ppMember(const PPContext &pp, IRID obj, IRID key);
+std::string ppMemberOf(const PPContext &pp, const std::string &base, IRID key);
 std::string ppPrivateMember(const PPContext &pp, IRID obj, IRID key);
 const char *ppWriteOp(bool init, bool safe);
 // A write's target ("thisinit ^this", "decl(script) s:x") and operator.

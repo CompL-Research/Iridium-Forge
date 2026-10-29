@@ -825,7 +825,7 @@ export default [
   {
     tag: "JSSuperFieldRead",
     meta: "AMP",
-    args: ["This", "Super", "Field"],
+    args: ["This", "Home", "Field"],
     flags: {
       string: [],
       void: [],
@@ -836,7 +836,7 @@ export default [
   {
     tag: "JSSuperFieldWrite",
     meta: "STMT",
-    args: ["This", "Super", "Field", "Value"],
+    args: ["This", "Home", "Field", "Value"],
     flags: {
       string: [],
       void: [],
