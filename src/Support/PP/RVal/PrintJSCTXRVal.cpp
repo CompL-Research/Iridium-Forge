@@ -15,15 +15,16 @@ namespace IRI_STRUCTURAL {
  *   - double OPID -> sexp.getOPID()
  */
 std::string printJSCTXRVal(const PPContext &pp, IRID node) {
-  // Implicit binding initializers, see NewBindingCreation.ts for the OPIDs.
+  // Special objects, see NewBindingCreation.ts for the OPIDs. Only 0-6 and 9
+  // reach the lowering (pass 4_3 rewrites 10-12; 7 and 8 were removed).
   static const char *names[] = {
-      "arguments",  "mapped_arguments", "active_func", "new_target",
-      "home_object", "var_obj",         "module_meta", "super_ctr",
-      "super_obj",  "this",             "nubd",        "ret",
-      "active_func_name"};
+      "arguments",   "mapped_arguments", "active_func", "new_target",
+      "home_object", "var_obj",          "module_meta", nullptr,
+      nullptr,       "this"};
   IRI_GEN::JSCTXSEXP sexp(node, pp.ctx);
   double opid = sexp.getOPID();
-  std::string name = (opid >= 0 && opid < std::size(names))
+  std::string name = (opid >= 0 && opid < std::size(names) &&
+                      names[static_cast<size_t>(opid)])
                          ? names[static_cast<size_t>(opid)]
                          : "op" + ppNumber(opid);
   auto a = pp.args(node);
