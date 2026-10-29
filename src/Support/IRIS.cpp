@@ -10,6 +10,7 @@
 #include "Support/BBContainerSupport.hpp"
 #include "Support/BBSupport.hpp"
 #include "Support/ClosureTree.hpp"
+#include "Support/IRIS.hpp"
 #include "Support/FileSupport.hpp"
 #include <cassert>
 #include <memory>
@@ -832,6 +833,111 @@ IRIS::getRemoteEnvBindingsInClosure(double headScope) {
     }
   }
   return res;
+}
+
+std::vector<IRI_STORAGE::IRID> IRIS::collectReferencedIrids() const {
+  std::vector<IRI_STORAGE::IRID> ref_irids;
+
+  // IRIDs in scopeHead
+  for (auto &[currHead, bbcID] : scopeHead) {
+    ref_irids.push_back(bbcID);
+  }
+
+  // IRIDs in argsAtScope
+  for (auto &[currScope, argbIDs] : argsAtScope) {
+    for (auto &bID : argbIDs) {
+      ref_irids.push_back(bID);
+    }
+  }
+
+  // IRIDs in scopeBindings
+  for (auto &[currScope, nameBindingMap] : scopeBindings) {
+    for (auto &[name, bID] : nameBindingMap) {
+      ref_irids.push_back(bID);
+    }
+  }
+
+  // IRIDs in scriptBindings
+  for (auto &[name, bID] : scriptBindings) {
+    ref_irids.push_back(bID);
+  }
+
+  // IRIDs in globalBindings
+  for (auto &[name, bID] : globalBindings) {
+    ref_irids.push_back(bID);
+  }
+
+  // closure binding IRIDs in closuresAtScope
+  for (auto &[currScope, closurebIDs] : closuresAtScope) {
+    for (auto &closurebID : closurebIDs) {
+      ref_irids.push_back(closurebID);
+    }
+  }
+
+  // direct eval IRIDs
+  for (auto &[id, scopeToTaint, containerScope] : directEvals) {
+    ref_irids.push_back(id);
+  }
+
+  std::vector<IRI_STORAGE::IRID> bpool_ref_irids;
+  bpool_ref_irids = ctx.storage.bindings.collectReferencedIrids();
+  ref_irids.insert(ref_irids.end(), bpool_ref_irids.begin(), bpool_ref_irids.end());
+
+  return ref_irids;
+}
+
+void IRIS::remapIrids(std::span<const IRID> old_to_new_irid_map) {
+  auto remap = [&](IRID old_irid) -> IRID {
+    if (old_irid >= old_to_new_irid_map.size() || old_to_new_irid_map[old_irid] == static_cast<IRID>(-1)) {
+      throw std::runtime_error(
+        "IRIS::remapIrids: garbage IRID in IRIS"
+      );
+    }
+    return old_to_new_irid_map[old_irid];
+  };
+
+  // remap IRID in scopeHead
+  for (auto &[currHead, bbcID] : scopeHead) {
+    bbcID = remap(bbcID);
+  }
+
+  // remap IRID in argsAtScope
+  for (auto &[currScope, argbIDs] : argsAtScope) {
+    for (auto &bID : argbIDs) {
+      bID = remap(bID);
+    }
+  }
+
+  // remap IRID in scopeBindings
+  for (auto &[currScope, nameBindingMap] : scopeBindings) {
+    for (auto &[name, bID] : nameBindingMap) {
+      bID = remap(bID);
+    }
+  }
+
+  // remap IRID in scriptBindings
+  for (auto &[name, bID] : scriptBindings) {
+    bID = remap(bID);
+  }
+
+  // remap IRID in globalBindings
+  for (auto &[name, bID] : globalBindings) {
+    bID = remap(bID);
+  }
+
+  // remap closure binding IRID in closuresAtScope
+  for (auto &[currScope, closurebIDs] : closuresAtScope) {
+    for (auto &closurebID : closurebIDs) {
+      closurebID = remap(closurebID);
+    }
+  }
+
+  // remap direct eval IRIDs
+  for (auto &[id, scopeToTaint, containerScope] : directEvals) {
+    id = remap(id);
+  }
+
+  ctx.storage.bindings.remapIrids(old_to_new_irid_map);
 }
 
 void IRIS::dumpBindingsAtScope(std::ostream &oss, double currScope) const {

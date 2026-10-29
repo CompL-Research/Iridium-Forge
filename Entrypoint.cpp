@@ -16,6 +16,7 @@
 #include "Support/IRIS.hpp"
 #include "Support/PP.hpp"
 #include "Support/PTA.hpp"
+#include "Storage/GCStats.h"
 #include <exception>
 #include <iostream>
 #include <functional>
@@ -27,6 +28,23 @@ namespace IRI_ENTRY {
 using namespace IRI_STORAGE;
 using namespace IRI_PARSE;
 using namespace IRI_STRUCTURAL;
+
+// 0 = no GC, 1 = GC only after core passes, 2 = GC only after iris commit, 3 = both (default)
+inline int gcMode() {
+  static const int m = [] {
+    const char *e = std::getenv("IRI_GC");
+    return e ? std::atoi(e) : 3;
+  }();
+  return m;
+}
+
+// record process VmRSS at a particular stage
+inline void emitPhase(IRIContext & ctx, const std::string &name) {
+  if (!statsOn()) return;
+  auto m = ctx.storage.nodes.memoryUsage();
+  std::cerr << "IRI_PHASE," << name << "," << m.usedBytes << "," << m.capBytes
+            << "," << procStatusKb("VmRSS") << "," << procStatusKb("VmHWM") << "\n";
+}
 
 using BuildContextMap =
     std::unordered_map<int, std::shared_ptr<IridiumBuildContext>>;
@@ -48,14 +66,14 @@ void dumpIfEnabled(IRIContext &ctx, IRID sexp, const std::string &name) {
   }
 }
 
-void runCorePasses(IRIContext &ctx, IRID sexp, BuildContextMap &buildContext) {
+void runCorePasses(IRIContext &ctx, IRID & sexpRef, BuildContextMap &buildContext) {
   if (ctx.flags.dumpForgePasses || ctx.flags.dumpForgePassesSEXP) {
     namespace fs = std::filesystem;
     std::filesystem::path root_ = fs::path("out.iri");
     fs::create_directories(root_);
   }
 
-  dumpIfEnabled(ctx, sexp, "_0_BEFORE_NORMALIZAION");
+  dumpIfEnabled(ctx, sexpRef, "_0_BEFORE_NORMALIZAION");
 
   IRI_CORE_PASSES::CTARGETS continueTargets;
 
@@ -65,51 +83,58 @@ void runCorePasses(IRIContext &ctx, IRID sexp, BuildContextMap &buildContext) {
   };
 
   std::vector<CorePassEntry> passes = {
-      {"_1_NBBF", [&] { IRI_CORE_PASSES::_1_NBBF(ctx, sexp, buildContext); }},
-      {"_2_HFD", [&] { IRI_CORE_PASSES::_2_HFD(ctx, sexp, buildContext); }},
+      {"_1_NBBF", [&] { IRI_CORE_PASSES::_1_NBBF(ctx, sexpRef, buildContext); }},
+      {"_2_HFD", [&] { IRI_CORE_PASSES::_2_HFD(ctx, sexpRef, buildContext); }},
       {"_4_1_1_GICG",
-       [&] { IRI_CORE_PASSES::_4_1_1_GICG(ctx, sexp, buildContext); }},
+       [&] { IRI_CORE_PASSES::_4_1_1_GICG(ctx, sexpRef, buildContext); }},
       {"_4_1_2_RUR",
-       [&] { IRI_CORE_PASSES::_4_1_2_RUR(ctx, sexp, buildContext); }},
-      {"_4_2_PMB", [&] { IRI_CORE_PASSES::_4_2_PMB(ctx, sexp, buildContext); }},
-      {"_4_3_PIB", [&] { IRI_CORE_PASSES::_4_3_PIB(ctx, sexp, buildContext); }},
-      {"_4_4_RFD", [&] { IRI_CORE_PASSES::_4_4_RFD(ctx, sexp, buildContext); }},
-      {"_4_5_PEB", [&] { IRI_CORE_PASSES::_4_5_PEB(ctx, sexp, buildContext); }},
-      {"_8_RREBS", [&] { IRI_CORE_PASSES::_8_RREBS(ctx, sexp, buildContext); }},
-      {"_9_CER", [&] { IRI_CORE_PASSES::_9_RLT(ctx, sexp, buildContext); }},
+       [&] { IRI_CORE_PASSES::_4_1_2_RUR(ctx, sexpRef, buildContext); }},
+      {"_4_2_PMB", [&] { IRI_CORE_PASSES::_4_2_PMB(ctx, sexpRef, buildContext); }},
+      {"_4_3_PIB", [&] { IRI_CORE_PASSES::_4_3_PIB(ctx, sexpRef, buildContext); }},
+      {"_4_4_RFD", [&] { IRI_CORE_PASSES::_4_4_RFD(ctx, sexpRef, buildContext); }},
+      {"_4_5_PEB", [&] { IRI_CORE_PASSES::_4_5_PEB(ctx, sexpRef, buildContext); }},
+      {"_8_RREBS", [&] { IRI_CORE_PASSES::_8_RREBS(ctx, sexpRef, buildContext); }},
+      {"_9_CER", [&] { IRI_CORE_PASSES::_9_RLT(ctx, sexpRef, buildContext); }},
       {"_10_RBACT",
        [&] {
-         continueTargets = IRI_CORE_PASSES::_10_RBACT(ctx, sexp, buildContext);
+         continueTargets = IRI_CORE_PASSES::_10_RBACT(ctx, sexpRef, buildContext);
        }},
       {"_11_12_DAPRT",
-       [&] { IRI_CORE_PASSES::_11_12_DAPRT(ctx, sexp, buildContext); }},
-      {"_16_MDE", [&] { IRI_CORE_PASSES::_16_MDE(ctx, sexp, buildContext); }},
-      {"_17_RTDZ", [&] { IRI_CORE_PASSES::_17_RTDZ(ctx, sexp, buildContext); }},
+       [&] { IRI_CORE_PASSES::_11_12_DAPRT(ctx, sexpRef, buildContext); }},
+      {"_16_MDE", [&] { IRI_CORE_PASSES::_16_MDE(ctx, sexpRef, buildContext); }},
+      {"_17_RTDZ", [&] { IRI_CORE_PASSES::_17_RTDZ(ctx, sexpRef, buildContext); }},
       {"_18_DELOP",
-       [&] { IRI_CORE_PASSES::_18_DELOP(ctx, sexp, buildContext); }},
+       [&] { IRI_CORE_PASSES::_18_DELOP(ctx, sexpRef, buildContext); }},
       {"_19_CBBAMTLA",
-       [&] { IRI_CORE_PASSES::_19_CBBAMTLA(ctx, sexp, buildContext); }},
-      {"_21_TER", [&] { IRI_CORE_PASSES::_21_TER(ctx, sexp, buildContext); }},
+       [&] { IRI_CORE_PASSES::_19_CBBAMTLA(ctx, sexpRef, buildContext); }},
+      {"_21_TER", [&] { IRI_CORE_PASSES::_21_TER(ctx, sexpRef, buildContext); }},
       {"_22_ESTKTHM",
        [&] {
-         IRI_CORE_PASSES::_22_ESTKTHM(ctx, sexp, buildContext, continueTargets);
+         IRI_CORE_PASSES::_22_ESTKTHM(ctx, sexpRef, buildContext, continueTargets);
        }},
       {"AFTER_CORE_PASSES",
-       [&] { IRI_CORE_PASSES::_FNOPS(ctx, sexp, buildContext); }},
+       [&] { IRI_CORE_PASSES::_FNOPS(ctx, sexpRef, buildContext); }},
   };
-
+  
   for (auto &pass : passes) {
     ctx.debugger.tick(pass.name);
     pass.run();
     ctx.debugger.tock(pass.name);
-    dumpIfEnabled(ctx, sexp, pass.name);
+    dumpIfEnabled(ctx, sexpRef, pass.name);
+    emitPhase(ctx,pass.name);
   }
+
+  if (gcMode() & 1) {
+    auto compaction_result = ctx.storage.nodes.garbageCollect(ctx, sexpRef, "AFTER_CORE_PASSES");
+  }
+
+  emitPhase(ctx, "post_core_gc_point");
 }
 
-void buildClosureTree(IRIContext &ctx, IRID sexp) {
-  IRID treeRoot = IRI_HELPERS::getTopLevelContainer(ctx, sexp);
+void buildClosureTree(IRIContext &ctx, IRID& sexpRef) {
+  IRID treeRoot = IRI_HELPERS::getTopLevelContainer(ctx, sexpRef);
   ctx.closureTree = std::make_unique<ClosureTree>(ctx, treeRoot);
-  FileSupport fs(sexp, ctx);
+  FileSupport fs(sexpRef, ctx);
 
   for (auto [bbcID, _] : fs.containers()) {
     if (bbcID == treeRoot)
@@ -195,11 +220,11 @@ void dumpCFGs(IRIContext &ctx) {
             << std::endl;
 }
 
-void commitAndDump(IRIContext &ctx, IRID sexp) {
+void commitAndDump(IRIContext &ctx, IRID& sexpRef) {
   ctx.closureTree->commit();
   ctx.iris->commit();
 
-  dumpIfEnabled(ctx, sexp, "AFTER_OPT_PASSES");
+  dumpIfEnabled(ctx, sexpRef, "AFTER_OPT_PASSES");
   if (ctx.flags.dumpCFG)
     dumpCFGs(ctx);
   if (ctx.flags.dumpClosureTree)
@@ -212,17 +237,36 @@ void commitAndDump(IRIContext &ctx, IRID sexp) {
 
 } // namespace
 
-void normalizeIRIDIUM(IRIContext &ctx, IRID sexp,
+void normalizeIRIDIUM(IRIContext &ctx, IRID& sexpRef,
                       BuildContextMap &iridiumBuildContext) {
-  runCorePasses(ctx, sexp, iridiumBuildContext);
-  buildClosureTree(ctx, sexp);
+  runCorePasses(ctx, sexpRef, iridiumBuildContext);
+  buildClosureTree(ctx, sexpRef);
   runOptimizationPasses(ctx);
-  commitAndDump(ctx, sexp);
+  commitAndDump(ctx, sexpRef);
 }
 
-IRID sharedEntrypoint(IRIContext &ctx, IRID file,
+IRID sharedEntrypoint(IRIContext &ctx, IRID& file,
                       BuildContextMap &iridiumBuildContext) {
+                      
+  if (statsOn()) {
+     resetPeakRss();   // VmHWM measures peak for normalization + GC
+
+     std::cerr << "IRI_SIZES," << sizeof(IRI_STORAGE::IridiumSEXP) << "," << sizeof(IRID)
+               << "," << sizeof(FlagValue) << "\n";
+     std::cerr << "IRI_START," << procStatusKb("VmRSS") << "," << procStatusKb("VmHWM") << "\n";
+    emitPhase(ctx, "start");
+  }
+
   normalizeIRIDIUM(ctx, file, iridiumBuildContext);
+
+  emitPhase(ctx, "pre_final_gc_point");
+  if (gcMode() & 2) {
+    auto compaction_result = ctx.storage.nodes.garbageCollect(ctx, file, "AFTER_IRIS_COMMIT");
+  }
+  emitPhase(ctx, "post_final_gc_point");
+
+  if (statsOn())
+    std::cerr << "IRI_FINAL," << procStatusKb("VmRSS") << "," << procStatusKb("VmHWM") << "\n";
 
   return file;
 }

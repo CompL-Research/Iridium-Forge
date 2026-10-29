@@ -178,34 +178,6 @@ void IridiumSEXP::dumpFlat(std::ostream &oss, IRIContext *ctx, int depth,
   // 1. Setup Indentation
   std::string indent(depth, ' ');
 
-  // if (tag == IRI_GEN::EnvBinding) {
-  //   auto flags_span = ctx->storage.nodes.get_flags(this);
-  //   const auto &v = flags_span[IRI_GEN::EnvBindingSEXP::FLAG_IDX_LINK];
-  //   if (!std::holds_alternative<double>(v)) {
-  //     throw std::runtime_error("Expected LINK to be a double");
-  //   }
-  //   double link = std::get<double>(v);
-  //   oss << indent;
-  //   ctx->iris->getBindingMetaFromLINK(link).dump(*ctx, oss, full);
-  //   oss << "\n";
-
-  //   return;
-  // }
-
-  // if (tag == IRI_GEN::RemoteEnvBinding) {
-  //   auto flags_span = ctx->storage.nodes.get_flags(this);
-  //   const auto &v = flags_span[IRI_GEN::RemoteEnvBindingSEXP::FLAG_IDX_LINK];
-  //   if (!std::holds_alternative<double>(v)) {
-  //     throw std::runtime_error("Expected LINK to be a double");
-  //   }
-  //   double link = std::get<double>(v);
-  //   oss << indent;
-  //   ctx->iris->getBindingMetaFromLINK(link).dump(*ctx, oss, full);
-  //   oss << "\n";
-
-  //   return;
-  // }
-
   // 2. Resolve Tag Name
   oss << indent << IRI_GEN::dump_tag(tag);
   if (id != 0) {

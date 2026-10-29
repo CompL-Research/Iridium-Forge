@@ -243,6 +243,14 @@ void IridiumPool::update_num_args(IRID id, uint32_t num_args) {
   node.num_args = num_args;
 }
 
+size_t IridiumPool::get_args_pool_size() const {
+  return args_pool.size();
+}
+
+size_t IridiumPool::get_flags_pool_size() const {
+  return flags_pool.size();
+}
+
 IridiumPoolTelemetry IridiumPool::telemetry() const {
   auto stat = [](const auto &v) {
     using T = typename std::decay_t<decltype(v)>::value_type;
