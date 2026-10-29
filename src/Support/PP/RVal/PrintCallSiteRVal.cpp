@@ -22,9 +22,9 @@ namespace IRI_STRUCTURAL {
  */
 std::string printCallSiteRVal(const PPContext &pp, IRID node) {
   // ctx->f(a, b), same shape as Apply. ctx is `this` for plain/private calls
-  // and new.target for super/new (construct). Mirrors the lowering order:
+  // and new.target for new. Mirrors the lowering order:
   //   eval#N f(a, b)            [f, args...], no ctx
-  //   super nt->f(a, b)         [f, nt, args...], new.target = nt
+  //   super(ctor: f, new.target: nt)(a, b)    [f, nt, args...]
   //   new f->f(a, b)            [f, args...], new.target = callee
   //   ctx->f(a, b)              CCall: [ctx, f, args...], this = ctx
   //   private ctx->f(a, b)      [ctx, f, args...], brand-checked
@@ -55,9 +55,9 @@ std::string printCallSiteRVal(const PPContext &pp, IRID node) {
 
   if (eval)
     return prefix + "eval#" + ppNumber(sexp.getJSDirectEval()) + " " + call;
-  if (super) // the super ctor is pushed first, then new.target
-    return prefix + "super " + ppOperand(pp, a[1]) + "->" + ppOperand(pp, a[0]) +
-           "(" + ppList(pp, a, 2) + ")";
+  if (super)
+    return prefix + "super(ctor: " + ppRVal(pp, a[0]) +
+           ", new.target: " + ppRVal(pp, a[1]) + ")(" + ppList(pp, a, 2) + ")";
   if (ctor)
     return prefix + "new " + callee + "->" + call;
   if (priv)

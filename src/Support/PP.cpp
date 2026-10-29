@@ -94,9 +94,12 @@ std::string ppPrivateMember(const PPContext &pp, IRID obj, IRID key) {
 }
 
 std::string ppMember(const PPContext &pp, IRID obj, IRID key) {
-  // Fixed keys use dot form (o.name, o."a-b"); brackets are reserved for
-  // computed keys.
-  std::string base = ppOperand(pp, obj);
+  return ppMemberOf(pp, ppOperand(pp, obj), key);
+}
+
+// Fixed keys use dot form (o.name, o."a-b"); brackets are reserved for
+// computed keys.
+std::string ppMemberOf(const PPContext &pp, const std::string &base, IRID key) {
   if (pp.tagOf(key) == String) {
     StringSEXP s(key, pp.ctx);
     if (s.hasIridiumPrimitive()) {
