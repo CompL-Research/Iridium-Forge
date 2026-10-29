@@ -83,13 +83,15 @@ static bool isIdentifier(std::string_view s) {
 }
 
 std::string ppMember(const PPContext &pp, IRID obj, IRID key) {
+  // Fixed keys use dot form (o.name, o."a-b"); brackets are reserved for
+  // computed keys.
   std::string base = ppOperand(pp, obj);
   if (pp.tagOf(key) == String) {
     StringSEXP s(key, pp.ctx);
     if (s.hasIridiumPrimitive()) {
       std::string_view name = pp.str(s.getIridiumPrimitive());
-      if (isIdentifier(name))
-        return base + "." + std::string(name);
+      return base + "." +
+             (isIdentifier(name) ? std::string(name) : ppStringLit(name));
     }
   }
   return base + "[" + ppRVal(pp, key) + "]";
@@ -152,8 +154,6 @@ std::string ppOperand(const PPContext &pp, IRID node) {
   case JSUnop:
   case Await:
   case Yield:
-  case UNOPDelMemberExpr:
-  case UNOPDelVar:
   case JSClass:
     return "(" + s + ")";
   case CallSite:
