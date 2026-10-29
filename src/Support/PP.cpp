@@ -385,7 +385,12 @@ private:
     os << "\n";
 
     for (IRID stmt : pp.args(bb)) {
-      os << "    " << ppStatement(pp, stmt);
+      // Multiline statements: indent every line, not just the first.
+      std::string text = ppStatement(pp, stmt);
+      for (size_t nl = text.find('\n'); nl != std::string::npos;
+           nl = text.find('\n', nl + 1))
+        text.insert(nl + 1, "    ");
+      os << "    " << text;
       if (pp.showIds)
         os << "  ; #" << stmt;
       os << "\n";
