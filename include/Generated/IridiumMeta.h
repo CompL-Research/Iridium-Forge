@@ -1,4 +1,4 @@
-// Generated: 2026-09-20 21:49:29
+// Generated: 2026-10-30 04:34:39
 #pragma once
 #include "IridiumEnums.h"
 #include <cstdint>
@@ -21,8 +21,8 @@ public:
       case IRI_GEN::JSExplicitBindingDeclaration: return 6;
       case IRI_GEN::JSExplicitBindingDeclarationN: return 6;
       case IRI_GEN::JSExplicitBindingDeclarationX: return 6;
-      case IRI_GEN::CallSite: return 8;
-      case IRI_GEN::Apply: return 3;
+      case IRI_GEN::CallSite: return 0;
+      case IRI_GEN::Apply: return 0;
       case IRI_GEN::ReturnAsync: return 0;
       case IRI_GEN::BB: return 7;
       case IRI_GEN::Return: return 0;
@@ -48,12 +48,14 @@ public:
       case IRI_GEN::SiblingSpecialWrite: return 5;
       case IRI_GEN::JSNUBD: return 0;
       case IRI_GEN::Number: return 1;
-      case IRI_GEN::JSClass: return 2;
+      case IRI_GEN::JSClass: return 1;
       case IRI_GEN::JSCheckConstructor: return 0;
-      case IRI_GEN::ResolvePrivateEnvBinding: return 2;
-      case IRI_GEN::PVTEnvRead: return 3;
       case IRI_GEN::JSPrivate: return 1;
-      case IRI_GEN::JSPrivateFieldWrite: return 1;
+      case IRI_GEN::JSPrivateFieldDefine: return 0;
+      case IRI_GEN::JSCheckBrand: return 0;
+      case IRI_GEN::JSThrowError: return 1;
+      case IRI_GEN::JSHasPrivate: return 0;
+      case IRI_GEN::JSPrivateFieldWrite: return 0;
       case IRI_GEN::JSADDBRAND: return 0;
       case IRI_GEN::JSPrivateFieldRead: return 0;
       case IRI_GEN::PoolBinding: return 1;
@@ -61,14 +63,14 @@ public:
       case IRI_GEN::ResolveBreakTarget: return 1;
       case IRI_GEN::JSForOfIteratorClose: return 0;
       case IRI_GEN::PopCatchContext: return 0;
-      case IRI_GEN::PopFinalizerReturnTarget: return 0;
+      case IRI_GEN::ExitFinalizer: return 0;
       case IRI_GEN::InvokeFinalizer: return 1;
       case IRI_GEN::JSForInStart: return 0;
       case IRI_GEN::JSForInNext: return 0;
-      case IRI_GEN::JSForOfStart: return 1;
-      case IRI_GEN::JSForOfNext: return 1;
+      case IRI_GEN::JSForOfStart: return 0;
+      case IRI_GEN::JSForOfNext: return 0;
       case IRI_GEN::PushCatchContext: return 1;
-      case IRI_GEN::JSCatchContext: return 1;
+      case IRI_GEN::JSCatchContext: return 0;
       case IRI_GEN::Throw: return 0;
       case IRI_GEN::Ret: return 0;
       case IRI_GEN::JSBinop: return 1;
@@ -80,14 +82,14 @@ public:
       case IRI_GEN::JSDefineObjProp: return 0;
       case IRI_GEN::JSArray: return 0;
       case IRI_GEN::Binop: return 1;
-      case IRI_GEN::Null: return 1;
+      case IRI_GEN::Null: return 0;
       case IRI_GEN::JSComputedFieldRead: return 1;
       case IRI_GEN::JSComputedFieldWrite: return 1;
-      case IRI_GEN::JSSuperFieldRead: return 0;
-      case IRI_GEN::JSSuperFieldWrite: return 0;
       case IRI_GEN::JSToObject: return 0;
       case IRI_GEN::JSAppend: return 0;
-      case IRI_GEN::JSDefineObjMethod: return 4;
+      case IRI_GEN::JSDefineMethod: return 1;
+      case IRI_GEN::JSDefineGetter: return 1;
+      case IRI_GEN::JSDefineSetter: return 1;
       case IRI_GEN::JSCopyDataProperties: return 0;
       case IRI_GEN::RegExp: return 2;
       case IRI_GEN::UNOPDelMemberExpr: return 0;
@@ -97,7 +99,6 @@ public:
       case IRI_GEN::Await: return 0;
       case IRI_GEN::Yield: return 0;
       case IRI_GEN::JSInitialYield: return 0;
-      case IRI_GEN::IDOP: return 2;
       case IRI_GEN::JSIDOP: return 2;
       case IRI_GEN::StackToHeap: return 0;
       case IRI_GEN::LoopInitPreludeEnd: return 0;
@@ -115,6 +116,13 @@ public:
       case IRI_GEN::CompoundAssn: return 0;
       case IRI_GEN::ThisINIT: return 0;
       case IRI_GEN::PTAStub: return 0;
+      case IRI_GEN::JSConstruct: return 0;
+      case IRI_GEN::JSConstructApply: return 0;
+      case IRI_GEN::JSEval: return 1;
+      case IRI_GEN::JSEvalApply: return 1;
+      case IRI_GEN::JSForAwaitOfStart: return 0;
+      case IRI_GEN::JSForAwaitOfNext: return 0;
+      case IRI_GEN::JSGetPrototypeOf: return 0;
       default: return 0;
     }
   }
@@ -206,27 +214,6 @@ public:
         case IRI_GEN::SLOPPY: return 3;
         case IRI_GEN::SAFE: return 4;
         case IRI_GEN::THISINIT: return 5;
-          default: return -1;
-        }
-        break;
-      case IRI_GEN::CallSite:
-        switch(flag) {
-        case IRI_GEN::CCall: return 0;
-        case IRI_GEN::ConstructorCall: return 1;
-        case IRI_GEN::PrivateCall: return 2;
-        case IRI_GEN::Import: return 3;
-        case IRI_GEN::Super: return 4;
-        case IRI_GEN::V8Intrinsic: return 5;
-        case IRI_GEN::TAILCALL: return 6;
-        case IRI_GEN::JSDirectEval: return 7;
-          default: return -1;
-        }
-        break;
-      case IRI_GEN::Apply:
-        switch(flag) {
-        case IRI_GEN::ConstructorCall: return 0;
-        case IRI_GEN::Super: return 1;
-        case IRI_GEN::JSDirectEval: return 2;
           default: return -1;
         }
         break;
@@ -411,22 +398,6 @@ public:
       case IRI_GEN::JSClass:
         switch(flag) {
         case IRI_GEN::NAME: return 0;
-        case IRI_GEN::DERIVED: return 1;
-          default: return -1;
-        }
-        break;
-      case IRI_GEN::ResolvePrivateEnvBinding:
-        switch(flag) {
-        case IRI_GEN::NAME: return 0;
-        case IRI_GEN::FULLY_RESOLVE: return 1;
-          default: return -1;
-        }
-        break;
-      case IRI_GEN::PVTEnvRead:
-        switch(flag) {
-        case IRI_GEN::SYMBOL: return 0;
-        case IRI_GEN::METHOD: return 1;
-        case IRI_GEN::FULLY_RESOLVE: return 2;
           default: return -1;
         }
         break;
@@ -436,9 +407,9 @@ public:
           default: return -1;
         }
         break;
-      case IRI_GEN::JSPrivateFieldWrite:
+      case IRI_GEN::JSThrowError:
         switch(flag) {
-        case IRI_GEN::DECL: return 0;
+        case IRI_GEN::NAME: return 0;
           default: return -1;
         }
         break;
@@ -466,27 +437,9 @@ public:
           default: return -1;
         }
         break;
-      case IRI_GEN::JSForOfStart:
-        switch(flag) {
-        case IRI_GEN::AWAIT: return 0;
-          default: return -1;
-        }
-        break;
-      case IRI_GEN::JSForOfNext:
-        switch(flag) {
-        case IRI_GEN::AWAIT: return 0;
-          default: return -1;
-        }
-        break;
       case IRI_GEN::PushCatchContext:
         switch(flag) {
         case IRI_GEN::IDX: return 0;
-          default: return -1;
-        }
-        break;
-      case IRI_GEN::JSCatchContext:
-        switch(flag) {
-        case IRI_GEN::NAME: return 0;
           default: return -1;
         }
         break;
@@ -520,12 +473,6 @@ public:
           default: return -1;
         }
         break;
-      case IRI_GEN::Null:
-        switch(flag) {
-        case IRI_GEN::IridiumPrimitive: return 0;
-          default: return -1;
-        }
-        break;
       case IRI_GEN::JSComputedFieldRead:
         switch(flag) {
         case IRI_GEN::SAFE: return 0;
@@ -538,12 +485,21 @@ public:
           default: return -1;
         }
         break;
-      case IRI_GEN::JSDefineObjMethod:
+      case IRI_GEN::JSDefineMethod:
         switch(flag) {
         case IRI_GEN::NOENUM: return 0;
-        case IRI_GEN::METHOD: return 1;
-        case IRI_GEN::GET: return 2;
-        case IRI_GEN::SET: return 3;
+          default: return -1;
+        }
+        break;
+      case IRI_GEN::JSDefineGetter:
+        switch(flag) {
+        case IRI_GEN::NOENUM: return 0;
+          default: return -1;
+        }
+        break;
+      case IRI_GEN::JSDefineSetter:
+        switch(flag) {
+        case IRI_GEN::NOENUM: return 0;
           default: return -1;
         }
         break;
@@ -563,13 +519,6 @@ public:
       case IRI_GEN::JSBigInt:
         switch(flag) {
         case IRI_GEN::IridiumPrimitive: return 0;
-          default: return -1;
-        }
-        break;
-      case IRI_GEN::IDOP:
-        switch(flag) {
-        case IRI_GEN::PREFIX: return 0;
-        case IRI_GEN::INCREMENT: return 1;
           default: return -1;
         }
         break;
@@ -615,6 +564,18 @@ public:
       case IRI_GEN::JSCTX:
         switch(flag) {
         case IRI_GEN::OPID: return 0;
+          default: return -1;
+        }
+        break;
+      case IRI_GEN::JSEval:
+        switch(flag) {
+        case IRI_GEN::ScopeIDX: return 0;
+          default: return -1;
+        }
+        break;
+      case IRI_GEN::JSEvalApply:
+        switch(flag) {
+        case IRI_GEN::ScopeIDX: return 0;
           default: return -1;
         }
         break;
@@ -709,27 +670,6 @@ public:
         case 3: return IRI_GEN::SLOPPY;
         case 4: return IRI_GEN::SAFE;
         case 5: return IRI_GEN::THISINIT;
-          default: throw std::runtime_error("Invalid flag index");
-        }
-        break;
-      case IRI_GEN::CallSite:
-        switch(index) {
-        case 0: return IRI_GEN::CCall;
-        case 1: return IRI_GEN::ConstructorCall;
-        case 2: return IRI_GEN::PrivateCall;
-        case 3: return IRI_GEN::Import;
-        case 4: return IRI_GEN::Super;
-        case 5: return IRI_GEN::V8Intrinsic;
-        case 6: return IRI_GEN::TAILCALL;
-        case 7: return IRI_GEN::JSDirectEval;
-          default: throw std::runtime_error("Invalid flag index");
-        }
-        break;
-      case IRI_GEN::Apply:
-        switch(index) {
-        case 0: return IRI_GEN::ConstructorCall;
-        case 1: return IRI_GEN::Super;
-        case 2: return IRI_GEN::JSDirectEval;
           default: throw std::runtime_error("Invalid flag index");
         }
         break;
@@ -914,22 +854,6 @@ public:
       case IRI_GEN::JSClass:
         switch(index) {
         case 0: return IRI_GEN::NAME;
-        case 1: return IRI_GEN::DERIVED;
-          default: throw std::runtime_error("Invalid flag index");
-        }
-        break;
-      case IRI_GEN::ResolvePrivateEnvBinding:
-        switch(index) {
-        case 0: return IRI_GEN::NAME;
-        case 1: return IRI_GEN::FULLY_RESOLVE;
-          default: throw std::runtime_error("Invalid flag index");
-        }
-        break;
-      case IRI_GEN::PVTEnvRead:
-        switch(index) {
-        case 0: return IRI_GEN::SYMBOL;
-        case 1: return IRI_GEN::METHOD;
-        case 2: return IRI_GEN::FULLY_RESOLVE;
           default: throw std::runtime_error("Invalid flag index");
         }
         break;
@@ -939,9 +863,9 @@ public:
           default: throw std::runtime_error("Invalid flag index");
         }
         break;
-      case IRI_GEN::JSPrivateFieldWrite:
+      case IRI_GEN::JSThrowError:
         switch(index) {
-        case 0: return IRI_GEN::DECL;
+        case 0: return IRI_GEN::NAME;
           default: throw std::runtime_error("Invalid flag index");
         }
         break;
@@ -969,27 +893,9 @@ public:
           default: throw std::runtime_error("Invalid flag index");
         }
         break;
-      case IRI_GEN::JSForOfStart:
-        switch(index) {
-        case 0: return IRI_GEN::AWAIT;
-          default: throw std::runtime_error("Invalid flag index");
-        }
-        break;
-      case IRI_GEN::JSForOfNext:
-        switch(index) {
-        case 0: return IRI_GEN::AWAIT;
-          default: throw std::runtime_error("Invalid flag index");
-        }
-        break;
       case IRI_GEN::PushCatchContext:
         switch(index) {
         case 0: return IRI_GEN::IDX;
-          default: throw std::runtime_error("Invalid flag index");
-        }
-        break;
-      case IRI_GEN::JSCatchContext:
-        switch(index) {
-        case 0: return IRI_GEN::NAME;
           default: throw std::runtime_error("Invalid flag index");
         }
         break;
@@ -1023,12 +929,6 @@ public:
           default: throw std::runtime_error("Invalid flag index");
         }
         break;
-      case IRI_GEN::Null:
-        switch(index) {
-        case 0: return IRI_GEN::IridiumPrimitive;
-          default: throw std::runtime_error("Invalid flag index");
-        }
-        break;
       case IRI_GEN::JSComputedFieldRead:
         switch(index) {
         case 0: return IRI_GEN::SAFE;
@@ -1041,12 +941,21 @@ public:
           default: throw std::runtime_error("Invalid flag index");
         }
         break;
-      case IRI_GEN::JSDefineObjMethod:
+      case IRI_GEN::JSDefineMethod:
         switch(index) {
         case 0: return IRI_GEN::NOENUM;
-        case 1: return IRI_GEN::METHOD;
-        case 2: return IRI_GEN::GET;
-        case 3: return IRI_GEN::SET;
+          default: throw std::runtime_error("Invalid flag index");
+        }
+        break;
+      case IRI_GEN::JSDefineGetter:
+        switch(index) {
+        case 0: return IRI_GEN::NOENUM;
+          default: throw std::runtime_error("Invalid flag index");
+        }
+        break;
+      case IRI_GEN::JSDefineSetter:
+        switch(index) {
+        case 0: return IRI_GEN::NOENUM;
           default: throw std::runtime_error("Invalid flag index");
         }
         break;
@@ -1066,13 +975,6 @@ public:
       case IRI_GEN::JSBigInt:
         switch(index) {
         case 0: return IRI_GEN::IridiumPrimitive;
-          default: throw std::runtime_error("Invalid flag index");
-        }
-        break;
-      case IRI_GEN::IDOP:
-        switch(index) {
-        case 0: return IRI_GEN::PREFIX;
-        case 1: return IRI_GEN::INCREMENT;
           default: throw std::runtime_error("Invalid flag index");
         }
         break;
@@ -1118,6 +1020,18 @@ public:
       case IRI_GEN::JSCTX:
         switch(index) {
         case 0: return IRI_GEN::OPID;
+          default: throw std::runtime_error("Invalid flag index");
+        }
+        break;
+      case IRI_GEN::JSEval:
+        switch(index) {
+        case 0: return IRI_GEN::ScopeIDX;
+          default: throw std::runtime_error("Invalid flag index");
+        }
+        break;
+      case IRI_GEN::JSEvalApply:
+        switch(index) {
+        case 0: return IRI_GEN::ScopeIDX;
           default: throw std::runtime_error("Invalid flag index");
         }
         break;

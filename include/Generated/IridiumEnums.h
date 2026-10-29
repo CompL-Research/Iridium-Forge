@@ -1,4 +1,4 @@
-// Generated: 2026-09-20 21:49:29
+// Generated: 2026-10-30 04:34:39
 #pragma once
 #include <string>
 
@@ -45,9 +45,11 @@ namespace IRI_GEN {
     Number,
     JSClass,
     JSCheckConstructor,
-    ResolvePrivateEnvBinding,
-    PVTEnvRead,
     JSPrivate,
+    JSPrivateFieldDefine,
+    JSCheckBrand,
+    JSThrowError,
+    JSHasPrivate,
     JSPrivateFieldWrite,
     JSADDBRAND,
     JSPrivateFieldRead,
@@ -56,7 +58,7 @@ namespace IRI_GEN {
     ResolveBreakTarget,
     JSForOfIteratorClose,
     PopCatchContext,
-    PopFinalizerReturnTarget,
+    ExitFinalizer,
     InvokeFinalizer,
     JSForInStart,
     JSForInNext,
@@ -78,11 +80,11 @@ namespace IRI_GEN {
     Null,
     JSComputedFieldRead,
     JSComputedFieldWrite,
-    JSSuperFieldRead,
-    JSSuperFieldWrite,
     JSToObject,
     JSAppend,
-    JSDefineObjMethod,
+    JSDefineMethod,
+    JSDefineGetter,
+    JSDefineSetter,
     JSCopyDataProperties,
     RegExp,
     UNOPDelMemberExpr,
@@ -92,7 +94,6 @@ namespace IRI_GEN {
     Await,
     Yield,
     JSInitialYield,
-    IDOP,
     JSIDOP,
     StackToHeap,
     LoopInitPreludeEnd,
@@ -109,7 +110,14 @@ namespace IRI_GEN {
     QJSModuleInit,
     CompoundAssn,
     ThisINIT,
-    PTAStub
+    PTAStub,
+    JSConstruct,
+    JSConstructApply,
+    JSEval,
+    JSEvalApply,
+    JSForAwaitOfStart,
+    JSForAwaitOfNext,
+    JSGetPrototypeOf
   };
 
   inline std::string dump_tag(IRI_TAG value) {
@@ -154,9 +162,11 @@ namespace IRI_GEN {
       case Number: return "Number";
       case JSClass: return "JSClass";
       case JSCheckConstructor: return "JSCheckConstructor";
-      case ResolvePrivateEnvBinding: return "ResolvePrivateEnvBinding";
-      case PVTEnvRead: return "PVTEnvRead";
       case JSPrivate: return "JSPrivate";
+      case JSPrivateFieldDefine: return "JSPrivateFieldDefine";
+      case JSCheckBrand: return "JSCheckBrand";
+      case JSThrowError: return "JSThrowError";
+      case JSHasPrivate: return "JSHasPrivate";
       case JSPrivateFieldWrite: return "JSPrivateFieldWrite";
       case JSADDBRAND: return "JSADDBRAND";
       case JSPrivateFieldRead: return "JSPrivateFieldRead";
@@ -165,7 +175,7 @@ namespace IRI_GEN {
       case ResolveBreakTarget: return "ResolveBreakTarget";
       case JSForOfIteratorClose: return "JSForOfIteratorClose";
       case PopCatchContext: return "PopCatchContext";
-      case PopFinalizerReturnTarget: return "PopFinalizerReturnTarget";
+      case ExitFinalizer: return "ExitFinalizer";
       case InvokeFinalizer: return "InvokeFinalizer";
       case JSForInStart: return "JSForInStart";
       case JSForInNext: return "JSForInNext";
@@ -187,11 +197,11 @@ namespace IRI_GEN {
       case Null: return "Null";
       case JSComputedFieldRead: return "JSComputedFieldRead";
       case JSComputedFieldWrite: return "JSComputedFieldWrite";
-      case JSSuperFieldRead: return "JSSuperFieldRead";
-      case JSSuperFieldWrite: return "JSSuperFieldWrite";
       case JSToObject: return "JSToObject";
       case JSAppend: return "JSAppend";
-      case JSDefineObjMethod: return "JSDefineObjMethod";
+      case JSDefineMethod: return "JSDefineMethod";
+      case JSDefineGetter: return "JSDefineGetter";
+      case JSDefineSetter: return "JSDefineSetter";
       case JSCopyDataProperties: return "JSCopyDataProperties";
       case RegExp: return "RegExp";
       case UNOPDelMemberExpr: return "UNOPDelMemberExpr";
@@ -201,7 +211,6 @@ namespace IRI_GEN {
       case Await: return "Await";
       case Yield: return "Yield";
       case JSInitialYield: return "JSInitialYield";
-      case IDOP: return "IDOP";
       case JSIDOP: return "JSIDOP";
       case StackToHeap: return "StackToHeap";
       case LoopInitPreludeEnd: return "LoopInitPreludeEnd";
@@ -219,6 +228,13 @@ namespace IRI_GEN {
       case CompoundAssn: return "CompoundAssn";
       case ThisINIT: return "ThisINIT";
       case PTAStub: return "PTAStub";
+      case JSConstruct: return "JSConstruct";
+      case JSConstructApply: return "JSConstructApply";
+      case JSEval: return "JSEval";
+      case JSEvalApply: return "JSEvalApply";
+      case JSForAwaitOfStart: return "JSForAwaitOfStart";
+      case JSForAwaitOfNext: return "JSForAwaitOfNext";
+      case JSGetPrototypeOf: return "JSGetPrototypeOf";
       default: return "unknown_tag";
     }
   }
@@ -240,14 +256,6 @@ namespace IRI_GEN {
     OPID,
     TAINTED,
     IridiumPrimitive,
-    CCall,
-    ConstructorCall,
-    PrivateCall,
-    Import,
-    Super,
-    V8Intrinsic,
-    TAILCALL,
-    JSDirectEval,
     TopLevel,
     ClosureBoundary,
     Lexical,
@@ -291,16 +299,9 @@ namespace IRI_GEN {
     MODULEI,
     MODULENSI,
     CINIT,
-    FULLY_RESOLVE,
-    SYMBOL,
-    METHOD,
-    DECL,
     Label,
-    AWAIT,
     OP,
     NOENUM,
-    GET,
-    SET,
     EXP,
     FLAGS,
     PREFIX,
@@ -328,14 +329,6 @@ namespace IRI_GEN {
       case OPID: return "OPID";
       case TAINTED: return "TAINTED";
       case IridiumPrimitive: return "IridiumPrimitive";
-      case CCall: return "CCall";
-      case ConstructorCall: return "ConstructorCall";
-      case PrivateCall: return "PrivateCall";
-      case Import: return "Import";
-      case Super: return "Super";
-      case V8Intrinsic: return "V8Intrinsic";
-      case TAILCALL: return "TAILCALL";
-      case JSDirectEval: return "JSDirectEval";
       case TopLevel: return "TopLevel";
       case ClosureBoundary: return "ClosureBoundary";
       case Lexical: return "Lexical";
@@ -379,16 +372,9 @@ namespace IRI_GEN {
       case MODULEI: return "MODULEI";
       case MODULENSI: return "MODULENSI";
       case CINIT: return "CINIT";
-      case FULLY_RESOLVE: return "FULLY_RESOLVE";
-      case SYMBOL: return "SYMBOL";
-      case METHOD: return "METHOD";
-      case DECL: return "DECL";
       case Label: return "Label";
-      case AWAIT: return "AWAIT";
       case OP: return "OP";
       case NOENUM: return "NOENUM";
-      case GET: return "GET";
-      case SET: return "SET";
       case EXP: return "EXP";
       case FLAGS: return "FLAGS";
       case PREFIX: return "PREFIX";
@@ -452,9 +438,11 @@ namespace IRI_GEN {
       case Number: return IRI_META::RVAL;
       case JSClass: return IRI_META::RVAL;
       case JSCheckConstructor: return IRI_META::STMT;
-      case ResolvePrivateEnvBinding: return IRI_META::STAR_RVAL;
-      case PVTEnvRead: return IRI_META::AMP;
       case JSPrivate: return IRI_META::RVAL;
+      case JSPrivateFieldDefine: return IRI_META::STMT;
+      case JSCheckBrand: return IRI_META::AMP;
+      case JSThrowError: return IRI_META::AMP;
+      case JSHasPrivate: return IRI_META::AMP;
       case JSPrivateFieldWrite: return IRI_META::STMT;
       case JSADDBRAND: return IRI_META::STMT;
       case JSPrivateFieldRead: return IRI_META::AMP;
@@ -463,7 +451,7 @@ namespace IRI_GEN {
       case ResolveBreakTarget: return IRI_META::STAR_STMT;
       case JSForOfIteratorClose: return IRI_META::STMT;
       case PopCatchContext: return IRI_META::STMT;
-      case PopFinalizerReturnTarget: return IRI_META::STMT;
+      case ExitFinalizer: return IRI_META::STMT;
       case InvokeFinalizer: return IRI_META::STMT;
       case JSForInStart: return IRI_META::RVAL;
       case JSForInNext: return IRI_META::RVAL;
@@ -485,11 +473,11 @@ namespace IRI_GEN {
       case Null: return IRI_META::RVAL;
       case JSComputedFieldRead: return IRI_META::AMP;
       case JSComputedFieldWrite: return IRI_META::STMT;
-      case JSSuperFieldRead: return IRI_META::AMP;
-      case JSSuperFieldWrite: return IRI_META::STMT;
       case JSToObject: return IRI_META::AMP;
       case JSAppend: return IRI_META::AMP;
-      case JSDefineObjMethod: return IRI_META::STMT;
+      case JSDefineMethod: return IRI_META::STMT;
+      case JSDefineGetter: return IRI_META::STMT;
+      case JSDefineSetter: return IRI_META::STMT;
       case JSCopyDataProperties: return IRI_META::AMP;
       case RegExp: return IRI_META::RVAL;
       case UNOPDelMemberExpr: return IRI_META::AMP;
@@ -499,7 +487,6 @@ namespace IRI_GEN {
       case Await: return IRI_META::AMP;
       case Yield: return IRI_META::AMP;
       case JSInitialYield: return IRI_META::STMT;
-      case IDOP: return IRI_META::AMP;
       case JSIDOP: return IRI_META::AMP;
       case StackToHeap: return IRI_META::STMT;
       case LoopInitPreludeEnd: return IRI_META::STAR_STMT;
@@ -517,6 +504,13 @@ namespace IRI_GEN {
       case CompoundAssn: return IRI_META::STMT;
       case ThisINIT: return IRI_META::RVAL;
       case PTAStub: return IRI_META::UKN;
+      case JSConstruct: return IRI_META::AMP;
+      case JSConstructApply: return IRI_META::AMP;
+      case JSEval: return IRI_META::AMP;
+      case JSEvalApply: return IRI_META::AMP;
+      case JSForAwaitOfStart: return IRI_META::STMT;
+      case JSForAwaitOfNext: return IRI_META::RVAL;
+      case JSGetPrototypeOf: return IRI_META::AMP;
       default: return IRI_META::ERROR;
     }
   }

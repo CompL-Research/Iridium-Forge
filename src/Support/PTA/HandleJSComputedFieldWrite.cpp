@@ -23,6 +23,9 @@ void handleJSComputedFieldWrite(const PTAStatementContext &ptactx) {
   Prakriti::TraceHelperAuto th("JSComputedFieldWrite", ptactx.stmt.id);
 
   IRI_GEN::JSComputedFieldWriteSEXP sexp(ptactx.stmt.id, ptactx.ctx);
+  if (sexp.hasArg_Receiver())
+    throw std::runtime_error(
+        "PTA: field access with an explicit receiver (super) is not modelled");
   Prakriti::ECMAGraph *G = ptactx.incomingState;
 
   std::set<Prakriti::NodeUID> objs, keys, vals;

@@ -166,14 +166,13 @@ void handleCompoundAssn(const PTAStatementContext &ptactx) {
 
     stackWrite(G, ctx, args[1], {Prakriti::PKRGlobalState::getNUMBER()});
     stackWrite(G, ctx, args[2], targets);
+  } else if (IRI_NODE(ctx, rval).tag == IRI_GEN::JSForAwaitOfNext) {
+    throw std::runtime_error(
+        "PTA unhandled case CompoundAssn over JSForAwaitOfNext: async "
+        "iteration needs the deferred execution model");
   } else if (IRI_NODE(ctx, rval).tag == IRI_GEN::JSForOfNext) {
     // Case 2
     IRI_GEN::JSForOfNextSEXP jfn(rval, ctx);
-    // hasAWAIT only says the flag is present; getAWAIT is the value.
-    if (jfn.hasAWAIT() && jfn.getAWAIT())
-      throw std::runtime_error(
-          "PTA unhandled case CompoundAssn over JSForOfNext [AWAIT]: async "
-          "iteration needs the deferred execution model");
 
     std::set<Prakriti::NodeUID> iterables;
     {

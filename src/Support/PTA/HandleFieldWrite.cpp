@@ -23,6 +23,9 @@ void handleFieldWrite(const PTAStatementContext &ptactx) {
   Prakriti::TraceHelperAuto th("FieldWrite", ptactx.stmt.id);
 
   IRI_GEN::FieldWriteSEXP sexp(ptactx.stmt.id, ptactx.ctx);
+  if (sexp.hasArg_Receiver())
+    throw std::runtime_error(
+        "PTA: field access with an explicit receiver (super) is not modelled");
   Prakriti::ECMAGraph *G = ptactx.incomingState;
 
   std::set<Prakriti::NodeUID> objs, values;

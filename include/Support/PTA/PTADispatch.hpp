@@ -1,4 +1,4 @@
-// Generated: 2026-09-15 12:01:18
+// Generated: 2026-10-30 04:34:39
 #pragma once
 
 #include "Support/PTA/PTAContext.hpp"
@@ -36,8 +36,14 @@ inline void dispatchPTAStatement(const PTAStatementContext &ptactx) {
       return handleNOP(ptactx);
     case IRI_GEN::IRI_TAG::JSCheckConstructor:
       return handleJSCheckConstructor(ptactx);
-    case IRI_GEN::IRI_TAG::PVTEnvRead:
-      return handlePVTEnvRead(ptactx);
+    case IRI_GEN::IRI_TAG::JSPrivateFieldDefine:
+      return handleJSPrivateFieldDefine(ptactx);
+    case IRI_GEN::IRI_TAG::JSCheckBrand:
+      return handleJSCheckBrand(ptactx);
+    case IRI_GEN::IRI_TAG::JSThrowError:
+      return handleJSThrowError(ptactx);
+    case IRI_GEN::IRI_TAG::JSHasPrivate:
+      return handleJSHasPrivate(ptactx);
     case IRI_GEN::IRI_TAG::JSPrivateFieldWrite:
       return handleJSPrivateFieldWrite(ptactx);
     case IRI_GEN::IRI_TAG::JSADDBRAND:
@@ -48,8 +54,8 @@ inline void dispatchPTAStatement(const PTAStatementContext &ptactx) {
       return handleJSForOfIteratorClose(ptactx);
     case IRI_GEN::IRI_TAG::PopCatchContext:
       return handlePopCatchContext(ptactx);
-    case IRI_GEN::IRI_TAG::PopFinalizerReturnTarget:
-      return handlePopFinalizerReturnTarget(ptactx);
+    case IRI_GEN::IRI_TAG::ExitFinalizer:
+      return handleExitFinalizer(ptactx);
     case IRI_GEN::IRI_TAG::InvokeFinalizer:
       return handleInvokeFinalizer(ptactx);
     case IRI_GEN::IRI_TAG::JSForOfStart:
@@ -78,16 +84,16 @@ inline void dispatchPTAStatement(const PTAStatementContext &ptactx) {
       return handleJSComputedFieldRead(ptactx);
     case IRI_GEN::IRI_TAG::JSComputedFieldWrite:
       return handleJSComputedFieldWrite(ptactx);
-    case IRI_GEN::IRI_TAG::JSSuperFieldRead:
-      return handleJSSuperFieldRead(ptactx);
-    case IRI_GEN::IRI_TAG::JSSuperFieldWrite:
-      return handleJSSuperFieldWrite(ptactx);
     case IRI_GEN::IRI_TAG::JSToObject:
       return handleJSToObject(ptactx);
     case IRI_GEN::IRI_TAG::JSAppend:
       return handleJSAppend(ptactx);
-    case IRI_GEN::IRI_TAG::JSDefineObjMethod:
-      return handleJSDefineObjMethod(ptactx);
+    case IRI_GEN::IRI_TAG::JSDefineMethod:
+      return handleJSDefineMethod(ptactx);
+    case IRI_GEN::IRI_TAG::JSDefineGetter:
+      return handleJSDefineGetter(ptactx);
+    case IRI_GEN::IRI_TAG::JSDefineSetter:
+      return handleJSDefineSetter(ptactx);
     case IRI_GEN::IRI_TAG::JSCopyDataProperties:
       return handleJSCopyDataProperties(ptactx);
     case IRI_GEN::IRI_TAG::UNOPDelMemberExpr:
@@ -102,8 +108,6 @@ inline void dispatchPTAStatement(const PTAStatementContext &ptactx) {
       return handleYield(ptactx);
     case IRI_GEN::IRI_TAG::JSInitialYield:
       return handleJSInitialYield(ptactx);
-    case IRI_GEN::IRI_TAG::IDOP:
-      return handleIDOP(ptactx);
     case IRI_GEN::IRI_TAG::JSIDOP:
       return handleJSIDOP(ptactx);
     case IRI_GEN::IRI_TAG::StackToHeap:
@@ -130,6 +134,18 @@ inline void dispatchPTAStatement(const PTAStatementContext &ptactx) {
       return handleQJSModuleInit(ptactx);
     case IRI_GEN::IRI_TAG::CompoundAssn:
       return handleCompoundAssn(ptactx);
+    case IRI_GEN::IRI_TAG::JSConstruct:
+      return handleJSConstruct(ptactx);
+    case IRI_GEN::IRI_TAG::JSConstructApply:
+      return handleJSConstructApply(ptactx);
+    case IRI_GEN::IRI_TAG::JSEval:
+      return handleJSEval(ptactx);
+    case IRI_GEN::IRI_TAG::JSEvalApply:
+      return handleJSEvalApply(ptactx);
+    case IRI_GEN::IRI_TAG::JSForAwaitOfStart:
+      return handleJSForAwaitOfStart(ptactx);
+    case IRI_GEN::IRI_TAG::JSGetPrototypeOf:
+      return handleJSGetPrototypeOf(ptactx);
     default:
       std::cerr << "[PTA Warning] Unhandled statement tag: "
                 << IRI_GEN::dump_tag(currTAG) << std::endl;

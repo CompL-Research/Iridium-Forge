@@ -71,7 +71,7 @@ Napi::Value execute(const Napi::CallbackInfo &info) {
   ctx.debugger.tock = [&](std::string msg) {
     NAPI_tock.Call(env.Global(), {Napi::String::New(env, msg)});
   };
-  ctx.storage.nodes.NULL_SEXP = IRI_GEN::NullSEXP::create(ctx, true);
+  ctx.storage.nodes.NULL_SEXP = IRI_GEN::NullSEXP::create(ctx);
   ctx.storage.nodes.NOP_SEXP = IRI_GEN::NOPSEXP::create(ctx);
   ctx.storage.nodes.NUBD_SEXP = IRI_GEN::JSNUBDSEXP::create(ctx);
 

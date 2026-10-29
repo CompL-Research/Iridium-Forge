@@ -8,8 +8,7 @@ namespace IRI_STRUCTURAL {
  * AST Tag: Null
  * Meta:    RVAL
  * Arguments: (none)
- * Flags:
- *   - void   IridiumPrimitive -> sexp.hasIridiumPrimitive()
+ * Flags: (none)
  */
 void computeNullVals(const PTAStatementContext &ptactx, IRID node,
                        std::set<Prakriti::NodeUID> &res_) {

@@ -12,8 +12,7 @@ namespace IRI_STRUCTURAL {
  * Meta:    RVAL
  * Arguments:
  *   [0] IRID Obj -> sexp.getArg_Obj()
- * Flags:
- *   - bool   AWAIT -> sexp.getAWAIT()
+ * Flags: (none)
  */
 void computeJSForOfNextVals(const PTAStatementContext &ptactx, IRID node,
                        std::set<Prakriti::NodeUID> &res_) {
@@ -22,7 +21,6 @@ void computeJSForOfNextVals(const PTAStatementContext &ptactx, IRID node,
 
   // === TODO : JSForOfNext ===
   // if (sexp.hasArg_Obj()) { IRID arg_Obj = sexp.getArg_Obj(); }
-  // if (sexp.hasAWAIT()) { bool val_AWAIT = sexp.getAWAIT(); }
 
   return;
 }

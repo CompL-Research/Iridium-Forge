@@ -61,10 +61,12 @@ struct ReduceComputedFieldOpsPass {
     auto tag = IRI_NODE(ctx, node).tag;
     if (tag == IRI_GEN::JSComputedFieldRead) {
       IRI_GEN::JSComputedFieldReadSEXP sexp(node, ctx);
-      if (literalKey(ctx, sexp.getArg_Field(), k))
-        return IRI_GEN::FieldReadSEXP::create(
-            ctx, sexp.getArg_Obj(),
-            IRI_GEN::StringSEXP::create(ctx, ctx.storage.strings.intern(k)));
+      if (literalKey(ctx, sexp.getArg_Field(), k)) {
+        std::vector<IRID> a = {sexp.getArg_Obj(), IRI_GEN::StringSEXP::create(ctx, ctx.storage.strings.intern(k))};
+        if (sexp.hasArg_Receiver())
+          a.push_back(sexp.getArg_Receiver());
+        return ctx.storage.nodes.add_node(IRI_GEN::FieldRead, a, {});
+      }
     } else if (tag == IRI_GEN::JSDefineObjProp) {
       // Not a computed op, but the same question about its key.
       IRI_GEN::JSDefineObjPropSEXP sexp(node, ctx);
@@ -77,11 +79,12 @@ struct ReduceComputedFieldOpsPass {
       }
     } else if (tag == IRI_GEN::JSComputedFieldWrite) {
       IRI_GEN::JSComputedFieldWriteSEXP sexp(node, ctx);
-      if (literalKey(ctx, sexp.getArg_Field(), k))
-        return IRI_GEN::FieldWriteSEXP::create(
-            ctx, sexp.getArg_Obj(),
-            IRI_GEN::StringSEXP::create(ctx, ctx.storage.strings.intern(k)),
-            sexp.getArg_Value());
+      if (literalKey(ctx, sexp.getArg_Field(), k)) {
+        std::vector<IRID> a = {sexp.getArg_Obj(), IRI_GEN::StringSEXP::create(ctx, ctx.storage.strings.intern(k)), sexp.getArg_Value()};
+        if (sexp.hasArg_Receiver())
+          a.push_back(sexp.getArg_Receiver());
+        return ctx.storage.nodes.add_node(IRI_GEN::FieldWrite, a, {});
+      }
     }
     return node;
   }

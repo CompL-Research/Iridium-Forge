@@ -1,0 +1,68 @@
+// Generated: 2026-10-30 04:34:39
+#pragma once
+
+#include "Support/PP/PPContext.hpp"
+#include <string>
+
+namespace IRI_STRUCTURAL {
+
+// ============================================================================
+// PP RVal Printer Declarations
+//
+// Each of these renders a given IRID (an AMP or RVAL tag) as an expression.
+// ============================================================================
+std::string printEnvReadRVal(const PPContext &pp, IRID node);
+std::string printStringRVal(const PPContext &pp, IRID node);
+std::string printFieldReadRVal(const PPContext &pp, IRID node);
+std::string printCallSiteRVal(const PPContext &pp, IRID node);
+std::string printApplyRVal(const PPContext &pp, IRID node);
+std::string printLambdaRVal(const PPContext &pp, IRID node);
+std::string printEnvBindingRVal(const PPContext &pp, IRID node);
+std::string printRemoteEnvBindingRVal(const PPContext &pp, IRID node);
+std::string printGlobalBindingRVal(const PPContext &pp, IRID node);
+std::string printScriptBindingRVal(const PPContext &pp, IRID node);
+std::string printJSNUBDRVal(const PPContext &pp, IRID node);
+std::string printNumberRVal(const PPContext &pp, IRID node);
+std::string printJSClassRVal(const PPContext &pp, IRID node);
+std::string printJSPrivateRVal(const PPContext &pp, IRID node);
+std::string printJSCheckBrandRVal(const PPContext &pp, IRID node);
+std::string printJSThrowErrorRVal(const PPContext &pp, IRID node);
+std::string printJSHasPrivateRVal(const PPContext &pp, IRID node);
+std::string printJSPrivateFieldReadRVal(const PPContext &pp, IRID node);
+std::string printPoolBindingRVal(const PPContext &pp, IRID node);
+std::string printJSForInStartRVal(const PPContext &pp, IRID node);
+std::string printJSForInNextRVal(const PPContext &pp, IRID node);
+std::string printJSForOfNextRVal(const PPContext &pp, IRID node);
+std::string printJSCatchContextRVal(const PPContext &pp, IRID node);
+std::string printJSBinopRVal(const PPContext &pp, IRID node);
+std::string printJSUnopRVal(const PPContext &pp, IRID node);
+std::string printUnopRVal(const PPContext &pp, IRID node);
+std::string printJSObjectRVal(const PPContext &pp, IRID node);
+std::string printBooleanRVal(const PPContext &pp, IRID node);
+std::string printJSArrayRVal(const PPContext &pp, IRID node);
+std::string printBinopRVal(const PPContext &pp, IRID node);
+std::string printNullRVal(const PPContext &pp, IRID node);
+std::string printJSComputedFieldReadRVal(const PPContext &pp, IRID node);
+std::string printJSToObjectRVal(const PPContext &pp, IRID node);
+std::string printJSAppendRVal(const PPContext &pp, IRID node);
+std::string printJSCopyDataPropertiesRVal(const PPContext &pp, IRID node);
+std::string printRegExpRVal(const PPContext &pp, IRID node);
+std::string printUNOPDelMemberExprRVal(const PPContext &pp, IRID node);
+std::string printUNOPDelVarRVal(const PPContext &pp, IRID node);
+std::string printJSTemplateRVal(const PPContext &pp, IRID node);
+std::string printJSBigIntRVal(const PPContext &pp, IRID node);
+std::string printAwaitRVal(const PPContext &pp, IRID node);
+std::string printYieldRVal(const PPContext &pp, IRID node);
+std::string printJSIDOPRVal(const PPContext &pp, IRID node);
+std::string printDCTRRetRVal(const PPContext &pp, IRID node);
+std::string printToNumericRVal(const PPContext &pp, IRID node);
+std::string printJSCTXRVal(const PPContext &pp, IRID node);
+std::string printThisINITRVal(const PPContext &pp, IRID node);
+std::string printJSConstructRVal(const PPContext &pp, IRID node);
+std::string printJSConstructApplyRVal(const PPContext &pp, IRID node);
+std::string printJSEvalRVal(const PPContext &pp, IRID node);
+std::string printJSEvalApplyRVal(const PPContext &pp, IRID node);
+std::string printJSForAwaitOfNextRVal(const PPContext &pp, IRID node);
+std::string printJSGetPrototypeOfRVal(const PPContext &pp, IRID node);
+
+} // namespace IRI_STRUCTURAL

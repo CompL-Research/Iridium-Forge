@@ -1,4 +1,4 @@
-// Generated: 2026-09-15 12:01:18
+// Generated: 2026-10-30 04:34:39
 #pragma once
 
 #include "Support/PTA/PTAContext.hpp"
@@ -19,13 +19,16 @@ void handleIfElseJump(const PTAStatementContext &ptactx);
 void handleGoto(const PTAStatementContext &ptactx);
 void handleNOP(const PTAStatementContext &ptactx);
 void handleJSCheckConstructor(const PTAStatementContext &ptactx);
-void handlePVTEnvRead(const PTAStatementContext &ptactx);
+void handleJSPrivateFieldDefine(const PTAStatementContext &ptactx);
+void handleJSCheckBrand(const PTAStatementContext &ptactx);
+void handleJSThrowError(const PTAStatementContext &ptactx);
+void handleJSHasPrivate(const PTAStatementContext &ptactx);
 void handleJSPrivateFieldWrite(const PTAStatementContext &ptactx);
 void handleJSADDBRAND(const PTAStatementContext &ptactx);
 void handleJSPrivateFieldRead(const PTAStatementContext &ptactx);
 void handleJSForOfIteratorClose(const PTAStatementContext &ptactx);
 void handlePopCatchContext(const PTAStatementContext &ptactx);
-void handlePopFinalizerReturnTarget(const PTAStatementContext &ptactx);
+void handleExitFinalizer(const PTAStatementContext &ptactx);
 void handleInvokeFinalizer(const PTAStatementContext &ptactx);
 void handleJSForOfStart(const PTAStatementContext &ptactx);
 void handlePushCatchContext(const PTAStatementContext &ptactx);
@@ -40,11 +43,11 @@ void handleJSDefineObjProp(const PTAStatementContext &ptactx);
 void handleBinop(const PTAStatementContext &ptactx);
 void handleJSComputedFieldRead(const PTAStatementContext &ptactx);
 void handleJSComputedFieldWrite(const PTAStatementContext &ptactx);
-void handleJSSuperFieldRead(const PTAStatementContext &ptactx);
-void handleJSSuperFieldWrite(const PTAStatementContext &ptactx);
 void handleJSToObject(const PTAStatementContext &ptactx);
 void handleJSAppend(const PTAStatementContext &ptactx);
-void handleJSDefineObjMethod(const PTAStatementContext &ptactx);
+void handleJSDefineMethod(const PTAStatementContext &ptactx);
+void handleJSDefineGetter(const PTAStatementContext &ptactx);
+void handleJSDefineSetter(const PTAStatementContext &ptactx);
 void handleJSCopyDataProperties(const PTAStatementContext &ptactx);
 void handleUNOPDelMemberExpr(const PTAStatementContext &ptactx);
 void handleUNOPDelVar(const PTAStatementContext &ptactx);
@@ -52,7 +55,6 @@ void handleJSTemplate(const PTAStatementContext &ptactx);
 void handleAwait(const PTAStatementContext &ptactx);
 void handleYield(const PTAStatementContext &ptactx);
 void handleJSInitialYield(const PTAStatementContext &ptactx);
-void handleIDOP(const PTAStatementContext &ptactx);
 void handleJSIDOP(const PTAStatementContext &ptactx);
 void handleStackToHeap(const PTAStatementContext &ptactx);
 void handleJSSetHome(const PTAStatementContext &ptactx);
@@ -66,6 +68,12 @@ void handleDCTRRet(const PTAStatementContext &ptactx);
 void handleToNumeric(const PTAStatementContext &ptactx);
 void handleQJSModuleInit(const PTAStatementContext &ptactx);
 void handleCompoundAssn(const PTAStatementContext &ptactx);
+void handleJSConstruct(const PTAStatementContext &ptactx);
+void handleJSConstructApply(const PTAStatementContext &ptactx);
+void handleJSEval(const PTAStatementContext &ptactx);
+void handleJSEvalApply(const PTAStatementContext &ptactx);
+void handleJSForAwaitOfStart(const PTAStatementContext &ptactx);
+void handleJSGetPrototypeOf(const PTAStatementContext &ptactx);
 
 // ============================================================================
 // Optional IPTATransferHandler Interface (for Visitor/Polymorphic Overrides)
@@ -107,8 +115,17 @@ public:
   virtual void visit_JSCheckConstructor(const PTAStatementContext &ptactx) {
     return handleJSCheckConstructor(ptactx);
   }
-  virtual void visit_PVTEnvRead(const PTAStatementContext &ptactx) {
-    return handlePVTEnvRead(ptactx);
+  virtual void visit_JSPrivateFieldDefine(const PTAStatementContext &ptactx) {
+    return handleJSPrivateFieldDefine(ptactx);
+  }
+  virtual void visit_JSCheckBrand(const PTAStatementContext &ptactx) {
+    return handleJSCheckBrand(ptactx);
+  }
+  virtual void visit_JSThrowError(const PTAStatementContext &ptactx) {
+    return handleJSThrowError(ptactx);
+  }
+  virtual void visit_JSHasPrivate(const PTAStatementContext &ptactx) {
+    return handleJSHasPrivate(ptactx);
   }
   virtual void visit_JSPrivateFieldWrite(const PTAStatementContext &ptactx) {
     return handleJSPrivateFieldWrite(ptactx);
@@ -125,8 +142,8 @@ public:
   virtual void visit_PopCatchContext(const PTAStatementContext &ptactx) {
     return handlePopCatchContext(ptactx);
   }
-  virtual void visit_PopFinalizerReturnTarget(const PTAStatementContext &ptactx) {
-    return handlePopFinalizerReturnTarget(ptactx);
+  virtual void visit_ExitFinalizer(const PTAStatementContext &ptactx) {
+    return handleExitFinalizer(ptactx);
   }
   virtual void visit_InvokeFinalizer(const PTAStatementContext &ptactx) {
     return handleInvokeFinalizer(ptactx);
@@ -170,20 +187,20 @@ public:
   virtual void visit_JSComputedFieldWrite(const PTAStatementContext &ptactx) {
     return handleJSComputedFieldWrite(ptactx);
   }
-  virtual void visit_JSSuperFieldRead(const PTAStatementContext &ptactx) {
-    return handleJSSuperFieldRead(ptactx);
-  }
-  virtual void visit_JSSuperFieldWrite(const PTAStatementContext &ptactx) {
-    return handleJSSuperFieldWrite(ptactx);
-  }
   virtual void visit_JSToObject(const PTAStatementContext &ptactx) {
     return handleJSToObject(ptactx);
   }
   virtual void visit_JSAppend(const PTAStatementContext &ptactx) {
     return handleJSAppend(ptactx);
   }
-  virtual void visit_JSDefineObjMethod(const PTAStatementContext &ptactx) {
-    return handleJSDefineObjMethod(ptactx);
+  virtual void visit_JSDefineMethod(const PTAStatementContext &ptactx) {
+    return handleJSDefineMethod(ptactx);
+  }
+  virtual void visit_JSDefineGetter(const PTAStatementContext &ptactx) {
+    return handleJSDefineGetter(ptactx);
+  }
+  virtual void visit_JSDefineSetter(const PTAStatementContext &ptactx) {
+    return handleJSDefineSetter(ptactx);
   }
   virtual void visit_JSCopyDataProperties(const PTAStatementContext &ptactx) {
     return handleJSCopyDataProperties(ptactx);
@@ -205,9 +222,6 @@ public:
   }
   virtual void visit_JSInitialYield(const PTAStatementContext &ptactx) {
     return handleJSInitialYield(ptactx);
-  }
-  virtual void visit_IDOP(const PTAStatementContext &ptactx) {
-    return handleIDOP(ptactx);
   }
   virtual void visit_JSIDOP(const PTAStatementContext &ptactx) {
     return handleJSIDOP(ptactx);
@@ -247,6 +261,24 @@ public:
   }
   virtual void visit_CompoundAssn(const PTAStatementContext &ptactx) {
     return handleCompoundAssn(ptactx);
+  }
+  virtual void visit_JSConstruct(const PTAStatementContext &ptactx) {
+    return handleJSConstruct(ptactx);
+  }
+  virtual void visit_JSConstructApply(const PTAStatementContext &ptactx) {
+    return handleJSConstructApply(ptactx);
+  }
+  virtual void visit_JSEval(const PTAStatementContext &ptactx) {
+    return handleJSEval(ptactx);
+  }
+  virtual void visit_JSEvalApply(const PTAStatementContext &ptactx) {
+    return handleJSEvalApply(ptactx);
+  }
+  virtual void visit_JSForAwaitOfStart(const PTAStatementContext &ptactx) {
+    return handleJSForAwaitOfStart(ptactx);
+  }
+  virtual void visit_JSGetPrototypeOf(const PTAStatementContext &ptactx) {
+    return handleJSGetPrototypeOf(ptactx);
   }
 };
 

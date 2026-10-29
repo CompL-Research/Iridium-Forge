@@ -14,6 +14,7 @@
 #include "Support/ClosureTree.hpp"
 #include "Support/FileSupport.hpp"
 #include "Support/IRIS.hpp"
+#include "Support/PP.hpp"
 #include "Support/PTA.hpp"
 #include "Storage/GCStats.h"
 #include <exception>
@@ -22,7 +23,6 @@
 #include <memory>
 #include <unordered_map>
 #include <vector>
-#include <cstdlib>
 
 namespace IRI_ENTRY {
 using namespace IRI_STORAGE;
@@ -52,13 +52,27 @@ using BuildContextMap =
 namespace {
 
 void dumpIfEnabled(IRIContext &ctx, IRID sexp, const std::string &name) {
-  if (ctx.flags.dumpForgePasses) {
-    std::ofstream outFile(name + ".iridump");
+  if (ctx.flags.dumpForgePassesSEXP) {
+    std::ofstream outFile("out.iri/" + name + ".iri");
     IRI_NODE(ctx, sexp).dumpFlat(outFile, &ctx);
+  }
+
+  if (ctx.flags.dumpForgePasses) {
+    // Readable form of the snapshots worth reading by hand.
+    if (name == "AFTER_CORE_PASSES" || name == "AFTER_OPT_PASSES") {
+      std::ofstream ppFile("out.iri/" + name + ".pp.iri");
+      prettyPrint(ppFile, ctx, sexp);
+    }
   }
 }
 
 void runCorePasses(IRIContext &ctx, IRID & sexpRef, BuildContextMap &buildContext) {
+  if (ctx.flags.dumpForgePasses || ctx.flags.dumpForgePassesSEXP) {
+    namespace fs = std::filesystem;
+    std::filesystem::path root_ = fs::path("out.iri");
+    fs::create_directories(root_);
+  }
+
   dumpIfEnabled(ctx, sexpRef, "_0_BEFORE_NORMALIZAION");
 
   IRI_CORE_PASSES::CTARGETS continueTargets;
@@ -79,9 +93,6 @@ void runCorePasses(IRIContext &ctx, IRID & sexpRef, BuildContextMap &buildContex
       {"_4_3_PIB", [&] { IRI_CORE_PASSES::_4_3_PIB(ctx, sexpRef, buildContext); }},
       {"_4_4_RFD", [&] { IRI_CORE_PASSES::_4_4_RFD(ctx, sexpRef, buildContext); }},
       {"_4_5_PEB", [&] { IRI_CORE_PASSES::_4_5_PEB(ctx, sexpRef, buildContext); }},
-      {"_6_PHCSC", [&] { IRI_CORE_PASSES::_6_PHCSC(ctx, sexpRef, buildContext); }},
-      {"_7_RRPEBS",
-       [&] { IRI_CORE_PASSES::_7_RRPEBS(ctx, sexpRef, buildContext); }},
       {"_8_RREBS", [&] { IRI_CORE_PASSES::_8_RREBS(ctx, sexpRef, buildContext); }},
       {"_9_CER", [&] { IRI_CORE_PASSES::_9_RLT(ctx, sexpRef, buildContext); }},
       {"_10_RBACT",
@@ -101,7 +112,7 @@ void runCorePasses(IRIContext &ctx, IRID & sexpRef, BuildContextMap &buildContex
        [&] {
          IRI_CORE_PASSES::_22_ESTKTHM(ctx, sexpRef, buildContext, continueTargets);
        }},
-      {"_AFTER_CORE_PASSES_",
+      {"AFTER_CORE_PASSES",
        [&] { IRI_CORE_PASSES::_FNOPS(ctx, sexpRef, buildContext); }},
   };
   

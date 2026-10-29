@@ -236,27 +236,6 @@ public:
       res->sourceLine =
           ctxObj.Get("sourceLine").As<Napi::Number>().DoubleValue();
 
-      // Private Mapping
-      Napi::Value pmVal = ctxObj.Get("privateMapping");
-      if (!pmVal.IsNull() && !pmVal.IsUndefined()) {
-        std::unordered_map<std::string, std::pair<std::string, std::string>>
-            pmMap;
-        Napi::Array pmArr = pmVal.As<Napi::Array>();
-        for (uint32_t j = 0; j < pmArr.Length(); j++) {
-          Napi::Array tuple = pmArr.Get(j).As<Napi::Array>();
-          std::string key =
-              tuple.Get((uint32_t)0).As<Napi::String>().Utf8Value();
-
-          Napi::Array innerTuple = tuple.Get(1).As<Napi::Array>();
-          std::string val1 =
-              innerTuple.Get((uint32_t)0).As<Napi::String>().Utf8Value();
-          std::string val2 = innerTuple.Get(1).As<Napi::String>().Utf8Value();
-
-          pmMap[key] = {val1, val2};
-        }
-        res->privateMapping = pmMap;
-      }
-
       // Module Request Map
       Napi::Value mrVal = ctxObj.Get("moduleRequestMap");
       if (!mrVal.IsNull() && !mrVal.IsUndefined()) {

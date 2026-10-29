@@ -1,7 +1,8 @@
-/** Generated: 2026-09-29 23:00:46 */
+/** Generated: 2026-10-30 04:34:39 */
 
 export interface PassFlags {
-  dumpForgePasses?: boolean; // Dump Forge Passes
+  dumpForgePassesSEXP?: boolean; // Dump Forge Passes (Raw SEXP)
+  dumpForgePasses?: boolean; // Dump Forge Passes (Pretty Printing)
   constantProp?: boolean; // Constant propagation optimization pass
   tdz?: boolean; // TDZ-check elimination optimization pass (MTDZS)
   dce?: boolean; // Dead code elimination optimization pass
@@ -15,6 +16,7 @@ export interface PassFlags {
 }
 
 export const DEFAULT_PASS_FLAGS: Required<PassFlags> = {
+  dumpForgePassesSEXP: false,
   dumpForgePasses: false,
   constantProp: true,
   tdz: true,
@@ -36,7 +38,8 @@ export const PASS_FLAGS_SPEC: Array<{
   default: boolean;
   desc: string;
 }> = [
-  { name: "dumpForgePasses", default: false, desc: "Dump Forge Passes" },
+  { name: "dumpForgePassesSEXP", default: false, desc: "Dump Forge Passes (Raw SEXP)" },
+  { name: "dumpForgePasses", default: false, desc: "Dump Forge Passes (Pretty Printing)" },
   { name: "constantProp", default: true, desc: "Constant propagation optimization pass" },
   { name: "tdz", default: true, desc: "TDZ-check elimination optimization pass (MTDZS)" },
   { name: "dce", default: true, desc: "Dead code elimination optimization pass" },

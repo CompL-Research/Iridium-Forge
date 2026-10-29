@@ -79,7 +79,7 @@ export default [
   {
     tag: "FieldRead",
     meta: "AMP",
-    args: ["Obj", "Field"],
+    args: ["Obj", "Field", "Receiver"],
     flags: {
       string: [],
       void: [],
@@ -121,22 +121,16 @@ export default [
     },
   },
   {
+    // [[Call]](Callee, This, args): `f(a)` passes undefined as This.
+    // Arguments follow This.
     tag: "CallSite",
     meta: "AMP",
-    args: [],
+    args: ["Callee", "This"],
     flags: {
       string: [],
-      void: [
-        "CCall",
-        "ConstructorCall",
-        "PrivateCall",
-        "Import",
-        "Super",
-        "V8Intrinsic",
-        "TAILCALL",
-      ],
+      void: [],
       bool: [],
-      double: ["JSDirectEval"],
+      double: [],
     },
   },
   {
@@ -145,9 +139,9 @@ export default [
     args: ["Callee", "Context", "ArgList"],
     flags: {
       string: [],
-      void: ["ConstructorCall", "Super"],
+      void: [],
       bool: [],
-      double: ["JSDirectEval"],
+      double: [],
     },
   },
   {
@@ -438,12 +432,13 @@ export default [
     },
   },
   {
+    // class NAME [extends Parent]: derived iff the Parent operand is present
     tag: "JSClass",
     meta: "RVAL",
-    args: ["Parent", "Constructor"],
+    args: ["Constructor", "Parent"],
     flags: {
       string: ["NAME"],
-      void: ["DERIVED"],
+      void: [],
       bool: [],
       double: [],
     },
@@ -460,28 +455,6 @@ export default [
     },
   },
   {
-    tag: "ResolvePrivateEnvBinding",
-    meta: "*RVAL",
-    args: [],
-    flags: {
-      string: ["NAME"],
-      void: ["FULLY_RESOLVE"],
-      bool: [],
-      double: [],
-    },
-  },
-  {
-    tag: "PVTEnvRead",
-    meta: "AMP",
-    args: ["Obj"],
-    flags: {
-      string: [],
-      void: ["SYMBOL", "METHOD", "FULLY_RESOLVE"],
-      bool: [],
-      double: [],
-    },
-  },
-  {
     tag: "JSPrivate",
     meta: "RVAL",
     args: [],
@@ -493,12 +466,63 @@ export default [
     },
   },
   {
+    // Obj.#[Field] := Value: PrivateFieldAdd (define_private_field), throws if
+    // Obj already has the field. Field is the read of the private symbol.
+    tag: "JSPrivateFieldDefine",
+    meta: "STMT",
+    args: ["Obj", "Field", "Value"],
+    flags: {
+      string: [],
+      void: [],
+      bool: [],
+      double: [],
+    },
+  },
+  {
+    // Obj.#method[Method]: throws unless Obj has the brand of the class that
+    // declares the private method; yields the method (check_brand).
+    tag: "JSCheckBrand",
+    meta: "AMP",
+    args: ["Obj", "Method"],
+    flags: {
+      string: [],
+      void: [],
+      bool: [],
+      double: [],
+    },
+  },
+  {
+    // Throws TypeError "'NAME' is read-only" (throw_error); e.g. writing a
+    // private getter-only accessor or reading a setter-only one.
+    tag: "JSThrowError",
+    meta: "AMP",
+    args: [],
+    flags: {
+      string: ["NAME"],
+      void: [],
+      bool: [],
+      double: [],
+    },
+  },
+  {
+    // #[Name] in Obj: does Obj have the private element (private_in).
+    tag: "JSHasPrivate",
+    meta: "AMP",
+    args: ["Obj", "Name"],
+    flags: {
+      string: [],
+      void: [],
+      bool: [],
+      double: [],
+    },
+  },
+  {
     tag: "JSPrivateFieldWrite",
     meta: "STMT",
     args: ["Obj", "Field", "Value"],
     flags: {
       string: [],
-      void: ["DECL"],
+      void: [],
       bool: [],
       double: [],
     },
@@ -581,7 +605,7 @@ export default [
     },
   },
   {
-    tag: "PopFinalizerReturnTarget",
+    tag: "ExitFinalizer",
     meta: "STMT",
     args: [],
     flags: {
@@ -631,7 +655,7 @@ export default [
     flags: {
       string: [],
       void: [],
-      bool: ["AWAIT"],
+      bool: [],
       double: [],
     },
   },
@@ -642,7 +666,7 @@ export default [
     flags: {
       string: [],
       void: [],
-      bool: ["AWAIT"],
+      bool: [],
       double: [],
     },
   },
@@ -662,7 +686,7 @@ export default [
     meta: "AMP",
     args: [],
     flags: {
-      string: ["NAME"],
+      string: [],
       void: [],
       bool: [],
       double: [],
@@ -704,7 +728,7 @@ export default [
   {
     tag: "FieldWrite",
     meta: "STMT",
-    args: ["Obj", "Field", "Value"],
+    args: ["Obj", "Field", "Value", "Receiver"],
     flags: {
       string: [],
       void: [],
@@ -795,7 +819,7 @@ export default [
     args: [],
     flags: {
       string: [],
-      void: ["IridiumPrimitive"],
+      void: [],
       bool: [],
       double: [],
     },
@@ -803,7 +827,7 @@ export default [
   {
     tag: "JSComputedFieldRead",
     meta: "AMP",
-    args: ["Obj", "Field"],
+    args: ["Obj", "Field", "Receiver"],
     flags: {
       string: [],
       void: ["SAFE"],
@@ -814,32 +838,10 @@ export default [
   {
     tag: "JSComputedFieldWrite",
     meta: "STMT",
-    args: ["Obj", "Field", "Value"],
+    args: ["Obj", "Field", "Value", "Receiver"],
     flags: {
       string: [],
       void: ["SAFE"],
-      bool: [],
-      double: [],
-    },
-  },
-  {
-    tag: "JSSuperFieldRead",
-    meta: "AMP",
-    args: ["This", "Super", "Field"],
-    flags: {
-      string: [],
-      void: [],
-      bool: [],
-      double: [],
-    },
-  },
-  {
-    tag: "JSSuperFieldWrite",
-    meta: "STMT",
-    args: ["This", "Super", "Field", "Value"],
-    flags: {
-      string: [],
-      void: [],
       bool: [],
       double: [],
     },
@@ -867,12 +869,40 @@ export default [
     },
   },
   {
-    tag: "JSDefineObjMethod",
+    // TargetObj[Key] := Value as a method (define_method); NOENUM: not
+    // enumerable (class members), else enumerable (object literals)
+    tag: "JSDefineMethod",
     meta: "STMT",
     args: ["TargetObj", "Key", "Value"],
     flags: {
       string: [],
-      void: ["NOENUM", "METHOD", "GET", "SET"],
+      void: ["NOENUM"],
+      bool: [],
+      double: [],
+    },
+  },
+  {
+    // TargetObj[Key] := Value as a getter (define_method); NOENUM: not
+    // enumerable (class members), else enumerable (object literals)
+    tag: "JSDefineGetter",
+    meta: "STMT",
+    args: ["TargetObj", "Key", "Value"],
+    flags: {
+      string: [],
+      void: ["NOENUM"],
+      bool: [],
+      double: [],
+    },
+  },
+  {
+    // TargetObj[Key] := Value as a setter (define_method); NOENUM: not
+    // enumerable (class members), else enumerable (object literals)
+    tag: "JSDefineSetter",
+    meta: "STMT",
+    args: ["TargetObj", "Key", "Value"],
+    flags: {
+      string: [],
+      void: ["NOENUM"],
       bool: [],
       double: [],
     },
@@ -973,17 +1003,6 @@ export default [
       string: [],
       void: [],
       bool: [],
-      double: [],
-    },
-  },
-  {
-    tag: "IDOP",
-    meta: "AMP",
-    args: ["Obj"],
-    flags: {
-      string: [],
-      void: [],
-      bool: ["PREFIX", "INCREMENT"],
       double: [],
     },
   },
@@ -1167,6 +1186,97 @@ export default [
     tag: "PTAStub",
     meta: "",
     args: [],
+    flags: {
+      string: [],
+      void: [],
+      bool: [],
+      double: [],
+    },
+  },
+  {
+    // [[Construct]](Callee, args, NewTarget): `new F(a)` passes F as NewTarget,
+    // super(a) the caller's new.target. Arguments follow NewTarget.
+    tag: "JSConstruct",
+    meta: "AMP",
+    args: ["Callee", "NewTarget"],
+    flags: {
+      string: [],
+      void: [],
+      bool: [],
+      double: [],
+    },
+  },
+  {
+    // JSConstruct with a spread argument list (an array).
+    tag: "JSConstructApply",
+    meta: "AMP",
+    args: ["Callee", "NewTarget", "ArgList"],
+    flags: {
+      string: [],
+      void: [],
+      bool: [],
+      double: [],
+    },
+  },
+  {
+    // Direct eval `eval(a)`: in sloppy mode the evaled code can see and modify
+    // the enclosing environment. Created by pass 16 from a call whose callee is
+    // the global eval; ScopeIDX is resolved by IRIS. If the callee is not the
+    // real eval at runtime, it is an ordinary call with this = undefined.
+    tag: "JSEval",
+    meta: "AMP",
+    args: ["Callee"],
+    flags: {
+      string: [],
+      void: [],
+      bool: [],
+      double: ["ScopeIDX"],
+    },
+  },
+  {
+    // JSEval with a spread argument list (an array).
+    tag: "JSEvalApply",
+    meta: "AMP",
+    args: ["Callee", "ArgList"],
+    flags: {
+      string: [],
+      void: [],
+      bool: [],
+      double: ["ScopeIDX"],
+    },
+  },
+  {
+    // for await (… of Obj): like JSForOfStart, the iterator state stays on the
+    // stack until JSForOfIteratorClose (for_await_of_start)
+    tag: "JSForAwaitOfStart",
+    meta: "STMT",
+    args: ["Obj"],
+    flags: {
+      string: [],
+      void: [],
+      bool: [],
+      double: [],
+    },
+  },
+  {
+    // The next step of a for await loop: {done, value}, awaiting the result.
+    // Obj (the iterable) is not read by the lowering; it is kept for analyses.
+    tag: "JSForAwaitOfNext",
+    meta: "RVAL",
+    args: ["Obj"],
+    flags: {
+      string: [],
+      void: [],
+      bool: [],
+      double: [],
+    },
+  },
+  {
+    // Object.getPrototypeOf(Obj) at the time of evaluation (OP_get_super).
+    // AMP: it reads mutable state, so passes must not move it.
+    tag: "JSGetPrototypeOf",
+    meta: "AMP",
+    args: ["Obj"],
     flags: {
       string: [],
       void: [],

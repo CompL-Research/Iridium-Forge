@@ -27,6 +27,9 @@ void computeJSComputedFieldReadVals(const PTAStatementContext &ptactx,
   Prakriti::TraceHelperAuto th("JSComputedFieldReadRVal", node);
 
   IRI_GEN::JSComputedFieldReadSEXP sexp(node, ptactx.ctx);
+  if (sexp.hasArg_Receiver())
+    throw std::runtime_error(
+        "PTA: field access with an explicit receiver (super) is not modelled");
   Prakriti::ECMAGraph *G = ptactx.incomingState;
 
   std::set<Prakriti::NodeUID> objs, keys;

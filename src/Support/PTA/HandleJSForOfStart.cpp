@@ -10,8 +10,7 @@ namespace IRI_STRUCTURAL {
  * Meta:    STMT
  * Arguments:
  *   [0] IRID Obj -> sexp.getArg_Obj()
- * Flags:
- *   - bool   AWAIT -> sexp.getAWAIT()
+ * Flags: (none)
  */
 void handleJSForOfStart(const PTAStatementContext &ptactx) {
   // Basically jusa no-op

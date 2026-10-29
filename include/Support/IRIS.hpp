@@ -186,6 +186,13 @@ private:
       const std::unordered_map<double, std::vector<double>> &childrenMap) const;
 
 public:
+  // The argument bindings (JSARG / JSRESTARG) declared at a closure's head
+  // scope, before commit() lays out the frame; null if there are none.
+  const std::vector<IRI_STORAGE::IRID> *getArgsAtScope(double scope) const {
+    auto it = argsAtScope.find(scope);
+    return it == argsAtScope.end() ? nullptr : &it->second;
+  }
+
   void dumpFlat(std::ostream &oss, int indentLevel = 0) const;
   void dumpScopeTree(std::ostream &oss, int indentLevel = 0) const;
   void dumpBindingsAtScope(std::ostream &oss, double node) const;

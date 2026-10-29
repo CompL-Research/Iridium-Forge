@@ -1,4 +1,4 @@
-// Generated: 2026-09-15 12:01:18
+// Generated: 2026-10-30 04:34:39
 #pragma once
 
 #include "Support/PTA/PTAContext.hpp"
@@ -44,10 +44,14 @@ inline void resolvePKRRVal(const PTAStatementContext &ptactx, IRID node,
       return computeNumberVals(ptactx, node, res_);
     case IRI_GEN::IRI_TAG::JSClass:
       return computeJSClassVals(ptactx, node, res_);
-    case IRI_GEN::IRI_TAG::PVTEnvRead:
-      return computePVTEnvReadVals(ptactx, node, res_);
     case IRI_GEN::IRI_TAG::JSPrivate:
       return computeJSPrivateVals(ptactx, node, res_);
+    case IRI_GEN::IRI_TAG::JSCheckBrand:
+      return computeJSCheckBrandVals(ptactx, node, res_);
+    case IRI_GEN::IRI_TAG::JSThrowError:
+      return computeJSThrowErrorVals(ptactx, node, res_);
+    case IRI_GEN::IRI_TAG::JSHasPrivate:
+      return computeJSHasPrivateVals(ptactx, node, res_);
     case IRI_GEN::IRI_TAG::JSPrivateFieldRead:
       return computeJSPrivateFieldReadVals(ptactx, node, res_);
     case IRI_GEN::IRI_TAG::PoolBinding:
@@ -78,8 +82,6 @@ inline void resolvePKRRVal(const PTAStatementContext &ptactx, IRID node,
       return computeNullVals(ptactx, node, res_);
     case IRI_GEN::IRI_TAG::JSComputedFieldRead:
       return computeJSComputedFieldReadVals(ptactx, node, res_);
-    case IRI_GEN::IRI_TAG::JSSuperFieldRead:
-      return computeJSSuperFieldReadVals(ptactx, node, res_);
     case IRI_GEN::IRI_TAG::JSToObject:
       return computeJSToObjectVals(ptactx, node, res_);
     case IRI_GEN::IRI_TAG::JSAppend:
@@ -100,8 +102,6 @@ inline void resolvePKRRVal(const PTAStatementContext &ptactx, IRID node,
       return computeAwaitVals(ptactx, node, res_);
     case IRI_GEN::IRI_TAG::Yield:
       return computeYieldVals(ptactx, node, res_);
-    case IRI_GEN::IRI_TAG::IDOP:
-      return computeIDOPVals(ptactx, node, res_);
     case IRI_GEN::IRI_TAG::JSIDOP:
       return computeJSIDOPVals(ptactx, node, res_);
     case IRI_GEN::IRI_TAG::DCTRRet:
@@ -112,6 +112,18 @@ inline void resolvePKRRVal(const PTAStatementContext &ptactx, IRID node,
       return computeJSCTXVals(ptactx, node, res_);
     case IRI_GEN::IRI_TAG::ThisINIT:
       return computeThisINITVals(ptactx, node, res_);
+    case IRI_GEN::IRI_TAG::JSConstruct:
+      return computeJSConstructVals(ptactx, node, res_);
+    case IRI_GEN::IRI_TAG::JSConstructApply:
+      return computeJSConstructApplyVals(ptactx, node, res_);
+    case IRI_GEN::IRI_TAG::JSEval:
+      return computeJSEvalVals(ptactx, node, res_);
+    case IRI_GEN::IRI_TAG::JSEvalApply:
+      return computeJSEvalApplyVals(ptactx, node, res_);
+    case IRI_GEN::IRI_TAG::JSForAwaitOfNext:
+      return computeJSForAwaitOfNextVals(ptactx, node, res_);
+    case IRI_GEN::IRI_TAG::JSGetPrototypeOf:
+      return computeJSGetPrototypeOfVals(ptactx, node, res_);
     default:
       std::cerr << "[PTA Warning] Unhandled RVal tag: "
                 << IRI_GEN::dump_tag(currTAG) << std::endl;
