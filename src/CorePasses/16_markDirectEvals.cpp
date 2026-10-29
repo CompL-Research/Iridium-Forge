@@ -18,20 +18,9 @@ using namespace IRI_STRUCTURAL;
 
 using BUILD_CTX = std::unordered_map<int, std::shared_ptr<IridiumBuildContext>>;
 
-static inline bool isGenericCall(CallSiteSEXP &o) {
-  if (o.hasImport())
-    return false;
-  else if (o.hasV8Intrinsic())
-    return false;
-  else if (o.hasCCall())
-    return false;
-  else if (o.hasPrivateCall())
-    return false;
-  else if (o.hasJSDirectEval())
-    return false;
-  else
-    return true;
-}
+// A method call o.eval(x) reads its callee into a temp first, so only a plain
+// eval(x) has the global eval binding as its callee.
+static inline bool isGenericCall(CallSiteSEXP &o) { return !o.hasJSDirectEval(); }
 
 static inline bool isGenericCall(ApplySEXP &o) { return true; }
 

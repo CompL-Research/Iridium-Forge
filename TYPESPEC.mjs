@@ -121,18 +121,14 @@ export default [
     },
   },
   {
+    // [[Call]](Callee, This, args): `f(a)` passes undefined as This.
+    // Arguments follow This.
     tag: "CallSite",
     meta: "AMP",
-    args: [],
+    args: ["Callee", "This"],
     flags: {
       string: [],
-      void: [
-        "CCall",
-        "PrivateCall",
-        "Import",
-        "V8Intrinsic",
-        "TAILCALL",
-      ],
+      void: [],
       bool: [],
       double: ["JSDirectEval"],
     },

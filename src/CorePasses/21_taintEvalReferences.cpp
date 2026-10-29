@@ -26,8 +26,9 @@ inline void patchNode(IRIContext &ctx, IRID node) {
   if (IRI_NODE(ctx, node).tag == IRI_GEN::CallSite) {
     CallSiteSEXP cs(node, ctx);
     if (cs.hasJSDirectEval()) {
+      // the arguments: skip the callee and `this`
       auto args = ctx.storage.nodes.get_args(node);
-      for (int i = 1; i < args.size(); i++) {
+      for (int i = 2; i < args.size(); i++) {
         patchNode(ctx, args[i]);
       }
       return;

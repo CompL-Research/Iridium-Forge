@@ -10,13 +10,10 @@ namespace IRI_STRUCTURAL {
 /**
  * AST Tag: CallSite
  * Meta:    AMP
- * Arguments: (none)
+ * Arguments:
+ *   [0] IRID Callee -> sexp.getArg_Callee()
+ *   [1] IRID This -> sexp.getArg_This()
  * Flags:
- *   - void   CCall -> sexp.hasCCall()
- *   - void   PrivateCall -> sexp.hasPrivateCall()
- *   - void   Import -> sexp.hasImport()
- *   - void   V8Intrinsic -> sexp.hasV8Intrinsic()
- *   - void   TAILCALL -> sexp.hasTAILCALL()
  *   - double JSDirectEval -> sexp.getJSDirectEval()
  *
  * AMP node used as a bare statement: print it as an expression statement.

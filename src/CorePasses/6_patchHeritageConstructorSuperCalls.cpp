@@ -36,19 +36,12 @@ inline std::vector<IRID> heritageThisInit(IRIContext & ctx, StringID thisValHold
     )
   );
 
-  IRID callSite = CallSiteSEXP::create(ctx, true, false, false, false, false, 0);
-  CallSiteSEXP callSEXP(callSite, ctx);
-  callSEXP.clearJSDirectEval();
-
-  std::vector<IRID> callSiteArgs;
-  callSiteArgs.push_back(
-    IRI_HELPERS::createUnsafeEnvReadSEXP(ctx, ctx.storage.strings.intern("this"))
-  );
-
-  callSiteArgs.push_back(
-    IRI_HELPERS::createUnsafeEnvReadSEXP(ctx, propInitClos)
-  );
-  ctx.storage.nodes.set_args(callSite, callSiteArgs);
+  // this->propInitClos()
+  IRID callSite = CallSiteSEXP::create(
+      ctx, IRI_HELPERS::createUnsafeEnvReadSEXP(ctx, propInitClos),
+      IRI_HELPERS::createUnsafeEnvReadSEXP(ctx, ctx.storage.strings.intern("this")),
+      0);
+  CallSiteSEXP(callSite, ctx).clearJSDirectEval();
 
   res.push_back(callSite);
   return res;

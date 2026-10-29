@@ -1,4 +1,4 @@
-// Generated: 2026-10-30 00:25:43
+// Generated: 2026-10-30 00:38:17
 #pragma once
 #include "IridiumEnums.h"
 #include <cstdint>
@@ -21,7 +21,7 @@ public:
       case IRI_GEN::JSExplicitBindingDeclaration: return 6;
       case IRI_GEN::JSExplicitBindingDeclarationN: return 6;
       case IRI_GEN::JSExplicitBindingDeclarationX: return 6;
-      case IRI_GEN::CallSite: return 6;
+      case IRI_GEN::CallSite: return 1;
       case IRI_GEN::Apply: return 1;
       case IRI_GEN::ReturnAsync: return 0;
       case IRI_GEN::BB: return 7;
@@ -212,12 +212,7 @@ public:
         break;
       case IRI_GEN::CallSite:
         switch(flag) {
-        case IRI_GEN::CCall: return 0;
-        case IRI_GEN::PrivateCall: return 1;
-        case IRI_GEN::Import: return 2;
-        case IRI_GEN::V8Intrinsic: return 3;
-        case IRI_GEN::TAILCALL: return 4;
-        case IRI_GEN::JSDirectEval: return 5;
+        case IRI_GEN::JSDirectEval: return 0;
           default: return -1;
         }
         break;
@@ -717,12 +712,7 @@ public:
         break;
       case IRI_GEN::CallSite:
         switch(index) {
-        case 0: return IRI_GEN::CCall;
-        case 1: return IRI_GEN::PrivateCall;
-        case 2: return IRI_GEN::Import;
-        case 3: return IRI_GEN::V8Intrinsic;
-        case 4: return IRI_GEN::TAILCALL;
-        case 5: return IRI_GEN::JSDirectEval;
+        case 0: return IRI_GEN::JSDirectEval;
           default: throw std::runtime_error("Invalid flag index");
         }
         break;

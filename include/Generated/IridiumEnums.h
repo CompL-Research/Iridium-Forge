@@ -1,4 +1,4 @@
-// Generated: 2026-10-30 00:25:43
+// Generated: 2026-10-30 00:38:17
 #pragma once
 #include <string>
 
@@ -242,11 +242,6 @@ namespace IRI_GEN {
     OPID,
     TAINTED,
     IridiumPrimitive,
-    CCall,
-    PrivateCall,
-    Import,
-    V8Intrinsic,
-    TAILCALL,
     JSDirectEval,
     TopLevel,
     ClosureBoundary,
@@ -329,11 +324,6 @@ namespace IRI_GEN {
       case OPID: return "OPID";
       case TAINTED: return "TAINTED";
       case IridiumPrimitive: return "IridiumPrimitive";
-      case CCall: return "CCall";
-      case PrivateCall: return "PrivateCall";
-      case Import: return "Import";
-      case V8Intrinsic: return "V8Intrinsic";
-      case TAILCALL: return "TAILCALL";
       case JSDirectEval: return "JSDirectEval";
       case TopLevel: return "TopLevel";
       case ClosureBoundary: return "ClosureBoundary";

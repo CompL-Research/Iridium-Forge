@@ -1,4 +1,4 @@
-// Generated: 2026-10-30 00:25:43
+// Generated: 2026-10-30 00:38:17
 #pragma once
 #include "Storage/Config.h"
 #include "Storage/IridiumSEXP.h"
@@ -603,19 +603,14 @@ using IRI_STORAGE::FlagValue;
       }
     }
 
-    static IRID create(IRIContext& p, bool CCall, bool PrivateCall, bool Import, bool V8Intrinsic, bool TAILCALL, double JSDirectEval) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::CallSite, {}, {CCall ? FlagValue(CCall) : FlagValue(std::monostate()), PrivateCall ? FlagValue(PrivateCall) : FlagValue(std::monostate()), Import ? FlagValue(Import) : FlagValue(std::monostate()), V8Intrinsic ? FlagValue(V8Intrinsic) : FlagValue(std::monostate()), TAILCALL ? FlagValue(TAILCALL) : FlagValue(std::monostate()), FlagValue(JSDirectEval)});
+    static IRID create(IRIContext& p, IRID Callee, IRID This, double JSDirectEval) {
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::CallSite, {Callee, This}, {FlagValue(JSDirectEval)});
     }
 
-    static constexpr uint32_t TOTAL_ARGS = 0;
-    static constexpr uint32_t TOTAL_FLAGS = 6;
+    static constexpr uint32_t TOTAL_ARGS = 2;
+    static constexpr uint32_t TOTAL_FLAGS = 1;
 
-    static constexpr uint32_t FLAG_IDX_CCall = 0;
-    static constexpr uint32_t FLAG_IDX_PrivateCall = 1;
-    static constexpr uint32_t FLAG_IDX_Import = 2;
-    static constexpr uint32_t FLAG_IDX_V8Intrinsic = 3;
-    static constexpr uint32_t FLAG_IDX_TAILCALL = 4;
-    static constexpr uint32_t FLAG_IDX_JSDirectEval = 5;
+    static constexpr uint32_t FLAG_IDX_JSDirectEval = 0;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
@@ -626,29 +621,15 @@ using IRI_STORAGE::FlagValue;
     }
 
     // --- Arguments ---
+    IRID getArg_Callee() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_Callee() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Callee(IRID val) { assert(hasArg_Callee() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
+    IRID getArg_This() const { return ctx->storage.nodes.get_args(id)[1]; }
+    bool hasArg_This() const { return 1 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_This(IRID val) { assert(hasArg_This() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,1,val); }
 
     // --- Flags ---
-    bool hasCCall() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_CCall)); }
-    void setCCall() { mutate_flag(FLAG_IDX_CCall) = std::nullptr_t{}; }
-    void clearCCall() { mutate_flag(FLAG_IDX_CCall) = std::monostate{}; }
-
-    bool hasPrivateCall() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_PrivateCall)); }
-    void setPrivateCall() { mutate_flag(FLAG_IDX_PrivateCall) = std::nullptr_t{}; }
-    void clearPrivateCall() { mutate_flag(FLAG_IDX_PrivateCall) = std::monostate{}; }
-
-    bool hasImport() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_Import)); }
-    void setImport() { mutate_flag(FLAG_IDX_Import) = std::nullptr_t{}; }
-    void clearImport() { mutate_flag(FLAG_IDX_Import) = std::monostate{}; }
-
-    bool hasV8Intrinsic() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_V8Intrinsic)); }
-    void setV8Intrinsic() { mutate_flag(FLAG_IDX_V8Intrinsic) = std::nullptr_t{}; }
-    void clearV8Intrinsic() { mutate_flag(FLAG_IDX_V8Intrinsic) = std::monostate{}; }
-
-    bool hasTAILCALL() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_TAILCALL)); }
-    void setTAILCALL() { mutate_flag(FLAG_IDX_TAILCALL) = std::nullptr_t{}; }
-    void clearTAILCALL() { mutate_flag(FLAG_IDX_TAILCALL) = std::monostate{}; }
-
     double getJSDirectEval() const { return std::get<double>(get_flag(FLAG_IDX_JSDirectEval)); }
     void setJSDirectEval(double val) { mutate_flag(FLAG_IDX_JSDirectEval) = val; }
     bool hasJSDirectEval() const { return std::holds_alternative<double>(get_flag(FLAG_IDX_JSDirectEval)); }
