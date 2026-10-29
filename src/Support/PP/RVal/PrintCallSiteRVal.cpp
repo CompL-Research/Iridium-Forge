@@ -24,7 +24,7 @@ std::string printCallSiteRVal(const PPContext &pp, IRID node) {
   // ctx->f(a, b), same shape as Apply. ctx is `this` for plain/private calls
   // and new.target for super/new (construct). Mirrors the lowering order:
   //   eval#N f(a, b)            [f, args...], no ctx
-  //   super ctx->f(a, b)        [ctx, f, args...], new.target = ctx
+  //   super nt->f(a, b)         [f, nt, args...], new.target = nt
   //   new f->f(a, b)            [f, args...], new.target = callee
   //   ctx->f(a, b)              CCall: [ctx, f, args...], this = ctx
   //   private ctx->f(a, b)      [ctx, f, args...], brand-checked
@@ -55,8 +55,9 @@ std::string printCallSiteRVal(const PPContext &pp, IRID node) {
 
   if (eval)
     return prefix + "eval#" + ppNumber(sexp.getJSDirectEval()) + " " + call;
-  if (super)
-    return prefix + "super " + ctx + call;
+  if (super) // the super ctor is pushed first, then new.target
+    return prefix + "super " + ppOperand(pp, a[1]) + "->" + ppOperand(pp, a[0]) +
+           "(" + ppList(pp, a, 2) + ")";
   if (ctor)
     return prefix + "new " + callee + "->" + call;
   if (priv)
