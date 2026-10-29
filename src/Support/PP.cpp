@@ -82,15 +82,9 @@ static bool isIdentifier(std::string_view s) {
   });
 }
 
-// o.#[k] for a private field, o.#method[k] for a brand-checked method lookup.
-// A PVTEnvRead key is printed as the binding holding the private symbol.
+// o.#[k]: the private element of o named by the private symbol k
 std::string ppPrivateMember(const PPContext &pp, IRID obj, IRID key) {
-  std::string base = ppOperand(pp, obj) + ".#";
-  if (pp.tagOf(key) != PVTEnvRead)
-    return base + "[" + ppRVal(pp, key) + "]";
-  PVTEnvReadSEXP pvt(key, pp.ctx);
-  return base + (pvt.hasMETHOD() ? "method" : "") + "[" +
-         ppRVal(pp, pvt.getArg_Obj()) + "]";
+  return ppOperand(pp, obj) + ".#[" + ppRVal(pp, key) + "]";
 }
 
 std::string ppMember(const PPContext &pp, IRID obj, IRID key) {
@@ -172,6 +166,7 @@ std::string ppOperand(const PPContext &pp, IRID node) {
     return "(" + s + ")";
   case JSConstruct:
   case JSConstructApply:
+  case JSHasPrivate:
     return "(" + s + ")";
   default:
     return s;

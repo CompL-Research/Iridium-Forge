@@ -1,4 +1,4 @@
-// Generated Stub for IRI_TAG::PVTEnvRead
+// Generated Stub for IRI_TAG::JSHasPrivate
 #include "Generated/IridiumTypes.h"
 #include "Support/PP.hpp"
 #include "Support/PP/PPHandlers.hpp"
@@ -8,18 +8,16 @@
 namespace IRI_STRUCTURAL {
 
 /**
- * AST Tag: PVTEnvRead
+ * AST Tag: JSHasPrivate
  * Meta:    AMP
  * Arguments:
  *   [0] IRID Obj -> sexp.getArg_Obj()
- * Flags:
- *   - void   SYMBOL -> sexp.hasSYMBOL()
- *   - void   METHOD -> sexp.hasMETHOD()
- *   - void   FULLY_RESOLVE -> sexp.hasFULLY_RESOLVE()
+ *   [1] IRID Name -> sexp.getArg_Name()
+ * Flags: (none)
  *
  * AMP node used as a bare statement: print it as an expression statement.
  */
-std::string printPVTEnvRead(const PPContext &pp, IRID node) {
+std::string printJSHasPrivate(const PPContext &pp, IRID node) {
   return ppRVal(pp, node);
 }
 

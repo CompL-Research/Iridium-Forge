@@ -1,4 +1,4 @@
-// Generated: 2026-10-30 01:05:09
+// Generated: 2026-10-30 01:37:24
 #pragma once
 
 #include "Support/PTA/PTAContext.hpp"
@@ -36,8 +36,12 @@ inline void dispatchPTAStatement(const PTAStatementContext &ptactx) {
       return handleNOP(ptactx);
     case IRI_GEN::IRI_TAG::JSCheckConstructor:
       return handleJSCheckConstructor(ptactx);
-    case IRI_GEN::IRI_TAG::PVTEnvRead:
-      return handlePVTEnvRead(ptactx);
+    case IRI_GEN::IRI_TAG::JSPrivateFieldDefine:
+      return handleJSPrivateFieldDefine(ptactx);
+    case IRI_GEN::IRI_TAG::JSCheckBrand:
+      return handleJSCheckBrand(ptactx);
+    case IRI_GEN::IRI_TAG::JSHasPrivate:
+      return handleJSHasPrivate(ptactx);
     case IRI_GEN::IRI_TAG::JSPrivateFieldWrite:
       return handleJSPrivateFieldWrite(ptactx);
     case IRI_GEN::IRI_TAG::JSADDBRAND:

@@ -1,4 +1,4 @@
-// Generated: 2026-10-30 01:05:09
+// Generated: 2026-10-30 01:37:24
 #pragma once
 #include <string>
 
@@ -46,8 +46,10 @@ namespace IRI_GEN {
     JSClass,
     JSCheckConstructor,
     ResolvePrivateEnvBinding,
-    PVTEnvRead,
     JSPrivate,
+    JSPrivateFieldDefine,
+    JSCheckBrand,
+    JSHasPrivate,
     JSPrivateFieldWrite,
     JSADDBRAND,
     JSPrivateFieldRead,
@@ -158,8 +160,10 @@ namespace IRI_GEN {
       case JSClass: return "JSClass";
       case JSCheckConstructor: return "JSCheckConstructor";
       case ResolvePrivateEnvBinding: return "ResolvePrivateEnvBinding";
-      case PVTEnvRead: return "PVTEnvRead";
       case JSPrivate: return "JSPrivate";
+      case JSPrivateFieldDefine: return "JSPrivateFieldDefine";
+      case JSCheckBrand: return "JSCheckBrand";
+      case JSHasPrivate: return "JSHasPrivate";
       case JSPrivateFieldWrite: return "JSPrivateFieldWrite";
       case JSADDBRAND: return "JSADDBRAND";
       case JSPrivateFieldRead: return "JSPrivateFieldRead";
@@ -289,14 +293,11 @@ namespace IRI_GEN {
     MODULEI,
     MODULENSI,
     CINIT,
-    FULLY_RESOLVE,
-    SYMBOL,
-    METHOD,
-    DECL,
     Label,
     AWAIT,
     OP,
     NOENUM,
+    METHOD,
     GET,
     SET,
     EXP,
@@ -370,14 +371,11 @@ namespace IRI_GEN {
       case MODULEI: return "MODULEI";
       case MODULENSI: return "MODULENSI";
       case CINIT: return "CINIT";
-      case FULLY_RESOLVE: return "FULLY_RESOLVE";
-      case SYMBOL: return "SYMBOL";
-      case METHOD: return "METHOD";
-      case DECL: return "DECL";
       case Label: return "Label";
       case AWAIT: return "AWAIT";
       case OP: return "OP";
       case NOENUM: return "NOENUM";
+      case METHOD: return "METHOD";
       case GET: return "GET";
       case SET: return "SET";
       case EXP: return "EXP";
@@ -445,8 +443,10 @@ namespace IRI_GEN {
       case JSClass: return IRI_META::RVAL;
       case JSCheckConstructor: return IRI_META::STMT;
       case ResolvePrivateEnvBinding: return IRI_META::STAR_RVAL;
-      case PVTEnvRead: return IRI_META::AMP;
       case JSPrivate: return IRI_META::RVAL;
+      case JSPrivateFieldDefine: return IRI_META::STMT;
+      case JSCheckBrand: return IRI_META::AMP;
+      case JSHasPrivate: return IRI_META::AMP;
       case JSPrivateFieldWrite: return IRI_META::STMT;
       case JSADDBRAND: return IRI_META::STMT;
       case JSPrivateFieldRead: return IRI_META::AMP;

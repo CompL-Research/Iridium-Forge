@@ -1,4 +1,4 @@
-// Generated: 2026-10-30 01:05:09
+// Generated: 2026-10-30 01:37:24
 #pragma once
 
 #include "Support/PP/PPContext.hpp"
@@ -22,7 +22,9 @@ std::string printIfElseJump(const PPContext &pp, IRID node);
 std::string printGoto(const PPContext &pp, IRID node);
 std::string printNOP(const PPContext &pp, IRID node);
 std::string printJSCheckConstructor(const PPContext &pp, IRID node);
-std::string printPVTEnvRead(const PPContext &pp, IRID node);
+std::string printJSPrivateFieldDefine(const PPContext &pp, IRID node);
+std::string printJSCheckBrand(const PPContext &pp, IRID node);
+std::string printJSHasPrivate(const PPContext &pp, IRID node);
 std::string printJSPrivateFieldWrite(const PPContext &pp, IRID node);
 std::string printJSADDBRAND(const PPContext &pp, IRID node);
 std::string printJSPrivateFieldRead(const PPContext &pp, IRID node);

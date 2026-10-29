@@ -1,4 +1,4 @@
-// Generated: 2026-10-30 01:05:09
+// Generated: 2026-10-30 01:37:24
 #pragma once
 
 #include "Support/PP.hpp"
@@ -39,10 +39,12 @@ inline std::string ppRVal(const PPContext &pp, IRID node) {
       return printNumberRVal(pp, node);
     case IRI_GEN::IRI_TAG::JSClass:
       return printJSClassRVal(pp, node);
-    case IRI_GEN::IRI_TAG::PVTEnvRead:
-      return printPVTEnvReadRVal(pp, node);
     case IRI_GEN::IRI_TAG::JSPrivate:
       return printJSPrivateRVal(pp, node);
+    case IRI_GEN::IRI_TAG::JSCheckBrand:
+      return printJSCheckBrandRVal(pp, node);
+    case IRI_GEN::IRI_TAG::JSHasPrivate:
+      return printJSHasPrivateRVal(pp, node);
     case IRI_GEN::IRI_TAG::JSPrivateFieldRead:
       return printJSPrivateFieldReadRVal(pp, node);
     case IRI_GEN::IRI_TAG::PoolBinding:

@@ -1,4 +1,4 @@
-// Generated: 2026-10-30 01:05:09
+// Generated: 2026-10-30 01:37:24
 #pragma once
 
 #include "Support/PTA/PTAContext.hpp"
@@ -19,7 +19,9 @@ void handleIfElseJump(const PTAStatementContext &ptactx);
 void handleGoto(const PTAStatementContext &ptactx);
 void handleNOP(const PTAStatementContext &ptactx);
 void handleJSCheckConstructor(const PTAStatementContext &ptactx);
-void handlePVTEnvRead(const PTAStatementContext &ptactx);
+void handleJSPrivateFieldDefine(const PTAStatementContext &ptactx);
+void handleJSCheckBrand(const PTAStatementContext &ptactx);
+void handleJSHasPrivate(const PTAStatementContext &ptactx);
 void handleJSPrivateFieldWrite(const PTAStatementContext &ptactx);
 void handleJSADDBRAND(const PTAStatementContext &ptactx);
 void handleJSPrivateFieldRead(const PTAStatementContext &ptactx);
@@ -110,8 +112,14 @@ public:
   virtual void visit_JSCheckConstructor(const PTAStatementContext &ptactx) {
     return handleJSCheckConstructor(ptactx);
   }
-  virtual void visit_PVTEnvRead(const PTAStatementContext &ptactx) {
-    return handlePVTEnvRead(ptactx);
+  virtual void visit_JSPrivateFieldDefine(const PTAStatementContext &ptactx) {
+    return handleJSPrivateFieldDefine(ptactx);
+  }
+  virtual void visit_JSCheckBrand(const PTAStatementContext &ptactx) {
+    return handleJSCheckBrand(ptactx);
+  }
+  virtual void visit_JSHasPrivate(const PTAStatementContext &ptactx) {
+    return handleJSHasPrivate(ptactx);
   }
   virtual void visit_JSPrivateFieldWrite(const PTAStatementContext &ptactx) {
     return handleJSPrivateFieldWrite(ptactx);

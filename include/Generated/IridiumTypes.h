@@ -1,4 +1,4 @@
-// Generated: 2026-10-30 01:05:09
+// Generated: 2026-10-30 01:37:24
 #pragma once
 #include "Storage/Config.h"
 #include "Storage/IridiumSEXP.h"
@@ -2071,15 +2071,14 @@ using IRI_STORAGE::FlagValue;
       }
     }
 
-    static IRID create(IRIContext& p, StringID NAME, bool FULLY_RESOLVE) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::ResolvePrivateEnvBinding, {}, {FlagValue(NAME), FULLY_RESOLVE ? FlagValue(FULLY_RESOLVE) : FlagValue(std::monostate())});
+    static IRID create(IRIContext& p, StringID NAME) {
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::ResolvePrivateEnvBinding, {}, {FlagValue(NAME)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
-    static constexpr uint32_t TOTAL_FLAGS = 2;
+    static constexpr uint32_t TOTAL_FLAGS = 1;
 
     static constexpr uint32_t FLAG_IDX_NAME = 0;
-    static constexpr uint32_t FLAG_IDX_FULLY_RESOLVE = 1;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
@@ -2097,58 +2096,6 @@ using IRI_STORAGE::FlagValue;
     void setNAME(StringID val) { mutate_flag(FLAG_IDX_NAME) = val; }
     bool hasNAME() const { return std::holds_alternative<StringID>(get_flag(FLAG_IDX_NAME)); }
     void clearNAME() { mutate_flag(FLAG_IDX_NAME) = std::monostate{}; }
-
-    bool hasFULLY_RESOLVE() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_FULLY_RESOLVE)); }
-    void setFULLY_RESOLVE() { mutate_flag(FLAG_IDX_FULLY_RESOLVE) = std::nullptr_t{}; }
-    void clearFULLY_RESOLVE() { mutate_flag(FLAG_IDX_FULLY_RESOLVE) = std::monostate{}; }
-  };
-
-  struct PVTEnvReadSEXP {
-    IRID id;
-    IRIContext* ctx;
-
-    explicit PVTEnvReadSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::PVTEnvRead) {
-        throw std::runtime_error("Schema Cast Error: Expected PVTEnvRead, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
-      }
-    }
-
-    static IRID create(IRIContext& p, IRID Obj, bool SYMBOL, bool METHOD, bool FULLY_RESOLVE) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::PVTEnvRead, {Obj}, {SYMBOL ? FlagValue(SYMBOL) : FlagValue(std::monostate()), METHOD ? FlagValue(METHOD) : FlagValue(std::monostate()), FULLY_RESOLVE ? FlagValue(FULLY_RESOLVE) : FlagValue(std::monostate())});
-    }
-
-    static constexpr uint32_t TOTAL_ARGS = 1;
-    static constexpr uint32_t TOTAL_FLAGS = 3;
-
-    static constexpr uint32_t FLAG_IDX_SYMBOL = 0;
-    static constexpr uint32_t FLAG_IDX_METHOD = 1;
-    static constexpr uint32_t FLAG_IDX_FULLY_RESOLVE = 2;
-
-    // --- Helpers ---
-    inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.nodes.get_flags_m(id)[idx];
-    }
-    inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.nodes.get_flags(id)[idx];
-    }
-
-    // --- Arguments ---
-    IRID getArg_Obj() const { return ctx->storage.nodes.get_args(id)[0]; }
-    bool hasArg_Obj() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
-    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
-
-    // --- Flags ---
-    bool hasSYMBOL() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_SYMBOL)); }
-    void setSYMBOL() { mutate_flag(FLAG_IDX_SYMBOL) = std::nullptr_t{}; }
-    void clearSYMBOL() { mutate_flag(FLAG_IDX_SYMBOL) = std::monostate{}; }
-
-    bool hasMETHOD() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_METHOD)); }
-    void setMETHOD() { mutate_flag(FLAG_IDX_METHOD) = std::nullptr_t{}; }
-    void clearMETHOD() { mutate_flag(FLAG_IDX_METHOD) = std::monostate{}; }
-
-    bool hasFULLY_RESOLVE() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_FULLY_RESOLVE)); }
-    void setFULLY_RESOLVE() { mutate_flag(FLAG_IDX_FULLY_RESOLVE) = std::nullptr_t{}; }
-    void clearFULLY_RESOLVE() { mutate_flag(FLAG_IDX_FULLY_RESOLVE) = std::monostate{}; }
   };
 
   struct JSPrivateSEXP {
@@ -2188,24 +2135,24 @@ using IRI_STORAGE::FlagValue;
     void clearIridiumPrimitive() { mutate_flag(FLAG_IDX_IridiumPrimitive) = std::monostate{}; }
   };
 
-  struct JSPrivateFieldWriteSEXP {
+  struct JSPrivateFieldDefineSEXP {
     IRID id;
     IRIContext* ctx;
 
-    explicit JSPrivateFieldWriteSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::JSPrivateFieldWrite) {
-        throw std::runtime_error("Schema Cast Error: Expected JSPrivateFieldWrite, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
+    explicit JSPrivateFieldDefineSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::JSPrivateFieldDefine) {
+        throw std::runtime_error("Schema Cast Error: Expected JSPrivateFieldDefine, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
-    static IRID create(IRIContext& p, IRID Obj, IRID Field, IRID Value, bool DECL) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSPrivateFieldWrite, {Obj, Field, Value}, {DECL ? FlagValue(DECL) : FlagValue(std::monostate())});
+    static IRID create(IRIContext& p, IRID Obj, IRID Field, IRID Value) {
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSPrivateFieldDefine, {Obj, Field, Value}, {});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 3;
-    static constexpr uint32_t TOTAL_FLAGS = 1;
+    static constexpr uint32_t TOTAL_FLAGS = 0;
 
-    static constexpr uint32_t FLAG_IDX_DECL = 0;
+
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
@@ -2229,9 +2176,131 @@ using IRI_STORAGE::FlagValue;
     void setArg_Value(IRID val) { assert(hasArg_Value() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,2,val); }
 
     // --- Flags ---
-    bool hasDECL() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_DECL)); }
-    void setDECL() { mutate_flag(FLAG_IDX_DECL) = std::nullptr_t{}; }
-    void clearDECL() { mutate_flag(FLAG_IDX_DECL) = std::monostate{}; }
+
+  };
+
+  struct JSCheckBrandSEXP {
+    IRID id;
+    IRIContext* ctx;
+
+    explicit JSCheckBrandSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::JSCheckBrand) {
+        throw std::runtime_error("Schema Cast Error: Expected JSCheckBrand, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
+      }
+    }
+
+    static IRID create(IRIContext& p, IRID Obj, IRID Method) {
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSCheckBrand, {Obj, Method}, {});
+    }
+
+    static constexpr uint32_t TOTAL_ARGS = 2;
+    static constexpr uint32_t TOTAL_FLAGS = 0;
+
+
+
+    // --- Helpers ---
+    inline FlagValue& mutate_flag(uint32_t idx) {
+        return ctx->storage.nodes.get_flags_m(id)[idx];
+    }
+    inline const FlagValue& get_flag(uint32_t idx) const {
+        return ctx->storage.nodes.get_flags(id)[idx];
+    }
+
+    // --- Arguments ---
+    IRID getArg_Obj() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_Obj() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
+
+    IRID getArg_Method() const { return ctx->storage.nodes.get_args(id)[1]; }
+    bool hasArg_Method() const { return 1 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Method(IRID val) { assert(hasArg_Method() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,1,val); }
+
+    // --- Flags ---
+
+  };
+
+  struct JSHasPrivateSEXP {
+    IRID id;
+    IRIContext* ctx;
+
+    explicit JSHasPrivateSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::JSHasPrivate) {
+        throw std::runtime_error("Schema Cast Error: Expected JSHasPrivate, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
+      }
+    }
+
+    static IRID create(IRIContext& p, IRID Obj, IRID Name) {
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSHasPrivate, {Obj, Name}, {});
+    }
+
+    static constexpr uint32_t TOTAL_ARGS = 2;
+    static constexpr uint32_t TOTAL_FLAGS = 0;
+
+
+
+    // --- Helpers ---
+    inline FlagValue& mutate_flag(uint32_t idx) {
+        return ctx->storage.nodes.get_flags_m(id)[idx];
+    }
+    inline const FlagValue& get_flag(uint32_t idx) const {
+        return ctx->storage.nodes.get_flags(id)[idx];
+    }
+
+    // --- Arguments ---
+    IRID getArg_Obj() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_Obj() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
+
+    IRID getArg_Name() const { return ctx->storage.nodes.get_args(id)[1]; }
+    bool hasArg_Name() const { return 1 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Name(IRID val) { assert(hasArg_Name() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,1,val); }
+
+    // --- Flags ---
+
+  };
+
+  struct JSPrivateFieldWriteSEXP {
+    IRID id;
+    IRIContext* ctx;
+
+    explicit JSPrivateFieldWriteSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::JSPrivateFieldWrite) {
+        throw std::runtime_error("Schema Cast Error: Expected JSPrivateFieldWrite, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
+      }
+    }
+
+    static IRID create(IRIContext& p, IRID Obj, IRID Field, IRID Value) {
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSPrivateFieldWrite, {Obj, Field, Value}, {});
+    }
+
+    static constexpr uint32_t TOTAL_ARGS = 3;
+    static constexpr uint32_t TOTAL_FLAGS = 0;
+
+
+
+    // --- Helpers ---
+    inline FlagValue& mutate_flag(uint32_t idx) {
+        return ctx->storage.nodes.get_flags_m(id)[idx];
+    }
+    inline const FlagValue& get_flag(uint32_t idx) const {
+        return ctx->storage.nodes.get_flags(id)[idx];
+    }
+
+    // --- Arguments ---
+    IRID getArg_Obj() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_Obj() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
+
+    IRID getArg_Field() const { return ctx->storage.nodes.get_args(id)[1]; }
+    bool hasArg_Field() const { return 1 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Field(IRID val) { assert(hasArg_Field() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,1,val); }
+
+    IRID getArg_Value() const { return ctx->storage.nodes.get_args(id)[2]; }
+    bool hasArg_Value() const { return 2 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Value(IRID val) { assert(hasArg_Value() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,2,val); }
+
+    // --- Flags ---
+
   };
 
   struct JSADDBRANDSEXP {

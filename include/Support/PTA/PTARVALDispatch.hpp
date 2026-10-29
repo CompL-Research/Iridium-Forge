@@ -1,4 +1,4 @@
-// Generated: 2026-10-30 01:05:09
+// Generated: 2026-10-30 01:37:24
 #pragma once
 
 #include "Support/PTA/PTAContext.hpp"
@@ -44,10 +44,12 @@ inline void resolvePKRRVal(const PTAStatementContext &ptactx, IRID node,
       return computeNumberVals(ptactx, node, res_);
     case IRI_GEN::IRI_TAG::JSClass:
       return computeJSClassVals(ptactx, node, res_);
-    case IRI_GEN::IRI_TAG::PVTEnvRead:
-      return computePVTEnvReadVals(ptactx, node, res_);
     case IRI_GEN::IRI_TAG::JSPrivate:
       return computeJSPrivateVals(ptactx, node, res_);
+    case IRI_GEN::IRI_TAG::JSCheckBrand:
+      return computeJSCheckBrandVals(ptactx, node, res_);
+    case IRI_GEN::IRI_TAG::JSHasPrivate:
+      return computeJSHasPrivateVals(ptactx, node, res_);
     case IRI_GEN::IRI_TAG::JSPrivateFieldRead:
       return computeJSPrivateFieldReadVals(ptactx, node, res_);
     case IRI_GEN::IRI_TAG::PoolBinding:

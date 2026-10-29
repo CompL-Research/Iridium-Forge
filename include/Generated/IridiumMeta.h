@@ -1,4 +1,4 @@
-// Generated: 2026-10-30 01:05:09
+// Generated: 2026-10-30 01:37:24
 #pragma once
 #include "IridiumEnums.h"
 #include <cstdint>
@@ -50,10 +50,12 @@ public:
       case IRI_GEN::Number: return 1;
       case IRI_GEN::JSClass: return 2;
       case IRI_GEN::JSCheckConstructor: return 0;
-      case IRI_GEN::ResolvePrivateEnvBinding: return 2;
-      case IRI_GEN::PVTEnvRead: return 3;
+      case IRI_GEN::ResolvePrivateEnvBinding: return 1;
       case IRI_GEN::JSPrivate: return 1;
-      case IRI_GEN::JSPrivateFieldWrite: return 1;
+      case IRI_GEN::JSPrivateFieldDefine: return 0;
+      case IRI_GEN::JSCheckBrand: return 0;
+      case IRI_GEN::JSHasPrivate: return 0;
+      case IRI_GEN::JSPrivateFieldWrite: return 0;
       case IRI_GEN::JSADDBRAND: return 0;
       case IRI_GEN::JSPrivateFieldRead: return 0;
       case IRI_GEN::PoolBinding: return 1;
@@ -400,27 +402,12 @@ public:
       case IRI_GEN::ResolvePrivateEnvBinding:
         switch(flag) {
         case IRI_GEN::NAME: return 0;
-        case IRI_GEN::FULLY_RESOLVE: return 1;
-          default: return -1;
-        }
-        break;
-      case IRI_GEN::PVTEnvRead:
-        switch(flag) {
-        case IRI_GEN::SYMBOL: return 0;
-        case IRI_GEN::METHOD: return 1;
-        case IRI_GEN::FULLY_RESOLVE: return 2;
           default: return -1;
         }
         break;
       case IRI_GEN::JSPrivate:
         switch(flag) {
         case IRI_GEN::IridiumPrimitive: return 0;
-          default: return -1;
-        }
-        break;
-      case IRI_GEN::JSPrivateFieldWrite:
-        switch(flag) {
-        case IRI_GEN::DECL: return 0;
           default: return -1;
         }
         break;
@@ -900,27 +887,12 @@ public:
       case IRI_GEN::ResolvePrivateEnvBinding:
         switch(index) {
         case 0: return IRI_GEN::NAME;
-        case 1: return IRI_GEN::FULLY_RESOLVE;
-          default: throw std::runtime_error("Invalid flag index");
-        }
-        break;
-      case IRI_GEN::PVTEnvRead:
-        switch(index) {
-        case 0: return IRI_GEN::SYMBOL;
-        case 1: return IRI_GEN::METHOD;
-        case 2: return IRI_GEN::FULLY_RESOLVE;
           default: throw std::runtime_error("Invalid flag index");
         }
         break;
       case IRI_GEN::JSPrivate:
         switch(index) {
         case 0: return IRI_GEN::IridiumPrimitive;
-          default: throw std::runtime_error("Invalid flag index");
-        }
-        break;
-      case IRI_GEN::JSPrivateFieldWrite:
-        switch(index) {
-        case 0: return IRI_GEN::DECL;
           default: throw std::runtime_error("Invalid flag index");
         }
         break;

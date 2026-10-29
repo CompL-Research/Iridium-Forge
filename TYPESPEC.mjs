@@ -459,18 +459,7 @@ export default [
     args: [],
     flags: {
       string: ["NAME"],
-      void: ["FULLY_RESOLVE"],
-      bool: [],
-      double: [],
-    },
-  },
-  {
-    tag: "PVTEnvRead",
-    meta: "AMP",
-    args: ["Obj"],
-    flags: {
-      string: [],
-      void: ["SYMBOL", "METHOD", "FULLY_RESOLVE"],
+      void: [],
       bool: [],
       double: [],
     },
@@ -487,12 +476,50 @@ export default [
     },
   },
   {
+    // Obj.#[Field] := Value: PrivateFieldAdd (define_private_field), throws if
+    // Obj already has the field. Field is the read of the private symbol.
+    tag: "JSPrivateFieldDefine",
+    meta: "STMT",
+    args: ["Obj", "Field", "Value"],
+    flags: {
+      string: [],
+      void: [],
+      bool: [],
+      double: [],
+    },
+  },
+  {
+    // Obj.#method[Method]: throws unless Obj has the brand of the class that
+    // declares the private method; yields the method (check_brand).
+    tag: "JSCheckBrand",
+    meta: "AMP",
+    args: ["Obj", "Method"],
+    flags: {
+      string: [],
+      void: [],
+      bool: [],
+      double: [],
+    },
+  },
+  {
+    // #[Name] in Obj: does Obj have the private element (private_in).
+    tag: "JSHasPrivate",
+    meta: "AMP",
+    args: ["Obj", "Name"],
+    flags: {
+      string: [],
+      void: [],
+      bool: [],
+      double: [],
+    },
+  },
+  {
     tag: "JSPrivateFieldWrite",
     meta: "STMT",
     args: ["Obj", "Field", "Value"],
     flags: {
       string: [],
-      void: ["DECL"],
+      void: [],
       bool: [],
       double: [],
     },

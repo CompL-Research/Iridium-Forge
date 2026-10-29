@@ -1,4 +1,4 @@
-// Generated: 2026-10-30 01:05:09
+// Generated: 2026-10-30 01:37:24
 #pragma once
 
 #include "Support/PP/PPContext.hpp"
@@ -24,8 +24,9 @@ std::string printScriptBindingRVal(const PPContext &pp, IRID node);
 std::string printJSNUBDRVal(const PPContext &pp, IRID node);
 std::string printNumberRVal(const PPContext &pp, IRID node);
 std::string printJSClassRVal(const PPContext &pp, IRID node);
-std::string printPVTEnvReadRVal(const PPContext &pp, IRID node);
 std::string printJSPrivateRVal(const PPContext &pp, IRID node);
+std::string printJSCheckBrandRVal(const PPContext &pp, IRID node);
+std::string printJSHasPrivateRVal(const PPContext &pp, IRID node);
 std::string printJSPrivateFieldReadRVal(const PPContext &pp, IRID node);
 std::string printPoolBindingRVal(const PPContext &pp, IRID node);
 std::string printJSForInStartRVal(const PPContext &pp, IRID node);

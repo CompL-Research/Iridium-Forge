@@ -14,7 +14,6 @@ namespace IRI_STRUCTURAL {
  *   [1] IRID Field -> sexp.getArg_Field()
  *   [2] IRID Value -> sexp.getArg_Value()
  * Flags:
- *   - void   DECL -> sexp.hasDECL()
  */
 void handleJSPrivateFieldWrite(const PTAStatementContext &ptactx) {
   throw std::runtime_error("PTA unhandled case JSPrivateFieldWrite");
@@ -24,7 +23,6 @@ void handleJSPrivateFieldWrite(const PTAStatementContext &ptactx) {
   // if (sexp.hasArg_Obj()) { IRID arg_Obj = sexp.getArg_Obj(); }
   // if (sexp.hasArg_Field()) { IRID arg_Field = sexp.getArg_Field(); }
   // if (sexp.hasArg_Value()) { IRID arg_Value = sexp.getArg_Value(); }
-  // bool has_DECL = sexp.hasDECL();
 
   return;
 }
