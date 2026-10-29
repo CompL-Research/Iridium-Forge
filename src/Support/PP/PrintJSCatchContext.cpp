@@ -11,8 +11,7 @@ namespace IRI_STRUCTURAL {
  * AST Tag: JSCatchContext
  * Meta:    AMP
  * Arguments: (none)
- * Flags:
- *   - string NAME -> sexp.getNAME()
+ * Flags: (none)
  *
  * AMP node used as a bare statement: print it as an expression statement.
  */

@@ -11,8 +11,7 @@ namespace IRI_STRUCTURAL {
  * AST Tag: JSCatchContext
  * Meta:    AMP
  * Arguments: (none)
- * Flags:
- *   - string NAME -> sexp.getNAME()
+ * Flags: (none)
  */
 void computeJSCatchContextVals(const PTAStatementContext &ptactx, IRID node,
                        std::set<Prakriti::NodeUID> &res_) {
@@ -20,7 +19,6 @@ void computeJSCatchContextVals(const PTAStatementContext &ptactx, IRID node,
   // IRI_GEN::JSCatchContextSEXP sexp(node, ptactx.ctx);
 
   // === TODO : JSCatchContext ===
-  // if (sexp.hasNAME()) { StringID str_NAME = sexp.getNAME(); }
 
   return;
 }

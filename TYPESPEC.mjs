@@ -662,7 +662,7 @@ export default [
     meta: "AMP",
     args: [],
     flags: {
-      string: ["NAME"],
+      string: [],
       void: [],
       bool: [],
       double: [],

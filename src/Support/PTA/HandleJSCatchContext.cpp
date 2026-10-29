@@ -12,8 +12,7 @@ namespace IRI_STRUCTURAL {
  * AST Tag: JSCatchContext
  * Meta:    AMP
  * Arguments: (none)
- * Flags:
- *   - string NAME -> sexp.getNAME()
+ * Flags: (none)
  *
  * AMP node used as a bare statement: evaluate it via RVal resolution for
  * its side effects and discard the produced value.

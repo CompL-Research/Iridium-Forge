@@ -10,13 +10,10 @@ namespace IRI_STRUCTURAL {
  * AST Tag: JSCatchContext
  * Meta:    AMP
  * Arguments: (none)
- * Flags:
- *   - string NAME -> sexp.getNAME()
+ * Flags: (none)
  */
 std::string printJSCatchContextRVal(const PPContext &pp, IRID node) {
-  IRI_GEN::JSCatchContextSEXP sexp(node, pp.ctx);
-  if (sexp.hasNAME())
-    return "caught(" + ppName(pp.str(sexp.getNAME())) + ")";
+  // The caught exception value (already on the stack in the handler).
   return "caught";
 }
 

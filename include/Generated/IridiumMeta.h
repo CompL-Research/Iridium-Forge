@@ -1,4 +1,4 @@
-// Generated: 2026-10-29 19:45:21
+// Generated: 2026-10-29 19:59:04
 #pragma once
 #include "IridiumEnums.h"
 #include <cstdint>
@@ -68,7 +68,7 @@ public:
       case IRI_GEN::JSForOfStart: return 1;
       case IRI_GEN::JSForOfNext: return 1;
       case IRI_GEN::PushCatchContext: return 1;
-      case IRI_GEN::JSCatchContext: return 1;
+      case IRI_GEN::JSCatchContext: return 0;
       case IRI_GEN::Throw: return 0;
       case IRI_GEN::Ret: return 0;
       case IRI_GEN::JSBinop: return 1;
@@ -481,12 +481,6 @@ public:
       case IRI_GEN::PushCatchContext:
         switch(flag) {
         case IRI_GEN::IDX: return 0;
-          default: return -1;
-        }
-        break;
-      case IRI_GEN::JSCatchContext:
-        switch(flag) {
-        case IRI_GEN::NAME: return 0;
           default: return -1;
         }
         break;
@@ -984,12 +978,6 @@ public:
       case IRI_GEN::PushCatchContext:
         switch(index) {
         case 0: return IRI_GEN::IDX;
-          default: throw std::runtime_error("Invalid flag index");
-        }
-        break;
-      case IRI_GEN::JSCatchContext:
-        switch(index) {
-        case 0: return IRI_GEN::NAME;
           default: throw std::runtime_error("Invalid flag index");
         }
         break;

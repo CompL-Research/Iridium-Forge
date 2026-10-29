@@ -1,4 +1,4 @@
-// Generated: 2026-10-29 19:45:21
+// Generated: 2026-10-29 19:59:04
 #pragma once
 #include "Storage/Config.h"
 #include "Storage/IridiumSEXP.h"
@@ -2804,14 +2804,14 @@ using IRI_STORAGE::FlagValue;
       }
     }
 
-    static IRID create(IRIContext& p, StringID NAME) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSCatchContext, {}, {FlagValue(NAME)});
+    static IRID create(IRIContext& p) {
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSCatchContext, {}, {});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
-    static constexpr uint32_t TOTAL_FLAGS = 1;
+    static constexpr uint32_t TOTAL_FLAGS = 0;
 
-    static constexpr uint32_t FLAG_IDX_NAME = 0;
+
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
@@ -2825,10 +2825,7 @@ using IRI_STORAGE::FlagValue;
 
 
     // --- Flags ---
-    StringID getNAME() const { return std::get<StringID>(get_flag(FLAG_IDX_NAME)); }
-    void setNAME(StringID val) { mutate_flag(FLAG_IDX_NAME) = val; }
-    bool hasNAME() const { return std::holds_alternative<StringID>(get_flag(FLAG_IDX_NAME)); }
-    void clearNAME() { mutate_flag(FLAG_IDX_NAME) = std::monostate{}; }
+
   };
 
   struct ThrowSEXP {
