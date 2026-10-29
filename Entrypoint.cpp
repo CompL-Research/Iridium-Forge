@@ -75,8 +75,6 @@ void runCorePasses(IRIContext &ctx, IRID sexp, BuildContextMap &buildContext) {
       {"_4_3_PIB", [&] { IRI_CORE_PASSES::_4_3_PIB(ctx, sexp, buildContext); }},
       {"_4_4_RFD", [&] { IRI_CORE_PASSES::_4_4_RFD(ctx, sexp, buildContext); }},
       {"_4_5_PEB", [&] { IRI_CORE_PASSES::_4_5_PEB(ctx, sexp, buildContext); }},
-      {"_7_RRPEBS",
-       [&] { IRI_CORE_PASSES::_7_RRPEBS(ctx, sexp, buildContext); }},
       {"_8_RREBS", [&] { IRI_CORE_PASSES::_8_RREBS(ctx, sexp, buildContext); }},
       {"_9_CER", [&] { IRI_CORE_PASSES::_9_RLT(ctx, sexp, buildContext); }},
       {"_10_RBACT",

@@ -57,9 +57,6 @@ public:
   std::string name;
   double sourceLine;
 
-  std::optional<
-      std::unordered_map<std::string, std::pair<std::string, std::string>>>
-      privateMapping = std::nullopt;
   std::optional<std::unordered_map<std::string, IRI_STORAGE::IRID>>
       moduleRequestMap = std::nullopt;
   std::vector<IRI_STORAGE::IRID> BB;
@@ -148,29 +145,9 @@ inline std::ostream &operator<<(std::ostream &os,
      << "    isStrict: " << (ctx.isStrict ? "true" : "false") << ",\n"
      << "    isModule: " << (ctx.isModule ? "true" : "false") << ",\n"
      << "    ecmaArgs: " << ctx.ecmaArgs << ",\n"
-     << "    name: '" << ctx.name << "',\n"
-     << "    privateMapping: ";
+     << "    name: '" << ctx.name << "',\n";
 
-  // Expand privateMapping
-  if (ctx.privateMapping) {
-    os << "{";
-    bool pmFirst = true;
-    for (const auto &[k, v] : *ctx.privateMapping) {
-      if (!pmFirst)
-        os << ", ";
-      else
-        os << " ";
-      os << "'" << k << "': ['" << v.first << "', '" << v.second << "']";
-      pmFirst = false;
-    }
-    if (!pmFirst)
-      os << " ";
-    os << "}";
-  } else {
-    os << "null";
-  }
-  os << ",\n"
-     << "    moduleRequestMap: ";
+  os << "    moduleRequestMap: ";
 
   // Expand moduleRequestMap
   if (ctx.moduleRequestMap) {

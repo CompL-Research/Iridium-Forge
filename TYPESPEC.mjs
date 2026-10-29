@@ -455,17 +455,6 @@ export default [
     },
   },
   {
-    tag: "ResolvePrivateEnvBinding",
-    meta: "*RVAL",
-    args: [],
-    flags: {
-      string: ["NAME"],
-      void: [],
-      bool: [],
-      double: [],
-    },
-  },
-  {
     tag: "JSPrivate",
     meta: "RVAL",
     args: [],

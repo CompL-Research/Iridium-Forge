@@ -1,4 +1,4 @@
-// Generated: 2026-10-30 04:00:24
+// Generated: 2026-10-30 04:34:39
 #pragma once
 #include <string>
 
@@ -45,7 +45,6 @@ namespace IRI_GEN {
     Number,
     JSClass,
     JSCheckConstructor,
-    ResolvePrivateEnvBinding,
     JSPrivate,
     JSPrivateFieldDefine,
     JSCheckBrand,
@@ -163,7 +162,6 @@ namespace IRI_GEN {
       case Number: return "Number";
       case JSClass: return "JSClass";
       case JSCheckConstructor: return "JSCheckConstructor";
-      case ResolvePrivateEnvBinding: return "ResolvePrivateEnvBinding";
       case JSPrivate: return "JSPrivate";
       case JSPrivateFieldDefine: return "JSPrivateFieldDefine";
       case JSCheckBrand: return "JSCheckBrand";
@@ -440,7 +438,6 @@ namespace IRI_GEN {
       case Number: return IRI_META::RVAL;
       case JSClass: return IRI_META::RVAL;
       case JSCheckConstructor: return IRI_META::STMT;
-      case ResolvePrivateEnvBinding: return IRI_META::STAR_RVAL;
       case JSPrivate: return IRI_META::RVAL;
       case JSPrivateFieldDefine: return IRI_META::STMT;
       case JSCheckBrand: return IRI_META::AMP;

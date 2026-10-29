@@ -1,4 +1,4 @@
-// Generated: 2026-10-30 04:00:24
+// Generated: 2026-10-30 04:34:39
 #pragma once
 #include "Storage/Config.h"
 #include "Storage/IridiumSEXP.h"
@@ -2054,43 +2054,6 @@ using IRI_STORAGE::FlagValue;
 
     // --- Flags ---
 
-  };
-
-  struct ResolvePrivateEnvBindingSEXP {
-    IRID id;
-    IRIContext* ctx;
-
-    explicit ResolvePrivateEnvBindingSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::ResolvePrivateEnvBinding) {
-        throw std::runtime_error("Schema Cast Error: Expected ResolvePrivateEnvBinding, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
-      }
-    }
-
-    static IRID create(IRIContext& p, StringID NAME) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::ResolvePrivateEnvBinding, {}, {FlagValue(NAME)});
-    }
-
-    static constexpr uint32_t TOTAL_ARGS = 0;
-    static constexpr uint32_t TOTAL_FLAGS = 1;
-
-    static constexpr uint32_t FLAG_IDX_NAME = 0;
-
-    // --- Helpers ---
-    inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.nodes.get_flags_m(id)[idx];
-    }
-    inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.nodes.get_flags(id)[idx];
-    }
-
-    // --- Arguments ---
-
-
-    // --- Flags ---
-    StringID getNAME() const { return std::get<StringID>(get_flag(FLAG_IDX_NAME)); }
-    void setNAME(StringID val) { mutate_flag(FLAG_IDX_NAME) = val; }
-    bool hasNAME() const { return std::holds_alternative<StringID>(get_flag(FLAG_IDX_NAME)); }
-    void clearNAME() { mutate_flag(FLAG_IDX_NAME) = std::monostate{}; }
   };
 
   struct JSPrivateSEXP {
