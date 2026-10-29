@@ -9,8 +9,10 @@
 #include <charconv>
 #include <cmath>
 #include <iomanip>
+#include <set>
 #include <sstream>
 #include <stdexcept>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -49,8 +51,13 @@ std::string ppNumber(double d) {
 
 std::string ppBinding(const PPContext &pp, IRID binding) {
   switch (pp.tagOf(binding)) {
-  case EnvBinding:
-    return ppName(pp.str(EnvBindingSEXP(binding, pp.ctx).getNAME()));
+  case EnvBinding: {
+    EnvBindingSEXP eb(binding, pp.ctx);
+    std::string name = ppName(pp.str(eb.getNAME()));
+    if (eb.hasSCOPE() && pp.scopedNames.count(name))
+      name += "#" + ppNumber(eb.getSCOPE());
+    return name;
+  }
   case ScriptBinding:
     return "s:" + ppName(pp.str(ScriptBindingSEXP(binding, pp.ctx).getNAME()));
   case GlobalBinding:
@@ -225,7 +232,7 @@ const char *containerKind(double flagID) {
 
 class Printer {
 public:
-  Printer(std::ostream &os, const PPContext &pp) : os(os), pp(pp) {}
+  Printer(std::ostream &os, PPContext &pp) : os(os), pp(pp) {}
 
   void printFile(IRID file) {
     if (pp.tagOf(file) != File) {
@@ -250,7 +257,34 @@ public:
 
 private:
   std::ostream &os;
-  const PPContext &pp;
+  PPContext &pp;
+
+  // Collects the declaring scopes of every binding name reachable from node.
+  void collectScopes(IRID node,
+                     std::unordered_map<std::string, std::set<double>> &scopes) {
+    if (pp.tagOf(node) == EnvBinding) {
+      EnvBindingSEXP eb(node, pp.ctx);
+      if (eb.hasSCOPE())
+        scopes[ppName(pp.str(eb.getNAME()))].insert(eb.getSCOPE());
+      return;
+    }
+    for (IRID arg : pp.args(node))
+      collectScopes(arg, scopes);
+  }
+
+  // A name needs its scope (x#3) if the function sees more than one binding
+  // with that name: its own (shadowed) locals or captured ones.
+  void computeScopedNames(BBContainerSEXP &c, BindingsSEXP &bindings) {
+    std::unordered_map<std::string, std::set<double>> scopes;
+    collectScopes(bindings.getArg_LocalBindings(), scopes);
+    collectScopes(bindings.getArg_RemoteBindings(), scopes);
+    for (IRID bb : pp.args(c.getArg_BB()))
+      collectScopes(bb, scopes);
+    pp.scopedNames.clear();
+    for (auto &[name, s] : scopes)
+      if (s.size() > 1)
+        pp.scopedNames.insert(name);
+  }
 
   // ModuleRequest / StaticImport / exports: only printed when non-empty.
   void printModuleList(IRID list) {
@@ -298,6 +332,7 @@ private:
   void printContainer(IRID bbc) {
     BBContainerSEXP c(bbc, pp.ctx);
     BindingsSEXP bindings(c.getArg_Bindings(), pp.ctx);
+    computeScopedNames(c, bindings);
 
     // Formals come from the local bindings, ordered by their REFIDX.
     std::vector<std::pair<double, std::string>> formals;

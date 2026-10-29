@@ -233,7 +233,9 @@ const ppContextHpp = `// Generated: ${getISTDateTime()}
 #include "Storage/IridiumSEXP.h"
 #include "Generated/IridiumEnums.h"
 #include <span>
+#include <string>
 #include <string_view>
+#include <unordered_set>
 
 namespace IRI_STRUCTURAL {
 
@@ -248,6 +250,10 @@ struct PPContext {
 
   // Append "  ; #<IRID>" to every statement line.
   bool showIds = false;
+
+  // Names with more than one binding in the function being printed
+  // (shadowing); they print with their declaring scope: x#3.
+  std::unordered_set<std::string> scopedNames;
 
   explicit PPContext(IRI_STORAGE::IRIContext &c) : ctx(c) {}
 
