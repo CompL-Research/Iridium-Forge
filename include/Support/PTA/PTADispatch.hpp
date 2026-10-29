@@ -1,4 +1,4 @@
-// Generated: 2026-10-30 03:34:48
+// Generated: 2026-10-30 03:47:02
 #pragma once
 
 #include "Support/PTA/PTAContext.hpp"
@@ -88,8 +88,12 @@ inline void dispatchPTAStatement(const PTAStatementContext &ptactx) {
       return handleJSToObject(ptactx);
     case IRI_GEN::IRI_TAG::JSAppend:
       return handleJSAppend(ptactx);
-    case IRI_GEN::IRI_TAG::JSDefineObjMethod:
-      return handleJSDefineObjMethod(ptactx);
+    case IRI_GEN::IRI_TAG::JSDefineMethod:
+      return handleJSDefineMethod(ptactx);
+    case IRI_GEN::IRI_TAG::JSDefineGetter:
+      return handleJSDefineGetter(ptactx);
+    case IRI_GEN::IRI_TAG::JSDefineSetter:
+      return handleJSDefineSetter(ptactx);
     case IRI_GEN::IRI_TAG::JSCopyDataProperties:
       return handleJSCopyDataProperties(ptactx);
     case IRI_GEN::IRI_TAG::UNOPDelMemberExpr:

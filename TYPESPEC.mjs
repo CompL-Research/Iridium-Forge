@@ -880,12 +880,40 @@ export default [
     },
   },
   {
-    tag: "JSDefineObjMethod",
+    // TargetObj[Key] := Value as a method (define_method); NOENUM: not
+    // enumerable (class members), else enumerable (object literals)
+    tag: "JSDefineMethod",
     meta: "STMT",
     args: ["TargetObj", "Key", "Value"],
     flags: {
       string: [],
-      void: ["NOENUM", "METHOD", "GET", "SET"],
+      void: ["NOENUM"],
+      bool: [],
+      double: [],
+    },
+  },
+  {
+    // TargetObj[Key] := Value as a getter (define_method); NOENUM: not
+    // enumerable (class members), else enumerable (object literals)
+    tag: "JSDefineGetter",
+    meta: "STMT",
+    args: ["TargetObj", "Key", "Value"],
+    flags: {
+      string: [],
+      void: ["NOENUM"],
+      bool: [],
+      double: [],
+    },
+  },
+  {
+    // TargetObj[Key] := Value as a setter (define_method); NOENUM: not
+    // enumerable (class members), else enumerable (object literals)
+    tag: "JSDefineSetter",
+    meta: "STMT",
+    args: ["TargetObj", "Key", "Value"],
+    flags: {
+      string: [],
+      void: ["NOENUM"],
       bool: [],
       double: [],
     },

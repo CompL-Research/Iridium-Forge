@@ -1,4 +1,4 @@
-// Generated: 2026-10-30 03:34:48
+// Generated: 2026-10-30 03:47:02
 #pragma once
 
 #include "Support/PTA/PTAContext.hpp"
@@ -45,7 +45,9 @@ void handleJSComputedFieldRead(const PTAStatementContext &ptactx);
 void handleJSComputedFieldWrite(const PTAStatementContext &ptactx);
 void handleJSToObject(const PTAStatementContext &ptactx);
 void handleJSAppend(const PTAStatementContext &ptactx);
-void handleJSDefineObjMethod(const PTAStatementContext &ptactx);
+void handleJSDefineMethod(const PTAStatementContext &ptactx);
+void handleJSDefineGetter(const PTAStatementContext &ptactx);
+void handleJSDefineSetter(const PTAStatementContext &ptactx);
 void handleJSCopyDataProperties(const PTAStatementContext &ptactx);
 void handleUNOPDelMemberExpr(const PTAStatementContext &ptactx);
 void handleUNOPDelVar(const PTAStatementContext &ptactx);
@@ -190,8 +192,14 @@ public:
   virtual void visit_JSAppend(const PTAStatementContext &ptactx) {
     return handleJSAppend(ptactx);
   }
-  virtual void visit_JSDefineObjMethod(const PTAStatementContext &ptactx) {
-    return handleJSDefineObjMethod(ptactx);
+  virtual void visit_JSDefineMethod(const PTAStatementContext &ptactx) {
+    return handleJSDefineMethod(ptactx);
+  }
+  virtual void visit_JSDefineGetter(const PTAStatementContext &ptactx) {
+    return handleJSDefineGetter(ptactx);
+  }
+  virtual void visit_JSDefineSetter(const PTAStatementContext &ptactx) {
+    return handleJSDefineSetter(ptactx);
   }
   virtual void visit_JSCopyDataProperties(const PTAStatementContext &ptactx) {
     return handleJSCopyDataProperties(ptactx);

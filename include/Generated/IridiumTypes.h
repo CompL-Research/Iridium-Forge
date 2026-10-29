@@ -1,4 +1,4 @@
-// Generated: 2026-10-30 03:34:48
+// Generated: 2026-10-30 03:47:02
 #pragma once
 #include "Storage/Config.h"
 #include "Storage/IridiumSEXP.h"
@@ -3529,27 +3529,24 @@ using IRI_STORAGE::FlagValue;
 
   };
 
-  struct JSDefineObjMethodSEXP {
+  struct JSDefineMethodSEXP {
     IRID id;
     IRIContext* ctx;
 
-    explicit JSDefineObjMethodSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::JSDefineObjMethod) {
-        throw std::runtime_error("Schema Cast Error: Expected JSDefineObjMethod, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
+    explicit JSDefineMethodSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::JSDefineMethod) {
+        throw std::runtime_error("Schema Cast Error: Expected JSDefineMethod, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
-    static IRID create(IRIContext& p, IRID TargetObj, IRID Key, IRID Value, bool NOENUM, bool METHOD, bool GET, bool SET) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSDefineObjMethod, {TargetObj, Key, Value}, {NOENUM ? FlagValue(NOENUM) : FlagValue(std::monostate()), METHOD ? FlagValue(METHOD) : FlagValue(std::monostate()), GET ? FlagValue(GET) : FlagValue(std::monostate()), SET ? FlagValue(SET) : FlagValue(std::monostate())});
+    static IRID create(IRIContext& p, IRID TargetObj, IRID Key, IRID Value, bool NOENUM) {
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSDefineMethod, {TargetObj, Key, Value}, {NOENUM ? FlagValue(NOENUM) : FlagValue(std::monostate())});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 3;
-    static constexpr uint32_t TOTAL_FLAGS = 4;
+    static constexpr uint32_t TOTAL_FLAGS = 1;
 
     static constexpr uint32_t FLAG_IDX_NOENUM = 0;
-    static constexpr uint32_t FLAG_IDX_METHOD = 1;
-    static constexpr uint32_t FLAG_IDX_GET = 2;
-    static constexpr uint32_t FLAG_IDX_SET = 3;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
@@ -3576,18 +3573,98 @@ using IRI_STORAGE::FlagValue;
     bool hasNOENUM() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_NOENUM)); }
     void setNOENUM() { mutate_flag(FLAG_IDX_NOENUM) = std::nullptr_t{}; }
     void clearNOENUM() { mutate_flag(FLAG_IDX_NOENUM) = std::monostate{}; }
+  };
 
-    bool hasMETHOD() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_METHOD)); }
-    void setMETHOD() { mutate_flag(FLAG_IDX_METHOD) = std::nullptr_t{}; }
-    void clearMETHOD() { mutate_flag(FLAG_IDX_METHOD) = std::monostate{}; }
+  struct JSDefineGetterSEXP {
+    IRID id;
+    IRIContext* ctx;
 
-    bool hasGET() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_GET)); }
-    void setGET() { mutate_flag(FLAG_IDX_GET) = std::nullptr_t{}; }
-    void clearGET() { mutate_flag(FLAG_IDX_GET) = std::monostate{}; }
+    explicit JSDefineGetterSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::JSDefineGetter) {
+        throw std::runtime_error("Schema Cast Error: Expected JSDefineGetter, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
+      }
+    }
 
-    bool hasSET() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_SET)); }
-    void setSET() { mutate_flag(FLAG_IDX_SET) = std::nullptr_t{}; }
-    void clearSET() { mutate_flag(FLAG_IDX_SET) = std::monostate{}; }
+    static IRID create(IRIContext& p, IRID TargetObj, IRID Key, IRID Value, bool NOENUM) {
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSDefineGetter, {TargetObj, Key, Value}, {NOENUM ? FlagValue(NOENUM) : FlagValue(std::monostate())});
+    }
+
+    static constexpr uint32_t TOTAL_ARGS = 3;
+    static constexpr uint32_t TOTAL_FLAGS = 1;
+
+    static constexpr uint32_t FLAG_IDX_NOENUM = 0;
+
+    // --- Helpers ---
+    inline FlagValue& mutate_flag(uint32_t idx) {
+        return ctx->storage.nodes.get_flags_m(id)[idx];
+    }
+    inline const FlagValue& get_flag(uint32_t idx) const {
+        return ctx->storage.nodes.get_flags(id)[idx];
+    }
+
+    // --- Arguments ---
+    IRID getArg_TargetObj() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_TargetObj() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_TargetObj(IRID val) { assert(hasArg_TargetObj() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
+
+    IRID getArg_Key() const { return ctx->storage.nodes.get_args(id)[1]; }
+    bool hasArg_Key() const { return 1 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Key(IRID val) { assert(hasArg_Key() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,1,val); }
+
+    IRID getArg_Value() const { return ctx->storage.nodes.get_args(id)[2]; }
+    bool hasArg_Value() const { return 2 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Value(IRID val) { assert(hasArg_Value() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,2,val); }
+
+    // --- Flags ---
+    bool hasNOENUM() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_NOENUM)); }
+    void setNOENUM() { mutate_flag(FLAG_IDX_NOENUM) = std::nullptr_t{}; }
+    void clearNOENUM() { mutate_flag(FLAG_IDX_NOENUM) = std::monostate{}; }
+  };
+
+  struct JSDefineSetterSEXP {
+    IRID id;
+    IRIContext* ctx;
+
+    explicit JSDefineSetterSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::JSDefineSetter) {
+        throw std::runtime_error("Schema Cast Error: Expected JSDefineSetter, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
+      }
+    }
+
+    static IRID create(IRIContext& p, IRID TargetObj, IRID Key, IRID Value, bool NOENUM) {
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSDefineSetter, {TargetObj, Key, Value}, {NOENUM ? FlagValue(NOENUM) : FlagValue(std::monostate())});
+    }
+
+    static constexpr uint32_t TOTAL_ARGS = 3;
+    static constexpr uint32_t TOTAL_FLAGS = 1;
+
+    static constexpr uint32_t FLAG_IDX_NOENUM = 0;
+
+    // --- Helpers ---
+    inline FlagValue& mutate_flag(uint32_t idx) {
+        return ctx->storage.nodes.get_flags_m(id)[idx];
+    }
+    inline const FlagValue& get_flag(uint32_t idx) const {
+        return ctx->storage.nodes.get_flags(id)[idx];
+    }
+
+    // --- Arguments ---
+    IRID getArg_TargetObj() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_TargetObj() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_TargetObj(IRID val) { assert(hasArg_TargetObj() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
+
+    IRID getArg_Key() const { return ctx->storage.nodes.get_args(id)[1]; }
+    bool hasArg_Key() const { return 1 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Key(IRID val) { assert(hasArg_Key() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,1,val); }
+
+    IRID getArg_Value() const { return ctx->storage.nodes.get_args(id)[2]; }
+    bool hasArg_Value() const { return 2 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Value(IRID val) { assert(hasArg_Value() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,2,val); }
+
+    // --- Flags ---
+    bool hasNOENUM() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_NOENUM)); }
+    void setNOENUM() { mutate_flag(FLAG_IDX_NOENUM) = std::nullptr_t{}; }
+    void clearNOENUM() { mutate_flag(FLAG_IDX_NOENUM) = std::monostate{}; }
   };
 
   struct JSCopyDataPropertiesSEXP {

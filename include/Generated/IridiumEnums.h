@@ -1,4 +1,4 @@
-// Generated: 2026-10-30 03:34:48
+// Generated: 2026-10-30 03:47:02
 #pragma once
 #include <string>
 
@@ -83,7 +83,9 @@ namespace IRI_GEN {
     JSComputedFieldWrite,
     JSToObject,
     JSAppend,
-    JSDefineObjMethod,
+    JSDefineMethod,
+    JSDefineGetter,
+    JSDefineSetter,
     JSCopyDataProperties,
     RegExp,
     UNOPDelMemberExpr,
@@ -197,7 +199,9 @@ namespace IRI_GEN {
       case JSComputedFieldWrite: return "JSComputedFieldWrite";
       case JSToObject: return "JSToObject";
       case JSAppend: return "JSAppend";
-      case JSDefineObjMethod: return "JSDefineObjMethod";
+      case JSDefineMethod: return "JSDefineMethod";
+      case JSDefineGetter: return "JSDefineGetter";
+      case JSDefineSetter: return "JSDefineSetter";
       case JSCopyDataProperties: return "JSCopyDataProperties";
       case RegExp: return "RegExp";
       case UNOPDelMemberExpr: return "UNOPDelMemberExpr";
@@ -297,9 +301,6 @@ namespace IRI_GEN {
     AWAIT,
     OP,
     NOENUM,
-    METHOD,
-    GET,
-    SET,
     EXP,
     FLAGS,
     PREFIX,
@@ -374,9 +375,6 @@ namespace IRI_GEN {
       case AWAIT: return "AWAIT";
       case OP: return "OP";
       case NOENUM: return "NOENUM";
-      case METHOD: return "METHOD";
-      case GET: return "GET";
-      case SET: return "SET";
       case EXP: return "EXP";
       case FLAGS: return "FLAGS";
       case PREFIX: return "PREFIX";
@@ -478,7 +476,9 @@ namespace IRI_GEN {
       case JSComputedFieldWrite: return IRI_META::STMT;
       case JSToObject: return IRI_META::AMP;
       case JSAppend: return IRI_META::AMP;
-      case JSDefineObjMethod: return IRI_META::STMT;
+      case JSDefineMethod: return IRI_META::STMT;
+      case JSDefineGetter: return IRI_META::STMT;
+      case JSDefineSetter: return IRI_META::STMT;
       case JSCopyDataProperties: return IRI_META::AMP;
       case RegExp: return IRI_META::RVAL;
       case UNOPDelMemberExpr: return IRI_META::AMP;

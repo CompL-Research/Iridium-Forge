@@ -1,4 +1,4 @@
-// Generated: 2026-10-30 03:34:48
+// Generated: 2026-10-30 03:47:02
 #pragma once
 
 #include "Support/PP.hpp"
@@ -87,8 +87,12 @@ inline std::string ppStatement(const PPContext &pp, IRID node) {
       return printJSToObject(pp, node);
     case IRI_GEN::IRI_TAG::JSAppend:
       return printJSAppend(pp, node);
-    case IRI_GEN::IRI_TAG::JSDefineObjMethod:
-      return printJSDefineObjMethod(pp, node);
+    case IRI_GEN::IRI_TAG::JSDefineMethod:
+      return printJSDefineMethod(pp, node);
+    case IRI_GEN::IRI_TAG::JSDefineGetter:
+      return printJSDefineGetter(pp, node);
+    case IRI_GEN::IRI_TAG::JSDefineSetter:
+      return printJSDefineSetter(pp, node);
     case IRI_GEN::IRI_TAG::JSCopyDataProperties:
       return printJSCopyDataProperties(pp, node);
     case IRI_GEN::IRI_TAG::UNOPDelMemberExpr:

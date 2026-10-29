@@ -1,4 +1,4 @@
-// Generated: 2026-10-30 03:34:48
+// Generated: 2026-10-30 03:47:02
 #pragma once
 #include "IridiumEnums.h"
 #include <cstdint>
@@ -88,7 +88,9 @@ public:
       case IRI_GEN::JSComputedFieldWrite: return 1;
       case IRI_GEN::JSToObject: return 0;
       case IRI_GEN::JSAppend: return 0;
-      case IRI_GEN::JSDefineObjMethod: return 4;
+      case IRI_GEN::JSDefineMethod: return 1;
+      case IRI_GEN::JSDefineGetter: return 1;
+      case IRI_GEN::JSDefineSetter: return 1;
       case IRI_GEN::JSCopyDataProperties: return 0;
       case IRI_GEN::RegExp: return 2;
       case IRI_GEN::UNOPDelMemberExpr: return 0;
@@ -500,12 +502,21 @@ public:
           default: return -1;
         }
         break;
-      case IRI_GEN::JSDefineObjMethod:
+      case IRI_GEN::JSDefineMethod:
         switch(flag) {
         case IRI_GEN::NOENUM: return 0;
-        case IRI_GEN::METHOD: return 1;
-        case IRI_GEN::GET: return 2;
-        case IRI_GEN::SET: return 3;
+          default: return -1;
+        }
+        break;
+      case IRI_GEN::JSDefineGetter:
+        switch(flag) {
+        case IRI_GEN::NOENUM: return 0;
+          default: return -1;
+        }
+        break;
+      case IRI_GEN::JSDefineSetter:
+        switch(flag) {
+        case IRI_GEN::NOENUM: return 0;
           default: return -1;
         }
         break;
@@ -965,12 +976,21 @@ public:
           default: throw std::runtime_error("Invalid flag index");
         }
         break;
-      case IRI_GEN::JSDefineObjMethod:
+      case IRI_GEN::JSDefineMethod:
         switch(index) {
         case 0: return IRI_GEN::NOENUM;
-        case 1: return IRI_GEN::METHOD;
-        case 2: return IRI_GEN::GET;
-        case 3: return IRI_GEN::SET;
+          default: throw std::runtime_error("Invalid flag index");
+        }
+        break;
+      case IRI_GEN::JSDefineGetter:
+        switch(index) {
+        case 0: return IRI_GEN::NOENUM;
+          default: throw std::runtime_error("Invalid flag index");
+        }
+        break;
+      case IRI_GEN::JSDefineSetter:
+        switch(index) {
+        case 0: return IRI_GEN::NOENUM;
           default: throw std::runtime_error("Invalid flag index");
         }
         break;
