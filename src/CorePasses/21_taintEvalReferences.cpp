@@ -23,16 +23,14 @@ using namespace IRI_STRUCTURAL;
 using BUILD_CTX = std::unordered_map<int, std::shared_ptr<IridiumBuildContext>>;
 
 inline void patchNode(IRIContext &ctx, IRID node) {
-  if (IRI_NODE(ctx, node).tag == IRI_GEN::CallSite) {
-    CallSiteSEXP cs(node, ctx);
-    if (cs.hasJSDirectEval()) {
-      // the arguments: skip the callee and `this`
-      auto args = ctx.storage.nodes.get_args(node);
-      for (int i = 2; i < args.size(); i++) {
-        patchNode(ctx, args[i]);
-      }
-      return;
+  auto tag = IRI_NODE(ctx, node).tag;
+  if (tag == IRI_GEN::JSEval || tag == IRI_GEN::JSEvalApply) {
+    // the arguments: skip the callee (the global eval)
+    auto args = ctx.storage.nodes.get_args(node);
+    for (int i = 1; i < args.size(); i++) {
+      patchNode(ctx, args[i]);
     }
+    return;
   }
 
   if (IRI_NODE(ctx, node).tag == IRI_GEN::EnvRead) {

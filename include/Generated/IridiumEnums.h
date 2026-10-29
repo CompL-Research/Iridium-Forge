@@ -1,4 +1,4 @@
-// Generated: 2026-10-30 00:38:17
+// Generated: 2026-10-30 01:05:09
 #pragma once
 #include <string>
 
@@ -110,6 +110,8 @@ namespace IRI_GEN {
     PTAStub,
     JSConstruct,
     JSConstructApply,
+    JSEval,
+    JSEvalApply,
     JSGetPrototypeOf
   };
 
@@ -220,6 +222,8 @@ namespace IRI_GEN {
       case PTAStub: return "PTAStub";
       case JSConstruct: return "JSConstruct";
       case JSConstructApply: return "JSConstructApply";
+      case JSEval: return "JSEval";
+      case JSEvalApply: return "JSEvalApply";
       case JSGetPrototypeOf: return "JSGetPrototypeOf";
       default: return "unknown_tag";
     }
@@ -242,7 +246,6 @@ namespace IRI_GEN {
     OPID,
     TAINTED,
     IridiumPrimitive,
-    JSDirectEval,
     TopLevel,
     ClosureBoundary,
     Lexical,
@@ -324,7 +327,6 @@ namespace IRI_GEN {
       case OPID: return "OPID";
       case TAINTED: return "TAINTED";
       case IridiumPrimitive: return "IridiumPrimitive";
-      case JSDirectEval: return "JSDirectEval";
       case TopLevel: return "TopLevel";
       case ClosureBoundary: return "ClosureBoundary";
       case Lexical: return "Lexical";
@@ -507,6 +509,8 @@ namespace IRI_GEN {
       case PTAStub: return IRI_META::UKN;
       case JSConstruct: return IRI_META::AMP;
       case JSConstructApply: return IRI_META::AMP;
+      case JSEval: return IRI_META::AMP;
+      case JSEvalApply: return IRI_META::AMP;
       case JSGetPrototypeOf: return IRI_META::AMP;
       default: return IRI_META::ERROR;
     }

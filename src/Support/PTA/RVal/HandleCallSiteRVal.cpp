@@ -15,8 +15,7 @@ namespace IRI_STRUCTURAL {
  * Arguments:
  *   [0] IRID Callee -> sexp.getArg_Callee()
  *   [1] IRID This -> sexp.getArg_This()
- * Flags:
- *   - double JSDirectEval -> sexp.getJSDirectEval()
+ * Flags: (none)
  */
 void computeCallSiteVals(const PTAStatementContext &ptactx, IRID node,
                          std::set<Prakriti::NodeUID> &res_) {

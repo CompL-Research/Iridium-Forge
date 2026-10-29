@@ -1,4 +1,4 @@
-// Generated: 2026-10-30 00:38:17
+// Generated: 2026-10-30 01:05:09
 #pragma once
 
 #include "Support/PTA/PTAContext.hpp"
@@ -66,6 +66,8 @@ void handleQJSModuleInit(const PTAStatementContext &ptactx);
 void handleCompoundAssn(const PTAStatementContext &ptactx);
 void handleJSConstruct(const PTAStatementContext &ptactx);
 void handleJSConstructApply(const PTAStatementContext &ptactx);
+void handleJSEval(const PTAStatementContext &ptactx);
+void handleJSEvalApply(const PTAStatementContext &ptactx);
 void handleJSGetPrototypeOf(const PTAStatementContext &ptactx);
 
 // ============================================================================
@@ -248,6 +250,12 @@ public:
   }
   virtual void visit_JSConstructApply(const PTAStatementContext &ptactx) {
     return handleJSConstructApply(ptactx);
+  }
+  virtual void visit_JSEval(const PTAStatementContext &ptactx) {
+    return handleJSEval(ptactx);
+  }
+  virtual void visit_JSEvalApply(const PTAStatementContext &ptactx) {
+    return handleJSEvalApply(ptactx);
   }
   virtual void visit_JSGetPrototypeOf(const PTAStatementContext &ptactx) {
     return handleJSGetPrototypeOf(ptactx);

@@ -1,4 +1,4 @@
-// Generated: 2026-10-30 00:38:17
+// Generated: 2026-10-30 01:05:09
 #pragma once
 #include "IridiumEnums.h"
 #include <cstdint>
@@ -21,8 +21,8 @@ public:
       case IRI_GEN::JSExplicitBindingDeclaration: return 6;
       case IRI_GEN::JSExplicitBindingDeclarationN: return 6;
       case IRI_GEN::JSExplicitBindingDeclarationX: return 6;
-      case IRI_GEN::CallSite: return 1;
-      case IRI_GEN::Apply: return 1;
+      case IRI_GEN::CallSite: return 0;
+      case IRI_GEN::Apply: return 0;
       case IRI_GEN::ReturnAsync: return 0;
       case IRI_GEN::BB: return 7;
       case IRI_GEN::Return: return 0;
@@ -115,6 +115,8 @@ public:
       case IRI_GEN::PTAStub: return 0;
       case IRI_GEN::JSConstruct: return 1;
       case IRI_GEN::JSConstructApply: return 1;
+      case IRI_GEN::JSEval: return 1;
+      case IRI_GEN::JSEvalApply: return 1;
       case IRI_GEN::JSGetPrototypeOf: return 0;
       default: return 0;
     }
@@ -207,18 +209,6 @@ public:
         case IRI_GEN::SLOPPY: return 3;
         case IRI_GEN::SAFE: return 4;
         case IRI_GEN::THISINIT: return 5;
-          default: return -1;
-        }
-        break;
-      case IRI_GEN::CallSite:
-        switch(flag) {
-        case IRI_GEN::JSDirectEval: return 0;
-          default: return -1;
-        }
-        break;
-      case IRI_GEN::Apply:
-        switch(flag) {
-        case IRI_GEN::JSDirectEval: return 0;
           default: return -1;
         }
         break;
@@ -616,6 +606,18 @@ public:
           default: return -1;
         }
         break;
+      case IRI_GEN::JSEval:
+        switch(flag) {
+        case IRI_GEN::ScopeIDX: return 0;
+          default: return -1;
+        }
+        break;
+      case IRI_GEN::JSEvalApply:
+        switch(flag) {
+        case IRI_GEN::ScopeIDX: return 0;
+          default: return -1;
+        }
+        break;
       default: return -1;
     }
   }
@@ -707,18 +709,6 @@ public:
         case 3: return IRI_GEN::SLOPPY;
         case 4: return IRI_GEN::SAFE;
         case 5: return IRI_GEN::THISINIT;
-          default: throw std::runtime_error("Invalid flag index");
-        }
-        break;
-      case IRI_GEN::CallSite:
-        switch(index) {
-        case 0: return IRI_GEN::JSDirectEval;
-          default: throw std::runtime_error("Invalid flag index");
-        }
-        break;
-      case IRI_GEN::Apply:
-        switch(index) {
-        case 0: return IRI_GEN::JSDirectEval;
           default: throw std::runtime_error("Invalid flag index");
         }
         break;
@@ -1113,6 +1103,18 @@ public:
       case IRI_GEN::JSConstructApply:
         switch(index) {
         case 0: return IRI_GEN::Super;
+          default: throw std::runtime_error("Invalid flag index");
+        }
+        break;
+      case IRI_GEN::JSEval:
+        switch(index) {
+        case 0: return IRI_GEN::ScopeIDX;
+          default: throw std::runtime_error("Invalid flag index");
+        }
+        break;
+      case IRI_GEN::JSEvalApply:
+        switch(index) {
+        case 0: return IRI_GEN::ScopeIDX;
           default: throw std::runtime_error("Invalid flag index");
         }
         break;

@@ -39,9 +39,7 @@ inline std::vector<IRID> heritageThisInit(IRIContext & ctx, StringID thisValHold
   // this->propInitClos()
   IRID callSite = CallSiteSEXP::create(
       ctx, IRI_HELPERS::createUnsafeEnvReadSEXP(ctx, propInitClos),
-      IRI_HELPERS::createUnsafeEnvReadSEXP(ctx, ctx.storage.strings.intern("this")),
-      0);
-  CallSiteSEXP(callSite, ctx).clearJSDirectEval();
+      IRI_HELPERS::createUnsafeEnvReadSEXP(ctx, ctx.storage.strings.intern("this")));
 
   res.push_back(callSite);
   return res;

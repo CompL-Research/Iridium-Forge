@@ -20,80 +20,53 @@ using BUILD_CTX = std::unordered_map<int, std::shared_ptr<IridiumBuildContext>>;
 
 // A method call o.eval(x) reads its callee into a temp first, so only a plain
 // eval(x) has the global eval binding as its callee.
-static inline bool isGenericCall(CallSiteSEXP &o) { return !o.hasJSDirectEval(); }
+static bool isGlobalEvalRead(IRIContext &ctx, IRID callee) {
+  if (IRI_NODE(ctx, callee).tag != IRI_GEN::EnvRead)
+    return false;
+  IRID binding = EnvReadSEXP(callee, ctx).getArg_Obj();
+  return IRI_NODE(ctx, binding).tag == IRI_GEN::GlobalBinding &&
+         GlobalBindingSEXP(binding, ctx).getNAME() ==
+             ctx.storage.strings.intern("eval");
+}
 
-static inline bool isGenericCall(ApplySEXP &o) { return true; }
-
-inline void patchNode(IRIContext &ctx, IRID node, double scopeToTaint,
+// Replaces a direct eval call with a JSEval node:
+//   CallSite(eval, this, ...args) -> JSEval(eval, ...args)
+//   Apply(eval, this, argList)    -> JSEvalApply(eval, argList)
+// Returns the node to use in place of `node`; the caller stores it.
+inline IRID patchNode(IRIContext &ctx, IRID node, double scopeToTaint,
                       double containerScope) {
+  auto tag = IRI_NODE(ctx, node).tag;
+  if ((tag == IRI_GEN::CallSite || tag == IRI_GEN::Apply) &&
+      isGlobalEvalRead(ctx, ctx.storage.nodes.get_args(node)[0])) {
+    if (ctx.iris->isArgInitScope(scopeToTaint)) {
+      throw std::runtime_error("IRI build failed ::TODO:: Eval in ArgInitScope");
+    }
+    // Direct eval enclosed in a prop init scope is unsupported
+    if (ctx.iris->isEnclosedInAPropInitScope(scopeToTaint)) {
+      throw std::runtime_error("IRI build failed ::TODO:: Eval in arg init scopes is unsupported");
+    }
+    ctx.iris->addEvalRemoteBindingsToParentClosure(scopeToTaint);
+
+    auto callArgs = ctx.storage.nodes.get_args(node);
+    std::vector<IRID> evalArgs = {callArgs[0]};
+    for (size_t i = 2; i < callArgs.size(); i++)
+      evalArgs.push_back(callArgs[i]);
+    // ScopeIDX is resolved later by IRIS
+    IRID evalNode = tag == IRI_GEN::CallSite
+                        ? JSEvalSEXP::create(ctx, callArgs[0], -3)
+                        : JSEvalApplySEXP::create(ctx, callArgs[0], callArgs[2], -3);
+    ctx.storage.nodes.set_args(evalNode, evalArgs);
+    ctx.iris->registerDirectEval(evalNode, scopeToTaint, containerScope);
+    node = evalNode;
+  }
+
   auto args = ctx.storage.nodes.get_args(node);
-
-  IRI_STORAGE::StringID EVAL = ctx.storage.strings.intern("eval");
-
-  if (IRI_NODE(ctx, node).tag == IRI_GEN::CallSite) {
-    CallSiteSEXP callSite(node, ctx);
-    if (isGenericCall(callSite)) {
-      if (ctx.storage.nodes.get_args(node).size() == 0) {
-        throw std::runtime_error("Call site with no callee!!");
-      }
-      auto calleeID = ctx.storage.nodes.get_args(node)[0];
-      if (IRI_NODE(ctx, calleeID).tag == IRI_GEN::EnvRead) {
-        EnvReadSEXP eRead(calleeID, ctx);
-        auto calleeBindingID = eRead.getArg_Obj();
-        if (IRI_NODE(ctx, calleeBindingID).tag == IRI_GEN::GlobalBinding) {
-          GlobalBindingSEXP gBinding(calleeBindingID, ctx);
-          if (gBinding.getNAME() == EVAL) {
-            if (ctx.iris->isArgInitScope(scopeToTaint)) {
-              throw std::runtime_error("IRI build failed ::TODO:: Eval in ArgInitScope");
-            }
-            // Direct eval enclosed in a prop init scope is unsupported
-            if (ctx.iris->isEnclosedInAPropInitScope(scopeToTaint)) {
-              throw std::runtime_error("IRI build failed ::TODO:: Eval in arg init scopes is unsupported");
-            }
-            ctx.iris->addEvalRemoteBindingsToParentClosure(scopeToTaint);
-            ctx.iris->registerDirectEval(node, scopeToTaint, containerScope);
-            // double evalREFIDX =
-            //     ctx.iris->getJSEvalLookupREFIDX(scopeToTaint, containerScope);
-            callSite.setJSDirectEval(-3);
-          }
-        }
-      }
-    }
+  for (size_t i = 0; i < args.size(); i++) {
+    IRID patched = patchNode(ctx, args[i], scopeToTaint, containerScope);
+    if (patched != args[i])
+      ctx.storage.nodes.update_arg_inplace(node, i, patched);
   }
-
-  if (IRI_NODE(ctx, node).tag == IRI_GEN::Apply) {
-    ApplySEXP callSite(node, ctx);
-    if (isGenericCall(callSite)) {
-      if (ctx.storage.nodes.get_args(node).size() == 0) {
-        throw std::runtime_error("Apply Call site with no callee!!");
-      }
-      auto calleeID = ctx.storage.nodes.get_args(node)[0];
-      if (IRI_NODE(ctx, calleeID).tag == IRI_GEN::EnvRead) {
-        EnvReadSEXP eRead(calleeID, ctx);
-        auto calleeBindingID = eRead.getArg_Obj();
-        if (IRI_NODE(ctx, calleeBindingID).tag == IRI_GEN::GlobalBinding) {
-          GlobalBindingSEXP gBinding(calleeBindingID, ctx);
-          if (gBinding.getNAME() == EVAL) {
-            if (ctx.iris->isArgInitScope(scopeToTaint)) {
-              throw std::runtime_error("IRI build failed ::TODO:: Eval in ArgInitScope");
-            }
-            // Direct eval enclosed in a prop init scope is unsupported
-            if (ctx.iris->isEnclosedInAPropInitScope(scopeToTaint)) {
-              throw std::runtime_error("IRI build failed ::TODO:: Eval in arg init scopes is unsupported");
-            }
-            ctx.iris->addEvalRemoteBindingsToParentClosure(scopeToTaint);
-            ctx.iris->registerDirectEval(node, scopeToTaint, containerScope);
-
-            callSite.setJSDirectEval(-3);
-          }
-        }
-      }
-    }
-  }
-
-  for (int i = 0; i < args.size(); i++) {
-    patchNode(ctx, args[i], scopeToTaint, containerScope);
-  }
+  return node;
 }
 
 void _16_MDE(IRI_STORAGE::IRIContext &ctx, IRI_STORAGE::IRID fileSEXP,
@@ -110,9 +83,10 @@ void _16_MDE(IRI_STORAGE::IRIContext &ctx, IRI_STORAGE::IRID fileSEXP,
 
       auto bbScope = bb.getScopeIDX();
 
-      for (auto [stmtID, _] : bb.stmts()) {
-        auto stmtTag = IRI_NODE(ctx, stmtID).tag;
-        patchNode(ctx, stmtID, bbScope, containerScope);
+      for (auto [stmtID, offset] : bb.stmts()) {
+        IRID patched = patchNode(ctx, stmtID, bbScope, containerScope);
+        if (patched != stmtID)
+          ctx.storage.nodes.update_arg_inplace(bbID, offset, patched);
       }
     }
   }

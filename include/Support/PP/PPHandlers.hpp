@@ -1,4 +1,4 @@
-// Generated: 2026-10-30 00:38:17
+// Generated: 2026-10-30 01:05:09
 #pragma once
 
 #include "Support/PP/PPContext.hpp"
@@ -69,6 +69,8 @@ std::string printQJSModuleInit(const PPContext &pp, IRID node);
 std::string printCompoundAssn(const PPContext &pp, IRID node);
 std::string printJSConstruct(const PPContext &pp, IRID node);
 std::string printJSConstructApply(const PPContext &pp, IRID node);
+std::string printJSEval(const PPContext &pp, IRID node);
+std::string printJSEvalApply(const PPContext &pp, IRID node);
 std::string printJSGetPrototypeOf(const PPContext &pp, IRID node);
 
 } // namespace IRI_STRUCTURAL

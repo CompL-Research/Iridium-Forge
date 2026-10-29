@@ -1,4 +1,4 @@
-// Generated: 2026-10-30 00:38:17
+// Generated: 2026-10-30 01:05:09
 #pragma once
 
 #include "Support/PTA/PTAContext.hpp"
@@ -130,6 +130,10 @@ inline void dispatchPTAStatement(const PTAStatementContext &ptactx) {
       return handleJSConstruct(ptactx);
     case IRI_GEN::IRI_TAG::JSConstructApply:
       return handleJSConstructApply(ptactx);
+    case IRI_GEN::IRI_TAG::JSEval:
+      return handleJSEval(ptactx);
+    case IRI_GEN::IRI_TAG::JSEvalApply:
+      return handleJSEvalApply(ptactx);
     case IRI_GEN::IRI_TAG::JSGetPrototypeOf:
       return handleJSGetPrototypeOf(ptactx);
     default:

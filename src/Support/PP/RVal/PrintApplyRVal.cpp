@@ -13,13 +13,10 @@ namespace IRI_STRUCTURAL {
  *   [0] IRID Callee -> sexp.getArg_Callee()
  *   [1] IRID Context -> sexp.getArg_Context()
  *   [2] IRID ArgList -> sexp.getArg_ArgList()
- * Flags:
- *   - double JSDirectEval -> sexp.getJSDirectEval()
+ * Flags: (none)
  */
 std::string printApplyRVal(const PPContext &pp, IRID node) {
-  // ctx->f(...args), ctx is `this`. Mirrors the lowering order:
-  //   eval#N f(...args)       no ctx
-  //   ctx->f(...args)         this = ctx
+  // this->f(...args)
   using S = IRI_GEN::ApplySEXP;
   S sexp(node, pp.ctx);
   std::string callee = ppOperand(pp, sexp.getArg_Callee());
@@ -27,8 +24,6 @@ std::string printApplyRVal(const PPContext &pp, IRID node) {
       callee + "(..." + ppOperand(pp, sexp.getArg_ArgList()) + ")";
   std::string ctx = ppOperand(pp, sexp.getArg_Context());
 
-  if (sexp.hasJSDirectEval())
-    return "eval#" + ppNumber(sexp.getJSDirectEval()) + " " + call;
   return ctx + "->" + call;
 }
 

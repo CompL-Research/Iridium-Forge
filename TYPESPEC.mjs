@@ -130,7 +130,7 @@ export default [
       string: [],
       void: [],
       bool: [],
-      double: ["JSDirectEval"],
+      double: [],
     },
   },
   {
@@ -141,7 +141,7 @@ export default [
       string: [],
       void: [],
       bool: [],
-      double: ["JSDirectEval"],
+      double: [],
     },
   },
   {
@@ -1170,6 +1170,33 @@ export default [
       void: ["Super"],
       bool: [],
       double: [],
+    },
+  },
+  {
+    // Direct eval `eval(a)`: in sloppy mode the evaled code can see and modify
+    // the enclosing environment. Created by pass 16 from a call whose callee is
+    // the global eval; ScopeIDX is resolved by IRIS. If the callee is not the
+    // real eval at runtime, it is an ordinary call with this = undefined.
+    tag: "JSEval",
+    meta: "AMP",
+    args: ["Callee"],
+    flags: {
+      string: [],
+      void: [],
+      bool: [],
+      double: ["ScopeIDX"],
+    },
+  },
+  {
+    // JSEval with a spread argument list (an array).
+    tag: "JSEvalApply",
+    meta: "AMP",
+    args: ["Callee", "ArgList"],
+    flags: {
+      string: [],
+      void: [],
+      bool: [],
+      double: ["ScopeIDX"],
     },
   },
   {

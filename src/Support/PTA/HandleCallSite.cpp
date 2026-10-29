@@ -14,8 +14,7 @@ namespace IRI_STRUCTURAL {
  * Arguments:
  *   [0] IRID Callee -> sexp.getArg_Callee()
  *   [1] IRID This -> sexp.getArg_This()
- * Flags:
- *   - double JSDirectEval -> sexp.getJSDirectEval()
+ * Flags: (none)
  *
  * AMP node used as a bare statement: evaluate it via RVal resolution for
  * its side effects and discard the produced value.

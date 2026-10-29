@@ -512,13 +512,10 @@ void IRIS::commit() {
   // Resolve evals
   for (auto &[id, scopeToTaint, containerScope] : directEvals) {
     double evalREFIDX = getJSEvalLookupREFIDX(scopeToTaint, containerScope);
-    if (IRI_NODE(ctx, id).tag == IRI_GEN::CallSite) {
-      CallSiteSEXP callSite(id, ctx);
-      callSite.setJSDirectEval(evalREFIDX);
-    } else {
-      ApplySEXP callSite(id, ctx);
-      callSite.setJSDirectEval(evalREFIDX);
-    }
+    if (IRI_NODE(ctx, id).tag == IRI_GEN::JSEval)
+      JSEvalSEXP(id, ctx).setScopeIDX(evalREFIDX);
+    else
+      JSEvalApplySEXP(id, ctx).setScopeIDX(evalREFIDX);
   }
 }
 
