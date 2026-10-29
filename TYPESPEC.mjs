@@ -1189,13 +1189,12 @@ export default [
   {
     // [[Construct]](Callee, args, NewTarget): `new F(a)` passes F as NewTarget,
     // super(a) the caller's new.target. Arguments follow NewTarget.
-    // Super: marks super() calls for pass 6 (this binding, field initializers).
     tag: "JSConstruct",
     meta: "AMP",
     args: ["Callee", "NewTarget"],
     flags: {
       string: [],
-      void: ["Super"],
+      void: [],
       bool: [],
       double: [],
     },
@@ -1207,7 +1206,7 @@ export default [
     args: ["Callee", "NewTarget", "ArgList"],
     flags: {
       string: [],
-      void: ["Super"],
+      void: [],
       bool: [],
       double: [],
     },

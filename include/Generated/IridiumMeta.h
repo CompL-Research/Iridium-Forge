@@ -1,4 +1,4 @@
-// Generated: 2026-10-30 02:04:41
+// Generated: 2026-10-30 02:50:44
 #pragma once
 #include "IridiumEnums.h"
 #include <cstdint>
@@ -116,8 +116,8 @@ public:
       case IRI_GEN::CompoundAssn: return 0;
       case IRI_GEN::ThisINIT: return 0;
       case IRI_GEN::PTAStub: return 0;
-      case IRI_GEN::JSConstruct: return 1;
-      case IRI_GEN::JSConstructApply: return 1;
+      case IRI_GEN::JSConstruct: return 0;
+      case IRI_GEN::JSConstructApply: return 0;
       case IRI_GEN::JSEval: return 1;
       case IRI_GEN::JSEvalApply: return 1;
       case IRI_GEN::JSGetPrototypeOf: return 0;
@@ -585,18 +585,6 @@ public:
       case IRI_GEN::JSCTX:
         switch(flag) {
         case IRI_GEN::OPID: return 0;
-          default: return -1;
-        }
-        break;
-      case IRI_GEN::JSConstruct:
-        switch(flag) {
-        case IRI_GEN::Super: return 0;
-          default: return -1;
-        }
-        break;
-      case IRI_GEN::JSConstructApply:
-        switch(flag) {
-        case IRI_GEN::Super: return 0;
           default: return -1;
         }
         break;
@@ -1076,18 +1064,6 @@ public:
       case IRI_GEN::JSCTX:
         switch(index) {
         case 0: return IRI_GEN::OPID;
-          default: throw std::runtime_error("Invalid flag index");
-        }
-        break;
-      case IRI_GEN::JSConstruct:
-        switch(index) {
-        case 0: return IRI_GEN::Super;
-          default: throw std::runtime_error("Invalid flag index");
-        }
-        break;
-      case IRI_GEN::JSConstructApply:
-        switch(index) {
-        case 0: return IRI_GEN::Super;
           default: throw std::runtime_error("Invalid flag index");
         }
         break;

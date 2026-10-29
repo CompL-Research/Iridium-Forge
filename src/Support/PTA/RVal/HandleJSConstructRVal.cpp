@@ -16,17 +16,13 @@ namespace IRI_STRUCTURAL {
  * Arguments:
  *   [0] IRID Callee -> sexp.getArg_Callee()
  *   [1] IRID NewTarget -> sexp.getArg_NewTarget()
- * Flags:
- *   - void   Super -> sexp.hasSuper()
+ * Flags: (none)
  */
 void computeJSConstructVals(const PTAStatementContext &ptactx, IRID node,
                             std::set<Prakriti::NodeUID> &res_) {
   Prakriti::TraceHelperAuto th("JSConstructRVal", node);
 
   IRI_GEN::JSConstructSEXP sexp(node, ptactx.ctx);
-  if (sexp.hasSuper())
-    throw std::runtime_error("PTA JSConstruct: super() is not yet implemented");
-
   Prakriti::ECMAGraph *G = ptactx.incomingState;
   auto rawArgs = ptactx.ctx.storage.nodes.get_args(node);
   assert(rawArgs.size() >= 2);

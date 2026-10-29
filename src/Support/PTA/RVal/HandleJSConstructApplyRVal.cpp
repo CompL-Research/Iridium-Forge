@@ -14,8 +14,7 @@ namespace IRI_STRUCTURAL {
  *   [0] IRID Callee -> sexp.getArg_Callee()
  *   [1] IRID NewTarget -> sexp.getArg_NewTarget()
  *   [2] IRID ArgList -> sexp.getArg_ArgList()
- * Flags:
- *   - void   Super -> sexp.hasSuper()
+ * Flags: (none)
  */
 void computeJSConstructApplyVals(const PTAStatementContext &ptactx, IRID node,
                        std::set<Prakriti::NodeUID> &res_) {
@@ -26,7 +25,6 @@ void computeJSConstructApplyVals(const PTAStatementContext &ptactx, IRID node,
   // if (sexp.hasArg_Callee()) { IRID arg_Callee = sexp.getArg_Callee(); }
   // if (sexp.hasArg_NewTarget()) { IRID arg_NewTarget = sexp.getArg_NewTarget(); }
   // if (sexp.hasArg_ArgList()) { IRID arg_ArgList = sexp.getArg_ArgList(); }
-  // bool has_Super = sexp.hasSuper();
 
   return;
 }

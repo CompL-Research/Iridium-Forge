@@ -14,8 +14,7 @@ namespace IRI_STRUCTURAL {
  *   [0] IRID Callee -> sexp.getArg_Callee()
  *   [1] IRID NewTarget -> sexp.getArg_NewTarget()
  *   [2] IRID ArgList -> sexp.getArg_ArgList()
- * Flags:
- *   - void   Super -> sexp.hasSuper()
+ * Flags: (none)
  *
  * AMP node used as a bare statement: print it as an expression statement.
  */

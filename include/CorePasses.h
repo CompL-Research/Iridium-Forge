@@ -48,9 +48,6 @@ void _4_6_CBA(IRIContext &ctx, IRID fileSEXP,
 void _5_INITSFRAME(IRIContext &ctx, IRID fileSEXP,
                    IRI_CONTEXTMAP &iridiumBuildContext);
 
-void _6_PHCSC(IRIContext &ctx, IRID fileSEXP,
-              IRI_CONTEXTMAP &iridiumBuildContext);
-
 void _7_RRPEBS(IRIContext &ctx, IRID fileSEXP,
                IRI_CONTEXTMAP &iridiumBuildContext);
 

@@ -1,4 +1,4 @@
-// Generated: 2026-10-30 02:04:41
+// Generated: 2026-10-30 02:50:44
 #pragma once
 #include "Storage/Config.h"
 #include "Storage/IridiumSEXP.h"
@@ -4689,14 +4689,14 @@ using IRI_STORAGE::FlagValue;
       }
     }
 
-    static IRID create(IRIContext& p, IRID Callee, IRID NewTarget, bool Super) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSConstruct, {Callee, NewTarget}, {Super ? FlagValue(Super) : FlagValue(std::monostate())});
+    static IRID create(IRIContext& p, IRID Callee, IRID NewTarget) {
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSConstruct, {Callee, NewTarget}, {});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 2;
-    static constexpr uint32_t TOTAL_FLAGS = 1;
+    static constexpr uint32_t TOTAL_FLAGS = 0;
 
-    static constexpr uint32_t FLAG_IDX_Super = 0;
+
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
@@ -4716,9 +4716,7 @@ using IRI_STORAGE::FlagValue;
     void setArg_NewTarget(IRID val) { assert(hasArg_NewTarget() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,1,val); }
 
     // --- Flags ---
-    bool hasSuper() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_Super)); }
-    void setSuper() { mutate_flag(FLAG_IDX_Super) = std::nullptr_t{}; }
-    void clearSuper() { mutate_flag(FLAG_IDX_Super) = std::monostate{}; }
+
   };
 
   struct JSConstructApplySEXP {
@@ -4731,14 +4729,14 @@ using IRI_STORAGE::FlagValue;
       }
     }
 
-    static IRID create(IRIContext& p, IRID Callee, IRID NewTarget, IRID ArgList, bool Super) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSConstructApply, {Callee, NewTarget, ArgList}, {Super ? FlagValue(Super) : FlagValue(std::monostate())});
+    static IRID create(IRIContext& p, IRID Callee, IRID NewTarget, IRID ArgList) {
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSConstructApply, {Callee, NewTarget, ArgList}, {});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 3;
-    static constexpr uint32_t TOTAL_FLAGS = 1;
+    static constexpr uint32_t TOTAL_FLAGS = 0;
 
-    static constexpr uint32_t FLAG_IDX_Super = 0;
+
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
@@ -4762,9 +4760,7 @@ using IRI_STORAGE::FlagValue;
     void setArg_ArgList(IRID val) { assert(hasArg_ArgList() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,2,val); }
 
     // --- Flags ---
-    bool hasSuper() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_Super)); }
-    void setSuper() { mutate_flag(FLAG_IDX_Super) = std::nullptr_t{}; }
-    void clearSuper() { mutate_flag(FLAG_IDX_Super) = std::monostate{}; }
+
   };
 
   struct JSEvalSEXP {

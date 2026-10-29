@@ -1,4 +1,4 @@
-// Generated: 2026-10-30 02:04:41
+// Generated: 2026-10-30 02:50:44
 #pragma once
 #include <string>
 
@@ -308,8 +308,7 @@ namespace IRI_GEN {
     INCREMENT,
     INIT,
     DECLVAR,
-    DECLFUN,
-    Super
+    DECLFUN
   };
 
   inline std::string dump_flag(IRI_FLAG value) {
@@ -387,7 +386,6 @@ namespace IRI_GEN {
       case INIT: return "INIT";
       case DECLVAR: return "DECLVAR";
       case DECLFUN: return "DECLFUN";
-      case Super: return "Super";
       default: return "unknown_flag";
     }
   }

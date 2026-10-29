@@ -13,8 +13,7 @@ namespace IRI_STRUCTURAL {
  * Arguments:
  *   [0] IRID Callee -> sexp.getArg_Callee()
  *   [1] IRID NewTarget -> sexp.getArg_NewTarget()
- * Flags:
- *   - void   Super -> sexp.hasSuper()
+ * Flags: (none)
  *
  * AMP node used as a bare statement: evaluate it via RVal resolution for
  * its side effects and discard the produced value.
