@@ -1,4 +1,4 @@
-// Generated: 2026-10-30 03:08:55
+// Generated: 2026-10-30 03:34:48
 #pragma once
 
 #include "Support/PP/PPContext.hpp"
@@ -56,7 +56,6 @@ std::string printJSTemplate(const PPContext &pp, IRID node);
 std::string printAwait(const PPContext &pp, IRID node);
 std::string printYield(const PPContext &pp, IRID node);
 std::string printJSInitialYield(const PPContext &pp, IRID node);
-std::string printIDOP(const PPContext &pp, IRID node);
 std::string printJSIDOP(const PPContext &pp, IRID node);
 std::string printStackToHeap(const PPContext &pp, IRID node);
 std::string printJSSetHome(const PPContext &pp, IRID node);

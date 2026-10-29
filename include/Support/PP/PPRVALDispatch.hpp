@@ -1,4 +1,4 @@
-// Generated: 2026-10-30 03:08:55
+// Generated: 2026-10-30 03:34:48
 #pragma once
 
 #include "Support/PP.hpp"
@@ -97,8 +97,6 @@ inline std::string ppRVal(const PPContext &pp, IRID node) {
       return printAwaitRVal(pp, node);
     case IRI_GEN::IRI_TAG::Yield:
       return printYieldRVal(pp, node);
-    case IRI_GEN::IRI_TAG::IDOP:
-      return printIDOPRVal(pp, node);
     case IRI_GEN::IRI_TAG::JSIDOP:
       return printJSIDOPRVal(pp, node);
     case IRI_GEN::IRI_TAG::DCTRRet:

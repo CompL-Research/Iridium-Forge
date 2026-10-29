@@ -1,4 +1,4 @@
-// Generated: 2026-10-30 03:08:55
+// Generated: 2026-10-30 03:34:48
 #pragma once
 
 #include "Support/PTA/PTAContext.hpp"
@@ -53,7 +53,6 @@ void handleJSTemplate(const PTAStatementContext &ptactx);
 void handleAwait(const PTAStatementContext &ptactx);
 void handleYield(const PTAStatementContext &ptactx);
 void handleJSInitialYield(const PTAStatementContext &ptactx);
-void handleIDOP(const PTAStatementContext &ptactx);
 void handleJSIDOP(const PTAStatementContext &ptactx);
 void handleStackToHeap(const PTAStatementContext &ptactx);
 void handleJSSetHome(const PTAStatementContext &ptactx);
@@ -214,9 +213,6 @@ public:
   }
   virtual void visit_JSInitialYield(const PTAStatementContext &ptactx) {
     return handleJSInitialYield(ptactx);
-  }
-  virtual void visit_IDOP(const PTAStatementContext &ptactx) {
-    return handleIDOP(ptactx);
   }
   virtual void visit_JSIDOP(const PTAStatementContext &ptactx) {
     return handleJSIDOP(ptactx);

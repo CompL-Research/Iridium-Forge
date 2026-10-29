@@ -1,4 +1,4 @@
-// Generated: 2026-10-30 03:08:55
+// Generated: 2026-10-30 03:34:48
 #pragma once
 
 #include "Support/PTA/PTAContext.hpp"
@@ -102,8 +102,6 @@ inline void resolvePKRRVal(const PTAStatementContext &ptactx, IRID node,
       return computeAwaitVals(ptactx, node, res_);
     case IRI_GEN::IRI_TAG::Yield:
       return computeYieldVals(ptactx, node, res_);
-    case IRI_GEN::IRI_TAG::IDOP:
-      return computeIDOPVals(ptactx, node, res_);
     case IRI_GEN::IRI_TAG::JSIDOP:
       return computeJSIDOPVals(ptactx, node, res_);
     case IRI_GEN::IRI_TAG::DCTRRet:

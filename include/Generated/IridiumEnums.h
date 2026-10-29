@@ -1,4 +1,4 @@
-// Generated: 2026-10-30 03:08:55
+// Generated: 2026-10-30 03:34:48
 #pragma once
 #include <string>
 
@@ -93,7 +93,6 @@ namespace IRI_GEN {
     Await,
     Yield,
     JSInitialYield,
-    IDOP,
     JSIDOP,
     StackToHeap,
     LoopInitPreludeEnd,
@@ -208,7 +207,6 @@ namespace IRI_GEN {
       case Await: return "Await";
       case Yield: return "Yield";
       case JSInitialYield: return "JSInitialYield";
-      case IDOP: return "IDOP";
       case JSIDOP: return "JSIDOP";
       case StackToHeap: return "StackToHeap";
       case LoopInitPreludeEnd: return "LoopInitPreludeEnd";
@@ -490,7 +488,6 @@ namespace IRI_GEN {
       case Await: return IRI_META::AMP;
       case Yield: return IRI_META::AMP;
       case JSInitialYield: return IRI_META::STMT;
-      case IDOP: return IRI_META::AMP;
       case JSIDOP: return IRI_META::AMP;
       case StackToHeap: return IRI_META::STMT;
       case LoopInitPreludeEnd: return IRI_META::STAR_STMT;

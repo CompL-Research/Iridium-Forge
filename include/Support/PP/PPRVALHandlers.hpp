@@ -1,4 +1,4 @@
-// Generated: 2026-10-30 03:08:55
+// Generated: 2026-10-30 03:34:48
 #pragma once
 
 #include "Support/PP/PPContext.hpp"
@@ -53,7 +53,6 @@ std::string printJSTemplateRVal(const PPContext &pp, IRID node);
 std::string printJSBigIntRVal(const PPContext &pp, IRID node);
 std::string printAwaitRVal(const PPContext &pp, IRID node);
 std::string printYieldRVal(const PPContext &pp, IRID node);
-std::string printIDOPRVal(const PPContext &pp, IRID node);
 std::string printJSIDOPRVal(const PPContext &pp, IRID node);
 std::string printDCTRRetRVal(const PPContext &pp, IRID node);
 std::string printToNumericRVal(const PPContext &pp, IRID node);

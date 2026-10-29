@@ -1,4 +1,4 @@
-// Generated: 2026-10-30 03:08:55
+// Generated: 2026-10-30 03:34:48
 #pragma once
 
 #include "Support/PP.hpp"
@@ -103,8 +103,6 @@ inline std::string ppStatement(const PPContext &pp, IRID node) {
       return printYield(pp, node);
     case IRI_GEN::IRI_TAG::JSInitialYield:
       return printJSInitialYield(pp, node);
-    case IRI_GEN::IRI_TAG::IDOP:
-      return printIDOP(pp, node);
     case IRI_GEN::IRI_TAG::JSIDOP:
       return printJSIDOP(pp, node);
     case IRI_GEN::IRI_TAG::StackToHeap:

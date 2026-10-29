@@ -1,4 +1,4 @@
-// Generated: 2026-10-30 03:08:55
+// Generated: 2026-10-30 03:34:48
 #pragma once
 #include "IridiumEnums.h"
 #include <cstdint>
@@ -98,7 +98,6 @@ public:
       case IRI_GEN::Await: return 0;
       case IRI_GEN::Yield: return 0;
       case IRI_GEN::JSInitialYield: return 0;
-      case IRI_GEN::IDOP: return 2;
       case IRI_GEN::JSIDOP: return 2;
       case IRI_GEN::StackToHeap: return 0;
       case IRI_GEN::LoopInitPreludeEnd: return 0;
@@ -526,13 +525,6 @@ public:
       case IRI_GEN::JSBigInt:
         switch(flag) {
         case IRI_GEN::IridiumPrimitive: return 0;
-          default: return -1;
-        }
-        break;
-      case IRI_GEN::IDOP:
-        switch(flag) {
-        case IRI_GEN::PREFIX: return 0;
-        case IRI_GEN::INCREMENT: return 1;
           default: return -1;
         }
         break;
@@ -998,13 +990,6 @@ public:
       case IRI_GEN::JSBigInt:
         switch(index) {
         case 0: return IRI_GEN::IridiumPrimitive;
-          default: throw std::runtime_error("Invalid flag index");
-        }
-        break;
-      case IRI_GEN::IDOP:
-        switch(index) {
-        case 0: return IRI_GEN::PREFIX;
-        case 1: return IRI_GEN::INCREMENT;
           default: throw std::runtime_error("Invalid flag index");
         }
         break;

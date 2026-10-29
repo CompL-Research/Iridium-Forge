@@ -990,17 +990,6 @@ export default [
     },
   },
   {
-    tag: "IDOP",
-    meta: "AMP",
-    args: ["Obj"],
-    flags: {
-      string: [],
-      void: [],
-      bool: ["PREFIX", "INCREMENT"],
-      double: [],
-    },
-  },
-  {
     tag: "JSIDOP",
     meta: "AMP",
     args: ["Obj"],

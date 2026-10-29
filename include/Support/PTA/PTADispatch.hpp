@@ -1,4 +1,4 @@
-// Generated: 2026-10-30 03:08:55
+// Generated: 2026-10-30 03:34:48
 #pragma once
 
 #include "Support/PTA/PTAContext.hpp"
@@ -104,8 +104,6 @@ inline void dispatchPTAStatement(const PTAStatementContext &ptactx) {
       return handleYield(ptactx);
     case IRI_GEN::IRI_TAG::JSInitialYield:
       return handleJSInitialYield(ptactx);
-    case IRI_GEN::IRI_TAG::IDOP:
-      return handleIDOP(ptactx);
     case IRI_GEN::IRI_TAG::JSIDOP:
       return handleJSIDOP(ptactx);
     case IRI_GEN::IRI_TAG::StackToHeap:

@@ -1,4 +1,4 @@
-// Generated: 2026-10-30 03:08:55
+// Generated: 2026-10-30 03:34:48
 #pragma once
 #include "Storage/Config.h"
 #include "Storage/IridiumSEXP.h"
@@ -3929,51 +3929,6 @@ using IRI_STORAGE::FlagValue;
 
     // --- Flags ---
 
-  };
-
-  struct IDOPSEXP {
-    IRID id;
-    IRIContext* ctx;
-
-    explicit IDOPSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::IDOP) {
-        throw std::runtime_error("Schema Cast Error: Expected IDOP, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
-      }
-    }
-
-    static IRID create(IRIContext& p, IRID Obj, bool PREFIX, bool INCREMENT) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::IDOP, {Obj}, {FlagValue(PREFIX), FlagValue(INCREMENT)});
-    }
-
-    static constexpr uint32_t TOTAL_ARGS = 1;
-    static constexpr uint32_t TOTAL_FLAGS = 2;
-
-    static constexpr uint32_t FLAG_IDX_PREFIX = 0;
-    static constexpr uint32_t FLAG_IDX_INCREMENT = 1;
-
-    // --- Helpers ---
-    inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.nodes.get_flags_m(id)[idx];
-    }
-    inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.nodes.get_flags(id)[idx];
-    }
-
-    // --- Arguments ---
-    IRID getArg_Obj() const { return ctx->storage.nodes.get_args(id)[0]; }
-    bool hasArg_Obj() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
-    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
-
-    // --- Flags ---
-    bool getPREFIX() const { return std::get<bool>(get_flag(FLAG_IDX_PREFIX)); }
-    void setPREFIX(bool val) { mutate_flag(FLAG_IDX_PREFIX) = val; }
-    bool hasPREFIX() const { return std::holds_alternative<bool>(get_flag(FLAG_IDX_PREFIX)); }
-    void clearPREFIX() { mutate_flag(FLAG_IDX_PREFIX) = std::monostate{}; }
-
-    bool getINCREMENT() const { return std::get<bool>(get_flag(FLAG_IDX_INCREMENT)); }
-    void setINCREMENT(bool val) { mutate_flag(FLAG_IDX_INCREMENT) = val; }
-    bool hasINCREMENT() const { return std::holds_alternative<bool>(get_flag(FLAG_IDX_INCREMENT)); }
-    void clearINCREMENT() { mutate_flag(FLAG_IDX_INCREMENT) = std::monostate{}; }
   };
 
   struct JSIDOPSEXP {
