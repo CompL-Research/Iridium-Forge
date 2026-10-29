@@ -12,7 +12,7 @@ namespace IRI_STRUCTURAL {
  * Meta:    AMP
  * Arguments:
  *   [0] IRID This -> sexp.getArg_This()
- *   [1] IRID Super -> sexp.getArg_Super()
+ *   [1] IRID Home -> sexp.getArg_Home()
  *   [2] IRID Field -> sexp.getArg_Field()
  * Flags: (none)
  */
@@ -23,7 +23,7 @@ void computeJSSuperFieldReadVals(const PTAStatementContext &ptactx, IRID node,
 
   // === TODO : JSSuperFieldRead ===
   // if (sexp.hasArg_This()) { IRID arg_This = sexp.getArg_This(); }
-  // if (sexp.hasArg_Super()) { IRID arg_Super = sexp.getArg_Super(); }
+  // if (sexp.hasArg_Home()) { IRID arg_Home = sexp.getArg_Home(); }
   // if (sexp.hasArg_Field()) { IRID arg_Field = sexp.getArg_Field(); }
 
   return;

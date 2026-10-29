@@ -13,7 +13,7 @@ namespace IRI_STRUCTURAL {
  * Meta:    AMP
  * Arguments:
  *   [0] IRID This -> sexp.getArg_This()
- *   [1] IRID Super -> sexp.getArg_Super()
+ *   [1] IRID Home -> sexp.getArg_Home()
  *   [2] IRID Field -> sexp.getArg_Field()
  * Flags: (none)
  *
