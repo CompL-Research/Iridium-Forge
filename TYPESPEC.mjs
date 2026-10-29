@@ -502,6 +502,19 @@ export default [
     },
   },
   {
+    // Throws TypeError "'NAME' is read-only" (throw_error); e.g. writing a
+    // private getter-only accessor or reading a setter-only one.
+    tag: "JSThrowError",
+    meta: "AMP",
+    args: [],
+    flags: {
+      string: ["NAME"],
+      void: [],
+      bool: [],
+      double: [],
+    },
+  },
+  {
     // #[Name] in Obj: does Obj have the private element (private_in).
     tag: "JSHasPrivate",
     meta: "AMP",

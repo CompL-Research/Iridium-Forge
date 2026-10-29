@@ -1,4 +1,4 @@
-// Generated: 2026-10-30 01:37:24
+// Generated: 2026-10-30 02:04:41
 #pragma once
 
 #include "Support/PP.hpp"
@@ -39,6 +39,8 @@ inline std::string ppStatement(const PPContext &pp, IRID node) {
       return printJSPrivateFieldDefine(pp, node);
     case IRI_GEN::IRI_TAG::JSCheckBrand:
       return printJSCheckBrand(pp, node);
+    case IRI_GEN::IRI_TAG::JSThrowError:
+      return printJSThrowError(pp, node);
     case IRI_GEN::IRI_TAG::JSHasPrivate:
       return printJSHasPrivate(pp, node);
     case IRI_GEN::IRI_TAG::JSPrivateFieldWrite:

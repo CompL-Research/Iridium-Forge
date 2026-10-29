@@ -1,4 +1,4 @@
-// Generated: 2026-10-30 01:37:24
+// Generated: 2026-10-30 02:04:41
 #pragma once
 #include <string>
 
@@ -49,6 +49,7 @@ namespace IRI_GEN {
     JSPrivate,
     JSPrivateFieldDefine,
     JSCheckBrand,
+    JSThrowError,
     JSHasPrivate,
     JSPrivateFieldWrite,
     JSADDBRAND,
@@ -163,6 +164,7 @@ namespace IRI_GEN {
       case JSPrivate: return "JSPrivate";
       case JSPrivateFieldDefine: return "JSPrivateFieldDefine";
       case JSCheckBrand: return "JSCheckBrand";
+      case JSThrowError: return "JSThrowError";
       case JSHasPrivate: return "JSHasPrivate";
       case JSPrivateFieldWrite: return "JSPrivateFieldWrite";
       case JSADDBRAND: return "JSADDBRAND";
@@ -446,6 +448,7 @@ namespace IRI_GEN {
       case JSPrivate: return IRI_META::RVAL;
       case JSPrivateFieldDefine: return IRI_META::STMT;
       case JSCheckBrand: return IRI_META::AMP;
+      case JSThrowError: return IRI_META::AMP;
       case JSHasPrivate: return IRI_META::AMP;
       case JSPrivateFieldWrite: return IRI_META::STMT;
       case JSADDBRAND: return IRI_META::STMT;

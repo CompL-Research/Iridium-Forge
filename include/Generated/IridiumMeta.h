@@ -1,4 +1,4 @@
-// Generated: 2026-10-30 01:37:24
+// Generated: 2026-10-30 02:04:41
 #pragma once
 #include "IridiumEnums.h"
 #include <cstdint>
@@ -54,6 +54,7 @@ public:
       case IRI_GEN::JSPrivate: return 1;
       case IRI_GEN::JSPrivateFieldDefine: return 0;
       case IRI_GEN::JSCheckBrand: return 0;
+      case IRI_GEN::JSThrowError: return 1;
       case IRI_GEN::JSHasPrivate: return 0;
       case IRI_GEN::JSPrivateFieldWrite: return 0;
       case IRI_GEN::JSADDBRAND: return 0;
@@ -408,6 +409,12 @@ public:
       case IRI_GEN::JSPrivate:
         switch(flag) {
         case IRI_GEN::IridiumPrimitive: return 0;
+          default: return -1;
+        }
+        break;
+      case IRI_GEN::JSThrowError:
+        switch(flag) {
+        case IRI_GEN::NAME: return 0;
           default: return -1;
         }
         break;
@@ -893,6 +900,12 @@ public:
       case IRI_GEN::JSPrivate:
         switch(index) {
         case 0: return IRI_GEN::IridiumPrimitive;
+          default: throw std::runtime_error("Invalid flag index");
+        }
+        break;
+      case IRI_GEN::JSThrowError:
+        switch(index) {
+        case 0: return IRI_GEN::NAME;
           default: throw std::runtime_error("Invalid flag index");
         }
         break;

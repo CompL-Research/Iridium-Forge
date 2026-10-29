@@ -1,4 +1,4 @@
-// Generated: 2026-10-30 01:37:24
+// Generated: 2026-10-30 02:04:41
 #pragma once
 
 #include "Support/PTA/PTAContext.hpp"
@@ -48,6 +48,8 @@ inline void resolvePKRRVal(const PTAStatementContext &ptactx, IRID node,
       return computeJSPrivateVals(ptactx, node, res_);
     case IRI_GEN::IRI_TAG::JSCheckBrand:
       return computeJSCheckBrandVals(ptactx, node, res_);
+    case IRI_GEN::IRI_TAG::JSThrowError:
+      return computeJSThrowErrorVals(ptactx, node, res_);
     case IRI_GEN::IRI_TAG::JSHasPrivate:
       return computeJSHasPrivateVals(ptactx, node, res_);
     case IRI_GEN::IRI_TAG::JSPrivateFieldRead:

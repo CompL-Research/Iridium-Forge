@@ -1,4 +1,4 @@
-// Generated: 2026-10-30 01:37:24
+// Generated: 2026-10-30 02:04:41
 #pragma once
 
 #include "Support/PTA/PTAContext.hpp"
@@ -21,6 +21,7 @@ void handleNOP(const PTAStatementContext &ptactx);
 void handleJSCheckConstructor(const PTAStatementContext &ptactx);
 void handleJSPrivateFieldDefine(const PTAStatementContext &ptactx);
 void handleJSCheckBrand(const PTAStatementContext &ptactx);
+void handleJSThrowError(const PTAStatementContext &ptactx);
 void handleJSHasPrivate(const PTAStatementContext &ptactx);
 void handleJSPrivateFieldWrite(const PTAStatementContext &ptactx);
 void handleJSADDBRAND(const PTAStatementContext &ptactx);
@@ -117,6 +118,9 @@ public:
   }
   virtual void visit_JSCheckBrand(const PTAStatementContext &ptactx) {
     return handleJSCheckBrand(ptactx);
+  }
+  virtual void visit_JSThrowError(const PTAStatementContext &ptactx) {
+    return handleJSThrowError(ptactx);
   }
   virtual void visit_JSHasPrivate(const PTAStatementContext &ptactx) {
     return handleJSHasPrivate(ptactx);

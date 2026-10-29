@@ -1,4 +1,4 @@
-// Generated: 2026-10-30 01:37:24
+// Generated: 2026-10-30 02:04:41
 #pragma once
 
 #include "Support/PP/PPContext.hpp"
@@ -24,6 +24,7 @@ std::string printNOP(const PPContext &pp, IRID node);
 std::string printJSCheckConstructor(const PPContext &pp, IRID node);
 std::string printJSPrivateFieldDefine(const PPContext &pp, IRID node);
 std::string printJSCheckBrand(const PPContext &pp, IRID node);
+std::string printJSThrowError(const PPContext &pp, IRID node);
 std::string printJSHasPrivate(const PPContext &pp, IRID node);
 std::string printJSPrivateFieldWrite(const PPContext &pp, IRID node);
 std::string printJSADDBRAND(const PPContext &pp, IRID node);
