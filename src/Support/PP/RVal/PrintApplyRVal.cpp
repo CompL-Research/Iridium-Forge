@@ -14,8 +14,8 @@ namespace IRI_STRUCTURAL {
  *   [1] IRID Context -> sexp.getArg_Context()
  *   [2] IRID ArgList -> sexp.getArg_ArgList()
  * Flags:
- *   - void   ConstructorCall -> pp.on(node, IRI_GEN::ApplySEXP::FLAG_IDX_ConstructorCall)
- *   - void   Super -> pp.on(node, IRI_GEN::ApplySEXP::FLAG_IDX_Super)
+ *   - void   ConstructorCall -> sexp.hasConstructorCall()
+ *   - void   Super -> sexp.hasSuper()
  *   - double JSDirectEval -> sexp.getJSDirectEval()
  */
 std::string printApplyRVal(const PPContext &pp, IRID node) {
@@ -32,9 +32,9 @@ std::string printApplyRVal(const PPContext &pp, IRID node) {
       callee + "(..." + ppOperand(pp, sexp.getArg_ArgList()) + ")";
   std::string ctx = ppOperand(pp, sexp.getArg_Context());
 
-  if (pp.on(node, S::FLAG_IDX_Super))
+  if (sexp.hasSuper())
     return "super " + ctx + "->" + call;
-  if (pp.on(node, S::FLAG_IDX_ConstructorCall))
+  if (sexp.hasConstructorCall())
     return "new " + callee + "->" + call;
   if (sexp.hasJSDirectEval())
     return "eval#" + ppNumber(sexp.getJSDirectEval()) + " " + call;

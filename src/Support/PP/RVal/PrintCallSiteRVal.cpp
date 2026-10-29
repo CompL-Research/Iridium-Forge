@@ -11,13 +11,13 @@ namespace IRI_STRUCTURAL {
  * Meta:    AMP
  * Arguments: (none)
  * Flags:
- *   - void   CCall -> pp.on(node, IRI_GEN::CallSiteSEXP::FLAG_IDX_CCall)
- *   - void   ConstructorCall -> pp.on(node, IRI_GEN::CallSiteSEXP::FLAG_IDX_ConstructorCall)
- *   - void   PrivateCall -> pp.on(node, IRI_GEN::CallSiteSEXP::FLAG_IDX_PrivateCall)
- *   - void   Import -> pp.on(node, IRI_GEN::CallSiteSEXP::FLAG_IDX_Import)
- *   - void   Super -> pp.on(node, IRI_GEN::CallSiteSEXP::FLAG_IDX_Super)
- *   - void   V8Intrinsic -> pp.on(node, IRI_GEN::CallSiteSEXP::FLAG_IDX_V8Intrinsic)
- *   - void   TAILCALL -> pp.on(node, IRI_GEN::CallSiteSEXP::FLAG_IDX_TAILCALL)
+ *   - void   CCall -> sexp.hasCCall()
+ *   - void   ConstructorCall -> sexp.hasConstructorCall()
+ *   - void   PrivateCall -> sexp.hasPrivateCall()
+ *   - void   Import -> sexp.hasImport()
+ *   - void   Super -> sexp.hasSuper()
+ *   - void   V8Intrinsic -> sexp.hasV8Intrinsic()
+ *   - void   TAILCALL -> sexp.hasTAILCALL()
  *   - double JSDirectEval -> sexp.getJSDirectEval()
  */
 std::string printCallSiteRVal(const PPContext &pp, IRID node) {
@@ -33,20 +33,20 @@ std::string printCallSiteRVal(const PPContext &pp, IRID node) {
   S sexp(node, pp.ctx);
   auto a = pp.args(node);
   bool eval = sexp.hasJSDirectEval();
-  bool super = pp.on(node, S::FLAG_IDX_Super);
-  bool ctor = pp.on(node, S::FLAG_IDX_ConstructorCall);
-  bool ccall = pp.on(node, S::FLAG_IDX_CCall);
-  bool priv = pp.on(node, S::FLAG_IDX_PrivateCall);
+  bool super = sexp.hasSuper();
+  bool ctor = sexp.hasConstructorCall();
+  bool ccall = sexp.hasCCall();
+  bool priv = sexp.hasPrivateCall();
   size_t calleeIdx = (super || ccall || priv) ? 1 : 0;
   if (a.size() <= calleeIdx)
     return ppGeneric(pp, node);
 
   std::string prefix;
-  if (pp.on(node, S::FLAG_IDX_TAILCALL))
+  if (sexp.hasTAILCALL())
     prefix += "tail ";
-  if (pp.on(node, S::FLAG_IDX_Import))
+  if (sexp.hasImport())
     prefix += "import ";
-  if (pp.on(node, S::FLAG_IDX_V8Intrinsic))
+  if (sexp.hasV8Intrinsic())
     prefix += "intrinsic ";
 
   std::string callee = ppOperand(pp, a[calleeIdx]);

@@ -1,7 +1,6 @@
 #include "Support/PP.hpp"
 #include "Config.h"
 #include "Generated/IridiumEnums.h"
-#include "Generated/IridiumMeta.h"
 #include "Generated/IridiumTypes.h"
 #include "Storage/IRIContext.h"
 #include "Support/PP/PPDispatch.hpp"
@@ -61,11 +60,11 @@ std::string ppBinding(const PPContext &pp, IRID binding) {
     std::string parent = sexp.hasArg_ParentReference()
                              ? ppBinding(pp, sexp.getArg_ParentReference())
                              : "?";
-    if (pp.on(binding, RemoteEnvBindingSEXP::FLAG_IDX_MODULE))
+    if (sexp.hasMODULE())
       return "m:" + parent;
-    if (pp.on(binding, RemoteEnvBindingSEXP::FLAG_IDX_MODULEI))
+    if (sexp.hasMODULEI())
       return "mi:" + parent;
-    if (pp.on(binding, RemoteEnvBindingSEXP::FLAG_IDX_MODULENSI))
+    if (sexp.hasMODULENSI())
       return "mns:" + parent;
     return "^" + parent;
   }
@@ -102,23 +101,32 @@ const char *ppWriteOp(bool init, bool safe) {
   return safe ? "=" : ".=";
 }
 
-std::string ppWriteLHS(const PPContext &pp, IRID write) {
-  auto tag = pp.tagOf(write);
-  if (tag != LWrite && tag != RWrite && tag != GWrite && tag != MWrite)
-    throw std::runtime_error("Unexpected write node");
+template <typename S>
+static std::string writeLHS(const PPContext &pp, const S &write,
+                            const std::string &prefix = "") {
+  return prefix + ppBinding(pp, write.getArg_LValTarget()) + " " +
+         ppWriteOp(write.hasINIT(), write.hasSAFE());
+}
 
-  std::string prefix;
-  if (tag == GWrite) {
+std::string ppWriteLHS(const PPContext &pp, IRID write) {
+  switch (pp.tagOf(write)) {
+  case LWrite:
+    return writeLHS(pp, LWriteSEXP(write, pp.ctx));
+  case RWrite:
+    return writeLHS(pp, RWriteSEXP(write, pp.ctx));
+  case MWrite:
+    return writeLHS(pp, MWriteSEXP(write, pp.ctx));
+  case GWrite: {
     GWriteSEXP gWrite(write, pp.ctx);
     if (gWrite.hasDECLVAR())
-      prefix = "decl(script) ";
-    else if (gWrite.hasDECLFUN())
-      prefix = "declFun(script) ";
+      return writeLHS(pp, gWrite, "decl(script) ");
+    if (gWrite.hasDECLFUN())
+      return writeLHS(pp, gWrite, "declFun(script) ");
+    return writeLHS(pp, gWrite);
   }
-
-  return prefix + ppBinding(pp, pp.args(write)[0]) + " " +
-         ppWriteOp(pp.on(write, LWriteSEXP::FLAG_IDX_INIT),
-                   pp.on(write, LWriteSEXP::FLAG_IDX_SAFE));
+  default:
+    throw std::runtime_error("Unexpected write node");
+  }
 }
 
 std::string ppBB(double idx) { return "BB" + ppNumber(idx); }
@@ -137,7 +145,7 @@ std::string ppOperand(const PPContext &pp, IRID node) {
   case JSClass:
     return "(" + s + ")";
   case CallSite:
-    if (pp.on(node, CallSiteSEXP::FLAG_IDX_ConstructorCall))
+    if (CallSiteSEXP(node, pp.ctx).hasConstructorCall())
       return "(" + s + ")";
     return s;
   default:
@@ -158,24 +166,16 @@ std::string ppList(const PPContext &pp, std::span<const IRID> args,
 
 namespace {
 
-std::string lower(std::string_view s) {
-  std::string out(s);
-  std::transform(out.begin(), out.end(), out.begin(),
-                 [](unsigned char c) { return std::tolower(c); });
-  return out;
-}
-
-// Names of the void/bool flags that are set, lower-cased: "arguments proto".
-std::string ppFlagWords(const PPContext &pp, IRID node,
-                        std::initializer_list<uint32_t> idxs) {
+// Words for the flags that are set: "arguments proto".
+std::string ppFlagWords(
+    std::initializer_list<std::pair<bool, const char *>> flags) {
   std::string out;
-  auto tag = pp.tagOf(node);
-  for (uint32_t idx : idxs) {
-    if (!pp.on(node, idx))
+  for (auto [set, word] : flags) {
+    if (!set)
       continue;
     if (!out.empty())
       out += " ";
-    out += lower(dump_flag(IridiumMeta::get_flag_enum(tag, idx)));
+    out += word;
   }
   return out;
 }
@@ -212,10 +212,10 @@ public:
       os << ppGeneric(pp, file) << "\n";
       return;
     }
-    std::string kind = ppFlagWords(pp, file,
-                                   {FileSEXP::FLAG_IDX_JSScript,
-                                    FileSEXP::FLAG_IDX_JSModule,
-                                    FileSEXP::FLAG_IDX_TLA});
+    FileSEXP f(file, pp.ctx);
+    std::string kind = ppFlagWords({{f.hasJSScript(), "jsscript"},
+                                    {f.hasJSModule(), "jsmodule"},
+                                    {f.hasTLA(), "tla"}});
     os << "; file" << (kind.empty() ? "" : " [" + kind + "]") << "\n";
 
     for (IRID child : pp.args(file)) {
@@ -250,9 +250,8 @@ private:
     }
     case StaticImport: {
       StaticImportSEXP s(item, pp.ctx);
-      std::string what = pp.on(item, StaticImportSEXP::FLAG_IDX_NSIMPORT)
-                             ? "*"
-                             : std::string(pp.str(s.getFIELD()));
+      std::string what =
+          s.hasNSIMPORT() ? "*" : std::string(pp.str(s.getFIELD()));
       return "import " + what + " from #" + ppNumber(s.getMODULEREQIDX()) +
              " -> " + ppBinding(pp, s.getArg_StorageLocation());
     }
@@ -290,13 +289,13 @@ private:
       }
       EnvBindingSEXP eb(b, pp.ctx);
       std::string name = ppBinding(pp, b);
-      if (pp.on(b, EnvBindingSEXP::FLAG_IDX_JSARG))
+      if (eb.hasJSARG())
         formals.emplace_back(eb.getREFIDX(), name);
-      else if (pp.on(b, EnvBindingSEXP::FLAG_IDX_JSRESTARG))
+      else if (eb.hasJSRESTARG())
         formals.emplace_back(eb.getREFIDX(), "..." + name);
-      else if (pp.on(b, EnvBindingSEXP::FLAG_IDX_JSCONST))
+      else if (eb.hasJSCONST())
         consts.push_back(name);
-      else if (pp.on(b, EnvBindingSEXP::FLAG_IDX_JSVAR))
+      else if (eb.hasJSVAR())
         vars.push_back(name);
       else
         lets.push_back(name);
@@ -305,9 +304,9 @@ private:
 
     // Header: function f(p, q)  ; entry BB1, scope 1, argc 2, arguments proto
     std::string kind = containerKind(c.getContainerFlagID());
-    if (pp.on(bbc, BBContainerSEXP::FLAG_IDX_ASYNC))
+    if (c.hasASYNC())
       kind = "async " + kind;
-    if (pp.on(bbc, BBContainerSEXP::FLAG_IDX_GENERATOR))
+    if (c.hasGENERATOR())
       kind += "*";
     std::string name(c.hasNAME() ? pp.str(c.getNAME()) : "");
 
@@ -318,12 +317,11 @@ private:
        << ppNumber(c.getScopeIDX()) << ", argc " << ppNumber(c.getECMAArgs());
 
     std::string words = ppFlagWords(
-        pp, bbc,
-        {BBContainerSEXP::FLAG_IDX_ARGUMENTS, BBContainerSEXP::FLAG_IDX_STRICT,
-         BBContainerSEXP::FLAG_IDX_PROTO, BBContainerSEXP::FLAG_IDX_NEW,
-         BBContainerSEXP::FLAG_IDX_SCALL, BBContainerSEXP::FLAG_IDX_SOBJ,
-         BBContainerSEXP::FLAG_IDX_HOME, BBContainerSEXP::FLAG_IDX_DERIVED,
-         BBContainerSEXP::FLAG_IDX_TopLevel});
+        {{c.hasARGUMENTS(), "arguments"}, {c.hasSTRICT(), "strict"},
+         {c.hasPROTO(), "proto"}, {c.hasNEW(), "new"},
+         {c.hasSCALL(), "scall"}, {c.hasSOBJ(), "sobj"},
+         {c.hasHOME(), "home"}, {c.hasDERIVED(), "derived"},
+         {c.hasTopLevel(), "toplevel"}});
     if (!words.empty())
       os << ", " << words;
     if (pp.showIds)
@@ -365,10 +363,11 @@ private:
     BBSEXP b(bb, pp.ctx);
     os << "\n  " << ppBB(b.getIDX()) << ":  ; scope " << ppNumber(b.getScopeIDX());
     std::string words = ppFlagWords(
-        pp, bb,
-        {BBSEXP::FLAG_IDX_TopLevel, BBSEXP::FLAG_IDX_ClosureBoundary,
-         BBSEXP::FLAG_IDX_Lexical, BBSEXP::FLAG_IDX_VARBoundary,
-         BBSEXP::FLAG_IDX_TryBB});
+        {{b.hasTopLevel(), "toplevel"},
+         {b.hasClosureBoundary(), "closureboundary"},
+         {b.hasLexical(), "lexical"},
+         {b.hasVARBoundary(), "varboundary"},
+         {b.hasTryBB(), "trybb"}});
     if (!words.empty())
       os << ", " << words;
     os << "\n";

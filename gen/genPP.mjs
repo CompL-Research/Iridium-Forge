@@ -82,8 +82,8 @@ function genTagDoc(item) {
 
   if (hasFlags) {
     lines.push(` * Flags:`);
-    (flags.void || []).forEach(f => lines.push(` *   - void   ${f} -> pp.on(node, IRI_GEN::${item.tag}SEXP::FLAG_IDX_${f})`));
-    (flags.bool || []).forEach(f => lines.push(` *   - bool   ${f} -> pp.on(node, IRI_GEN::${item.tag}SEXP::FLAG_IDX_${f})`));
+    (flags.void || []).forEach(f => lines.push(` *   - void   ${f} -> sexp.has${f}()`));
+    (flags.bool || []).forEach(f => lines.push(` *   - bool   ${f} -> sexp.get${f}()`));
     (flags.string || []).forEach(f => lines.push(` *   - string ${f} -> sexp.get${f}()`));
     (flags.double || []).forEach(f => lines.push(` *   - double ${f} -> sexp.get${f}()`));
   } else {
@@ -100,8 +100,8 @@ function genSampleCalls(item) {
     });
   }
   const flags = item.flags || {};
-  [...(flags.void || []), ...(flags.bool || [])].forEach(f =>
-    sampleCalls.push(`  // bool ${f} = pp.on(node, IRI_GEN::${item.tag}SEXP::FLAG_IDX_${f});`));
+  (flags.void || []).forEach(f => sampleCalls.push(`  // bool ${f} = sexp.has${f}();`));
+  (flags.bool || []).forEach(f => sampleCalls.push(`  // bool ${f} = sexp.has${f}() && sexp.get${f}();`));
   (flags.string || []).forEach(f => sampleCalls.push(`  // if (sexp.has${f}()) { std::string_view str_${f} = pp.str(sexp.get${f}()); }`));
   (flags.double || []).forEach(f => sampleCalls.push(`  // if (sexp.has${f}()) { double dbl_${f} = sexp.get${f}(); }`));
   return sampleCalls;
@@ -234,7 +234,6 @@ const ppContextHpp = `// Generated: ${getISTDateTime()}
 #include "Generated/IridiumEnums.h"
 #include <span>
 #include <string_view>
-#include <variant>
 
 namespace IRI_STRUCTURAL {
 
@@ -256,18 +255,6 @@ struct PPContext {
   inline IRI_GEN::IRI_TAG tagOf(IRID n) const { return IRI_NODE(ctx, n).tag; }
   inline std::span<const IRID> args(IRID n) const {
     return ctx.storage.nodes.get_args_view(n);
-  }
-  inline const IRI_STORAGE::FlagValue &flag(IRID n, uint32_t idx) const {
-    return ctx.storage.nodes.get_flags(n)[idx];
-  }
-  // A void flag is set when present; a bool flag only when present and true.
-  inline bool on(IRID n, uint32_t idx) const {
-    const auto &v = flag(n, idx);
-    if (std::holds_alternative<std::monostate>(v))
-      return false;
-    if (const bool *b = std::get_if<bool>(&v))
-      return *b;
-    return true;
   }
   inline std::string_view str(StringID s) const {
     return ctx.storage.strings.get(s);

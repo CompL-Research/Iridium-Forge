@@ -12,13 +12,13 @@ namespace IRI_STRUCTURAL {
  * Meta:    AMP
  * Arguments: (none)
  * Flags:
- *   - void   CCall -> pp.on(node, IRI_GEN::CallSiteSEXP::FLAG_IDX_CCall)
- *   - void   ConstructorCall -> pp.on(node, IRI_GEN::CallSiteSEXP::FLAG_IDX_ConstructorCall)
- *   - void   PrivateCall -> pp.on(node, IRI_GEN::CallSiteSEXP::FLAG_IDX_PrivateCall)
- *   - void   Import -> pp.on(node, IRI_GEN::CallSiteSEXP::FLAG_IDX_Import)
- *   - void   Super -> pp.on(node, IRI_GEN::CallSiteSEXP::FLAG_IDX_Super)
- *   - void   V8Intrinsic -> pp.on(node, IRI_GEN::CallSiteSEXP::FLAG_IDX_V8Intrinsic)
- *   - void   TAILCALL -> pp.on(node, IRI_GEN::CallSiteSEXP::FLAG_IDX_TAILCALL)
+ *   - void   CCall -> sexp.hasCCall()
+ *   - void   ConstructorCall -> sexp.hasConstructorCall()
+ *   - void   PrivateCall -> sexp.hasPrivateCall()
+ *   - void   Import -> sexp.hasImport()
+ *   - void   Super -> sexp.hasSuper()
+ *   - void   V8Intrinsic -> sexp.hasV8Intrinsic()
+ *   - void   TAILCALL -> sexp.hasTAILCALL()
  *   - double JSDirectEval -> sexp.getJSDirectEval()
  *
  * AMP node used as a bare statement: print it as an expression statement.
