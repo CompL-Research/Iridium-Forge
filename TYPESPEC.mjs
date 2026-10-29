@@ -432,12 +432,13 @@ export default [
     },
   },
   {
+    // class NAME [extends Parent]: derived iff the Parent operand is present
     tag: "JSClass",
     meta: "RVAL",
-    args: ["Parent", "Constructor"],
+    args: ["Constructor", "Parent"],
     flags: {
       string: ["NAME"],
-      void: ["DERIVED"],
+      void: [],
       bool: [],
       double: [],
     },
@@ -829,7 +830,7 @@ export default [
     args: [],
     flags: {
       string: [],
-      void: ["IridiumPrimitive"],
+      void: [],
       bool: [],
       double: [],
     },

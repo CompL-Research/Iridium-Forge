@@ -11,10 +11,9 @@ namespace IRI_STRUCTURAL {
  * AST Tag: JSClass
  * Meta:    RVAL
  * Arguments:
- *   [0] IRID Parent -> sexp.getArg_Parent()
- *   [1] IRID Constructor -> sexp.getArg_Constructor()
+ *   [0] IRID Constructor -> sexp.getArg_Constructor()
+ *   [1] IRID Parent -> sexp.getArg_Parent()
  * Flags:
- *   - void   DERIVED -> sexp.hasDERIVED()
  *   - string NAME -> sexp.getNAME()
  */
 void computeJSClassVals(const PTAStatementContext &ptactx, IRID node,
@@ -25,7 +24,6 @@ void computeJSClassVals(const PTAStatementContext &ptactx, IRID node,
   // === TODO : JSClass ===
   // if (sexp.hasArg_Parent()) { IRID arg_Parent = sexp.getArg_Parent(); }
   // if (sexp.hasArg_Constructor()) { IRID arg_Constructor = sexp.getArg_Constructor(); }
-  // bool has_DERIVED = sexp.hasDERIVED();
   // if (sexp.hasNAME()) { StringID str_NAME = sexp.getNAME(); }
 
   return;

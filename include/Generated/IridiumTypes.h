@@ -1,4 +1,4 @@
-// Generated: 2026-10-30 02:50:44
+// Generated: 2026-10-30 03:08:55
 #pragma once
 #include "Storage/Config.h"
 #include "Storage/IridiumSEXP.h"
@@ -1989,15 +1989,14 @@ using IRI_STORAGE::FlagValue;
       }
     }
 
-    static IRID create(IRIContext& p, IRID Parent, IRID Constructor, StringID NAME, bool DERIVED) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSClass, {Parent, Constructor}, {FlagValue(NAME), DERIVED ? FlagValue(DERIVED) : FlagValue(std::monostate())});
+    static IRID create(IRIContext& p, IRID Constructor, IRID Parent, StringID NAME) {
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSClass, {Constructor, Parent}, {FlagValue(NAME)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 2;
-    static constexpr uint32_t TOTAL_FLAGS = 2;
+    static constexpr uint32_t TOTAL_FLAGS = 1;
 
     static constexpr uint32_t FLAG_IDX_NAME = 0;
-    static constexpr uint32_t FLAG_IDX_DERIVED = 1;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
@@ -2008,23 +2007,19 @@ using IRI_STORAGE::FlagValue;
     }
 
     // --- Arguments ---
-    IRID getArg_Parent() const { return ctx->storage.nodes.get_args(id)[0]; }
-    bool hasArg_Parent() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
-    void setArg_Parent(IRID val) { assert(hasArg_Parent() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
+    IRID getArg_Constructor() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_Constructor() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Constructor(IRID val) { assert(hasArg_Constructor() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
-    IRID getArg_Constructor() const { return ctx->storage.nodes.get_args(id)[1]; }
-    bool hasArg_Constructor() const { return 1 < ctx->storage.nodes.get_args(id).size(); }
-    void setArg_Constructor(IRID val) { assert(hasArg_Constructor() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,1,val); }
+    IRID getArg_Parent() const { return ctx->storage.nodes.get_args(id)[1]; }
+    bool hasArg_Parent() const { return 1 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Parent(IRID val) { assert(hasArg_Parent() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,1,val); }
 
     // --- Flags ---
     StringID getNAME() const { return std::get<StringID>(get_flag(FLAG_IDX_NAME)); }
     void setNAME(StringID val) { mutate_flag(FLAG_IDX_NAME) = val; }
     bool hasNAME() const { return std::holds_alternative<StringID>(get_flag(FLAG_IDX_NAME)); }
     void clearNAME() { mutate_flag(FLAG_IDX_NAME) = std::monostate{}; }
-
-    bool hasDERIVED() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_DERIVED)); }
-    void setDERIVED() { mutate_flag(FLAG_IDX_DERIVED) = std::nullptr_t{}; }
-    void clearDERIVED() { mutate_flag(FLAG_IDX_DERIVED) = std::monostate{}; }
   };
 
   struct JSCheckConstructorSEXP {
@@ -3334,14 +3329,14 @@ using IRI_STORAGE::FlagValue;
       }
     }
 
-    static IRID create(IRIContext& p, bool IridiumPrimitive) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::Null, {}, {IridiumPrimitive ? FlagValue(IridiumPrimitive) : FlagValue(std::monostate())});
+    static IRID create(IRIContext& p) {
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::Null, {}, {});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
-    static constexpr uint32_t TOTAL_FLAGS = 1;
+    static constexpr uint32_t TOTAL_FLAGS = 0;
 
-    static constexpr uint32_t FLAG_IDX_IridiumPrimitive = 0;
+
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
@@ -3355,9 +3350,7 @@ using IRI_STORAGE::FlagValue;
 
 
     // --- Flags ---
-    bool hasIridiumPrimitive() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_IridiumPrimitive)); }
-    void setIridiumPrimitive() { mutate_flag(FLAG_IDX_IridiumPrimitive) = std::nullptr_t{}; }
-    void clearIridiumPrimitive() { mutate_flag(FLAG_IDX_IridiumPrimitive) = std::monostate{}; }
+
   };
 
   struct JSComputedFieldReadSEXP {

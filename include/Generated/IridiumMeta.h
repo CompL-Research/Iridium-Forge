@@ -1,4 +1,4 @@
-// Generated: 2026-10-30 02:50:44
+// Generated: 2026-10-30 03:08:55
 #pragma once
 #include "IridiumEnums.h"
 #include <cstdint>
@@ -48,7 +48,7 @@ public:
       case IRI_GEN::SiblingSpecialWrite: return 5;
       case IRI_GEN::JSNUBD: return 0;
       case IRI_GEN::Number: return 1;
-      case IRI_GEN::JSClass: return 2;
+      case IRI_GEN::JSClass: return 1;
       case IRI_GEN::JSCheckConstructor: return 0;
       case IRI_GEN::ResolvePrivateEnvBinding: return 1;
       case IRI_GEN::JSPrivate: return 1;
@@ -83,7 +83,7 @@ public:
       case IRI_GEN::JSDefineObjProp: return 0;
       case IRI_GEN::JSArray: return 0;
       case IRI_GEN::Binop: return 1;
-      case IRI_GEN::Null: return 1;
+      case IRI_GEN::Null: return 0;
       case IRI_GEN::JSComputedFieldRead: return 1;
       case IRI_GEN::JSComputedFieldWrite: return 1;
       case IRI_GEN::JSToObject: return 0;
@@ -396,7 +396,6 @@ public:
       case IRI_GEN::JSClass:
         switch(flag) {
         case IRI_GEN::NAME: return 0;
-        case IRI_GEN::DERIVED: return 1;
           default: return -1;
         }
         break;
@@ -487,12 +486,6 @@ public:
       case IRI_GEN::Binop:
         switch(flag) {
         case IRI_GEN::OP: return 0;
-          default: return -1;
-        }
-        break;
-      case IRI_GEN::Null:
-        switch(flag) {
-        case IRI_GEN::IridiumPrimitive: return 0;
           default: return -1;
         }
         break;
@@ -875,7 +868,6 @@ public:
       case IRI_GEN::JSClass:
         switch(index) {
         case 0: return IRI_GEN::NAME;
-        case 1: return IRI_GEN::DERIVED;
           default: throw std::runtime_error("Invalid flag index");
         }
         break;
@@ -966,12 +958,6 @@ public:
       case IRI_GEN::Binop:
         switch(index) {
         case 0: return IRI_GEN::OP;
-          default: throw std::runtime_error("Invalid flag index");
-        }
-        break;
-      case IRI_GEN::Null:
-        switch(index) {
-        case 0: return IRI_GEN::IridiumPrimitive;
           default: throw std::runtime_error("Invalid flag index");
         }
         break;
