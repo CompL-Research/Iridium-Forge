@@ -1,4 +1,4 @@
-// Generated: 2026-10-30 00:12:49
+// Generated: 2026-10-30 00:25:43
 #pragma once
 
 #include "Support/PP.hpp"
@@ -125,6 +125,10 @@ inline std::string ppStatement(const PPContext &pp, IRID node) {
       return printQJSModuleInit(pp, node);
     case IRI_GEN::IRI_TAG::CompoundAssn:
       return printCompoundAssn(pp, node);
+    case IRI_GEN::IRI_TAG::JSConstruct:
+      return printJSConstruct(pp, node);
+    case IRI_GEN::IRI_TAG::JSConstructApply:
+      return printJSConstructApply(pp, node);
     case IRI_GEN::IRI_TAG::JSGetPrototypeOf:
       return printJSGetPrototypeOf(pp, node);
     default:

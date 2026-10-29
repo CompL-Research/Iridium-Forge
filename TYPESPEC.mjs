@@ -128,10 +128,8 @@ export default [
       string: [],
       void: [
         "CCall",
-        "ConstructorCall",
         "PrivateCall",
         "Import",
-        "Super",
         "V8Intrinsic",
         "TAILCALL",
       ],
@@ -145,7 +143,7 @@ export default [
     args: ["Callee", "Context", "ArgList"],
     flags: {
       string: [],
-      void: ["ConstructorCall", "Super"],
+      void: [],
       bool: [],
       double: ["JSDirectEval"],
     },
@@ -1148,6 +1146,32 @@ export default [
     flags: {
       string: [],
       void: [],
+      bool: [],
+      double: [],
+    },
+  },
+  {
+    // [[Construct]](Callee, args, NewTarget): `new F(a)` passes F as NewTarget,
+    // super(a) the caller's new.target. Arguments follow NewTarget.
+    // Super: marks super() calls for pass 6 (this binding, field initializers).
+    tag: "JSConstruct",
+    meta: "AMP",
+    args: ["Callee", "NewTarget"],
+    flags: {
+      string: [],
+      void: ["Super"],
+      bool: [],
+      double: [],
+    },
+  },
+  {
+    // JSConstruct with a spread argument list (an array).
+    tag: "JSConstructApply",
+    meta: "AMP",
+    args: ["Callee", "NewTarget", "ArgList"],
+    flags: {
+      string: [],
+      void: ["Super"],
       bool: [],
       double: [],
     },

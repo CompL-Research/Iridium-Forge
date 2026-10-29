@@ -1,4 +1,4 @@
-// Generated: 2026-10-30 00:12:49
+// Generated: 2026-10-30 00:25:43
 #pragma once
 #include <string>
 
@@ -108,6 +108,8 @@ namespace IRI_GEN {
     CompoundAssn,
     ThisINIT,
     PTAStub,
+    JSConstruct,
+    JSConstructApply,
     JSGetPrototypeOf
   };
 
@@ -216,6 +218,8 @@ namespace IRI_GEN {
       case CompoundAssn: return "CompoundAssn";
       case ThisINIT: return "ThisINIT";
       case PTAStub: return "PTAStub";
+      case JSConstruct: return "JSConstruct";
+      case JSConstructApply: return "JSConstructApply";
       case JSGetPrototypeOf: return "JSGetPrototypeOf";
       default: return "unknown_tag";
     }
@@ -239,10 +243,8 @@ namespace IRI_GEN {
     TAINTED,
     IridiumPrimitive,
     CCall,
-    ConstructorCall,
     PrivateCall,
     Import,
-    Super,
     V8Intrinsic,
     TAILCALL,
     JSDirectEval,
@@ -305,7 +307,8 @@ namespace IRI_GEN {
     INCREMENT,
     INIT,
     DECLVAR,
-    DECLFUN
+    DECLFUN,
+    Super
   };
 
   inline std::string dump_flag(IRI_FLAG value) {
@@ -327,10 +330,8 @@ namespace IRI_GEN {
       case TAINTED: return "TAINTED";
       case IridiumPrimitive: return "IridiumPrimitive";
       case CCall: return "CCall";
-      case ConstructorCall: return "ConstructorCall";
       case PrivateCall: return "PrivateCall";
       case Import: return "Import";
-      case Super: return "Super";
       case V8Intrinsic: return "V8Intrinsic";
       case TAILCALL: return "TAILCALL";
       case JSDirectEval: return "JSDirectEval";
@@ -394,6 +395,7 @@ namespace IRI_GEN {
       case INIT: return "INIT";
       case DECLVAR: return "DECLVAR";
       case DECLFUN: return "DECLFUN";
+      case Super: return "Super";
       default: return "unknown_flag";
     }
   }
@@ -513,6 +515,8 @@ namespace IRI_GEN {
       case CompoundAssn: return IRI_META::STMT;
       case ThisINIT: return IRI_META::RVAL;
       case PTAStub: return IRI_META::UKN;
+      case JSConstruct: return IRI_META::AMP;
+      case JSConstructApply: return IRI_META::AMP;
       case JSGetPrototypeOf: return IRI_META::AMP;
       default: return IRI_META::ERROR;
     }

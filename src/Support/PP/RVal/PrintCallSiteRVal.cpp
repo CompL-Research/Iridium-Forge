@@ -12,20 +12,15 @@ namespace IRI_STRUCTURAL {
  * Arguments: (none)
  * Flags:
  *   - void   CCall -> sexp.hasCCall()
- *   - void   ConstructorCall -> sexp.hasConstructorCall()
  *   - void   PrivateCall -> sexp.hasPrivateCall()
  *   - void   Import -> sexp.hasImport()
- *   - void   Super -> sexp.hasSuper()
  *   - void   V8Intrinsic -> sexp.hasV8Intrinsic()
  *   - void   TAILCALL -> sexp.hasTAILCALL()
  *   - double JSDirectEval -> sexp.getJSDirectEval()
  */
 std::string printCallSiteRVal(const PPContext &pp, IRID node) {
-  // ctx->f(a, b), same shape as Apply. ctx is `this` for plain/private calls
-  // and new.target for new. Mirrors the lowering order:
+  // ctx->f(a, b), same shape as Apply; ctx is `this`. Mirrors the lowering order:
   //   eval#N f(a, b)            [f, args...], no ctx
-  //   super(ctor: f, new.target: nt)(a, b)    [f, nt, args...]
-  //   new f->f(a, b)            [f, args...], new.target = callee
   //   ctx->f(a, b)              CCall: [ctx, f, args...], this = ctx
   //   private ctx->f(a, b)      [ctx, f, args...], brand-checked
   //   f(a, b)                   [f, args...], no ctx
@@ -33,11 +28,9 @@ std::string printCallSiteRVal(const PPContext &pp, IRID node) {
   S sexp(node, pp.ctx);
   auto a = pp.args(node);
   bool eval = sexp.hasJSDirectEval();
-  bool super = sexp.hasSuper();
-  bool ctor = sexp.hasConstructorCall();
   bool ccall = sexp.hasCCall();
   bool priv = sexp.hasPrivateCall();
-  size_t calleeIdx = (super || ccall || priv) ? 1 : 0;
+  size_t calleeIdx = (ccall || priv) ? 1 : 0;
   if (a.size() <= calleeIdx)
     return ppGeneric(pp, node);
 
@@ -55,11 +48,6 @@ std::string printCallSiteRVal(const PPContext &pp, IRID node) {
 
   if (eval)
     return prefix + "eval#" + ppNumber(sexp.getJSDirectEval()) + " " + call;
-  if (super)
-    return prefix + "super(ctor: " + ppRVal(pp, a[0]) +
-           ", new.target: " + ppRVal(pp, a[1]) + ")(" + ppList(pp, a, 2) + ")";
-  if (ctor)
-    return prefix + "new " + callee + "->" + call;
   if (priv)
     return prefix + "private " + ctx + call;
   return prefix + ctx + call;

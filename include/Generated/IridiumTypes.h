@@ -1,4 +1,4 @@
-// Generated: 2026-10-30 00:12:49
+// Generated: 2026-10-30 00:25:43
 #pragma once
 #include "Storage/Config.h"
 #include "Storage/IridiumSEXP.h"
@@ -603,21 +603,19 @@ using IRI_STORAGE::FlagValue;
       }
     }
 
-    static IRID create(IRIContext& p, bool CCall, bool ConstructorCall, bool PrivateCall, bool Import, bool Super, bool V8Intrinsic, bool TAILCALL, double JSDirectEval) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::CallSite, {}, {CCall ? FlagValue(CCall) : FlagValue(std::monostate()), ConstructorCall ? FlagValue(ConstructorCall) : FlagValue(std::monostate()), PrivateCall ? FlagValue(PrivateCall) : FlagValue(std::monostate()), Import ? FlagValue(Import) : FlagValue(std::monostate()), Super ? FlagValue(Super) : FlagValue(std::monostate()), V8Intrinsic ? FlagValue(V8Intrinsic) : FlagValue(std::monostate()), TAILCALL ? FlagValue(TAILCALL) : FlagValue(std::monostate()), FlagValue(JSDirectEval)});
+    static IRID create(IRIContext& p, bool CCall, bool PrivateCall, bool Import, bool V8Intrinsic, bool TAILCALL, double JSDirectEval) {
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::CallSite, {}, {CCall ? FlagValue(CCall) : FlagValue(std::monostate()), PrivateCall ? FlagValue(PrivateCall) : FlagValue(std::monostate()), Import ? FlagValue(Import) : FlagValue(std::monostate()), V8Intrinsic ? FlagValue(V8Intrinsic) : FlagValue(std::monostate()), TAILCALL ? FlagValue(TAILCALL) : FlagValue(std::monostate()), FlagValue(JSDirectEval)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
-    static constexpr uint32_t TOTAL_FLAGS = 8;
+    static constexpr uint32_t TOTAL_FLAGS = 6;
 
     static constexpr uint32_t FLAG_IDX_CCall = 0;
-    static constexpr uint32_t FLAG_IDX_ConstructorCall = 1;
-    static constexpr uint32_t FLAG_IDX_PrivateCall = 2;
-    static constexpr uint32_t FLAG_IDX_Import = 3;
-    static constexpr uint32_t FLAG_IDX_Super = 4;
-    static constexpr uint32_t FLAG_IDX_V8Intrinsic = 5;
-    static constexpr uint32_t FLAG_IDX_TAILCALL = 6;
-    static constexpr uint32_t FLAG_IDX_JSDirectEval = 7;
+    static constexpr uint32_t FLAG_IDX_PrivateCall = 1;
+    static constexpr uint32_t FLAG_IDX_Import = 2;
+    static constexpr uint32_t FLAG_IDX_V8Intrinsic = 3;
+    static constexpr uint32_t FLAG_IDX_TAILCALL = 4;
+    static constexpr uint32_t FLAG_IDX_JSDirectEval = 5;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
@@ -635,10 +633,6 @@ using IRI_STORAGE::FlagValue;
     void setCCall() { mutate_flag(FLAG_IDX_CCall) = std::nullptr_t{}; }
     void clearCCall() { mutate_flag(FLAG_IDX_CCall) = std::monostate{}; }
 
-    bool hasConstructorCall() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_ConstructorCall)); }
-    void setConstructorCall() { mutate_flag(FLAG_IDX_ConstructorCall) = std::nullptr_t{}; }
-    void clearConstructorCall() { mutate_flag(FLAG_IDX_ConstructorCall) = std::monostate{}; }
-
     bool hasPrivateCall() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_PrivateCall)); }
     void setPrivateCall() { mutate_flag(FLAG_IDX_PrivateCall) = std::nullptr_t{}; }
     void clearPrivateCall() { mutate_flag(FLAG_IDX_PrivateCall) = std::monostate{}; }
@@ -646,10 +640,6 @@ using IRI_STORAGE::FlagValue;
     bool hasImport() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_Import)); }
     void setImport() { mutate_flag(FLAG_IDX_Import) = std::nullptr_t{}; }
     void clearImport() { mutate_flag(FLAG_IDX_Import) = std::monostate{}; }
-
-    bool hasSuper() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_Super)); }
-    void setSuper() { mutate_flag(FLAG_IDX_Super) = std::nullptr_t{}; }
-    void clearSuper() { mutate_flag(FLAG_IDX_Super) = std::monostate{}; }
 
     bool hasV8Intrinsic() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_V8Intrinsic)); }
     void setV8Intrinsic() { mutate_flag(FLAG_IDX_V8Intrinsic) = std::nullptr_t{}; }
@@ -675,16 +665,14 @@ using IRI_STORAGE::FlagValue;
       }
     }
 
-    static IRID create(IRIContext& p, IRID Callee, IRID Context, IRID ArgList, bool ConstructorCall, bool Super, double JSDirectEval) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::Apply, {Callee, Context, ArgList}, {ConstructorCall ? FlagValue(ConstructorCall) : FlagValue(std::monostate()), Super ? FlagValue(Super) : FlagValue(std::monostate()), FlagValue(JSDirectEval)});
+    static IRID create(IRIContext& p, IRID Callee, IRID Context, IRID ArgList, double JSDirectEval) {
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::Apply, {Callee, Context, ArgList}, {FlagValue(JSDirectEval)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 3;
-    static constexpr uint32_t TOTAL_FLAGS = 3;
+    static constexpr uint32_t TOTAL_FLAGS = 1;
 
-    static constexpr uint32_t FLAG_IDX_ConstructorCall = 0;
-    static constexpr uint32_t FLAG_IDX_Super = 1;
-    static constexpr uint32_t FLAG_IDX_JSDirectEval = 2;
+    static constexpr uint32_t FLAG_IDX_JSDirectEval = 0;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
@@ -708,14 +696,6 @@ using IRI_STORAGE::FlagValue;
     void setArg_ArgList(IRID val) { assert(hasArg_ArgList() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,2,val); }
 
     // --- Flags ---
-    bool hasConstructorCall() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_ConstructorCall)); }
-    void setConstructorCall() { mutate_flag(FLAG_IDX_ConstructorCall) = std::nullptr_t{}; }
-    void clearConstructorCall() { mutate_flag(FLAG_IDX_ConstructorCall) = std::monostate{}; }
-
-    bool hasSuper() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_Super)); }
-    void setSuper() { mutate_flag(FLAG_IDX_Super) = std::nullptr_t{}; }
-    void clearSuper() { mutate_flag(FLAG_IDX_Super) = std::monostate{}; }
-
     double getJSDirectEval() const { return std::get<double>(get_flag(FLAG_IDX_JSDirectEval)); }
     void setJSDirectEval(double val) { mutate_flag(FLAG_IDX_JSDirectEval) = val; }
     bool hasJSDirectEval() const { return std::holds_alternative<double>(get_flag(FLAG_IDX_JSDirectEval)); }
@@ -4616,6 +4596,94 @@ using IRI_STORAGE::FlagValue;
 
     // --- Flags ---
 
+  };
+
+  struct JSConstructSEXP {
+    IRID id;
+    IRIContext* ctx;
+
+    explicit JSConstructSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::JSConstruct) {
+        throw std::runtime_error("Schema Cast Error: Expected JSConstruct, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
+      }
+    }
+
+    static IRID create(IRIContext& p, IRID Callee, IRID NewTarget, bool Super) {
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSConstruct, {Callee, NewTarget}, {Super ? FlagValue(Super) : FlagValue(std::monostate())});
+    }
+
+    static constexpr uint32_t TOTAL_ARGS = 2;
+    static constexpr uint32_t TOTAL_FLAGS = 1;
+
+    static constexpr uint32_t FLAG_IDX_Super = 0;
+
+    // --- Helpers ---
+    inline FlagValue& mutate_flag(uint32_t idx) {
+        return ctx->storage.nodes.get_flags_m(id)[idx];
+    }
+    inline const FlagValue& get_flag(uint32_t idx) const {
+        return ctx->storage.nodes.get_flags(id)[idx];
+    }
+
+    // --- Arguments ---
+    IRID getArg_Callee() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_Callee() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Callee(IRID val) { assert(hasArg_Callee() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
+
+    IRID getArg_NewTarget() const { return ctx->storage.nodes.get_args(id)[1]; }
+    bool hasArg_NewTarget() const { return 1 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_NewTarget(IRID val) { assert(hasArg_NewTarget() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,1,val); }
+
+    // --- Flags ---
+    bool hasSuper() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_Super)); }
+    void setSuper() { mutate_flag(FLAG_IDX_Super) = std::nullptr_t{}; }
+    void clearSuper() { mutate_flag(FLAG_IDX_Super) = std::monostate{}; }
+  };
+
+  struct JSConstructApplySEXP {
+    IRID id;
+    IRIContext* ctx;
+
+    explicit JSConstructApplySEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::JSConstructApply) {
+        throw std::runtime_error("Schema Cast Error: Expected JSConstructApply, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
+      }
+    }
+
+    static IRID create(IRIContext& p, IRID Callee, IRID NewTarget, IRID ArgList, bool Super) {
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSConstructApply, {Callee, NewTarget, ArgList}, {Super ? FlagValue(Super) : FlagValue(std::monostate())});
+    }
+
+    static constexpr uint32_t TOTAL_ARGS = 3;
+    static constexpr uint32_t TOTAL_FLAGS = 1;
+
+    static constexpr uint32_t FLAG_IDX_Super = 0;
+
+    // --- Helpers ---
+    inline FlagValue& mutate_flag(uint32_t idx) {
+        return ctx->storage.nodes.get_flags_m(id)[idx];
+    }
+    inline const FlagValue& get_flag(uint32_t idx) const {
+        return ctx->storage.nodes.get_flags(id)[idx];
+    }
+
+    // --- Arguments ---
+    IRID getArg_Callee() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_Callee() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Callee(IRID val) { assert(hasArg_Callee() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
+
+    IRID getArg_NewTarget() const { return ctx->storage.nodes.get_args(id)[1]; }
+    bool hasArg_NewTarget() const { return 1 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_NewTarget(IRID val) { assert(hasArg_NewTarget() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,1,val); }
+
+    IRID getArg_ArgList() const { return ctx->storage.nodes.get_args(id)[2]; }
+    bool hasArg_ArgList() const { return 2 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_ArgList(IRID val) { assert(hasArg_ArgList() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,2,val); }
+
+    // --- Flags ---
+    bool hasSuper() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_Super)); }
+    void setSuper() { mutate_flag(FLAG_IDX_Super) = std::nullptr_t{}; }
+    void clearSuper() { mutate_flag(FLAG_IDX_Super) = std::monostate{}; }
   };
 
   struct JSGetPrototypeOfSEXP {

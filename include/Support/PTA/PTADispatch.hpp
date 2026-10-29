@@ -1,4 +1,4 @@
-// Generated: 2026-10-30 00:12:49
+// Generated: 2026-10-30 00:25:43
 #pragma once
 
 #include "Support/PTA/PTAContext.hpp"
@@ -126,6 +126,10 @@ inline void dispatchPTAStatement(const PTAStatementContext &ptactx) {
       return handleQJSModuleInit(ptactx);
     case IRI_GEN::IRI_TAG::CompoundAssn:
       return handleCompoundAssn(ptactx);
+    case IRI_GEN::IRI_TAG::JSConstruct:
+      return handleJSConstruct(ptactx);
+    case IRI_GEN::IRI_TAG::JSConstructApply:
+      return handleJSConstructApply(ptactx);
     case IRI_GEN::IRI_TAG::JSGetPrototypeOf:
       return handleJSGetPrototypeOf(ptactx);
     default:

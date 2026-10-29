@@ -13,10 +13,8 @@ namespace IRI_STRUCTURAL {
  * Arguments: (none)
  * Flags:
  *   - void   CCall -> sexp.hasCCall()
- *   - void   ConstructorCall -> sexp.hasConstructorCall()
  *   - void   PrivateCall -> sexp.hasPrivateCall()
  *   - void   Import -> sexp.hasImport()
- *   - void   Super -> sexp.hasSuper()
  *   - void   V8Intrinsic -> sexp.hasV8Intrinsic()
  *   - void   TAILCALL -> sexp.hasTAILCALL()
  *   - double JSDirectEval -> sexp.getJSDirectEval()

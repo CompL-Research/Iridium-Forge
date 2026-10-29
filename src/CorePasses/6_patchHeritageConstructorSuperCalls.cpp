@@ -36,7 +36,7 @@ inline std::vector<IRID> heritageThisInit(IRIContext & ctx, StringID thisValHold
     )
   );
 
-  IRID callSite = CallSiteSEXP::create(ctx, true, false, false, false, false, false, false, 0);
+  IRID callSite = CallSiteSEXP::create(ctx, true, false, false, false, false, 0);
   CallSiteSEXP callSEXP(callSite, ctx);
   callSEXP.clearJSDirectEval();
 
@@ -58,14 +58,10 @@ void _6_PHCSC(IRIContext &ctx, IRID fileSEXP,
               BUILD_CTX &iridiumBuildContext) {
 
   std::function<bool(IRID)> pred = [&](IRID id) {
-    if (IRI_NODE(ctx, id).tag == IRI_GEN::CallSite) {
-      CallSiteSEXP cs(id, ctx);
-      return cs.hasSuper();
-    }
-    if (IRI_NODE(ctx, id).tag == IRI_GEN::Apply) {
-      ApplySEXP cs(id, ctx);
-      return cs.hasSuper();
-    }
+    if (IRI_NODE(ctx, id).tag == IRI_GEN::JSConstruct)
+      return JSConstructSEXP(id, ctx).hasSuper();
+    if (IRI_NODE(ctx, id).tag == IRI_GEN::JSConstructApply)
+      return JSConstructApplySEXP(id, ctx).hasSuper();
     return false;
   };
   FileSupport fileSupport(fileSEXP, ctx);

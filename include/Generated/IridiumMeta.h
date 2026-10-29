@@ -1,4 +1,4 @@
-// Generated: 2026-10-30 00:12:49
+// Generated: 2026-10-30 00:25:43
 #pragma once
 #include "IridiumEnums.h"
 #include <cstdint>
@@ -21,8 +21,8 @@ public:
       case IRI_GEN::JSExplicitBindingDeclaration: return 6;
       case IRI_GEN::JSExplicitBindingDeclarationN: return 6;
       case IRI_GEN::JSExplicitBindingDeclarationX: return 6;
-      case IRI_GEN::CallSite: return 8;
-      case IRI_GEN::Apply: return 3;
+      case IRI_GEN::CallSite: return 6;
+      case IRI_GEN::Apply: return 1;
       case IRI_GEN::ReturnAsync: return 0;
       case IRI_GEN::BB: return 7;
       case IRI_GEN::Return: return 0;
@@ -113,6 +113,8 @@ public:
       case IRI_GEN::CompoundAssn: return 0;
       case IRI_GEN::ThisINIT: return 0;
       case IRI_GEN::PTAStub: return 0;
+      case IRI_GEN::JSConstruct: return 1;
+      case IRI_GEN::JSConstructApply: return 1;
       case IRI_GEN::JSGetPrototypeOf: return 0;
       default: return 0;
     }
@@ -211,21 +213,17 @@ public:
       case IRI_GEN::CallSite:
         switch(flag) {
         case IRI_GEN::CCall: return 0;
-        case IRI_GEN::ConstructorCall: return 1;
-        case IRI_GEN::PrivateCall: return 2;
-        case IRI_GEN::Import: return 3;
-        case IRI_GEN::Super: return 4;
-        case IRI_GEN::V8Intrinsic: return 5;
-        case IRI_GEN::TAILCALL: return 6;
-        case IRI_GEN::JSDirectEval: return 7;
+        case IRI_GEN::PrivateCall: return 1;
+        case IRI_GEN::Import: return 2;
+        case IRI_GEN::V8Intrinsic: return 3;
+        case IRI_GEN::TAILCALL: return 4;
+        case IRI_GEN::JSDirectEval: return 5;
           default: return -1;
         }
         break;
       case IRI_GEN::Apply:
         switch(flag) {
-        case IRI_GEN::ConstructorCall: return 0;
-        case IRI_GEN::Super: return 1;
-        case IRI_GEN::JSDirectEval: return 2;
+        case IRI_GEN::JSDirectEval: return 0;
           default: return -1;
         }
         break;
@@ -611,6 +609,18 @@ public:
           default: return -1;
         }
         break;
+      case IRI_GEN::JSConstruct:
+        switch(flag) {
+        case IRI_GEN::Super: return 0;
+          default: return -1;
+        }
+        break;
+      case IRI_GEN::JSConstructApply:
+        switch(flag) {
+        case IRI_GEN::Super: return 0;
+          default: return -1;
+        }
+        break;
       default: return -1;
     }
   }
@@ -708,21 +718,17 @@ public:
       case IRI_GEN::CallSite:
         switch(index) {
         case 0: return IRI_GEN::CCall;
-        case 1: return IRI_GEN::ConstructorCall;
-        case 2: return IRI_GEN::PrivateCall;
-        case 3: return IRI_GEN::Import;
-        case 4: return IRI_GEN::Super;
-        case 5: return IRI_GEN::V8Intrinsic;
-        case 6: return IRI_GEN::TAILCALL;
-        case 7: return IRI_GEN::JSDirectEval;
+        case 1: return IRI_GEN::PrivateCall;
+        case 2: return IRI_GEN::Import;
+        case 3: return IRI_GEN::V8Intrinsic;
+        case 4: return IRI_GEN::TAILCALL;
+        case 5: return IRI_GEN::JSDirectEval;
           default: throw std::runtime_error("Invalid flag index");
         }
         break;
       case IRI_GEN::Apply:
         switch(index) {
-        case 0: return IRI_GEN::ConstructorCall;
-        case 1: return IRI_GEN::Super;
-        case 2: return IRI_GEN::JSDirectEval;
+        case 0: return IRI_GEN::JSDirectEval;
           default: throw std::runtime_error("Invalid flag index");
         }
         break;
@@ -1105,6 +1111,18 @@ public:
       case IRI_GEN::JSCTX:
         switch(index) {
         case 0: return IRI_GEN::OPID;
+          default: throw std::runtime_error("Invalid flag index");
+        }
+        break;
+      case IRI_GEN::JSConstruct:
+        switch(index) {
+        case 0: return IRI_GEN::Super;
+          default: throw std::runtime_error("Invalid flag index");
+        }
+        break;
+      case IRI_GEN::JSConstructApply:
+        switch(index) {
+        case 0: return IRI_GEN::Super;
           default: throw std::runtime_error("Invalid flag index");
         }
         break;

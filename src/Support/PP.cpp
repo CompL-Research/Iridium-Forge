@@ -170,10 +170,9 @@ std::string ppOperand(const PPContext &pp, IRID node) {
   case Yield:
   case JSClass:
     return "(" + s + ")";
-  case CallSite:
-    if (CallSiteSEXP(node, pp.ctx).hasConstructorCall())
-      return "(" + s + ")";
-    return s;
+  case JSConstruct:
+  case JSConstructApply:
+    return "(" + s + ")";
   default:
     return s;
   }

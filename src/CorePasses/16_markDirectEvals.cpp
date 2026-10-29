@@ -21,13 +21,9 @@ using BUILD_CTX = std::unordered_map<int, std::shared_ptr<IridiumBuildContext>>;
 static inline bool isGenericCall(CallSiteSEXP &o) {
   if (o.hasImport())
     return false;
-  else if (o.hasSuper())
-    return false;
   else if (o.hasV8Intrinsic())
     return false;
   else if (o.hasCCall())
-    return false;
-  else if (o.hasConstructorCall())
     return false;
   else if (o.hasPrivateCall())
     return false;
@@ -37,11 +33,7 @@ static inline bool isGenericCall(CallSiteSEXP &o) {
     return true;
 }
 
-static inline bool isGenericCall(ApplySEXP &o) {
-  if (o.hasConstructorCall())
-    return false;
-  return true;
-}
+static inline bool isGenericCall(ApplySEXP &o) { return true; }
 
 inline void patchNode(IRIContext &ctx, IRID node, double scopeToTaint,
                       double containerScope) {

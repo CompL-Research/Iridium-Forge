@@ -16,8 +16,6 @@ namespace IRI_STRUCTURAL {
  *   [1] IRID Context -> sexp.getArg_Context()
  *   [2] IRID ArgList -> sexp.getArg_ArgList()
  * Flags:
- *   - void   ConstructorCall -> sexp.hasConstructorCall()
- *   - void   Super -> sexp.hasSuper()
  *   - double JSDirectEval -> sexp.getJSDirectEval()
  *
  * AMP node used as a bare statement: evaluate it via RVal resolution for
