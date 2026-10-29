@@ -79,7 +79,7 @@ export default [
   {
     tag: "FieldRead",
     meta: "AMP",
-    args: ["Obj", "Field"],
+    args: ["Obj", "Field", "Receiver"],
     flags: {
       string: [],
       void: [],
@@ -704,7 +704,7 @@ export default [
   {
     tag: "FieldWrite",
     meta: "STMT",
-    args: ["Obj", "Field", "Value"],
+    args: ["Obj", "Field", "Value", "Receiver"],
     flags: {
       string: [],
       void: [],
@@ -803,7 +803,7 @@ export default [
   {
     tag: "JSComputedFieldRead",
     meta: "AMP",
-    args: ["Obj", "Field"],
+    args: ["Obj", "Field", "Receiver"],
     flags: {
       string: [],
       void: ["SAFE"],
@@ -814,32 +814,10 @@ export default [
   {
     tag: "JSComputedFieldWrite",
     meta: "STMT",
-    args: ["Obj", "Field", "Value"],
+    args: ["Obj", "Field", "Value", "Receiver"],
     flags: {
       string: [],
       void: ["SAFE"],
-      bool: [],
-      double: [],
-    },
-  },
-  {
-    tag: "JSSuperFieldRead",
-    meta: "AMP",
-    args: ["This", "Home", "Field"],
-    flags: {
-      string: [],
-      void: [],
-      bool: [],
-      double: [],
-    },
-  },
-  {
-    tag: "JSSuperFieldWrite",
-    meta: "STMT",
-    args: ["This", "Home", "Field", "Value"],
-    flags: {
-      string: [],
-      void: [],
       bool: [],
       double: [],
     },

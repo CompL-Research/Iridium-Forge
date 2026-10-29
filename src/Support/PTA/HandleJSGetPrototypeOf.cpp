@@ -1,28 +1,23 @@
-// Generated Stub for IRI_TAG::JSSuperFieldRead
+// Generated Stub for IRI_TAG::JSGetPrototypeOf
 #include "Generated/IridiumTypes.h"
 #include "Support/PTA/PTAContext.hpp"
 #include "Support/PTA/PTAHandlers.hpp"
 #include "Support/PTA/PTARVALDispatch.hpp"
-#include "external/Prakriti.hpp"
 #include <set>
 
 namespace IRI_STRUCTURAL {
 
 /**
- * AST Tag: JSSuperFieldRead
+ * AST Tag: JSGetPrototypeOf
  * Meta:    AMP
  * Arguments:
- *   [0] IRID This -> sexp.getArg_This()
- *   [1] IRID Home -> sexp.getArg_Home()
- *   [2] IRID Field -> sexp.getArg_Field()
+ *   [0] IRID Obj -> sexp.getArg_Obj()
  * Flags: (none)
  *
  * AMP node used as a bare statement: evaluate it via RVal resolution for
  * its side effects and discard the produced value.
  */
-void handleJSSuperFieldRead(const PTAStatementContext &ptactx) {
-  Prakriti::TraceHelperAuto th("JSSuperFieldRead", ptactx.stmt.id);
-
+void handleJSGetPrototypeOf(const PTAStatementContext &ptactx) {
   std::set<Prakriti::NodeUID> discarded;
   resolvePKRRVal(ptactx, ptactx.stmt.id, discarded);
 }

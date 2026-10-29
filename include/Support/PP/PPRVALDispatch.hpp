@@ -1,4 +1,4 @@
-// Generated: 2026-10-29 23:52:39
+// Generated: 2026-10-30 00:12:49
 #pragma once
 
 #include "Support/PP.hpp"
@@ -73,8 +73,6 @@ inline std::string ppRVal(const PPContext &pp, IRID node) {
       return printNullRVal(pp, node);
     case IRI_GEN::IRI_TAG::JSComputedFieldRead:
       return printJSComputedFieldReadRVal(pp, node);
-    case IRI_GEN::IRI_TAG::JSSuperFieldRead:
-      return printJSSuperFieldReadRVal(pp, node);
     case IRI_GEN::IRI_TAG::JSToObject:
       return printJSToObjectRVal(pp, node);
     case IRI_GEN::IRI_TAG::JSAppend:

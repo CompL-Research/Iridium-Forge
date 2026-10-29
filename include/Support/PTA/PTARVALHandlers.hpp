@@ -1,4 +1,4 @@
-// Generated: 2026-10-29 23:52:39
+// Generated: 2026-10-30 00:12:49
 #pragma once
 
 #include "Support/PTA/PTAContext.hpp"
@@ -71,8 +71,6 @@ void computeBinopVals(const PTAStatementContext &ptactx, IRID node,
 void computeNullVals(const PTAStatementContext &ptactx, IRID node,
                        std::set<Prakriti::NodeUID> &res_);
 void computeJSComputedFieldReadVals(const PTAStatementContext &ptactx, IRID node,
-                       std::set<Prakriti::NodeUID> &res_);
-void computeJSSuperFieldReadVals(const PTAStatementContext &ptactx, IRID node,
                        std::set<Prakriti::NodeUID> &res_);
 void computeJSToObjectVals(const PTAStatementContext &ptactx, IRID node,
                        std::set<Prakriti::NodeUID> &res_);

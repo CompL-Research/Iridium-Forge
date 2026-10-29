@@ -18,7 +18,12 @@ namespace IRI_STRUCTURAL {
  */
 std::string printFieldWrite(const PPContext &pp, IRID node) {
   IRI_GEN::FieldWriteSEXP sexp(node, pp.ctx);
-  return ppMember(pp, sexp.getArg_Obj(), sexp.getArg_Field()) + " = " +
+  // With a receiver (super.f): receiver->obj.f, the access runs with
+  // this = receiver
+  std::string recv = sexp.hasArg_Receiver()
+                         ? ppOperand(pp, sexp.getArg_Receiver()) + "->"
+                         : "";
+  return recv + ppMember(pp, sexp.getArg_Obj(), sexp.getArg_Field()) + " = " +
          ppRVal(pp, sexp.getArg_Value());
 }
 

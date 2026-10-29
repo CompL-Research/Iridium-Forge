@@ -1,4 +1,4 @@
-// Generated: 2026-10-29 23:52:39
+// Generated: 2026-10-30 00:12:49
 #pragma once
 
 #include "Support/PTA/PTAContext.hpp"
@@ -78,8 +78,6 @@ inline void resolvePKRRVal(const PTAStatementContext &ptactx, IRID node,
       return computeNullVals(ptactx, node, res_);
     case IRI_GEN::IRI_TAG::JSComputedFieldRead:
       return computeJSComputedFieldReadVals(ptactx, node, res_);
-    case IRI_GEN::IRI_TAG::JSSuperFieldRead:
-      return computeJSSuperFieldReadVals(ptactx, node, res_);
     case IRI_GEN::IRI_TAG::JSToObject:
       return computeJSToObjectVals(ptactx, node, res_);
     case IRI_GEN::IRI_TAG::JSAppend:

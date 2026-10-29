@@ -24,7 +24,12 @@ std::string printJSComputedFieldWrite(const PPContext &pp, IRID node) {
   std::string key = ppRVal(pp, sexp.getArg_Field());
   if (!sexp.hasSAFE())
     key = "topropkey(" + key + ")";
-  return ppOperand(pp, sexp.getArg_Obj()) + "[" + key + "] = " +
+  // With a receiver (super.f): receiver->obj.f, the access runs with
+  // this = receiver
+  std::string recv = sexp.hasArg_Receiver()
+                         ? ppOperand(pp, sexp.getArg_Receiver()) + "->"
+                         : "";
+  return recv + ppOperand(pp, sexp.getArg_Obj()) + "[" + key + "] = " +
          ppRVal(pp, sexp.getArg_Value());
 }
 

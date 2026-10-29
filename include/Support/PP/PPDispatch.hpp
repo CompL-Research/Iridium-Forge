@@ -1,4 +1,4 @@
-// Generated: 2026-10-29 23:52:39
+// Generated: 2026-10-30 00:12:49
 #pragma once
 
 #include "Support/PP.hpp"
@@ -77,10 +77,6 @@ inline std::string ppStatement(const PPContext &pp, IRID node) {
       return printJSComputedFieldRead(pp, node);
     case IRI_GEN::IRI_TAG::JSComputedFieldWrite:
       return printJSComputedFieldWrite(pp, node);
-    case IRI_GEN::IRI_TAG::JSSuperFieldRead:
-      return printJSSuperFieldRead(pp, node);
-    case IRI_GEN::IRI_TAG::JSSuperFieldWrite:
-      return printJSSuperFieldWrite(pp, node);
     case IRI_GEN::IRI_TAG::JSToObject:
       return printJSToObject(pp, node);
     case IRI_GEN::IRI_TAG::JSAppend:

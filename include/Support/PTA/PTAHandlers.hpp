@@ -1,4 +1,4 @@
-// Generated: 2026-10-29 23:52:39
+// Generated: 2026-10-30 00:12:49
 #pragma once
 
 #include "Support/PTA/PTAContext.hpp"
@@ -40,8 +40,6 @@ void handleJSDefineObjProp(const PTAStatementContext &ptactx);
 void handleBinop(const PTAStatementContext &ptactx);
 void handleJSComputedFieldRead(const PTAStatementContext &ptactx);
 void handleJSComputedFieldWrite(const PTAStatementContext &ptactx);
-void handleJSSuperFieldRead(const PTAStatementContext &ptactx);
-void handleJSSuperFieldWrite(const PTAStatementContext &ptactx);
 void handleJSToObject(const PTAStatementContext &ptactx);
 void handleJSAppend(const PTAStatementContext &ptactx);
 void handleJSDefineObjMethod(const PTAStatementContext &ptactx);
@@ -170,12 +168,6 @@ public:
   }
   virtual void visit_JSComputedFieldWrite(const PTAStatementContext &ptactx) {
     return handleJSComputedFieldWrite(ptactx);
-  }
-  virtual void visit_JSSuperFieldRead(const PTAStatementContext &ptactx) {
-    return handleJSSuperFieldRead(ptactx);
-  }
-  virtual void visit_JSSuperFieldWrite(const PTAStatementContext &ptactx) {
-    return handleJSSuperFieldWrite(ptactx);
   }
   virtual void visit_JSToObject(const PTAStatementContext &ptactx) {
     return handleJSToObject(ptactx);

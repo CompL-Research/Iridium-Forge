@@ -1,4 +1,4 @@
-// Generated: 2026-10-29 23:52:39
+// Generated: 2026-10-30 00:12:49
 #pragma once
 #include <string>
 
@@ -78,8 +78,6 @@ namespace IRI_GEN {
     Null,
     JSComputedFieldRead,
     JSComputedFieldWrite,
-    JSSuperFieldRead,
-    JSSuperFieldWrite,
     JSToObject,
     JSAppend,
     JSDefineObjMethod,
@@ -188,8 +186,6 @@ namespace IRI_GEN {
       case Null: return "Null";
       case JSComputedFieldRead: return "JSComputedFieldRead";
       case JSComputedFieldWrite: return "JSComputedFieldWrite";
-      case JSSuperFieldRead: return "JSSuperFieldRead";
-      case JSSuperFieldWrite: return "JSSuperFieldWrite";
       case JSToObject: return "JSToObject";
       case JSAppend: return "JSAppend";
       case JSDefineObjMethod: return "JSDefineObjMethod";
@@ -487,8 +483,6 @@ namespace IRI_GEN {
       case Null: return IRI_META::RVAL;
       case JSComputedFieldRead: return IRI_META::AMP;
       case JSComputedFieldWrite: return IRI_META::STMT;
-      case JSSuperFieldRead: return IRI_META::AMP;
-      case JSSuperFieldWrite: return IRI_META::STMT;
       case JSToObject: return IRI_META::AMP;
       case JSAppend: return IRI_META::AMP;
       case JSDefineObjMethod: return IRI_META::STMT;

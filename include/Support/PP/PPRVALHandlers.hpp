@@ -1,4 +1,4 @@
-// Generated: 2026-10-29 23:52:39
+// Generated: 2026-10-30 00:12:49
 #pragma once
 
 #include "Support/PP/PPContext.hpp"
@@ -41,7 +41,6 @@ std::string printJSArrayRVal(const PPContext &pp, IRID node);
 std::string printBinopRVal(const PPContext &pp, IRID node);
 std::string printNullRVal(const PPContext &pp, IRID node);
 std::string printJSComputedFieldReadRVal(const PPContext &pp, IRID node);
-std::string printJSSuperFieldReadRVal(const PPContext &pp, IRID node);
 std::string printJSToObjectRVal(const PPContext &pp, IRID node);
 std::string printJSAppendRVal(const PPContext &pp, IRID node);
 std::string printJSCopyDataPropertiesRVal(const PPContext &pp, IRID node);

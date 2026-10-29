@@ -1,4 +1,4 @@
-// Generated: 2026-10-29 23:52:39
+// Generated: 2026-10-30 00:12:49
 #pragma once
 #include "IridiumEnums.h"
 #include <cstdint>
@@ -83,8 +83,6 @@ public:
       case IRI_GEN::Null: return 1;
       case IRI_GEN::JSComputedFieldRead: return 1;
       case IRI_GEN::JSComputedFieldWrite: return 1;
-      case IRI_GEN::JSSuperFieldRead: return 0;
-      case IRI_GEN::JSSuperFieldWrite: return 0;
       case IRI_GEN::JSToObject: return 0;
       case IRI_GEN::JSAppend: return 0;
       case IRI_GEN::JSDefineObjMethod: return 4;

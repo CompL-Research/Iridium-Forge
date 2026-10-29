@@ -1,4 +1,4 @@
-// Generated: 2026-10-29 23:52:39
+// Generated: 2026-10-30 00:12:49
 #pragma once
 
 #include "Support/PTA/PTAContext.hpp"
@@ -78,10 +78,6 @@ inline void dispatchPTAStatement(const PTAStatementContext &ptactx) {
       return handleJSComputedFieldRead(ptactx);
     case IRI_GEN::IRI_TAG::JSComputedFieldWrite:
       return handleJSComputedFieldWrite(ptactx);
-    case IRI_GEN::IRI_TAG::JSSuperFieldRead:
-      return handleJSSuperFieldRead(ptactx);
-    case IRI_GEN::IRI_TAG::JSSuperFieldWrite:
-      return handleJSSuperFieldWrite(ptactx);
     case IRI_GEN::IRI_TAG::JSToObject:
       return handleJSToObject(ptactx);
     case IRI_GEN::IRI_TAG::JSAppend:
