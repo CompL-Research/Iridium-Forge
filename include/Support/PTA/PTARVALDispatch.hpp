@@ -1,4 +1,4 @@
-// Generated: 2026-10-29 20:48:05
+// Generated: 2026-10-29 23:52:39
 #pragma once
 
 #include "Support/PTA/PTAContext.hpp"
@@ -112,6 +112,8 @@ inline void resolvePKRRVal(const PTAStatementContext &ptactx, IRID node,
       return computeJSCTXVals(ptactx, node, res_);
     case IRI_GEN::IRI_TAG::ThisINIT:
       return computeThisINITVals(ptactx, node, res_);
+    case IRI_GEN::IRI_TAG::JSGetPrototypeOf:
+      return computeJSGetPrototypeOfVals(ptactx, node, res_);
     default:
       std::cerr << "[PTA Warning] Unhandled RVal tag: "
                 << IRI_GEN::dump_tag(currTAG) << std::endl;

@@ -1,4 +1,4 @@
-// Generated: 2026-10-29 20:48:05
+// Generated: 2026-10-29 23:52:39
 #pragma once
 
 #include "Support/PTA/PTAContext.hpp"
@@ -66,6 +66,7 @@ void handleDCTRRet(const PTAStatementContext &ptactx);
 void handleToNumeric(const PTAStatementContext &ptactx);
 void handleQJSModuleInit(const PTAStatementContext &ptactx);
 void handleCompoundAssn(const PTAStatementContext &ptactx);
+void handleJSGetPrototypeOf(const PTAStatementContext &ptactx);
 
 // ============================================================================
 // Optional IPTATransferHandler Interface (for Visitor/Polymorphic Overrides)
@@ -247,6 +248,9 @@ public:
   }
   virtual void visit_CompoundAssn(const PTAStatementContext &ptactx) {
     return handleCompoundAssn(ptactx);
+  }
+  virtual void visit_JSGetPrototypeOf(const PTAStatementContext &ptactx) {
+    return handleJSGetPrototypeOf(ptactx);
   }
 };
 

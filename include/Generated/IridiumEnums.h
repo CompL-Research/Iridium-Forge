@@ -1,4 +1,4 @@
-// Generated: 2026-10-29 20:48:05
+// Generated: 2026-10-29 23:52:39
 #pragma once
 #include <string>
 
@@ -109,7 +109,8 @@ namespace IRI_GEN {
     QJSModuleInit,
     CompoundAssn,
     ThisINIT,
-    PTAStub
+    PTAStub,
+    JSGetPrototypeOf
   };
 
   inline std::string dump_tag(IRI_TAG value) {
@@ -219,6 +220,7 @@ namespace IRI_GEN {
       case CompoundAssn: return "CompoundAssn";
       case ThisINIT: return "ThisINIT";
       case PTAStub: return "PTAStub";
+      case JSGetPrototypeOf: return "JSGetPrototypeOf";
       default: return "unknown_tag";
     }
   }
@@ -517,6 +519,7 @@ namespace IRI_GEN {
       case CompoundAssn: return IRI_META::STMT;
       case ThisINIT: return IRI_META::RVAL;
       case PTAStub: return IRI_META::UKN;
+      case JSGetPrototypeOf: return IRI_META::AMP;
       default: return IRI_META::ERROR;
     }
   }

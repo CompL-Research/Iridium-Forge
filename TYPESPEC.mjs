@@ -1174,4 +1174,17 @@ export default [
       double: [],
     },
   },
+  {
+    // Object.getPrototypeOf(Obj) at the time of evaluation (OP_get_super).
+    // AMP: it reads mutable state, so passes must not move it.
+    tag: "JSGetPrototypeOf",
+    meta: "AMP",
+    args: ["Obj"],
+    flags: {
+      string: [],
+      void: [],
+      bool: [],
+      double: [],
+    },
+  },
 ];

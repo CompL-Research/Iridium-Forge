@@ -1,4 +1,4 @@
-// Generated: 2026-10-29 20:48:05
+// Generated: 2026-10-29 23:52:39
 #pragma once
 #include "IridiumEnums.h"
 #include <cstdint>
@@ -115,6 +115,7 @@ public:
       case IRI_GEN::CompoundAssn: return 0;
       case IRI_GEN::ThisINIT: return 0;
       case IRI_GEN::PTAStub: return 0;
+      case IRI_GEN::JSGetPrototypeOf: return 0;
       default: return 0;
     }
   }

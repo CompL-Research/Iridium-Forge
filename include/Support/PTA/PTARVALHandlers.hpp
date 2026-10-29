@@ -1,4 +1,4 @@
-// Generated: 2026-10-29 20:48:05
+// Generated: 2026-10-29 23:52:39
 #pragma once
 
 #include "Support/PTA/PTAContext.hpp"
@@ -105,6 +105,8 @@ void computeToNumericVals(const PTAStatementContext &ptactx, IRID node,
 void computeJSCTXVals(const PTAStatementContext &ptactx, IRID node,
                        std::set<Prakriti::NodeUID> &res_);
 void computeThisINITVals(const PTAStatementContext &ptactx, IRID node,
+                       std::set<Prakriti::NodeUID> &res_);
+void computeJSGetPrototypeOfVals(const PTAStatementContext &ptactx, IRID node,
                        std::set<Prakriti::NodeUID> &res_);
 
 } // namespace IRI_STRUCTURAL

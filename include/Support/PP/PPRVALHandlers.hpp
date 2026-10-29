@@ -1,4 +1,4 @@
-// Generated: 2026-10-29 20:48:05
+// Generated: 2026-10-29 23:52:39
 #pragma once
 
 #include "Support/PP/PPContext.hpp"
@@ -58,5 +58,6 @@ std::string printDCTRRetRVal(const PPContext &pp, IRID node);
 std::string printToNumericRVal(const PPContext &pp, IRID node);
 std::string printJSCTXRVal(const PPContext &pp, IRID node);
 std::string printThisINITRVal(const PPContext &pp, IRID node);
+std::string printJSGetPrototypeOfRVal(const PPContext &pp, IRID node);
 
 } // namespace IRI_STRUCTURAL

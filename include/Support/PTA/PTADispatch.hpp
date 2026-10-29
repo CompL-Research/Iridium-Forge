@@ -1,4 +1,4 @@
-// Generated: 2026-10-29 20:48:05
+// Generated: 2026-10-29 23:52:39
 #pragma once
 
 #include "Support/PTA/PTAContext.hpp"
@@ -130,6 +130,8 @@ inline void dispatchPTAStatement(const PTAStatementContext &ptactx) {
       return handleQJSModuleInit(ptactx);
     case IRI_GEN::IRI_TAG::CompoundAssn:
       return handleCompoundAssn(ptactx);
+    case IRI_GEN::IRI_TAG::JSGetPrototypeOf:
+      return handleJSGetPrototypeOf(ptactx);
     default:
       std::cerr << "[PTA Warning] Unhandled statement tag: "
                 << IRI_GEN::dump_tag(currTAG) << std::endl;
