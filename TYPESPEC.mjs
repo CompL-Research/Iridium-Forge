@@ -581,7 +581,7 @@ export default [
     },
   },
   {
-    tag: "PopFinalizerReturnTarget",
+    tag: "ExitFinalizer",
     meta: "STMT",
     args: [],
     flags: {

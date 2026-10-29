@@ -1,4 +1,4 @@
-// Generated: 2026-09-15 12:01:18
+// Generated: 2026-10-29 19:45:21
 #pragma once
 
 #include "Support/PTA/PTAContext.hpp"
@@ -48,8 +48,8 @@ inline void dispatchPTAStatement(const PTAStatementContext &ptactx) {
       return handleJSForOfIteratorClose(ptactx);
     case IRI_GEN::IRI_TAG::PopCatchContext:
       return handlePopCatchContext(ptactx);
-    case IRI_GEN::IRI_TAG::PopFinalizerReturnTarget:
-      return handlePopFinalizerReturnTarget(ptactx);
+    case IRI_GEN::IRI_TAG::ExitFinalizer:
+      return handleExitFinalizer(ptactx);
     case IRI_GEN::IRI_TAG::InvokeFinalizer:
       return handleInvokeFinalizer(ptactx);
     case IRI_GEN::IRI_TAG::JSForOfStart:

@@ -1,4 +1,4 @@
-// Generated: 2026-09-15 12:01:18
+// Generated: 2026-10-29 19:45:21
 #pragma once
 
 #include "Support/PTA/PTAContext.hpp"
@@ -25,7 +25,7 @@ void handleJSADDBRAND(const PTAStatementContext &ptactx);
 void handleJSPrivateFieldRead(const PTAStatementContext &ptactx);
 void handleJSForOfIteratorClose(const PTAStatementContext &ptactx);
 void handlePopCatchContext(const PTAStatementContext &ptactx);
-void handlePopFinalizerReturnTarget(const PTAStatementContext &ptactx);
+void handleExitFinalizer(const PTAStatementContext &ptactx);
 void handleInvokeFinalizer(const PTAStatementContext &ptactx);
 void handleJSForOfStart(const PTAStatementContext &ptactx);
 void handlePushCatchContext(const PTAStatementContext &ptactx);
@@ -125,8 +125,8 @@ public:
   virtual void visit_PopCatchContext(const PTAStatementContext &ptactx) {
     return handlePopCatchContext(ptactx);
   }
-  virtual void visit_PopFinalizerReturnTarget(const PTAStatementContext &ptactx) {
-    return handlePopFinalizerReturnTarget(ptactx);
+  virtual void visit_ExitFinalizer(const PTAStatementContext &ptactx) {
+    return handleExitFinalizer(ptactx);
   }
   virtual void visit_InvokeFinalizer(const PTAStatementContext &ptactx) {
     return handleInvokeFinalizer(ptactx);

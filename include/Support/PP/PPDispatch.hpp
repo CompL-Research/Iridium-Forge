@@ -1,4 +1,4 @@
-// Generated: 2026-09-30 23:30:42
+// Generated: 2026-10-29 19:45:21
 #pragma once
 
 #include "Support/PP.hpp"
@@ -47,8 +47,8 @@ inline std::string ppStatement(const PPContext &pp, IRID node) {
       return printJSForOfIteratorClose(pp, node);
     case IRI_GEN::IRI_TAG::PopCatchContext:
       return printPopCatchContext(pp, node);
-    case IRI_GEN::IRI_TAG::PopFinalizerReturnTarget:
-      return printPopFinalizerReturnTarget(pp, node);
+    case IRI_GEN::IRI_TAG::ExitFinalizer:
+      return printExitFinalizer(pp, node);
     case IRI_GEN::IRI_TAG::InvokeFinalizer:
       return printInvokeFinalizer(pp, node);
     case IRI_GEN::IRI_TAG::JSForOfStart:

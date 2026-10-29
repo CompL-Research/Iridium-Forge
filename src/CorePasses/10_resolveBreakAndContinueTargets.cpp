@@ -200,11 +200,10 @@ std::unordered_map<IRID, double> _10_RBACT(
               }
             } else {
 
-              // This pops the finalizer return target from the stack, should be
-              // renamed to prevent confusion
-              BBSupport::insert_before(
-                  newStmtList, element,
-                  PopFinalizerReturnTargetSEXP::create(ctx));
+              // Leaving the finally block early: drop the return address
+              // pushed by InvokeFinalizer (gosub).
+              BBSupport::insert_before(newStmtList, element,
+                                       ExitFinalizerSEXP::create(ctx));
 
               // This must be reached through a finalizer block, we dont
               // expect any nesting inside the implicit catch block as

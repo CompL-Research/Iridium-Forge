@@ -1,4 +1,4 @@
-// Generated: 2026-09-20 21:49:29
+// Generated: 2026-10-29 19:45:21
 #pragma once
 #include <string>
 
@@ -56,7 +56,7 @@ namespace IRI_GEN {
     ResolveBreakTarget,
     JSForOfIteratorClose,
     PopCatchContext,
-    PopFinalizerReturnTarget,
+    ExitFinalizer,
     InvokeFinalizer,
     JSForInStart,
     JSForInNext,
@@ -165,7 +165,7 @@ namespace IRI_GEN {
       case ResolveBreakTarget: return "ResolveBreakTarget";
       case JSForOfIteratorClose: return "JSForOfIteratorClose";
       case PopCatchContext: return "PopCatchContext";
-      case PopFinalizerReturnTarget: return "PopFinalizerReturnTarget";
+      case ExitFinalizer: return "ExitFinalizer";
       case InvokeFinalizer: return "InvokeFinalizer";
       case JSForInStart: return "JSForInStart";
       case JSForInNext: return "JSForInNext";
@@ -463,7 +463,7 @@ namespace IRI_GEN {
       case ResolveBreakTarget: return IRI_META::STAR_STMT;
       case JSForOfIteratorClose: return IRI_META::STMT;
       case PopCatchContext: return IRI_META::STMT;
-      case PopFinalizerReturnTarget: return IRI_META::STMT;
+      case ExitFinalizer: return IRI_META::STMT;
       case InvokeFinalizer: return IRI_META::STMT;
       case JSForInStart: return IRI_META::RVAL;
       case JSForInNext: return IRI_META::RVAL;

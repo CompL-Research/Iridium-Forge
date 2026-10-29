@@ -1,4 +1,4 @@
-// Generated: 2026-09-20 21:49:29
+// Generated: 2026-10-29 19:45:21
 #pragma once
 #include "Storage/Config.h"
 #include "Storage/IridiumSEXP.h"
@@ -2536,18 +2536,18 @@ using IRI_STORAGE::FlagValue;
 
   };
 
-  struct PopFinalizerReturnTargetSEXP {
+  struct ExitFinalizerSEXP {
     IRID id;
     IRIContext* ctx;
 
-    explicit PopFinalizerReturnTargetSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::PopFinalizerReturnTarget) {
-        throw std::runtime_error("Schema Cast Error: Expected PopFinalizerReturnTarget, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
+    explicit ExitFinalizerSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::ExitFinalizer) {
+        throw std::runtime_error("Schema Cast Error: Expected ExitFinalizer, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::PopFinalizerReturnTarget, {}, {});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::ExitFinalizer, {}, {});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;

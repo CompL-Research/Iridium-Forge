@@ -1,4 +1,4 @@
-// Generated: 2026-09-20 21:49:29
+// Generated: 2026-10-29 19:45:21
 #pragma once
 #include "IridiumEnums.h"
 #include <cstdint>
@@ -61,7 +61,7 @@ public:
       case IRI_GEN::ResolveBreakTarget: return 1;
       case IRI_GEN::JSForOfIteratorClose: return 0;
       case IRI_GEN::PopCatchContext: return 0;
-      case IRI_GEN::PopFinalizerReturnTarget: return 0;
+      case IRI_GEN::ExitFinalizer: return 0;
       case IRI_GEN::InvokeFinalizer: return 1;
       case IRI_GEN::JSForInStart: return 0;
       case IRI_GEN::JSForInNext: return 0;
