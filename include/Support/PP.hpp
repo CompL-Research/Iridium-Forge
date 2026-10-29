@@ -19,6 +19,12 @@ std::string ppNumber(double d);
 std::string ppBinding(const PPContext &pp, IRID binding);
 std::string ppMember(const PPContext &pp, IRID obj, IRID key);
 const char *ppWriteOp(bool init, bool safe);
+// A write's target ("thisinit ^this", "decl(script) s:x") and operator.
+struct PPWrite {
+  std::string target;
+  const char *op;
+};
+PPWrite ppWriteParts(const PPContext &pp, IRID write);
 std::string ppWriteLHS(const PPContext &pp, IRID write);
 std::string ppBB(double idx);
 std::string ppOperand(const PPContext &pp, IRID node);

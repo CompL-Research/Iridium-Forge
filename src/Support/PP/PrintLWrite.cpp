@@ -19,14 +19,9 @@ namespace IRI_STRUCTURAL {
  *   - void   THISINIT -> sexp.hasTHISINIT()
  */
 std::string printLWrite(const PPContext &pp, IRID node) {
-  // x <- v (INIT) / x = v (SAFE) / x .= v (checked)
-  // thisinit marks put_loc_check_init; it is ignored when INIT is set.
-
+  // x <- v (INIT) / x = v (SAFE) / x .= v (checked) / thisinit x .= v
   IRI_GEN::LWriteSEXP lWrite(node, pp.ctx);
-  std::string out = ppWriteLHS(pp, node) + " " + ppRVal(pp, lWrite.getArg_RVal());
-  if (lWrite.hasTHISINIT() && !lWrite.hasINIT())
-    return "thisinit " + out;
-  return out;
+  return ppWriteLHS(pp, node) + " " + ppRVal(pp, lWrite.getArg_RVal());
 }
 
 } // namespace IRI_STRUCTURAL

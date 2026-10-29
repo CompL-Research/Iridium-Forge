@@ -102,31 +102,43 @@ const char *ppWriteOp(bool init, bool safe) {
 }
 
 template <typename S>
-static std::string writeLHS(const PPContext &pp, const S &write,
-                            const std::string &prefix = "") {
-  return prefix + ppBinding(pp, write.getArg_LValTarget()) + " " +
-         ppWriteOp(write.hasINIT(), write.hasSAFE());
+static PPWrite writeParts(const PPContext &pp, const S &write,
+                          const std::string &prefix = "") {
+  return {prefix + ppBinding(pp, write.getArg_LValTarget()),
+          ppWriteOp(write.hasINIT(), write.hasSAFE())};
 }
 
-std::string ppWriteLHS(const PPContext &pp, IRID write) {
+PPWrite ppWriteParts(const PPContext &pp, IRID write) {
   switch (pp.tagOf(write)) {
-  case LWrite:
-    return writeLHS(pp, LWriteSEXP(write, pp.ctx));
-  case RWrite:
-    return writeLHS(pp, RWriteSEXP(write, pp.ctx));
+  case LWrite: {
+    // put_loc_check_init; ignored by the lowering when INIT is set.
+    LWriteSEXP lWrite(write, pp.ctx);
+    bool thisInit = lWrite.hasTHISINIT() && !lWrite.hasINIT();
+    return writeParts(pp, lWrite, thisInit ? "thisinit " : "");
+  }
+  case RWrite: {
+    // put_var_ref_check_init; unlike LWrite it wins over INIT.
+    RWriteSEXP rWrite(write, pp.ctx);
+    return writeParts(pp, rWrite, rWrite.hasTHISINIT() ? "thisinit " : "");
+  }
   case MWrite:
-    return writeLHS(pp, MWriteSEXP(write, pp.ctx));
+    return writeParts(pp, MWriteSEXP(write, pp.ctx));
   case GWrite: {
     GWriteSEXP gWrite(write, pp.ctx);
     if (gWrite.hasDECLVAR())
-      return writeLHS(pp, gWrite, "decl(script) ");
+      return writeParts(pp, gWrite, "decl(script) ");
     if (gWrite.hasDECLFUN())
-      return writeLHS(pp, gWrite, "declFun(script) ");
-    return writeLHS(pp, gWrite);
+      return writeParts(pp, gWrite, "declFun(script) ");
+    return writeParts(pp, gWrite);
   }
   default:
     throw std::runtime_error("Unexpected write node");
   }
+}
+
+std::string ppWriteLHS(const PPContext &pp, IRID write) {
+  PPWrite w = ppWriteParts(pp, write);
+  return w.target + " " + w.op;
 }
 
 std::string ppBB(double idx) { return "BB" + ppNumber(idx); }
