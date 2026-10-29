@@ -1,4 +1,4 @@
-// Generated: 2026-10-30 03:47:02
+// Generated: 2026-10-30 04:00:24
 #pragma once
 #include <string>
 
@@ -116,6 +116,8 @@ namespace IRI_GEN {
     JSConstructApply,
     JSEval,
     JSEvalApply,
+    JSForAwaitOfStart,
+    JSForAwaitOfNext,
     JSGetPrototypeOf
   };
 
@@ -232,6 +234,8 @@ namespace IRI_GEN {
       case JSConstructApply: return "JSConstructApply";
       case JSEval: return "JSEval";
       case JSEvalApply: return "JSEvalApply";
+      case JSForAwaitOfStart: return "JSForAwaitOfStart";
+      case JSForAwaitOfNext: return "JSForAwaitOfNext";
       case JSGetPrototypeOf: return "JSGetPrototypeOf";
       default: return "unknown_tag";
     }
@@ -298,7 +302,6 @@ namespace IRI_GEN {
     MODULENSI,
     CINIT,
     Label,
-    AWAIT,
     OP,
     NOENUM,
     EXP,
@@ -372,7 +375,6 @@ namespace IRI_GEN {
       case MODULENSI: return "MODULENSI";
       case CINIT: return "CINIT";
       case Label: return "Label";
-      case AWAIT: return "AWAIT";
       case OP: return "OP";
       case NOENUM: return "NOENUM";
       case EXP: return "EXP";
@@ -509,6 +511,8 @@ namespace IRI_GEN {
       case JSConstructApply: return IRI_META::AMP;
       case JSEval: return IRI_META::AMP;
       case JSEvalApply: return IRI_META::AMP;
+      case JSForAwaitOfStart: return IRI_META::STMT;
+      case JSForAwaitOfNext: return IRI_META::RVAL;
       case JSGetPrototypeOf: return IRI_META::AMP;
       default: return IRI_META::ERROR;
     }

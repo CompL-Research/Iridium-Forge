@@ -1,4 +1,4 @@
-// Generated: 2026-10-30 03:47:02
+// Generated: 2026-10-30 04:00:24
 #pragma once
 #include "IridiumEnums.h"
 #include <cstdint>
@@ -68,8 +68,8 @@ public:
       case IRI_GEN::InvokeFinalizer: return 1;
       case IRI_GEN::JSForInStart: return 0;
       case IRI_GEN::JSForInNext: return 0;
-      case IRI_GEN::JSForOfStart: return 1;
-      case IRI_GEN::JSForOfNext: return 1;
+      case IRI_GEN::JSForOfStart: return 0;
+      case IRI_GEN::JSForOfNext: return 0;
       case IRI_GEN::PushCatchContext: return 1;
       case IRI_GEN::JSCatchContext: return 0;
       case IRI_GEN::Throw: return 0;
@@ -121,6 +121,8 @@ public:
       case IRI_GEN::JSConstructApply: return 0;
       case IRI_GEN::JSEval: return 1;
       case IRI_GEN::JSEvalApply: return 1;
+      case IRI_GEN::JSForAwaitOfStart: return 0;
+      case IRI_GEN::JSForAwaitOfNext: return 0;
       case IRI_GEN::JSGetPrototypeOf: return 0;
       default: return 0;
     }
@@ -439,18 +441,6 @@ public:
       case IRI_GEN::InvokeFinalizer:
         switch(flag) {
         case IRI_GEN::IDX: return 0;
-          default: return -1;
-        }
-        break;
-      case IRI_GEN::JSForOfStart:
-        switch(flag) {
-        case IRI_GEN::AWAIT: return 0;
-          default: return -1;
-        }
-        break;
-      case IRI_GEN::JSForOfNext:
-        switch(flag) {
-        case IRI_GEN::AWAIT: return 0;
           default: return -1;
         }
         break;
@@ -913,18 +903,6 @@ public:
       case IRI_GEN::InvokeFinalizer:
         switch(index) {
         case 0: return IRI_GEN::IDX;
-          default: throw std::runtime_error("Invalid flag index");
-        }
-        break;
-      case IRI_GEN::JSForOfStart:
-        switch(index) {
-        case 0: return IRI_GEN::AWAIT;
-          default: throw std::runtime_error("Invalid flag index");
-        }
-        break;
-      case IRI_GEN::JSForOfNext:
-        switch(index) {
-        case 0: return IRI_GEN::AWAIT;
           default: throw std::runtime_error("Invalid flag index");
         }
         break;

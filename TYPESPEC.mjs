@@ -666,7 +666,7 @@ export default [
     flags: {
       string: [],
       void: [],
-      bool: ["AWAIT"],
+      bool: [],
       double: [],
     },
   },
@@ -677,7 +677,7 @@ export default [
     flags: {
       string: [],
       void: [],
-      bool: ["AWAIT"],
+      bool: [],
       double: [],
     },
   },
@@ -1254,6 +1254,32 @@ export default [
       void: [],
       bool: [],
       double: ["ScopeIDX"],
+    },
+  },
+  {
+    // for await (… of Obj): like JSForOfStart, the iterator state stays on the
+    // stack until JSForOfIteratorClose (for_await_of_start)
+    tag: "JSForAwaitOfStart",
+    meta: "STMT",
+    args: ["Obj"],
+    flags: {
+      string: [],
+      void: [],
+      bool: [],
+      double: [],
+    },
+  },
+  {
+    // The next step of a for await loop: {done, value}, awaiting the result.
+    // Obj (the iterable) is not read by the lowering; it is kept for analyses.
+    tag: "JSForAwaitOfNext",
+    meta: "RVAL",
+    args: ["Obj"],
+    flags: {
+      string: [],
+      void: [],
+      bool: [],
+      double: [],
     },
   },
   {

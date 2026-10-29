@@ -1,4 +1,4 @@
-// Generated: 2026-10-30 03:47:02
+// Generated: 2026-10-30 04:00:24
 #pragma once
 
 #include "Support/PTA/PTAContext.hpp"
@@ -113,6 +113,8 @@ void computeJSConstructApplyVals(const PTAStatementContext &ptactx, IRID node,
 void computeJSEvalVals(const PTAStatementContext &ptactx, IRID node,
                        std::set<Prakriti::NodeUID> &res_);
 void computeJSEvalApplyVals(const PTAStatementContext &ptactx, IRID node,
+                       std::set<Prakriti::NodeUID> &res_);
+void computeJSForAwaitOfNextVals(const PTAStatementContext &ptactx, IRID node,
                        std::set<Prakriti::NodeUID> &res_);
 void computeJSGetPrototypeOfVals(const PTAStatementContext &ptactx, IRID node,
                        std::set<Prakriti::NodeUID> &res_);

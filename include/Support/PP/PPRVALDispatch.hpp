@@ -1,4 +1,4 @@
-// Generated: 2026-10-30 03:47:02
+// Generated: 2026-10-30 04:00:24
 #pragma once
 
 #include "Support/PP.hpp"
@@ -115,6 +115,8 @@ inline std::string ppRVal(const PPContext &pp, IRID node) {
       return printJSEvalRVal(pp, node);
     case IRI_GEN::IRI_TAG::JSEvalApply:
       return printJSEvalApplyRVal(pp, node);
+    case IRI_GEN::IRI_TAG::JSForAwaitOfNext:
+      return printJSForAwaitOfNextRVal(pp, node);
     case IRI_GEN::IRI_TAG::JSGetPrototypeOf:
       return printJSGetPrototypeOfRVal(pp, node);
     default:

@@ -1,4 +1,4 @@
-// Generated: 2026-10-30 03:47:02
+// Generated: 2026-10-30 04:00:24
 #pragma once
 #include "Storage/Config.h"
 #include "Storage/IridiumSEXP.h"
@@ -2749,14 +2749,14 @@ using IRI_STORAGE::FlagValue;
       }
     }
 
-    static IRID create(IRIContext& p, IRID Obj, bool AWAIT) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSForOfStart, {Obj}, {FlagValue(AWAIT)});
+    static IRID create(IRIContext& p, IRID Obj) {
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSForOfStart, {Obj}, {});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 1;
-    static constexpr uint32_t TOTAL_FLAGS = 1;
+    static constexpr uint32_t TOTAL_FLAGS = 0;
 
-    static constexpr uint32_t FLAG_IDX_AWAIT = 0;
+
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
@@ -2772,10 +2772,7 @@ using IRI_STORAGE::FlagValue;
     void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
     // --- Flags ---
-    bool getAWAIT() const { return std::get<bool>(get_flag(FLAG_IDX_AWAIT)); }
-    void setAWAIT(bool val) { mutate_flag(FLAG_IDX_AWAIT) = val; }
-    bool hasAWAIT() const { return std::holds_alternative<bool>(get_flag(FLAG_IDX_AWAIT)); }
-    void clearAWAIT() { mutate_flag(FLAG_IDX_AWAIT) = std::monostate{}; }
+
   };
 
   struct JSForOfNextSEXP {
@@ -2788,14 +2785,14 @@ using IRI_STORAGE::FlagValue;
       }
     }
 
-    static IRID create(IRIContext& p, IRID Obj, bool AWAIT) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSForOfNext, {Obj}, {FlagValue(AWAIT)});
+    static IRID create(IRIContext& p, IRID Obj) {
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSForOfNext, {Obj}, {});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 1;
-    static constexpr uint32_t TOTAL_FLAGS = 1;
+    static constexpr uint32_t TOTAL_FLAGS = 0;
 
-    static constexpr uint32_t FLAG_IDX_AWAIT = 0;
+
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
@@ -2811,10 +2808,7 @@ using IRI_STORAGE::FlagValue;
     void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
     // --- Flags ---
-    bool getAWAIT() const { return std::get<bool>(get_flag(FLAG_IDX_AWAIT)); }
-    void setAWAIT(bool val) { mutate_flag(FLAG_IDX_AWAIT) = val; }
-    bool hasAWAIT() const { return std::holds_alternative<bool>(get_flag(FLAG_IDX_AWAIT)); }
-    void clearAWAIT() { mutate_flag(FLAG_IDX_AWAIT) = std::monostate{}; }
+
   };
 
   struct PushCatchContextSEXP {
@@ -4868,6 +4862,78 @@ using IRI_STORAGE::FlagValue;
     void setScopeIDX(double val) { mutate_flag(FLAG_IDX_ScopeIDX) = val; }
     bool hasScopeIDX() const { return std::holds_alternative<double>(get_flag(FLAG_IDX_ScopeIDX)); }
     void clearScopeIDX() { mutate_flag(FLAG_IDX_ScopeIDX) = std::monostate{}; }
+  };
+
+  struct JSForAwaitOfStartSEXP {
+    IRID id;
+    IRIContext* ctx;
+
+    explicit JSForAwaitOfStartSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::JSForAwaitOfStart) {
+        throw std::runtime_error("Schema Cast Error: Expected JSForAwaitOfStart, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
+      }
+    }
+
+    static IRID create(IRIContext& p, IRID Obj) {
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSForAwaitOfStart, {Obj}, {});
+    }
+
+    static constexpr uint32_t TOTAL_ARGS = 1;
+    static constexpr uint32_t TOTAL_FLAGS = 0;
+
+
+
+    // --- Helpers ---
+    inline FlagValue& mutate_flag(uint32_t idx) {
+        return ctx->storage.nodes.get_flags_m(id)[idx];
+    }
+    inline const FlagValue& get_flag(uint32_t idx) const {
+        return ctx->storage.nodes.get_flags(id)[idx];
+    }
+
+    // --- Arguments ---
+    IRID getArg_Obj() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_Obj() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
+
+    // --- Flags ---
+
+  };
+
+  struct JSForAwaitOfNextSEXP {
+    IRID id;
+    IRIContext* ctx;
+
+    explicit JSForAwaitOfNextSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::JSForAwaitOfNext) {
+        throw std::runtime_error("Schema Cast Error: Expected JSForAwaitOfNext, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
+      }
+    }
+
+    static IRID create(IRIContext& p, IRID Obj) {
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSForAwaitOfNext, {Obj}, {});
+    }
+
+    static constexpr uint32_t TOTAL_ARGS = 1;
+    static constexpr uint32_t TOTAL_FLAGS = 0;
+
+
+
+    // --- Helpers ---
+    inline FlagValue& mutate_flag(uint32_t idx) {
+        return ctx->storage.nodes.get_flags_m(id)[idx];
+    }
+    inline const FlagValue& get_flag(uint32_t idx) const {
+        return ctx->storage.nodes.get_flags(id)[idx];
+    }
+
+    // --- Arguments ---
+    IRID getArg_Obj() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_Obj() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
+
+    // --- Flags ---
+
   };
 
   struct JSGetPrototypeOfSEXP {

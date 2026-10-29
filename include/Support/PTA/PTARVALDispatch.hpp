@@ -1,4 +1,4 @@
-// Generated: 2026-10-30 03:47:02
+// Generated: 2026-10-30 04:00:24
 #pragma once
 
 #include "Support/PTA/PTAContext.hpp"
@@ -120,6 +120,8 @@ inline void resolvePKRRVal(const PTAStatementContext &ptactx, IRID node,
       return computeJSEvalVals(ptactx, node, res_);
     case IRI_GEN::IRI_TAG::JSEvalApply:
       return computeJSEvalApplyVals(ptactx, node, res_);
+    case IRI_GEN::IRI_TAG::JSForAwaitOfNext:
+      return computeJSForAwaitOfNextVals(ptactx, node, res_);
     case IRI_GEN::IRI_TAG::JSGetPrototypeOf:
       return computeJSGetPrototypeOfVals(ptactx, node, res_);
     default:
