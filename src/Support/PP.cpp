@@ -4,6 +4,7 @@
 #include "Generated/IridiumTypes.h"
 #include "Storage/IRIContext.h"
 #include "Support/PP/PPDispatch.hpp"
+#include "Support/IRIS.hpp"
 #include "Support/PP/PPRVALDispatch.hpp"
 #include <algorithm>
 #include <charconv>
@@ -243,7 +244,7 @@ public:
     std::string kind = ppFlagWords({{f.hasJSScript(), "jsscript"},
                                     {f.hasJSModule(), "jsmodule"},
                                     {f.hasTLA(), "tla"}});
-    os << "; file" << (kind.empty() ? "" : " [" + kind + "]") << "\n";
+    os << "file" << (kind.empty() ? "" : " [" + kind + "]") << "\n";
 
     for (IRID child : pp.args(file)) {
       if (pp.tagOf(child) == List)
@@ -355,9 +356,21 @@ private:
       else
         lets.push_back(name);
     }
+    // Before IRIS::commit() lays out the frame (the core pass dump) the local
+    // bindings are empty; the arguments are already known to IRIS.
+    if (formals.empty() && pp.ctx.iris) {
+      if (auto *argBindings = pp.ctx.iris->getArgsAtScope(c.getScopeIDX())) {
+        for (IRID b : *argBindings) {
+          EnvBindingSEXP eb(b, pp.ctx);
+          std::string name = ppBinding(pp, b);
+          formals.emplace_back(eb.getREFIDX(),
+                               eb.hasJSRESTARG() ? "..." + name : name);
+        }
+      }
+    }
     std::sort(formals.begin(), formals.end());
 
-    // Header: function f(p, q)  ; entry BB1, scope 1, argc 2, arguments proto
+    // Header: function f(p, q) {entry: BB1, scope: 1, length: 2} [arguments strict]
     std::string kind = containerKind(c.getContainerFlagID());
     if (c.hasASYNC())
       kind = "async " + kind;
@@ -368,17 +381,19 @@ private:
     os << "\n" << kind << (name.empty() ? "" : " " + name) << "(";
     for (size_t i = 0; i < formals.size(); ++i)
       os << (i ? ", " : "") << formals[i].second;
-    os << ")  ; entry " << ppBB(c.getStartBBIDX()) << ", scope "
-       << ppNumber(c.getScopeIDX()) << ", argc " << ppNumber(c.getECMAArgs());
+    os << ") {entry: " << ppBB(c.getStartBBIDX())
+       << ", scope: " << ppNumber(c.getScopeIDX())
+       << ", length: " << ppNumber(c.getECMAArgs()) << "}";
 
+    // What the function may use / is
     std::string words = ppFlagWords(
         {{c.hasARGUMENTS(), "arguments"}, {c.hasSTRICT(), "strict"},
-         {c.hasPROTO(), "proto"}, {c.hasNEW(), "new"},
-         {c.hasSCALL(), "scall"}, {c.hasSOBJ(), "sobj"},
+         {c.hasPROTO(), "prototype"}, {c.hasNEW(), "new.target"},
+         {c.hasSCALL(), "super()"}, {c.hasSOBJ(), "super.x"},
          {c.hasHOME(), "home"}, {c.hasDERIVED(), "derived"},
          {c.hasTopLevel(), "toplevel"}});
     if (!words.empty())
-      os << ", " << words;
+      os << " [" << words << "]";
     if (pp.showIds)
       os << "  #" << bbc;
     os << "\n";
@@ -416,7 +431,9 @@ private:
       return;
     }
     BBSEXP b(bb, pp.ctx);
-    os << "\n  " << ppBB(b.getIDX()) << ":  ; scope " << ppNumber(b.getScopeIDX());
+    // BB1 {scope: 1} [closureboundary]:
+    os << "\n  " << ppBB(b.getIDX()) << " {scope: " << ppNumber(b.getScopeIDX())
+       << "}";
     std::string words = ppFlagWords(
         {{b.hasTopLevel(), "toplevel"},
          {b.hasClosureBoundary(), "closureboundary"},
@@ -424,8 +441,8 @@ private:
          {b.hasVARBoundary(), "varboundary"},
          {b.hasTryBB(), "trybb"}});
     if (!words.empty())
-      os << ", " << words;
-    os << "\n";
+      os << " [" << words << "]";
+    os << ":\n";
 
     for (IRID stmt : pp.args(bb)) {
       // Multiline statements: indent every line, not just the first.
