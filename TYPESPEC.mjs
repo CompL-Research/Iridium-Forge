@@ -349,7 +349,18 @@ export default [
     args: [],
     flags: {
       string: ["NAME"],
-      void: ["JSARG", "JSRESTARG", "JSLET", "JSCONST", "JSVAR"],
+      void: [
+        "JSARG",
+        "JSRESTARG",
+        "JSLET",
+        "JSCONST",
+        "JSVAR",
+        "PRIVFIELD",
+        "PRIVMETHOD",
+        "PRIVGET",
+        "PRIVSET",
+        "PRIVGETSET",
+      ],
       bool: [],
       double: ["REFIDX", "SCOPE", "NEXT", "LINK"],
     },
@@ -460,7 +471,7 @@ export default [
     args: [],
     flags: {
       string: ["IridiumPrimitive"],
-      void: [],
+      void: ["PRIVFIELD", "PRIVMETHOD", "PRIVGET", "PRIVSET", "PRIVGETSET"],
       bool: [],
       double: [],
     },

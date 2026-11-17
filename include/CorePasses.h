@@ -93,6 +93,9 @@ void _21_TER(IRIContext &ctx, IRID fileSEXP,
 void _22_ESTKTHM(IRIContext &ctx, IRID fileSEXP,
                  IRI_CONTEXTMAP &iridiumBuildContext, CTARGETS);
 
+void _23_APVK(IRIContext &ctx, IRID fileSEXP,
+              IRI_CONTEXTMAP &iridiumBuildContext);
+
 void _23_RIB(IRIContext &ctx, IRID fileSEXP,
              IRI_CONTEXTMAP &iridiumBuildContext);
 

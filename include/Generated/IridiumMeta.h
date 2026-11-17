@@ -1,4 +1,4 @@
-// Generated: 2026-10-30 04:34:39
+// Generated: 2026-11-18 05:04:28
 #pragma once
 #include "IridiumEnums.h"
 #include <cstdint>
@@ -40,7 +40,7 @@ public:
       case IRI_GEN::LocalStaticExport: return 2;
       case IRI_GEN::NamedReexport: return 3;
       case IRI_GEN::ModuleRequest: return 2;
-      case IRI_GEN::EnvBinding: return 10;
+      case IRI_GEN::EnvBinding: return 15;
       case IRI_GEN::RemoteEnvBinding: return 5;
       case IRI_GEN::GlobalBinding: return 2;
       case IRI_GEN::ScriptBinding: return 5;
@@ -50,7 +50,7 @@ public:
       case IRI_GEN::Number: return 1;
       case IRI_GEN::JSClass: return 1;
       case IRI_GEN::JSCheckConstructor: return 0;
-      case IRI_GEN::JSPrivate: return 1;
+      case IRI_GEN::JSPrivate: return 6;
       case IRI_GEN::JSPrivateFieldDefine: return 0;
       case IRI_GEN::JSCheckBrand: return 0;
       case IRI_GEN::JSThrowError: return 1;
@@ -336,10 +336,15 @@ public:
         case IRI_GEN::JSLET: return 3;
         case IRI_GEN::JSCONST: return 4;
         case IRI_GEN::JSVAR: return 5;
-        case IRI_GEN::REFIDX: return 6;
-        case IRI_GEN::SCOPE: return 7;
-        case IRI_GEN::NEXT: return 8;
-        case IRI_GEN::LINK: return 9;
+        case IRI_GEN::PRIVFIELD: return 6;
+        case IRI_GEN::PRIVMETHOD: return 7;
+        case IRI_GEN::PRIVGET: return 8;
+        case IRI_GEN::PRIVSET: return 9;
+        case IRI_GEN::PRIVGETSET: return 10;
+        case IRI_GEN::REFIDX: return 11;
+        case IRI_GEN::SCOPE: return 12;
+        case IRI_GEN::NEXT: return 13;
+        case IRI_GEN::LINK: return 14;
           default: return -1;
         }
         break;
@@ -404,6 +409,11 @@ public:
       case IRI_GEN::JSPrivate:
         switch(flag) {
         case IRI_GEN::IridiumPrimitive: return 0;
+        case IRI_GEN::PRIVFIELD: return 1;
+        case IRI_GEN::PRIVMETHOD: return 2;
+        case IRI_GEN::PRIVGET: return 3;
+        case IRI_GEN::PRIVSET: return 4;
+        case IRI_GEN::PRIVGETSET: return 5;
           default: return -1;
         }
         break;
@@ -792,10 +802,15 @@ public:
         case 3: return IRI_GEN::JSLET;
         case 4: return IRI_GEN::JSCONST;
         case 5: return IRI_GEN::JSVAR;
-        case 6: return IRI_GEN::REFIDX;
-        case 7: return IRI_GEN::SCOPE;
-        case 8: return IRI_GEN::NEXT;
-        case 9: return IRI_GEN::LINK;
+        case 6: return IRI_GEN::PRIVFIELD;
+        case 7: return IRI_GEN::PRIVMETHOD;
+        case 8: return IRI_GEN::PRIVGET;
+        case 9: return IRI_GEN::PRIVSET;
+        case 10: return IRI_GEN::PRIVGETSET;
+        case 11: return IRI_GEN::REFIDX;
+        case 12: return IRI_GEN::SCOPE;
+        case 13: return IRI_GEN::NEXT;
+        case 14: return IRI_GEN::LINK;
           default: throw std::runtime_error("Invalid flag index");
         }
         break;
@@ -860,6 +875,11 @@ public:
       case IRI_GEN::JSPrivate:
         switch(index) {
         case 0: return IRI_GEN::IridiumPrimitive;
+        case 1: return IRI_GEN::PRIVFIELD;
+        case 2: return IRI_GEN::PRIVMETHOD;
+        case 3: return IRI_GEN::PRIVGET;
+        case 4: return IRI_GEN::PRIVSET;
+        case 5: return IRI_GEN::PRIVGETSET;
           default: throw std::runtime_error("Invalid flag index");
         }
         break;

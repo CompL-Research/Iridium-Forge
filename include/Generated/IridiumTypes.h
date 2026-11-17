@@ -1,4 +1,4 @@
-// Generated: 2026-10-30 04:34:39
+// Generated: 2026-11-18 05:04:28
 #pragma once
 #include "Storage/Config.h"
 #include "Storage/IridiumSEXP.h"
@@ -1545,12 +1545,12 @@ using IRI_STORAGE::FlagValue;
       }
     }
 
-    static IRID create(IRIContext& p, StringID NAME, bool JSARG, bool JSRESTARG, bool JSLET, bool JSCONST, bool JSVAR, double REFIDX, double SCOPE, double NEXT, double LINK) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::EnvBinding, {}, {FlagValue(NAME), JSARG ? FlagValue(JSARG) : FlagValue(std::monostate()), JSRESTARG ? FlagValue(JSRESTARG) : FlagValue(std::monostate()), JSLET ? FlagValue(JSLET) : FlagValue(std::monostate()), JSCONST ? FlagValue(JSCONST) : FlagValue(std::monostate()), JSVAR ? FlagValue(JSVAR) : FlagValue(std::monostate()), FlagValue(REFIDX), FlagValue(SCOPE), FlagValue(NEXT), FlagValue(LINK)});
+    static IRID create(IRIContext& p, StringID NAME, bool JSARG, bool JSRESTARG, bool JSLET, bool JSCONST, bool JSVAR, bool PRIVFIELD, bool PRIVMETHOD, bool PRIVGET, bool PRIVSET, bool PRIVGETSET, double REFIDX, double SCOPE, double NEXT, double LINK) {
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::EnvBinding, {}, {FlagValue(NAME), JSARG ? FlagValue(JSARG) : FlagValue(std::monostate()), JSRESTARG ? FlagValue(JSRESTARG) : FlagValue(std::monostate()), JSLET ? FlagValue(JSLET) : FlagValue(std::monostate()), JSCONST ? FlagValue(JSCONST) : FlagValue(std::monostate()), JSVAR ? FlagValue(JSVAR) : FlagValue(std::monostate()), PRIVFIELD ? FlagValue(PRIVFIELD) : FlagValue(std::monostate()), PRIVMETHOD ? FlagValue(PRIVMETHOD) : FlagValue(std::monostate()), PRIVGET ? FlagValue(PRIVGET) : FlagValue(std::monostate()), PRIVSET ? FlagValue(PRIVSET) : FlagValue(std::monostate()), PRIVGETSET ? FlagValue(PRIVGETSET) : FlagValue(std::monostate()), FlagValue(REFIDX), FlagValue(SCOPE), FlagValue(NEXT), FlagValue(LINK)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
-    static constexpr uint32_t TOTAL_FLAGS = 10;
+    static constexpr uint32_t TOTAL_FLAGS = 15;
 
     static constexpr uint32_t FLAG_IDX_NAME = 0;
     static constexpr uint32_t FLAG_IDX_JSARG = 1;
@@ -1558,10 +1558,15 @@ using IRI_STORAGE::FlagValue;
     static constexpr uint32_t FLAG_IDX_JSLET = 3;
     static constexpr uint32_t FLAG_IDX_JSCONST = 4;
     static constexpr uint32_t FLAG_IDX_JSVAR = 5;
-    static constexpr uint32_t FLAG_IDX_REFIDX = 6;
-    static constexpr uint32_t FLAG_IDX_SCOPE = 7;
-    static constexpr uint32_t FLAG_IDX_NEXT = 8;
-    static constexpr uint32_t FLAG_IDX_LINK = 9;
+    static constexpr uint32_t FLAG_IDX_PRIVFIELD = 6;
+    static constexpr uint32_t FLAG_IDX_PRIVMETHOD = 7;
+    static constexpr uint32_t FLAG_IDX_PRIVGET = 8;
+    static constexpr uint32_t FLAG_IDX_PRIVSET = 9;
+    static constexpr uint32_t FLAG_IDX_PRIVGETSET = 10;
+    static constexpr uint32_t FLAG_IDX_REFIDX = 11;
+    static constexpr uint32_t FLAG_IDX_SCOPE = 12;
+    static constexpr uint32_t FLAG_IDX_NEXT = 13;
+    static constexpr uint32_t FLAG_IDX_LINK = 14;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
@@ -1599,6 +1604,26 @@ using IRI_STORAGE::FlagValue;
     bool hasJSVAR() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_JSVAR)); }
     void setJSVAR() { mutate_flag(FLAG_IDX_JSVAR) = std::nullptr_t{}; }
     void clearJSVAR() { mutate_flag(FLAG_IDX_JSVAR) = std::monostate{}; }
+
+    bool hasPRIVFIELD() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_PRIVFIELD)); }
+    void setPRIVFIELD() { mutate_flag(FLAG_IDX_PRIVFIELD) = std::nullptr_t{}; }
+    void clearPRIVFIELD() { mutate_flag(FLAG_IDX_PRIVFIELD) = std::monostate{}; }
+
+    bool hasPRIVMETHOD() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_PRIVMETHOD)); }
+    void setPRIVMETHOD() { mutate_flag(FLAG_IDX_PRIVMETHOD) = std::nullptr_t{}; }
+    void clearPRIVMETHOD() { mutate_flag(FLAG_IDX_PRIVMETHOD) = std::monostate{}; }
+
+    bool hasPRIVGET() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_PRIVGET)); }
+    void setPRIVGET() { mutate_flag(FLAG_IDX_PRIVGET) = std::nullptr_t{}; }
+    void clearPRIVGET() { mutate_flag(FLAG_IDX_PRIVGET) = std::monostate{}; }
+
+    bool hasPRIVSET() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_PRIVSET)); }
+    void setPRIVSET() { mutate_flag(FLAG_IDX_PRIVSET) = std::nullptr_t{}; }
+    void clearPRIVSET() { mutate_flag(FLAG_IDX_PRIVSET) = std::monostate{}; }
+
+    bool hasPRIVGETSET() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_PRIVGETSET)); }
+    void setPRIVGETSET() { mutate_flag(FLAG_IDX_PRIVGETSET) = std::nullptr_t{}; }
+    void clearPRIVGETSET() { mutate_flag(FLAG_IDX_PRIVGETSET) = std::monostate{}; }
 
     double getREFIDX() const { return std::get<double>(get_flag(FLAG_IDX_REFIDX)); }
     void setREFIDX(double val) { mutate_flag(FLAG_IDX_REFIDX) = val; }
@@ -2066,14 +2091,19 @@ using IRI_STORAGE::FlagValue;
       }
     }
 
-    static IRID create(IRIContext& p, StringID IridiumPrimitive) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSPrivate, {}, {FlagValue(IridiumPrimitive)});
+    static IRID create(IRIContext& p, StringID IridiumPrimitive, bool PRIVFIELD, bool PRIVMETHOD, bool PRIVGET, bool PRIVSET, bool PRIVGETSET) {
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSPrivate, {}, {FlagValue(IridiumPrimitive), PRIVFIELD ? FlagValue(PRIVFIELD) : FlagValue(std::monostate()), PRIVMETHOD ? FlagValue(PRIVMETHOD) : FlagValue(std::monostate()), PRIVGET ? FlagValue(PRIVGET) : FlagValue(std::monostate()), PRIVSET ? FlagValue(PRIVSET) : FlagValue(std::monostate()), PRIVGETSET ? FlagValue(PRIVGETSET) : FlagValue(std::monostate())});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
-    static constexpr uint32_t TOTAL_FLAGS = 1;
+    static constexpr uint32_t TOTAL_FLAGS = 6;
 
     static constexpr uint32_t FLAG_IDX_IridiumPrimitive = 0;
+    static constexpr uint32_t FLAG_IDX_PRIVFIELD = 1;
+    static constexpr uint32_t FLAG_IDX_PRIVMETHOD = 2;
+    static constexpr uint32_t FLAG_IDX_PRIVGET = 3;
+    static constexpr uint32_t FLAG_IDX_PRIVSET = 4;
+    static constexpr uint32_t FLAG_IDX_PRIVGETSET = 5;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
@@ -2091,6 +2121,26 @@ using IRI_STORAGE::FlagValue;
     void setIridiumPrimitive(StringID val) { mutate_flag(FLAG_IDX_IridiumPrimitive) = val; }
     bool hasIridiumPrimitive() const { return std::holds_alternative<StringID>(get_flag(FLAG_IDX_IridiumPrimitive)); }
     void clearIridiumPrimitive() { mutate_flag(FLAG_IDX_IridiumPrimitive) = std::monostate{}; }
+
+    bool hasPRIVFIELD() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_PRIVFIELD)); }
+    void setPRIVFIELD() { mutate_flag(FLAG_IDX_PRIVFIELD) = std::nullptr_t{}; }
+    void clearPRIVFIELD() { mutate_flag(FLAG_IDX_PRIVFIELD) = std::monostate{}; }
+
+    bool hasPRIVMETHOD() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_PRIVMETHOD)); }
+    void setPRIVMETHOD() { mutate_flag(FLAG_IDX_PRIVMETHOD) = std::nullptr_t{}; }
+    void clearPRIVMETHOD() { mutate_flag(FLAG_IDX_PRIVMETHOD) = std::monostate{}; }
+
+    bool hasPRIVGET() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_PRIVGET)); }
+    void setPRIVGET() { mutate_flag(FLAG_IDX_PRIVGET) = std::nullptr_t{}; }
+    void clearPRIVGET() { mutate_flag(FLAG_IDX_PRIVGET) = std::monostate{}; }
+
+    bool hasPRIVSET() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_PRIVSET)); }
+    void setPRIVSET() { mutate_flag(FLAG_IDX_PRIVSET) = std::nullptr_t{}; }
+    void clearPRIVSET() { mutate_flag(FLAG_IDX_PRIVSET) = std::monostate{}; }
+
+    bool hasPRIVGETSET() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_PRIVGETSET)); }
+    void setPRIVGETSET() { mutate_flag(FLAG_IDX_PRIVGETSET) = std::nullptr_t{}; }
+    void clearPRIVGETSET() { mutate_flag(FLAG_IDX_PRIVGETSET) = std::monostate{}; }
   };
 
   struct JSPrivateFieldDefineSEXP {

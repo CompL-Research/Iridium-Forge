@@ -112,6 +112,8 @@ void runCorePasses(IRIContext &ctx, IRID & sexpRef, BuildContextMap &buildContex
        [&] {
          IRI_CORE_PASSES::_22_ESTKTHM(ctx, sexpRef, buildContext, continueTargets);
        }},
+      {"_23_APVK",
+       [&] { IRI_CORE_PASSES::_23_APVK(ctx, sexpRef, buildContext); }},
       {"AFTER_CORE_PASSES",
        [&] { IRI_CORE_PASSES::_FNOPS(ctx, sexpRef, buildContext); }},
   };
