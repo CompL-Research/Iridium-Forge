@@ -526,6 +526,9 @@ IRICFG::IRICFG(IRI_STORAGE::IRID i, IRI_STORAGE::IRIContext &p)
     awaitWorklist.insert(e.first);
   }
 
+  // Statements already placed as the first statement of a resume block.
+  std::set<IRID> resumeSites;
+
   while (!awaitWorklist.empty()) {
     BBIDX bbIDX = *awaitWorklist.begin();
     awaitWorklist.erase(awaitWorklist.begin());
@@ -536,6 +539,9 @@ IRICFG::IRICFG(IRI_STORAGE::IRID i, IRI_STORAGE::IRIContext &p)
     }
 
     IRIStatement *currStmt = bb->head;
+    if (currStmt != nullptr && resumeSites.contains(currStmt->id)) {
+      currStmt = currStmt->next;
+    }
     while (currStmt != nullptr) {
       if (hasAwait(currStmt->id)) {
         break;
@@ -555,8 +561,15 @@ IRICFG::IRICFG(IRI_STORAGE::IRID i, IRI_STORAGE::IRIContext &p)
     auto postBBIDX = postBB->IDX;
     awaitWorklist.insert(postBBIDX);
 
-    IRIStatement *nextStmts = currStmt->next;
-    currStmt->next = nullptr;
+    // The await statement itself starts the resume block; the pre block ends
+    // carrying only its handle operand across the deferred edge.
+    IRIStatement *nextStmts = currStmt;
+    if (currStmt->prev != nullptr) {
+      currStmt->prev->next = nullptr;
+    } else {
+      bb->head = nullptr;
+    }
+    currStmt->prev = nullptr;
 
     postBB->head = nextStmts;
     if (postBB->head != nullptr) {
@@ -578,6 +591,7 @@ IRICFG::IRICFG(IRI_STORAGE::IRID i, IRI_STORAGE::IRIContext &p)
     bb->setTerminal(GotoSEXP::create(ctx, true, postBBIDX));
 
     continuationPoints.insert(postBBIDX);
+    resumeSites.insert(nextStmts->id);
   }
 
   verify();
