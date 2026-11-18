@@ -5,10 +5,26 @@
 #include "Storage/Config.h"
 #include "Storage/IRIContext.h"
 #include "Support/IRIS.hpp"
+#include <cmath>
 #include <iomanip>
 #include <stdexcept>
 
 namespace IRI_STORAGE {
+
+// std::ostream writes non-finite doubles as `inf`/`nan`, but JSON has no such
+// literals and the .iri reader (nlohmann::json) rejects overflowing number
+// literals outright ("number overflow parsing '1e9999'" for `1e1000000`-style
+// sources folded to Infinity). Emit them as strings; the backend decodes them
+// back with strtod (getFlagDoubleLoose).
+inline void append_json_double(std::ostream &oss, double v) {
+  if (std::isfinite(v)) {
+    oss << std::setprecision(17) << v;
+  } else if (std::isnan(v)) {
+    oss << "\"NaN\"";
+  } else {
+    oss << (v > 0 ? "\"Infinity\"" : "\"-Infinity\"");
+  }
+}
 
 void append_escaped_json_string(std::ostream &oss, std::string_view s) {
   oss << '"';
@@ -157,7 +173,7 @@ void IridiumSEXP::dump(std::ostream &oss, IRIContext *ctx, bool compressed,
     oss << "[\"" << IRI_GEN::dump_flag(flagEnum) << "\",";
 
     if (std::holds_alternative<double>(v)) {
-      oss << std::setprecision(17) << std::get<double>(v);
+      append_json_double(oss, std::get<double>(v));
     } else if (std::holds_alternative<bool>(v)) {
       oss << std::boolalpha << std::get<bool>(v);
     } else if (std::holds_alternative<StringID>(v)) {
@@ -206,7 +222,7 @@ void IridiumSEXP::dumpFlat(std::ostream &oss, IRIContext *ctx, int depth,
     // Stream the variant value
     if (std::holds_alternative<double>(v)) {
       oss << IRI_GEN::dump_flag(flagEnum) << ": ";
-      oss << std::setprecision(17) << std::get<double>(v);
+      append_json_double(oss, std::get<double>(v));
     } else if (std::holds_alternative<bool>(v)) {
       oss << IRI_GEN::dump_flag(flagEnum) << ": ";
       oss << std::boolalpha << std::get<bool>(v);

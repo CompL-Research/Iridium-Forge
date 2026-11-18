@@ -16,6 +16,42 @@
 
 namespace IRI_PARSE {
 
+// V8's Utf8Value() is lossy: it replaces unpaired surrogates with U+FFFD.
+// JS strings are UTF-16 code unit sequences and may legitimately contain
+// lone surrogates, and both the Iridium string pool (raw bytes) and
+// quickjs's UTF-8 decoder (utf8_decode accepts 0xED lead bytes) round-trip
+// WTF-8/CESU sequences. So encode from UTF-16 by hand: valid pairs become
+// 4-byte UTF-8, lone surrogates become 3-byte CESU sequences, preserving
+// string fidelity end-to-end (pool -> .iri dump -> JS_NewStringLen).
+inline std::string napiStringToWTF8(const Napi::String &str) {
+  std::u16string u16 = str.Utf16Value();
+  std::string out;
+  out.reserve(u16.size());
+  for (size_t i = 0; i < u16.size(); i++) {
+    uint32_t cp = u16[i];
+    if (cp >= 0xD800 && cp <= 0xDBFF && i + 1 < u16.size() &&
+        u16[i + 1] >= 0xDC00 && u16[i + 1] <= 0xDFFF) {
+      cp = 0x10000 + ((cp - 0xD800) << 10) + (uint32_t)(u16[++i] - 0xDC00);
+    }
+    if (cp < 0x80) {
+      out.push_back((char)cp);
+    } else if (cp < 0x800) {
+      out.push_back((char)(0xC0 | (cp >> 6)));
+      out.push_back((char)(0x80 | (cp & 0x3F)));
+    } else if (cp < 0x10000) {
+      out.push_back((char)(0xE0 | (cp >> 12)));
+      out.push_back((char)(0x80 | ((cp >> 6) & 0x3F)));
+      out.push_back((char)(0x80 | (cp & 0x3F)));
+    } else {
+      out.push_back((char)(0xF0 | (cp >> 18)));
+      out.push_back((char)(0x80 | ((cp >> 12) & 0x3F)));
+      out.push_back((char)(0x80 | ((cp >> 6) & 0x3F)));
+      out.push_back((char)(0x80 | (cp & 0x3F)));
+    }
+  }
+  return out;
+}
+
 class IridiumParser {
   Napi::Array arr;
   uint32_t size = 0;
@@ -85,7 +121,8 @@ public:
         } else if (val_obj.IsString()) {
           // STRING POOLING: Hash it, store it in the ctx, and save the integer
           // ID
-          std::string temp_str = val_obj.As<Napi::String>().Utf8Value();
+          std::string temp_str =
+              napiStringToWTF8(val_obj.As<Napi::String>());
           StringID id = ctx.storage.strings.intern(temp_str);
           flags[slot_idx] = id;
         } else if (val_obj.IsNull()) {
@@ -153,7 +190,8 @@ public:
 
       Napi::Array argsArr = ctxObj.Get("args").As<Napi::Array>();
       for (uint32_t j = 0; j < argsArr.Length(); j++) {
-        res->args.push_back(argsArr.Get(j).As<Napi::String>().Utf8Value());
+        res->args.push_back(
+            napiStringToWTF8(argsArr.Get(j).As<Napi::String>()));
       }
 
       res->isArgInitContext =
@@ -165,7 +203,7 @@ public:
           ctxObj.Get("argInitContextWhitelist").As<Napi::Array>();
       for (uint32_t j = 0; j < whitelistArr.Length(); j++) {
         res->argInitContextWhitelist.insert(
-            whitelistArr.Get(j).As<Napi::String>().Utf8Value());
+            napiStringToWTF8(whitelistArr.Get(j).As<Napi::String>()));
       }
 
       res->hasRestArgs = ctxObj.Get("hasRestArgs").As<Napi::Boolean>().Value();
@@ -175,7 +213,8 @@ public:
       if (!loopConfigVal.IsNull() && !loopConfigVal.IsUndefined()) {
         Napi::Object lcObj = loopConfigVal.As<Napi::Object>();
         LoopConfig lc;
-        std::string kindStr = lcObj.Get("kind").As<Napi::String>().Utf8Value();
+        std::string kindStr =
+            napiStringToWTF8(lcObj.Get("kind").As<Napi::String>());
         lc.kind = (kindStr == "for-of") ? LoopConfig::Kind::ForOf
                                         : LoopConfig::Kind::Standard;
         lc.loopHeadIDX =
@@ -187,7 +226,7 @@ public:
 
         Napi::Value labelVal = lcObj.Get("label");
         if (!labelVal.IsNull() && !labelVal.IsUndefined()) {
-          lc.label = labelVal.As<Napi::String>().Utf8Value();
+          lc.label = napiStringToWTF8(labelVal.As<Napi::String>());
         }
 
         lc.breakTarget =
@@ -222,7 +261,7 @@ public:
 
       Napi::Value propInitVal = ctxObj.Get("propInitClos");
       if (!propInitVal.IsNull() && !propInitVal.IsUndefined()) {
-        res->propInitClos = propInitVal.As<Napi::String>().Utf8Value();
+        res->propInitClos = napiStringToWTF8(propInitVal.As<Napi::String>());
       }
 
       res->argumentsKind =
@@ -232,7 +271,7 @@ public:
       res->isStrict = ctxObj.Get("isStrict").As<Napi::Boolean>().Value();
       res->isModule = ctxObj.Get("isModule").As<Napi::Boolean>().Value();
       res->ecmaArgs = ctxObj.Get("ecmaArgs").As<Napi::Number>().Int32Value();
-      res->name = ctxObj.Get("name").As<Napi::String>().Utf8Value();
+      res->name = napiStringToWTF8(ctxObj.Get("name").As<Napi::String>());
       res->sourceLine =
           ctxObj.Get("sourceLine").As<Napi::Number>().DoubleValue();
 
@@ -250,7 +289,7 @@ public:
         for (uint32_t j = 0; j < pmArr.Length(); j++) {
           Napi::Array tuple = pmArr.Get(j).As<Napi::Array>();
           std::string key =
-              tuple.Get((uint32_t)0).As<Napi::String>().Utf8Value();
+              napiStringToWTF8(tuple.Get((uint32_t)0).As<Napi::String>());
           Napi::Array code = tuple.Get(1).As<Napi::Array>();
 
           initParseCTX(code);
