@@ -87,6 +87,23 @@ public:
 
   double getExceptionTargetForScope(double);
 
+  // Per-BB exception dispatch target, keyed (closure scope, BBIDX).
+  // Materialized by _20_IFB, carried by IRICloner; after that pass it is
+  // the only valid dispatch source (regions and their clones share scopes).
+  void declareExceptionIDX(double closureScope, double bbIDX, double target) {
+    exceptionIDX[closureScope][bbIDX] = target;
+  }
+  bool getExceptionIDX(double closureScope, double bbIDX, double &out) const {
+    auto c = exceptionIDX.find(closureScope);
+    if (c == exceptionIDX.end())
+      return false;
+    auto b = c->second.find(bbIDX);
+    if (b == c->second.end())
+      return false;
+    out = b->second;
+    return true;
+  }
+
   double getFinalizerRetBBIDX(double);
 
   size_t computePoolCapacity();
@@ -153,6 +170,10 @@ private:
   std::unordered_map<double, double> outEdges;
   std::unordered_map<double, std::set<double>> inEdges;
   std::set<double> nodes;
+
+  // Per-BB dispatch targets, (closure scope -> BBIDX -> target BBIDX).
+  // See declareExceptionIDX.
+  std::unordered_map<double, std::unordered_map<double, double>> exceptionIDX;
 
   std::vector<std::tuple<IRI_STORAGE::IRID, double, double>> directEvals;
 

@@ -146,13 +146,9 @@ static bool isValidBBTerminal(IRI_GEN::IRI_TAG tag, IRIContext &ctx) {
     return true;
   if (IfElseJump == tag)
     return true;
-  if (Ret == tag)
-    return true;
   if (Return == tag)
     return true;
   if (Throw == tag)
-    return true;
-  if (InvokeFinalizer == tag)
     return true;
   return false;
 }
@@ -180,8 +176,6 @@ void IRIBB::moveTerminalTo(IRIBB *dst) {
     throw std::runtime_error("moveTerminalTo: dst already has a terminal");
   }
 
-  bool wasRet = IRI_NODE(ctx, tail->id).tag == IRI_GEN::Ret;
-
   dst->tail = tail;
   dst->tail->bb = dst;
   dst->tail->prev = nullptr;
@@ -193,45 +187,13 @@ void IRIBB::moveTerminalTo(IRIBB *dst) {
   for (auto s : succs) {
     dst->addEdge(s);
   }
-
-  dst->FINTARGET = FINTARGET;
-  FINTARGET = -1;
-
-  // A finalizer body's Ret may be pushed into a fresh BB by a later split;
-  // whoever asks for that body's exit must now be told about the new owner.
-  if (wasRet) {
-    closure->retagFinalizerRet(IDX, dst->IDX);
-  }
 }
 
 IRIBB *IRICFG::makeBB(ScopeIDX scope) {
   markDirty();
   auto idx = ++ctx.lastBBIDX;
   nodeMap[idx] = std::make_unique<IRIBB>(scope, idx, this, ctx);
-  IRIBB *bb = nodeMap[idx].get();
-  // Was missing on finalizer-split post-blocks: they inherit the scope, so
-  // they must inherit the handler too.
-  bb->EXCEPTION = ctx.iris->getExceptionTargetForScope(scope);
-  return bb;
-}
-
-BBIDX IRICFG::finalizerRetOf(BBIDX entryIDX) {
-  auto it = finalizerRetBB.find(entryIDX);
-  if (it != finalizerRetBB.end()) {
-    return it->second;
-  }
-  BBIDX ret = ctx.iris->getFinalizerRetBBIDX(entryIDX);
-  finalizerRetBB[entryIDX] = ret;
-  return ret;
-}
-
-void IRICFG::retagFinalizerRet(BBIDX from, BBIDX to) {
-  markDirty();
-  for (auto &e : finalizerRetBB) {
-    if (e.second == from) {
-      e.second = to;
-    }
-  }
+  return nodeMap[idx].get();
 }
 
 void IRIBB::setTerminal(IRID stmtID) {
@@ -276,16 +238,6 @@ void IRIBB::setTerminal(IRID stmtID) {
     IfElseJumpSEXP ieJump(stmtID, ctx);
     addEdge(ieJump.getTRUE());
     addEdge(ieJump.getFALSE());
-    break;
-  }
-  case IRI_GEN::InvokeFinalizer: {
-    tail = new IRIStatement(stmtID, this);
-    InvokeFinalizerSEXP inv(stmtID, ctx);
-    addEdge(inv.getIDX());
-    break;
-  }
-  case IRI_GEN::Ret: {
-    tail = new IRIStatement(stmtID, this);
     break;
   }
   case IRI_GEN::Throw: {
@@ -375,9 +327,6 @@ void IRICFG::verify() {
         throw std::runtime_error("successor/predecessor asymmetry");
       }
     }
-    if (bb->FINTARGET > -1 && !nodeMap.contains(bb->FINTARGET)) {
-      throw std::runtime_error("FINTARGET missing from nodeMap");
-    }
     if (bb->EXCEPTION > -1 && !nodeMap.contains(bb->EXCEPTION)) {
       throw std::runtime_error("EXCEPTION missing from nodeMap");
     }
@@ -431,7 +380,10 @@ IRICFG::IRICFG(IRI_STORAGE::IRID i, IRI_STORAGE::IRIContext &p)
     BBSupport bbSupp(bbID, ctx);
     auto currBBIDX = bbSupp.getIDX();
     IRIBB *bb = nodeMap[currBBIDX].get();
-    bb->EXCEPTION = ctx.iris->getExceptionTargetForScope(bb->SCOPE);
+    // Per-BB dispatch target (declared by _20_IFB, carried by clones).
+    double dispatch = -1;
+    ctx.iris->getExceptionIDX(bbc.getScopeIDX(), currBBIDX, dispatch);
+    bb->EXCEPTION = dispatch;
     auto stmts = bbSupp.stmtsVec();
     for (size_t i = 0; i < stmts.size(); i++) {
       IRID stmtID = stmts[i];
@@ -439,77 +391,6 @@ IRICFG::IRICFG(IRI_STORAGE::IRID i, IRI_STORAGE::IRIContext &p)
         bb->setTerminal(stmtID);
       } else {
         bb->append(new IRIStatement(stmtID, bb));
-      }
-    }
-  }
-
-  // Split BBs at Finalizer Calls
-  //
-  // Worklists are keyed on BBIDX, not IRIBB*: pointer ordering makes split
-  // order (and therefore every synthetic BBIDX) vary run to run.
-  std::set<BBIDX> worklist;
-  for (auto &e : nodeMap) {
-    worklist.insert(e.first);
-  }
-  while (!worklist.empty()) {
-    BBIDX bbIDX = *worklist.begin();
-    worklist.erase(worklist.begin());
-    IRIBB *bb = nodeMap[bbIDX].get();
-
-    IRIStatement *curr = bb->head;
-    while (curr != nullptr) {
-      if (IRI_NODE(ctx, curr->id).tag == IRI_GEN::InvokeFinalizer) {
-        break;
-      }
-      curr = curr->next;
-    }
-
-    if (curr != nullptr) {
-      InvokeFinalizerSEXP ivTarget(curr->id, ctx);
-      auto finalizerEntryIDX = ivTarget.getIDX();
-      auto finalizerExitIDX = finalizerRetOf(finalizerEntryIDX);
-      if (!nodeMap.contains(finalizerEntryIDX)) {
-        throw std::runtime_error("finalizerEntryIDX missing");
-      }
-      if (!nodeMap.contains(finalizerExitIDX)) {
-        throw std::runtime_error("finalizerExitIDX missing");
-      }
-
-      IRIBB *postBB = makeBB(bb->SCOPE);
-      auto postBBIDX = postBB->IDX;
-      worklist.insert(postBBIDX);
-
-      // Everything after the invoke moves to postBB...
-      postBB->head = curr->next;
-      if (postBB->head != nullptr) {
-        postBB->head->prev = nullptr;
-        for (IRIStatement *s = postBB->head; s != nullptr; s = s->next) {
-          s->bb = postBB;
-        }
-      }
-      // ...including the terminal, its out-edges and its FINTARGET.
-      bb->moveTerminalTo(postBB);
-
-      // Make the prev stmt the last
-      if (curr->prev) {
-        curr->prev->next = nullptr;
-      } else {
-        bb->head = nullptr;
-      }
-
-      // Set the invoke finalizer as the terminal. The bb -> finalizerEntry
-      // edge is registered by setTerminal now, no manual fixup.
-      bb->setTerminal(curr->id);
-      delete curr;
-
-      bool finalizerDynamicRet =
-          IRI_NODE(ctx, nodeMap[finalizerExitIDX]->tail->id).tag == Ret;
-      if (finalizerDynamicRet) {
-        bb->FINTARGET = postBBIDX;
-        // Edge from the finalizer body's Ret back to this invoke's post block.
-        nodeMap[finalizerExitIDX]->addEdge(postBBIDX);
-      } else {
-        bb->FINTARGET = -2;
       }
     }
   }
@@ -558,6 +439,8 @@ IRICFG::IRICFG(IRI_STORAGE::IRID i, IRI_STORAGE::IRIContext &p)
     }
 
     IRIBB *postBB = makeBB(bb->SCOPE);
+    // Same region, resumed half: inherit the dispatch target.
+    postBB->EXCEPTION = bb->EXCEPTION;
     auto postBBIDX = postBB->IDX;
     awaitWorklist.insert(postBBIDX);
 
@@ -579,7 +462,7 @@ IRICFG::IRICFG(IRI_STORAGE::IRID i, IRI_STORAGE::IRIContext &p)
       }
     }
 
-    // Terminal + out-edges + FINTARGET all belong to the resumed half.
+    // Terminal + out-edges belong to the resumed half.
     bb->moveTerminalTo(postBB);
     if (postBB->tail == nullptr) {
       throw std::runtime_error("postBB tail cannot be null");
@@ -658,11 +541,6 @@ void IRICFG::dumpDOT(const std::string &filePath) {
               << " [style=\"dotted\", color=\"red\"];\n";
       dumpRecurse(bb->EXCEPTION);
     }
-
-    if (bb->FINTARGET > -1) {
-      outFile << "  " << (int)currentBBIDX << " -> " << (int)bb->FINTARGET
-              << " [style=\"dotted\"];\n";
-    }
   };
   dumpRecurse(entry_block);
 
@@ -688,6 +566,8 @@ void IRICFG::commit() {
     nodesTODO.insert(e.first);
   }
 
+  std::set<BBIDX> emitted;
+
   std::function<void(BBIDX)> dumpRecurse = [&](BBIDX currentBBIDX) {
     if (!nodesTODO.contains(currentBBIDX))
       return;
@@ -697,6 +577,7 @@ void IRICFG::commit() {
     IRID currBBID = BBSEXP::create(ctx, false, false, false, false, false,
                                    bb->IDX, bb->SCOPE);
     newBBS.push_back(currBBID);
+    emitted.insert(bb->IDX);
 
     std::vector<IRID> stmtList;
 
@@ -707,13 +588,6 @@ void IRICFG::commit() {
     }
     if (bb->tail != nullptr) {
       stmtList.push_back(bb->tail->id);
-    }
-    if (bb->FINTARGET == -2) {
-      stmtList.push_back(ThrowSEXP::create(
-          ctx,
-          StringSEXP::create(ctx, ctx.storage.strings.intern("Unreachable"))));
-    } else if (bb->FINTARGET > -1) {
-      stmtList.push_back(GotoSEXP::create(ctx, false, bb->FINTARGET));
     }
 
     ctx.storage.nodes.set_args(currBBID, stmtList);
@@ -728,7 +602,50 @@ void IRICFG::commit() {
   };
   dumpRecurse(entry_block);
 
+  // Strict emit: blocks unreachable from successors ∪ EXCEPTION are dead
+  // rewrite leftovers (e.g. the original finalizer regions after _20_IFB
+  // cloned them) and get dropped; references to them fail the check below.
+
   ctx.storage.nodes.set_args(newBBList, newBBS);
+
+  // All jump targets in the serialized blocks must be blocks we serialized.
+  // verify() holds this in-memory, but passes mutate successors after it.
+  for (IRID bbID : newBBS) {
+    BBIDX from = BBSEXP(bbID, ctx).getIDX();
+    for (IRID stmtID : ctx.storage.nodes.get_args(bbID)) {
+      BBIDX to1 = -1, to2 = -1;
+      const char *kind = nullptr;
+      switch (IRI_NODE(ctx, stmtID).tag) {
+      case IRI_GEN::Goto:
+        kind = "Goto";
+        to1 = GotoSEXP(stmtID, ctx).getIDX();
+        break;
+      case IRI_GEN::PushCatchContext:
+        kind = "PushCatchContext";
+        to1 = PushCatchContextSEXP(stmtID, ctx).getIDX();
+        break;
+      case IRI_GEN::IfJump:
+        kind = "IfJump";
+        to1 = IfJumpSEXP(stmtID, ctx).getIDX();
+        break;
+      case IRI_GEN::IfElseJump:
+        kind = "IfElseJump";
+        to1 = IfElseJumpSEXP(stmtID, ctx).getTRUE();
+        to2 = IfElseJumpSEXP(stmtID, ctx).getFALSE();
+        break;
+      default:
+        break;
+      }
+      if (!kind)
+        continue;
+      if ((to1 >= 0 && !emitted.contains(to1)) ||
+          (to2 >= 0 && !emitted.contains(to2))) {
+        throw std::runtime_error("commit: dangling " + std::string(kind) +
+                                 " target " + std::to_string(to1) +
+                                 " in BB " + std::to_string(from));
+      }
+    }
+  }
 }
 
 const PTAClosureInfo &IRICFG::ptaInfo() {

@@ -107,6 +107,8 @@ void runCorePasses(IRIContext &ctx, IRID & sexpRef, BuildContextMap &buildContex
        [&] { IRI_CORE_PASSES::_18_DELOP(ctx, sexpRef, buildContext); }},
       {"_19_CBBAMTLA",
        [&] { IRI_CORE_PASSES::_19_CBBAMTLA(ctx, sexpRef, buildContext); }},
+      {"_20_IFB",
+       [&] { IRI_CORE_PASSES::_20_IFB(ctx, sexpRef, buildContext, continueTargets); }},
       {"_21_TER", [&] { IRI_CORE_PASSES::_21_TER(ctx, sexpRef, buildContext); }},
       {"_22_ESTKTHM",
        [&] {
