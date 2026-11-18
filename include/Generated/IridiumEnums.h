@@ -1,4 +1,4 @@
-// Generated: 2026-11-18 05:04:28
+// Generated: 2026-11-19 03:30:30
 #pragma once
 #include <string>
 
@@ -462,7 +462,7 @@ namespace IRI_GEN {
       case JSForOfIteratorClose: return IRI_META::STMT;
       case PopCatchContext: return IRI_META::STMT;
       case ExitFinalizer: return IRI_META::STMT;
-      case InvokeFinalizer: return IRI_META::STMT;
+      case InvokeFinalizer: return IRI_META::STAR_STMT;
       case JSForInStart: return IRI_META::RVAL;
       case JSForInNext: return IRI_META::RVAL;
       case JSForOfStart: return IRI_META::STMT;
@@ -470,7 +470,7 @@ namespace IRI_GEN {
       case PushCatchContext: return IRI_META::STMT;
       case JSCatchContext: return IRI_META::AMP;
       case Throw: return IRI_META::STMT;
-      case Ret: return IRI_META::STMT;
+      case Ret: return IRI_META::STAR_STMT;
       case JSBinop: return IRI_META::AMP;
       case FieldWrite: return IRI_META::STMT;
       case JSUnop: return IRI_META::AMP;

@@ -1,4 +1,4 @@
-// Generated: 2026-11-18 05:04:28
+// Generated: 2026-11-19 03:30:31
 #pragma once
 
 #include "Support/PTA/PTAContext.hpp"
@@ -56,8 +56,6 @@ inline void dispatchPTAStatement(const PTAStatementContext &ptactx) {
       return handlePopCatchContext(ptactx);
     case IRI_GEN::IRI_TAG::ExitFinalizer:
       return handleExitFinalizer(ptactx);
-    case IRI_GEN::IRI_TAG::InvokeFinalizer:
-      return handleInvokeFinalizer(ptactx);
     case IRI_GEN::IRI_TAG::JSForOfStart:
       return handleJSForOfStart(ptactx);
     case IRI_GEN::IRI_TAG::PushCatchContext:
@@ -66,8 +64,6 @@ inline void dispatchPTAStatement(const PTAStatementContext &ptactx) {
       return handleJSCatchContext(ptactx);
     case IRI_GEN::IRI_TAG::Throw:
       return handleThrow(ptactx);
-    case IRI_GEN::IRI_TAG::Ret:
-      return handleRet(ptactx);
     case IRI_GEN::IRI_TAG::JSBinop:
       return handleJSBinop(ptactx);
     case IRI_GEN::IRI_TAG::FieldWrite:

@@ -17,7 +17,7 @@ interface IridiumForge {
     tick: (arg0: string) => void,
     tock: (arg0: string) => void,
     flags: PassFlags,
-  ): Array<any>;
+  ): Buffer;
 }
 
 const binaryWrapperPath = path.resolve(__dirname, "./forge.cjs");

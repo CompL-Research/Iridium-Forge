@@ -50,7 +50,6 @@ struct IRIBB {
   double IDX;
   double SCOPE;
   double EXCEPTION = -1;
-  double FINTARGET = -1;
   IRI_STORAGE::IRIContext &ctx;
   IRIStatement *head = nullptr;
   IRIStatement *tail = nullptr;
@@ -100,10 +99,7 @@ struct IRICFG {
   std::set<BBIDX> continuationPoints;
 
   IRIBB *makeBB(ScopeIDX scope);
-  BBIDX finalizerRetOf(BBIDX entryIDX);
-  void retagFinalizerRet(BBIDX from, BBIDX to);
   void verify();
-  std::map<BBIDX, BBIDX> finalizerRetBB;
 
   IRIBB *get_bb(BBIDX idx) {
     auto it = nodeMap.find(idx);

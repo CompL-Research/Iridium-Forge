@@ -1,4 +1,4 @@
-// Generated: 2026-11-18 05:04:28
+// Generated: 2026-11-19 03:30:31
 #pragma once
 
 #include "Support/PP.hpp"
@@ -55,8 +55,6 @@ inline std::string ppStatement(const PPContext &pp, IRID node) {
       return printPopCatchContext(pp, node);
     case IRI_GEN::IRI_TAG::ExitFinalizer:
       return printExitFinalizer(pp, node);
-    case IRI_GEN::IRI_TAG::InvokeFinalizer:
-      return printInvokeFinalizer(pp, node);
     case IRI_GEN::IRI_TAG::JSForOfStart:
       return printJSForOfStart(pp, node);
     case IRI_GEN::IRI_TAG::PushCatchContext:
@@ -65,8 +63,6 @@ inline std::string ppStatement(const PPContext &pp, IRID node) {
       return printJSCatchContext(pp, node);
     case IRI_GEN::IRI_TAG::Throw:
       return printThrow(pp, node);
-    case IRI_GEN::IRI_TAG::Ret:
-      return printRet(pp, node);
     case IRI_GEN::IRI_TAG::JSBinop:
       return printJSBinop(pp, node);
     case IRI_GEN::IRI_TAG::FieldWrite:

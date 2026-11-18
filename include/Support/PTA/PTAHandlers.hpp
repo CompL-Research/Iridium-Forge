@@ -1,4 +1,4 @@
-// Generated: 2026-11-18 05:04:28
+// Generated: 2026-11-19 03:30:31
 #pragma once
 
 #include "Support/PTA/PTAContext.hpp"
@@ -29,12 +29,10 @@ void handleJSPrivateFieldRead(const PTAStatementContext &ptactx);
 void handleJSForOfIteratorClose(const PTAStatementContext &ptactx);
 void handlePopCatchContext(const PTAStatementContext &ptactx);
 void handleExitFinalizer(const PTAStatementContext &ptactx);
-void handleInvokeFinalizer(const PTAStatementContext &ptactx);
 void handleJSForOfStart(const PTAStatementContext &ptactx);
 void handlePushCatchContext(const PTAStatementContext &ptactx);
 void handleJSCatchContext(const PTAStatementContext &ptactx);
 void handleThrow(const PTAStatementContext &ptactx);
-void handleRet(const PTAStatementContext &ptactx);
 void handleJSBinop(const PTAStatementContext &ptactx);
 void handleFieldWrite(const PTAStatementContext &ptactx);
 void handleJSUnop(const PTAStatementContext &ptactx);
@@ -145,9 +143,6 @@ public:
   virtual void visit_ExitFinalizer(const PTAStatementContext &ptactx) {
     return handleExitFinalizer(ptactx);
   }
-  virtual void visit_InvokeFinalizer(const PTAStatementContext &ptactx) {
-    return handleInvokeFinalizer(ptactx);
-  }
   virtual void visit_JSForOfStart(const PTAStatementContext &ptactx) {
     return handleJSForOfStart(ptactx);
   }
@@ -159,9 +154,6 @@ public:
   }
   virtual void visit_Throw(const PTAStatementContext &ptactx) {
     return handleThrow(ptactx);
-  }
-  virtual void visit_Ret(const PTAStatementContext &ptactx) {
-    return handleRet(ptactx);
   }
   virtual void visit_JSBinop(const PTAStatementContext &ptactx) {
     return handleJSBinop(ptactx);

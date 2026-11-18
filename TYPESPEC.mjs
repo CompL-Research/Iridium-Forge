@@ -628,7 +628,7 @@ export default [
   },
   {
     tag: "InvokeFinalizer",
-    meta: "STMT",
+    meta: "*STMT",
     args: [],
     flags: {
       string: [],
@@ -716,7 +716,7 @@ export default [
   },
   {
     tag: "Ret",
-    meta: "STMT",
+    meta: "*STMT",
     args: [],
     flags: {
       string: [],

@@ -1,4 +1,4 @@
-// Generated: 2026-11-18 05:04:28
+// Generated: 2026-11-19 03:30:31
 #pragma once
 
 #include "Support/PP/PPContext.hpp"
@@ -32,12 +32,10 @@ std::string printJSPrivateFieldRead(const PPContext &pp, IRID node);
 std::string printJSForOfIteratorClose(const PPContext &pp, IRID node);
 std::string printPopCatchContext(const PPContext &pp, IRID node);
 std::string printExitFinalizer(const PPContext &pp, IRID node);
-std::string printInvokeFinalizer(const PPContext &pp, IRID node);
 std::string printJSForOfStart(const PPContext &pp, IRID node);
 std::string printPushCatchContext(const PPContext &pp, IRID node);
 std::string printJSCatchContext(const PPContext &pp, IRID node);
 std::string printThrow(const PPContext &pp, IRID node);
-std::string printRet(const PPContext &pp, IRID node);
 std::string printJSBinop(const PPContext &pp, IRID node);
 std::string printFieldWrite(const PPContext &pp, IRID node);
 std::string printJSUnop(const PPContext &pp, IRID node);

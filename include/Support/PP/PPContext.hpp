@@ -1,4 +1,4 @@
-// Generated: 2026-11-18 05:04:28
+// Generated: 2026-11-19 03:30:31
 #pragma once
 
 #include "Storage/IRIContext.h"

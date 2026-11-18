@@ -87,6 +87,9 @@ void _19_CBBAMTLA(IRIContext &ctx, IRID fileSEXP,
 void _20_REW(IRIContext &ctx, IRID fileSEXP,
              IRI_CONTEXTMAP &iridiumBuildContext);
 
+void _20_IFB(IRIContext &ctx, IRID fileSEXP, IRI_CONTEXTMAP &iridiumBuildContext,
+             CTARGETS &continueTargets);
+
 void _21_TER(IRIContext &ctx, IRID fileSEXP,
              IRI_CONTEXTMAP &iridiumBuildContext);
 
