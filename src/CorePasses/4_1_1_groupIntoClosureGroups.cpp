@@ -43,7 +43,15 @@ inline void setClosureFlags(double flag, BBContainerSEXP bbContainer) {
     break;
 
   case CF_FUNCTION:
-    bbContainer.setPROTO();
+    // Generators and async functions are not constructors: quickjs's own
+    // compiler sets has_prototype only when func_kind == JS_FUNC_NORMAL.
+    // The Function.prototype.arguments/.caller accessors throw unless the
+    // receiver has a prototype slot (see js_function_proto_caller), so
+    // keeping PROTO off for these kinds is what makes those reads throw
+    // TypeError per spec (restricted-properties suite). new.target stays
+    // allowed: generators/async functions may still read it.
+    if (!bbContainer.hasGENERATOR() && !bbContainer.hasASYNC())
+      bbContainer.setPROTO();
     bbContainer.setNEW();
     bbContainer.setARGUMENTS();
     break;
