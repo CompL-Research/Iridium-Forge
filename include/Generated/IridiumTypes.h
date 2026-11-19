@@ -1,4 +1,4 @@
-// Generated: 2026-11-19 03:30:30
+// Generated: 2026-11-19 05:19:28
 #pragma once
 #include "Storage/Config.h"
 #include "Storage/IridiumSEXP.h"
@@ -3406,6 +3406,42 @@ using IRI_STORAGE::FlagValue;
     void clearSAFE() { mutate_flag(FLAG_IDX_SAFE) = std::monostate{}; }
   };
 
+  struct PropKeyCheckSEXP {
+    IRID id;
+    IRIContext* ctx;
+
+    explicit PropKeyCheckSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::PropKeyCheck) {
+        throw std::runtime_error("Schema Cast Error: Expected PropKeyCheck, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
+      }
+    }
+
+    static IRID create(IRIContext& p, IRID Obj) {
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::PropKeyCheck, {Obj}, {});
+    }
+
+    static constexpr uint32_t TOTAL_ARGS = 1;
+    static constexpr uint32_t TOTAL_FLAGS = 0;
+
+
+
+    // --- Helpers ---
+    inline FlagValue& mutate_flag(uint32_t idx) {
+        return ctx->storage.nodes.get_flags_m(id)[idx];
+    }
+    inline const FlagValue& get_flag(uint32_t idx) const {
+        return ctx->storage.nodes.get_flags(id)[idx];
+    }
+
+    // --- Arguments ---
+    IRID getArg_Obj() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_Obj() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Obj(IRID val) { assert(hasArg_Obj() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
+
+    // --- Flags ---
+
+  };
+
   struct JSComputedFieldWriteSEXP {
     IRID id;
     IRIContext* ctx;
@@ -4072,40 +4108,6 @@ using IRI_STORAGE::FlagValue;
 
     static IRID create(IRIContext& p) {
       return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::StackToHeap, {}, {});
-    }
-
-    static constexpr uint32_t TOTAL_ARGS = 0;
-    static constexpr uint32_t TOTAL_FLAGS = 0;
-
-
-
-    // --- Helpers ---
-    inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.nodes.get_flags_m(id)[idx];
-    }
-    inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.nodes.get_flags(id)[idx];
-    }
-
-    // --- Arguments ---
-
-
-    // --- Flags ---
-
-  };
-
-  struct LoopInitPreludeEndSEXP {
-    IRID id;
-    IRIContext* ctx;
-
-    explicit LoopInitPreludeEndSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::LoopInitPreludeEnd) {
-        throw std::runtime_error("Schema Cast Error: Expected LoopInitPreludeEnd, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
-      }
-    }
-
-    static IRID create(IRIContext& p) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::LoopInitPreludeEnd, {}, {});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;

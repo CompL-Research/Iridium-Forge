@@ -1,4 +1,4 @@
-// Generated: 2026-11-19 03:30:31
+// Generated: 2026-11-19 05:19:28
 #pragma once
 
 #include "Support/PP/PPContext.hpp"
@@ -43,6 +43,7 @@ std::string printUnop(const PPContext &pp, IRID node);
 std::string printJSDefineObjProp(const PPContext &pp, IRID node);
 std::string printBinop(const PPContext &pp, IRID node);
 std::string printJSComputedFieldRead(const PPContext &pp, IRID node);
+std::string printPropKeyCheck(const PPContext &pp, IRID node);
 std::string printJSComputedFieldWrite(const PPContext &pp, IRID node);
 std::string printJSToObject(const PPContext &pp, IRID node);
 std::string printJSAppend(const PPContext &pp, IRID node);

@@ -1,4 +1,4 @@
-// Generated: 2026-11-19 03:30:31
+// Generated: 2026-11-19 05:19:28
 #pragma once
 
 #include "Support/PTA/PTAContext.hpp"
@@ -78,6 +78,8 @@ inline void dispatchPTAStatement(const PTAStatementContext &ptactx) {
       return handleBinop(ptactx);
     case IRI_GEN::IRI_TAG::JSComputedFieldRead:
       return handleJSComputedFieldRead(ptactx);
+    case IRI_GEN::IRI_TAG::PropKeyCheck:
+      return handlePropKeyCheck(ptactx);
     case IRI_GEN::IRI_TAG::JSComputedFieldWrite:
       return handleJSComputedFieldWrite(ptactx);
     case IRI_GEN::IRI_TAG::JSToObject:

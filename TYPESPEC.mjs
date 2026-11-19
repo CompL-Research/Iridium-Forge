@@ -847,6 +847,17 @@ export default [
     },
   },
   {
+    tag: "PropKeyCheck",
+    meta: "STMT",
+    args: ["Obj"],
+    flags: {
+      string: [],
+      void: [],
+      bool: [],
+      double: [],
+    },
+  },
+  {
     tag: "JSComputedFieldWrite",
     meta: "STMT",
     args: ["Obj", "Field", "Value", "Receiver"],
@@ -1031,17 +1042,6 @@ export default [
   {
     tag: "StackToHeap",
     meta: "STMT",
-    args: [],
-    flags: {
-      string: [],
-      void: [],
-      bool: [],
-      double: [],
-    },
-  },
-  {
-    tag: "LoopInitPreludeEnd",
-    meta: "*STMT",
     args: [],
     flags: {
       string: [],

@@ -1,4 +1,4 @@
-// Generated: 2026-11-19 03:30:30
+// Generated: 2026-11-19 05:19:28
 #pragma once
 #include <string>
 
@@ -79,6 +79,7 @@ namespace IRI_GEN {
     Binop,
     Null,
     JSComputedFieldRead,
+    PropKeyCheck,
     JSComputedFieldWrite,
     JSToObject,
     JSAppend,
@@ -96,7 +97,6 @@ namespace IRI_GEN {
     JSInitialYield,
     JSIDOP,
     StackToHeap,
-    LoopInitPreludeEnd,
     JSSetHome,
     JSSetName,
     JSSetPrototypeOf,
@@ -196,6 +196,7 @@ namespace IRI_GEN {
       case Binop: return "Binop";
       case Null: return "Null";
       case JSComputedFieldRead: return "JSComputedFieldRead";
+      case PropKeyCheck: return "PropKeyCheck";
       case JSComputedFieldWrite: return "JSComputedFieldWrite";
       case JSToObject: return "JSToObject";
       case JSAppend: return "JSAppend";
@@ -213,7 +214,6 @@ namespace IRI_GEN {
       case JSInitialYield: return "JSInitialYield";
       case JSIDOP: return "JSIDOP";
       case StackToHeap: return "StackToHeap";
-      case LoopInitPreludeEnd: return "LoopInitPreludeEnd";
       case JSSetHome: return "JSSetHome";
       case JSSetName: return "JSSetName";
       case JSSetPrototypeOf: return "JSSetPrototypeOf";
@@ -482,6 +482,7 @@ namespace IRI_GEN {
       case Binop: return IRI_META::AMP;
       case Null: return IRI_META::RVAL;
       case JSComputedFieldRead: return IRI_META::AMP;
+      case PropKeyCheck: return IRI_META::STMT;
       case JSComputedFieldWrite: return IRI_META::STMT;
       case JSToObject: return IRI_META::AMP;
       case JSAppend: return IRI_META::AMP;
@@ -499,7 +500,6 @@ namespace IRI_GEN {
       case JSInitialYield: return IRI_META::STMT;
       case JSIDOP: return IRI_META::AMP;
       case StackToHeap: return IRI_META::STMT;
-      case LoopInitPreludeEnd: return IRI_META::STAR_STMT;
       case JSSetHome: return IRI_META::STMT;
       case JSSetName: return IRI_META::STMT;
       case JSSetPrototypeOf: return IRI_META::STMT;

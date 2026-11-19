@@ -1,4 +1,4 @@
-// Generated: 2026-11-19 03:30:30
+// Generated: 2026-11-19 05:19:28
 #pragma once
 #include "IridiumEnums.h"
 #include <cstdint>
@@ -84,6 +84,7 @@ public:
       case IRI_GEN::Binop: return 1;
       case IRI_GEN::Null: return 0;
       case IRI_GEN::JSComputedFieldRead: return 1;
+      case IRI_GEN::PropKeyCheck: return 0;
       case IRI_GEN::JSComputedFieldWrite: return 1;
       case IRI_GEN::JSToObject: return 0;
       case IRI_GEN::JSAppend: return 0;
@@ -101,7 +102,6 @@ public:
       case IRI_GEN::JSInitialYield: return 0;
       case IRI_GEN::JSIDOP: return 2;
       case IRI_GEN::StackToHeap: return 0;
-      case IRI_GEN::LoopInitPreludeEnd: return 0;
       case IRI_GEN::JSSetHome: return 0;
       case IRI_GEN::JSSetName: return 0;
       case IRI_GEN::JSSetPrototypeOf: return 0;

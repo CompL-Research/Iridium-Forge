@@ -1,4 +1,4 @@
-// Generated: 2026-11-19 03:30:31
+// Generated: 2026-11-19 05:19:28
 #pragma once
 
 #include "Support/PP.hpp"
@@ -77,6 +77,8 @@ inline std::string ppStatement(const PPContext &pp, IRID node) {
       return printBinop(pp, node);
     case IRI_GEN::IRI_TAG::JSComputedFieldRead:
       return printJSComputedFieldRead(pp, node);
+    case IRI_GEN::IRI_TAG::PropKeyCheck:
+      return printPropKeyCheck(pp, node);
     case IRI_GEN::IRI_TAG::JSComputedFieldWrite:
       return printJSComputedFieldWrite(pp, node);
     case IRI_GEN::IRI_TAG::JSToObject:
