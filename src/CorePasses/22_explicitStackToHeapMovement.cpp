@@ -86,26 +86,6 @@ void _22_ESTKTHM(IRI_STORAGE::IRIContext &ctx, IRI_STORAGE::IRID fileSEXP,
             // so the next loop increment moves us to the statement after 'goto'
             ++it;
           }
-
-        } else if (stmtTAG == IRI_GEN::LoopInitPreludeEnd) {
-
-          dirty = true;
-
-          double targetScope = currScope;
-          auto bindingsToMove =
-              ctx.iris->getBindingsToMoveToHeap(currScope, targetScope);
-
-          // This statement is transitional, marks the end of a loop
-          // at this point the scope must release all escaping bindings in the
-          // top level loop scope (if any).
-          if (bindingsToMove.size() > 0) {
-            IRI_STORAGE::IRID stackToHeapNodeID = StackToHeapSEXP::create(ctx);
-            ctx.storage.nodes.set_args(stackToHeapNodeID, bindingsToMove);
-            *it = stackToHeapNodeID;
-          } else {
-
-            *it = ctx.storage.nodes.NOP_SEXP;
-          }
         }
       }
 
