@@ -176,7 +176,11 @@ public:
           bool isCap = IRI_BINDING(iris, target).isCaptured();
           bool isArg = eb.hasJSARG();
           bool alwaysLive = isEvalTainted || isCap || (!isStrict && isArg);
-          if (!alwaysLive) {
+          // A write to a function's own name binding (CreateImmutableBinding,
+          // marked SLOPPYCONST when the body is sloppy) is ignored at runtime,
+          // so it must not kill the value earlier definitions gave the binding.
+          bool stores = eb.hasSLOPPYCONST() ? lw.hasINIT() : true;
+          if (stores && !alwaysLive) {
             nextState = nextState.setLattice(target, LivenessLattice::DEAD);
           }
         }

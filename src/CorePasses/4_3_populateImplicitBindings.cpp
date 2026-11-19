@@ -58,7 +58,18 @@ void _4_3_PIB(IRIContext &ctx, IRID fileID, BUILD_CTX &iridiumBuildContext) {
           }
 
           if (ctx.iris->hasBinding(ibs.getNAME(), localScope)) {
-            if (ibs.getNAME() == str_arguments || ibs.getNAME() == str_closure) {
+            // A named function expression whose name collides with one of its
+            // own parameters keeps the parameter binding: the function's own
+            // name binding is not created in that case, so the declaration is
+            // dropped rather than treated as a conflict.
+            IRID existingBinding =
+                ctx.iris->resolve(ibs.getNAME(), localScope).ID;
+            if (ibs.getOPID() == 12 &&
+                (IRI_GEN::EnvBindingSEXP(existingBinding, ctx).hasJSARG() ||
+                 IRI_GEN::EnvBindingSEXP(existingBinding, ctx).hasJSRESTARG())) {
+              ctx.storage.nodes.update_arg_inplace(bbID, i, ctx.storage.nodes.NOP_SEXP);
+            } else if (ibs.getNAME() == str_arguments ||
+                       ibs.getNAME() == str_closure) {
               ctx.storage.nodes.update_arg_inplace(bbID, i, ctx.storage.nodes.NOP_SEXP);
             } else {
               throw std::runtime_error("unexpected conflict when declaring implicit bindings");
@@ -77,6 +88,11 @@ void _4_3_PIB(IRIContext &ctx, IRID fileID, BUILD_CTX &iridiumBuildContext) {
             rval = IRI_HELPERS::createUnsafeEnvReadSEXP(ctx, str_undefined);
           } else if (OPID == 12) {
             resolved.isIMPLICITOVERRIDEABLE = true;
+            // FunctionDefinitionInstantiation creates the function's own name
+            // binding with CreateImmutableBinding(name, strict), so a write to
+            // it is an error only in strict code and is ignored otherwise.
+            if (!container.hasSTRICT())
+              EnvBindingSEXP(lval, ctx).setSLOPPYCONST();
             rval = JSCTXSEXP::create(ctx, 2);
             ctx.storage.nodes.set_args(rval, ctx.storage.nodes.get_args(ibs.getArg_Args()));
           } else {

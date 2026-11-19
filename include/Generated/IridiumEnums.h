@@ -1,4 +1,4 @@
-// Generated: 2026-11-19 05:19:28
+// Generated: 2026-11-19 14:28:14
 #pragma once
 #include <string>
 
@@ -270,6 +270,7 @@ namespace IRI_GEN {
     CNAME,
     SETNAME,
     StartBBIDX,
+    FUNCNAME,
     ARGUMENTS,
     ASYNC,
     STRICT,
@@ -291,6 +292,7 @@ namespace IRI_GEN {
     REQIDX,
     JSARG,
     JSRESTARG,
+    SLOPPYCONST,
     PRIVFIELD,
     PRIVMETHOD,
     PRIVGET,
@@ -348,6 +350,7 @@ namespace IRI_GEN {
       case CNAME: return "CNAME";
       case SETNAME: return "SETNAME";
       case StartBBIDX: return "StartBBIDX";
+      case FUNCNAME: return "FUNCNAME";
       case ARGUMENTS: return "ARGUMENTS";
       case ASYNC: return "ASYNC";
       case STRICT: return "STRICT";
@@ -369,6 +372,7 @@ namespace IRI_GEN {
       case REQIDX: return "REQIDX";
       case JSARG: return "JSARG";
       case JSRESTARG: return "JSRESTARG";
+      case SLOPPYCONST: return "SLOPPYCONST";
       case PRIVFIELD: return "PRIVFIELD";
       case PRIVMETHOD: return "PRIVMETHOD";
       case PRIVGET: return "PRIVGET";

@@ -89,6 +89,9 @@ function genSchema(spec) {
       if (a.type === "bool" && a.isVoid === true) {
         return `${a.name} ? FlagValue(${a.name}) : FlagValue(std::monostate())`;
       }
+      if (a.type === "StringID") {
+        return `FlagValue(${a.name})`;
+      }
       return `FlagValue(${a.name})`;
     })
     .join(", ");

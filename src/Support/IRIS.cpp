@@ -107,7 +107,7 @@ IRIS::IRIS(
 
       auto lb =
           EnvBindingSEXP::create(ctx, bName, kind == JSARG, kind == JSRESTARG,
-                                 false, false, false,
+                                 false, false, false, false,
                                  false, false, false, false, false,
                                  k, currScope, -1, -1);
 
@@ -191,7 +191,7 @@ IRI_STORAGE::BindingMeta &IRIS::declareLBinding(double scope, StringID name,
   double NEXT = -1;
   double LINK = -1;
   IRID newBinding = IRI_GEN::EnvBindingSEXP::create(ctx, NAME, JSARG, JSRESTARG,
-                                                    JSLET, JSCONST, JSVAR,
+                                                    JSLET, JSCONST, false, JSVAR,
                                                     false, false, false, false, false,
                                                     REFIDX, SCOPE, NEXT, LINK);
   bindingsAtScope[name] = newBinding;
@@ -231,7 +231,7 @@ IRI_STORAGE::BindingMeta &IRIS::declareRBinding(double scope, StringID name,
     double NEXT = -1;
     double LINK = -1;
     IRID store = IRI_GEN::EnvBindingSEXP::create(ctx, NAME, JSARG, JSRESTARG,
-                                                 JSLET, JSCONST, JSVAR,
+                                                 JSLET, JSCONST, false, JSVAR,
                                                  false, false, false, false, false,
                                                  REFIDX, SCOPE, NEXT, LINK);
     ctx.storage.bindings.allocate(ctx, store);

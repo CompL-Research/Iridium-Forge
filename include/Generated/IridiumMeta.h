@@ -1,4 +1,4 @@
-// Generated: 2026-11-19 05:19:28
+// Generated: 2026-11-19 14:28:14
 #pragma once
 #include "IridiumEnums.h"
 #include <cstdint>
@@ -33,14 +33,14 @@ public:
       case IRI_GEN::JSFuncDecl: return 6;
       case IRI_GEN::Lambda: return 4;
       case IRI_GEN::NOP: return 0;
-      case IRI_GEN::BBContainer: return 16;
+      case IRI_GEN::BBContainer: return 17;
       case IRI_GEN::Bindings: return 0;
       case IRI_GEN::StarExport: return 1;
       case IRI_GEN::StaticImport: return 3;
       case IRI_GEN::LocalStaticExport: return 2;
       case IRI_GEN::NamedReexport: return 3;
       case IRI_GEN::ModuleRequest: return 2;
-      case IRI_GEN::EnvBinding: return 15;
+      case IRI_GEN::EnvBinding: return 16;
       case IRI_GEN::RemoteEnvBinding: return 5;
       case IRI_GEN::GlobalBinding: return 2;
       case IRI_GEN::ScriptBinding: return 5;
@@ -274,21 +274,22 @@ public:
       case IRI_GEN::BBContainer:
         switch(flag) {
         case IRI_GEN::NAME: return 0;
-        case IRI_GEN::ARGUMENTS: return 1;
-        case IRI_GEN::ASYNC: return 2;
-        case IRI_GEN::STRICT: return 3;
-        case IRI_GEN::GENERATOR: return 4;
-        case IRI_GEN::PROTO: return 5;
-        case IRI_GEN::NEW: return 6;
-        case IRI_GEN::SCALL: return 7;
-        case IRI_GEN::SOBJ: return 8;
-        case IRI_GEN::HOME: return 9;
-        case IRI_GEN::DERIVED: return 10;
-        case IRI_GEN::TopLevel: return 11;
-        case IRI_GEN::ECMAArgs: return 12;
-        case IRI_GEN::StartBBIDX: return 13;
-        case IRI_GEN::ScopeIDX: return 14;
-        case IRI_GEN::ContainerFlagID: return 15;
+        case IRI_GEN::FUNCNAME: return 1;
+        case IRI_GEN::ARGUMENTS: return 2;
+        case IRI_GEN::ASYNC: return 3;
+        case IRI_GEN::STRICT: return 4;
+        case IRI_GEN::GENERATOR: return 5;
+        case IRI_GEN::PROTO: return 6;
+        case IRI_GEN::NEW: return 7;
+        case IRI_GEN::SCALL: return 8;
+        case IRI_GEN::SOBJ: return 9;
+        case IRI_GEN::HOME: return 10;
+        case IRI_GEN::DERIVED: return 11;
+        case IRI_GEN::TopLevel: return 12;
+        case IRI_GEN::ECMAArgs: return 13;
+        case IRI_GEN::StartBBIDX: return 14;
+        case IRI_GEN::ScopeIDX: return 15;
+        case IRI_GEN::ContainerFlagID: return 16;
           default: return -1;
         }
         break;
@@ -335,16 +336,17 @@ public:
         case IRI_GEN::JSRESTARG: return 2;
         case IRI_GEN::JSLET: return 3;
         case IRI_GEN::JSCONST: return 4;
-        case IRI_GEN::JSVAR: return 5;
-        case IRI_GEN::PRIVFIELD: return 6;
-        case IRI_GEN::PRIVMETHOD: return 7;
-        case IRI_GEN::PRIVGET: return 8;
-        case IRI_GEN::PRIVSET: return 9;
-        case IRI_GEN::PRIVGETSET: return 10;
-        case IRI_GEN::REFIDX: return 11;
-        case IRI_GEN::SCOPE: return 12;
-        case IRI_GEN::NEXT: return 13;
-        case IRI_GEN::LINK: return 14;
+        case IRI_GEN::SLOPPYCONST: return 5;
+        case IRI_GEN::JSVAR: return 6;
+        case IRI_GEN::PRIVFIELD: return 7;
+        case IRI_GEN::PRIVMETHOD: return 8;
+        case IRI_GEN::PRIVGET: return 9;
+        case IRI_GEN::PRIVSET: return 10;
+        case IRI_GEN::PRIVGETSET: return 11;
+        case IRI_GEN::REFIDX: return 12;
+        case IRI_GEN::SCOPE: return 13;
+        case IRI_GEN::NEXT: return 14;
+        case IRI_GEN::LINK: return 15;
           default: return -1;
         }
         break;
@@ -740,21 +742,22 @@ public:
       case IRI_GEN::BBContainer:
         switch(index) {
         case 0: return IRI_GEN::NAME;
-        case 1: return IRI_GEN::ARGUMENTS;
-        case 2: return IRI_GEN::ASYNC;
-        case 3: return IRI_GEN::STRICT;
-        case 4: return IRI_GEN::GENERATOR;
-        case 5: return IRI_GEN::PROTO;
-        case 6: return IRI_GEN::NEW;
-        case 7: return IRI_GEN::SCALL;
-        case 8: return IRI_GEN::SOBJ;
-        case 9: return IRI_GEN::HOME;
-        case 10: return IRI_GEN::DERIVED;
-        case 11: return IRI_GEN::TopLevel;
-        case 12: return IRI_GEN::ECMAArgs;
-        case 13: return IRI_GEN::StartBBIDX;
-        case 14: return IRI_GEN::ScopeIDX;
-        case 15: return IRI_GEN::ContainerFlagID;
+        case 1: return IRI_GEN::FUNCNAME;
+        case 2: return IRI_GEN::ARGUMENTS;
+        case 3: return IRI_GEN::ASYNC;
+        case 4: return IRI_GEN::STRICT;
+        case 5: return IRI_GEN::GENERATOR;
+        case 6: return IRI_GEN::PROTO;
+        case 7: return IRI_GEN::NEW;
+        case 8: return IRI_GEN::SCALL;
+        case 9: return IRI_GEN::SOBJ;
+        case 10: return IRI_GEN::HOME;
+        case 11: return IRI_GEN::DERIVED;
+        case 12: return IRI_GEN::TopLevel;
+        case 13: return IRI_GEN::ECMAArgs;
+        case 14: return IRI_GEN::StartBBIDX;
+        case 15: return IRI_GEN::ScopeIDX;
+        case 16: return IRI_GEN::ContainerFlagID;
           default: throw std::runtime_error("Invalid flag index");
         }
         break;
@@ -801,16 +804,17 @@ public:
         case 2: return IRI_GEN::JSRESTARG;
         case 3: return IRI_GEN::JSLET;
         case 4: return IRI_GEN::JSCONST;
-        case 5: return IRI_GEN::JSVAR;
-        case 6: return IRI_GEN::PRIVFIELD;
-        case 7: return IRI_GEN::PRIVMETHOD;
-        case 8: return IRI_GEN::PRIVGET;
-        case 9: return IRI_GEN::PRIVSET;
-        case 10: return IRI_GEN::PRIVGETSET;
-        case 11: return IRI_GEN::REFIDX;
-        case 12: return IRI_GEN::SCOPE;
-        case 13: return IRI_GEN::NEXT;
-        case 14: return IRI_GEN::LINK;
+        case 5: return IRI_GEN::SLOPPYCONST;
+        case 6: return IRI_GEN::JSVAR;
+        case 7: return IRI_GEN::PRIVFIELD;
+        case 8: return IRI_GEN::PRIVMETHOD;
+        case 9: return IRI_GEN::PRIVGET;
+        case 10: return IRI_GEN::PRIVSET;
+        case 11: return IRI_GEN::PRIVGETSET;
+        case 12: return IRI_GEN::REFIDX;
+        case 13: return IRI_GEN::SCOPE;
+        case 14: return IRI_GEN::NEXT;
+        case 15: return IRI_GEN::LINK;
           default: throw std::runtime_error("Invalid flag index");
         }
         break;

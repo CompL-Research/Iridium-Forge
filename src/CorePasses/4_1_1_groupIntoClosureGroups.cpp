@@ -110,7 +110,8 @@ inline IRID createBBContainerSEXP(IRIContext &ctx, double targetScopeIDX,
   auto &currContext = iridiumBuildContext[targetScopeIDX];
 
   IRID bbContainer = BBContainerSEXP::create(
-      ctx, bindingsID, BBListID, ctx.storage.strings.intern(currContext->name), false,
+      ctx, bindingsID, BBListID, ctx.storage.strings.intern(currContext->name),
+      ctx.storage.strings.intern(""), false,
       currContext->isAsync, currContext->isStrict, currContext->isGenerator,
       false, false, false, false, false, false, isTopLevel,
       currContext->ecmaArgs, BBSEXP(currContext->BB[0], ctx).getIDX(),

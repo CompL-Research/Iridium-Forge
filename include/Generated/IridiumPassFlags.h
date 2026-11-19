@@ -1,4 +1,4 @@
-// Generated: 2026-11-19 05:19:28
+// Generated: 2026-11-19 14:28:14
 #pragma once
 #include <functional>
 #include <string>

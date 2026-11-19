@@ -259,7 +259,7 @@ export default [
     meta: "",
     args: ["Bindings", "BB"],
     flags: {
-      string: ["NAME"],
+      string: ["NAME", "FUNCNAME"],
       void: [
         "ARGUMENTS",
         "ASYNC",
@@ -354,6 +354,7 @@ export default [
         "JSRESTARG",
         "JSLET",
         "JSCONST",
+        "SLOPPYCONST",
         "JSVAR",
         "PRIVFIELD",
         "PRIVMETHOD",
