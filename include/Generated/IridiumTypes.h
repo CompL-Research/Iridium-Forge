@@ -1,4 +1,4 @@
-// Generated: 2026-11-19 14:28:14
+// Generated: 2026-11-20 01:01:49
 #pragma once
 #include "Storage/Config.h"
 #include "Storage/IridiumSEXP.h"
@@ -4582,18 +4582,61 @@ using IRI_STORAGE::FlagValue;
     void clearOPID() { mutate_flag(FLAG_IDX_OPID) = std::monostate{}; }
   };
 
-  struct QJSModuleInitSEXP {
+  struct ModuleDeclareGuardSEXP {
     IRID id;
     IRIContext* ctx;
 
-    explicit QJSModuleInitSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::QJSModuleInit) {
-        throw std::runtime_error("Schema Cast Error: Expected QJSModuleInit, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
+    explicit ModuleDeclareGuardSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::ModuleDeclareGuard) {
+        throw std::runtime_error("Schema Cast Error: Expected ModuleDeclareGuard, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
+      }
+    }
+
+    static IRID create(IRIContext& p, double DECL, double EVAL) {
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::ModuleDeclareGuard, {}, {FlagValue(DECL), FlagValue(EVAL)});
+    }
+
+    static constexpr uint32_t TOTAL_ARGS = 0;
+    static constexpr uint32_t TOTAL_FLAGS = 2;
+
+    static constexpr uint32_t FLAG_IDX_DECL = 0;
+    static constexpr uint32_t FLAG_IDX_EVAL = 1;
+
+    // --- Helpers ---
+    inline FlagValue& mutate_flag(uint32_t idx) {
+        return ctx->storage.nodes.get_flags_m(id)[idx];
+    }
+    inline const FlagValue& get_flag(uint32_t idx) const {
+        return ctx->storage.nodes.get_flags(id)[idx];
+    }
+
+    // --- Arguments ---
+
+
+    // --- Flags ---
+    double getDECL() const { return std::get<double>(get_flag(FLAG_IDX_DECL)); }
+    void setDECL(double val) { mutate_flag(FLAG_IDX_DECL) = val; }
+    bool hasDECL() const { return std::holds_alternative<double>(get_flag(FLAG_IDX_DECL)); }
+    void clearDECL() { mutate_flag(FLAG_IDX_DECL) = std::monostate{}; }
+
+    double getEVAL() const { return std::get<double>(get_flag(FLAG_IDX_EVAL)); }
+    void setEVAL(double val) { mutate_flag(FLAG_IDX_EVAL) = val; }
+    bool hasEVAL() const { return std::holds_alternative<double>(get_flag(FLAG_IDX_EVAL)); }
+    void clearEVAL() { mutate_flag(FLAG_IDX_EVAL) = std::monostate{}; }
+  };
+
+  struct ModuleDeclareReturnSEXP {
+    IRID id;
+    IRIContext* ctx;
+
+    explicit ModuleDeclareReturnSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::ModuleDeclareReturn) {
+        throw std::runtime_error("Schema Cast Error: Expected ModuleDeclareReturn, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
       }
     }
 
     static IRID create(IRIContext& p) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::QJSModuleInit, {}, {});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::ModuleDeclareReturn, {}, {});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;

@@ -1,4 +1,4 @@
-// Generated: 2026-11-19 14:28:14
+// Generated: 2026-11-20 01:01:50
 #pragma once
 
 #include "Support/PTA/PTAContext.hpp"
@@ -128,8 +128,10 @@ inline void dispatchPTAStatement(const PTAStatementContext &ptactx) {
       return handleDCTRRet(ptactx);
     case IRI_GEN::IRI_TAG::ToNumeric:
       return handleToNumeric(ptactx);
-    case IRI_GEN::IRI_TAG::QJSModuleInit:
-      return handleQJSModuleInit(ptactx);
+    case IRI_GEN::IRI_TAG::ModuleDeclareGuard:
+      return handleModuleDeclareGuard(ptactx);
+    case IRI_GEN::IRI_TAG::ModuleDeclareReturn:
+      return handleModuleDeclareReturn(ptactx);
     case IRI_GEN::IRI_TAG::CompoundAssn:
       return handleCompoundAssn(ptactx);
     case IRI_GEN::IRI_TAG::JSConstruct:

@@ -35,6 +35,10 @@ inline static bool isCFlowStmt(IRI_TAG tag) {
     return true;
   if (Throw == tag)
     return true;
+  if (ModuleDeclareGuard == tag)
+    return true;
+  if (ModuleDeclareReturn == tag)
+    return true;
   return false;
 }
 

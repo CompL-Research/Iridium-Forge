@@ -1162,7 +1162,21 @@ export default [
     },
   },
   {
-    tag: "QJSModuleInit",
+    // Branches a module body into its two passes: DECL (initialize the exported
+    // bindings, then ModuleDeclareReturn) and EVAL (run the body).
+    tag: "ModuleDeclareGuard",
+    meta: "STMT",
+    args: [],
+    flags: {
+      string: [],
+      void: [],
+      bool: [],
+      double: ["DECL", "EVAL"],
+    },
+  },
+  {
+    // Ends the module declaration pass without running the body.
+    tag: "ModuleDeclareReturn",
     meta: "STMT",
     args: [],
     flags: {

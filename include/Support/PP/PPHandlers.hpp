@@ -1,4 +1,4 @@
-// Generated: 2026-11-19 14:28:14
+// Generated: 2026-11-20 01:01:50
 #pragma once
 
 #include "Support/PP/PPContext.hpp"
@@ -68,7 +68,8 @@ std::string printRWrite(const PPContext &pp, IRID node);
 std::string printMWrite(const PPContext &pp, IRID node);
 std::string printDCTRRet(const PPContext &pp, IRID node);
 std::string printToNumeric(const PPContext &pp, IRID node);
-std::string printQJSModuleInit(const PPContext &pp, IRID node);
+std::string printModuleDeclareGuard(const PPContext &pp, IRID node);
+std::string printModuleDeclareReturn(const PPContext &pp, IRID node);
 std::string printCompoundAssn(const PPContext &pp, IRID node);
 std::string printJSConstruct(const PPContext &pp, IRID node);
 std::string printJSConstructApply(const PPContext &pp, IRID node);

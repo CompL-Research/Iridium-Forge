@@ -1,4 +1,4 @@
-// Generated: 2026-11-19 14:28:14
+// Generated: 2026-11-20 01:01:49
 #pragma once
 #include <string>
 
@@ -107,7 +107,8 @@ namespace IRI_GEN {
     DCTRRet,
     ToNumeric,
     JSCTX,
-    QJSModuleInit,
+    ModuleDeclareGuard,
+    ModuleDeclareReturn,
     CompoundAssn,
     ThisINIT,
     PTAStub,
@@ -224,7 +225,8 @@ namespace IRI_GEN {
       case DCTRRet: return "DCTRRet";
       case ToNumeric: return "ToNumeric";
       case JSCTX: return "JSCTX";
-      case QJSModuleInit: return "QJSModuleInit";
+      case ModuleDeclareGuard: return "ModuleDeclareGuard";
+      case ModuleDeclareReturn: return "ModuleDeclareReturn";
       case CompoundAssn: return "CompoundAssn";
       case ThisINIT: return "ThisINIT";
       case PTAStub: return "PTAStub";
@@ -315,7 +317,9 @@ namespace IRI_GEN {
     INCREMENT,
     INIT,
     DECLVAR,
-    DECLFUN
+    DECLFUN,
+    DECL,
+    EVAL
   };
 
   inline std::string dump_flag(IRI_FLAG value) {
@@ -396,6 +400,8 @@ namespace IRI_GEN {
       case INIT: return "INIT";
       case DECLVAR: return "DECLVAR";
       case DECLFUN: return "DECLFUN";
+      case DECL: return "DECL";
+      case EVAL: return "EVAL";
       default: return "unknown_flag";
     }
   }
@@ -514,7 +520,8 @@ namespace IRI_GEN {
       case DCTRRet: return IRI_META::AMP;
       case ToNumeric: return IRI_META::AMP;
       case JSCTX: return IRI_META::RVAL;
-      case QJSModuleInit: return IRI_META::STMT;
+      case ModuleDeclareGuard: return IRI_META::STMT;
+      case ModuleDeclareReturn: return IRI_META::STMT;
       case CompoundAssn: return IRI_META::STMT;
       case ThisINIT: return IRI_META::RVAL;
       case PTAStub: return IRI_META::UKN;

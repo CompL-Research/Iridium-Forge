@@ -150,6 +150,10 @@ static bool isValidBBTerminal(IRI_GEN::IRI_TAG tag, IRIContext &ctx) {
     return true;
   if (Throw == tag)
     return true;
+  if (ModuleDeclareGuard == tag)
+    return true;
+  if (ModuleDeclareReturn == tag)
+    return true;
   return false;
 }
 
@@ -238,6 +242,20 @@ void IRIBB::setTerminal(IRID stmtID) {
     IfElseJumpSEXP ieJump(stmtID, ctx);
     addEdge(ieJump.getTRUE());
     addEdge(ieJump.getFALSE());
+    break;
+  }
+  case IRI_GEN::ModuleDeclareGuard: {
+    // The module's two passes are two branches, not an instruction fall-through:
+    // the declaration pass initialises the exported bindings and stops, the
+    // evaluation pass runs the body.
+    tail = new IRIStatement(stmtID, this);
+    ModuleDeclareGuardSEXP guard(stmtID, ctx);
+    addEdge(guard.getDECL());
+    addEdge(guard.getEVAL());
+    break;
+  }
+  case IRI_GEN::ModuleDeclareReturn: {
+    tail = new IRIStatement(stmtID, this);
     break;
   }
   case IRI_GEN::Throw: {
@@ -632,6 +650,11 @@ void IRICFG::commit() {
         kind = "IfElseJump";
         to1 = IfElseJumpSEXP(stmtID, ctx).getTRUE();
         to2 = IfElseJumpSEXP(stmtID, ctx).getFALSE();
+        break;
+      case IRI_GEN::ModuleDeclareGuard:
+        kind = "ModuleDeclareGuard";
+        to1 = ModuleDeclareGuardSEXP(stmtID, ctx).getDECL();
+        to2 = ModuleDeclareGuardSEXP(stmtID, ctx).getEVAL();
         break;
       default:
         break;
