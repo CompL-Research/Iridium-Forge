@@ -150,10 +150,6 @@ static bool isValidBBTerminal(IRI_GEN::IRI_TAG tag, IRIContext &ctx) {
     return true;
   if (Throw == tag)
     return true;
-  if (ModuleDeclareGuard == tag)
-    return true;
-  if (ModuleDeclareReturn == tag)
-    return true;
   return false;
 }
 
@@ -244,22 +240,10 @@ void IRIBB::setTerminal(IRID stmtID) {
     addEdge(ieJump.getFALSE());
     break;
   }
-  case IRI_GEN::ModuleDeclareGuard: {
-    // The module's two passes are two branches, not an instruction fall-through:
-    // the declaration pass initialises the exported bindings and stops, the
-    // evaluation pass runs the body.
-    tail = new IRIStatement(stmtID, this);
-    ModuleDeclareGuardSEXP guard(stmtID, ctx);
-    addEdge(guard.getDECL());
-    addEdge(guard.getEVAL());
-    break;
-  }
-  case IRI_GEN::ModuleDeclareReturn: {
-    tail = new IRIStatement(stmtID, this);
-    break;
-  }
   case IRI_GEN::Throw: {
     tail = new IRIStatement(stmtID, this);
+    // Force CFGs to have a single entry and well defined exit bb.
+    addEdge(closure->exit_block);
     break;
   }
   default:
@@ -354,8 +338,6 @@ void IRICFG::verify() {
 IRICFG::IRICFG(IRI_STORAGE::IRID i, IRI_STORAGE::IRIContext &p)
     : id(i), ctx(p) {
   BBContainerSupport bbc(id, ctx);
-  // Entry BBIDX
-  bool wasEntrySet = false;
   entry_block = bbc.getStartBBIDX();
 
   // Common Return Path
@@ -385,13 +367,7 @@ IRICFG::IRICFG(IRI_STORAGE::IRID i, IRI_STORAGE::IRIContext &p)
 
     nodeMap[currBBIDX] =
         std::make_unique<IRIBB>(bb.getScopeIDX(), currBBIDX, this, ctx);
-    if (currBBIDX == entry_block) {
-      assert(!wasEntrySet);
-      wasEntrySet = true;
-    }
   }
-
-  assert(wasEntrySet);
 
   // Populate statements and establish edges
   for (auto [bbID, bbOffset] : bbc.bbs()) {
@@ -627,7 +603,7 @@ void IRICFG::commit() {
   ctx.storage.nodes.set_args(newBBList, newBBS);
 
   // All jump targets in the serialized blocks must be blocks we serialized.
-  // verify() holds this in-memory, but passes mutate successors after it.
+  // The in-memory graph was validated when it was built, but passes mutate
   for (IRID bbID : newBBS) {
     BBIDX from = BBSEXP(bbID, ctx).getIDX();
     for (IRID stmtID : ctx.storage.nodes.get_args(bbID)) {
@@ -650,11 +626,6 @@ void IRICFG::commit() {
         kind = "IfElseJump";
         to1 = IfElseJumpSEXP(stmtID, ctx).getTRUE();
         to2 = IfElseJumpSEXP(stmtID, ctx).getFALSE();
-        break;
-      case IRI_GEN::ModuleDeclareGuard:
-        kind = "ModuleDeclareGuard";
-        to1 = ModuleDeclareGuardSEXP(stmtID, ctx).getDECL();
-        to2 = ModuleDeclareGuardSEXP(stmtID, ctx).getEVAL();
         break;
       default:
         break;

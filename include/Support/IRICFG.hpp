@@ -96,7 +96,6 @@ struct IRICFG {
   std::unordered_map<BBIDX, std::unique_ptr<IRIBB>> nodeMap;
   std::unordered_map<BBIDX, std::set<BBIDX>> successors;
   std::unordered_map<BBIDX, std::set<BBIDX>> predecessors;
-  std::set<BBIDX> continuationPoints;
 
   IRIBB *makeBB(ScopeIDX scope);
   void verify();
@@ -135,6 +134,9 @@ struct IRICFG {
   std::vector<BBIDX> getReversePostOrder(bool includeExceptions,
                                          double startBBIDX) const;
   std::vector<BBIDX> getReversePostOrder(bool includeExceptions = false) const;
+
+private:
+  std::set<BBIDX> continuationPoints;
 };
 
 } // namespace IRI_STRUCTURAL
