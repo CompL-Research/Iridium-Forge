@@ -1,4 +1,4 @@
-// Generated: 2026-11-20 01:01:50
+// Generated: 2026-11-20 22:49:22
 #pragma once
 
 #include "Support/PP.hpp"
@@ -105,6 +105,8 @@ inline std::string ppRVal(const PPContext &pp, IRID node) {
       return printToNumericRVal(pp, node);
     case IRI_GEN::IRI_TAG::JSCTX:
       return printJSCTXRVal(pp, node);
+    case IRI_GEN::IRI_TAG::ModuleDecl:
+      return printModuleDeclRVal(pp, node);
     case IRI_GEN::IRI_TAG::ThisINIT:
       return printThisINITRVal(pp, node);
     case IRI_GEN::IRI_TAG::JSConstruct:

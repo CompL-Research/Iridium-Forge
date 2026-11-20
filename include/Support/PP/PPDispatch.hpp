@@ -1,4 +1,4 @@
-// Generated: 2026-11-20 01:01:50
+// Generated: 2026-11-20 22:49:22
 #pragma once
 
 #include "Support/PP.hpp"
@@ -127,10 +127,8 @@ inline std::string ppStatement(const PPContext &pp, IRID node) {
       return printDCTRRet(pp, node);
     case IRI_GEN::IRI_TAG::ToNumeric:
       return printToNumeric(pp, node);
-    case IRI_GEN::IRI_TAG::ModuleDeclareGuard:
-      return printModuleDeclareGuard(pp, node);
-    case IRI_GEN::IRI_TAG::ModuleDeclareReturn:
-      return printModuleDeclareReturn(pp, node);
+    case IRI_GEN::IRI_TAG::ModuleDeclarationEarlyExit:
+      return printModuleDeclarationEarlyExit(pp, node);
     case IRI_GEN::IRI_TAG::CompoundAssn:
       return printCompoundAssn(pp, node);
     case IRI_GEN::IRI_TAG::JSConstruct:

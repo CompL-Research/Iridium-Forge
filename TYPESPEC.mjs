@@ -1162,21 +1162,18 @@ export default [
     },
   },
   {
-    // Branches a module body into its two passes: DECL (initialize the exported
-    // bindings, then ModuleDeclareReturn) and EVAL (run the body).
-    tag: "ModuleDeclareGuard",
-    meta: "STMT",
+    tag: "ModuleDecl",
+    meta: "RVAL",
     args: [],
     flags: {
       string: [],
       void: [],
       bool: [],
-      double: ["DECL", "EVAL"],
+      double: [],
     },
   },
   {
-    // Ends the module declaration pass without running the body.
-    tag: "ModuleDeclareReturn",
+    tag: "ModuleDeclarationEarlyExit",
     meta: "STMT",
     args: [],
     flags: {

@@ -1,4 +1,4 @@
-// Generated: 2026-11-20 01:01:49
+// Generated: 2026-11-20 22:49:22
 #pragma once
 #include "IridiumEnums.h"
 #include <cstdint>
@@ -112,8 +112,8 @@ public:
       case IRI_GEN::DCTRRet: return 0;
       case IRI_GEN::ToNumeric: return 0;
       case IRI_GEN::JSCTX: return 1;
-      case IRI_GEN::ModuleDeclareGuard: return 2;
-      case IRI_GEN::ModuleDeclareReturn: return 0;
+      case IRI_GEN::ModuleDecl: return 0;
+      case IRI_GEN::ModuleDeclarationEarlyExit: return 0;
       case IRI_GEN::CompoundAssn: return 0;
       case IRI_GEN::ThisINIT: return 0;
       case IRI_GEN::PTAStub: return 0;
@@ -577,13 +577,6 @@ public:
       case IRI_GEN::JSCTX:
         switch(flag) {
         case IRI_GEN::OPID: return 0;
-          default: return -1;
-        }
-        break;
-      case IRI_GEN::ModuleDeclareGuard:
-        switch(flag) {
-        case IRI_GEN::DECL: return 0;
-        case IRI_GEN::EVAL: return 1;
           default: return -1;
         }
         break;
@@ -1052,13 +1045,6 @@ public:
       case IRI_GEN::JSCTX:
         switch(index) {
         case 0: return IRI_GEN::OPID;
-          default: throw std::runtime_error("Invalid flag index");
-        }
-        break;
-      case IRI_GEN::ModuleDeclareGuard:
-        switch(index) {
-        case 0: return IRI_GEN::DECL;
-        case 1: return IRI_GEN::EVAL;
           default: throw std::runtime_error("Invalid flag index");
         }
         break;

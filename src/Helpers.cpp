@@ -83,10 +83,15 @@ IRI_STORAGE::IRID getHoistTargetBB(IRI_STORAGE::IRIContext &ctx,
     return startBBID;
 
   IRI_STORAGE::IRID terminal = stmts.back();
-  if (IRI_NODE(ctx, terminal).tag != IRI_GEN::ModuleDeclareGuard)
+  if (IRI_NODE(ctx, terminal).tag != IRI_GEN::IfElseJump)
     return startBBID;
 
-  double declIDX = IRI_GEN::ModuleDeclareGuardSEXP(terminal, ctx).getDECL();
+  // Module Declaration hoisting target
+  IRI_GEN::IfElseJumpSEXP jump(terminal, ctx);
+  if (IRI_NODE(ctx, jump.getArg_Test()).tag != IRI_GEN::ModuleDecl)
+    return startBBID;
+
+  double declIDX = jump.getTRUE();
   for (auto &bbID : bbs) {
     if (IRI_NODE(ctx, bbID).tag != IRI_GEN::BB)
       continue;

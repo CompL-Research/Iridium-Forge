@@ -1,4 +1,4 @@
-// Generated: 2026-11-20 01:01:50
+// Generated: 2026-11-20 22:49:22
 #pragma once
 
 #include "Support/PTA/PTAContext.hpp"
@@ -65,8 +65,7 @@ void handleRWrite(const PTAStatementContext &ptactx);
 void handleMWrite(const PTAStatementContext &ptactx);
 void handleDCTRRet(const PTAStatementContext &ptactx);
 void handleToNumeric(const PTAStatementContext &ptactx);
-void handleModuleDeclareGuard(const PTAStatementContext &ptactx);
-void handleModuleDeclareReturn(const PTAStatementContext &ptactx);
+void handleModuleDeclarationEarlyExit(const PTAStatementContext &ptactx);
 void handleCompoundAssn(const PTAStatementContext &ptactx);
 void handleJSConstruct(const PTAStatementContext &ptactx);
 void handleJSConstructApply(const PTAStatementContext &ptactx);
@@ -253,11 +252,8 @@ public:
   virtual void visit_ToNumeric(const PTAStatementContext &ptactx) {
     return handleToNumeric(ptactx);
   }
-  virtual void visit_ModuleDeclareGuard(const PTAStatementContext &ptactx) {
-    return handleModuleDeclareGuard(ptactx);
-  }
-  virtual void visit_ModuleDeclareReturn(const PTAStatementContext &ptactx) {
-    return handleModuleDeclareReturn(ptactx);
+  virtual void visit_ModuleDeclarationEarlyExit(const PTAStatementContext &ptactx) {
+    return handleModuleDeclarationEarlyExit(ptactx);
   }
   virtual void visit_CompoundAssn(const PTAStatementContext &ptactx) {
     return handleCompoundAssn(ptactx);

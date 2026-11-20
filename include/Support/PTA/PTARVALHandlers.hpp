@@ -1,4 +1,4 @@
-// Generated: 2026-11-20 01:01:50
+// Generated: 2026-11-20 22:49:22
 #pragma once
 
 #include "Support/PTA/PTAContext.hpp"
@@ -103,6 +103,8 @@ void computeDCTRRetVals(const PTAStatementContext &ptactx, IRID node,
 void computeToNumericVals(const PTAStatementContext &ptactx, IRID node,
                        std::set<Prakriti::NodeUID> &res_);
 void computeJSCTXVals(const PTAStatementContext &ptactx, IRID node,
+                       std::set<Prakriti::NodeUID> &res_);
+void computeModuleDeclVals(const PTAStatementContext &ptactx, IRID node,
                        std::set<Prakriti::NodeUID> &res_);
 void computeThisINITVals(const PTAStatementContext &ptactx, IRID node,
                        std::set<Prakriti::NodeUID> &res_);

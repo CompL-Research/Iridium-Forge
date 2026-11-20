@@ -52,10 +52,6 @@ void IRICloner::remapTargets(IRIContext &ctx, IRID stmtID,
   case IRI_TAG::PushCatchContext:
     re(PushCatchContextSEXP::FLAG_IDX_IDX);
     break;
-  case IRI_TAG::ModuleDeclareGuard:
-    re(ModuleDeclareGuardSEXP::FLAG_IDX_DECL);
-    re(ModuleDeclareGuardSEXP::FLAG_IDX_EVAL);
-    break;
   case IRI_TAG::InvokeFinalizer:
     re(InvokeFinalizerSEXP::FLAG_IDX_IDX);
     break;
@@ -165,10 +161,6 @@ std::vector<double> bbTargets(IRIContext &ctx, IRID bbID) {
       break;
     case IRI_TAG::PushCatchContext:
       add(s, PushCatchContextSEXP::FLAG_IDX_IDX);
-      break;
-    case IRI_TAG::ModuleDeclareGuard:
-      add(s, ModuleDeclareGuardSEXP::FLAG_IDX_DECL);
-      add(s, ModuleDeclareGuardSEXP::FLAG_IDX_EVAL);
       break;
     default:
       break;
