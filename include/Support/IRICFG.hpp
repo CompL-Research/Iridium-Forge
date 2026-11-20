@@ -100,6 +100,11 @@ struct IRICFG {
   IRIBB *makeBB(ScopeIDX scope);
   void verify();
 
+private:
+  void removeUnreachable();
+
+public:
+
   IRIBB *get_bb(BBIDX idx) {
     auto it = nodeMap.find(idx);
     if (it == nodeMap.end())

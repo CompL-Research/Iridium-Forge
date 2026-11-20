@@ -287,6 +287,14 @@ void IRIBB::dumpFlat(std::ostream &oss) const {
 }
 
 void IRICFG::verify() {
+  // EXCEPTION dispatch targets carry their incoming edge in the EXCEPTION
+  // field, not in the predecessors map.
+  std::set<BBIDX> exceptionTargets;
+  for (auto &e : nodeMap) {
+    if (e.second->EXCEPTION > -1)
+      exceptionTargets.insert(e.second->EXCEPTION);
+  }
+
   for (auto &e : nodeMap) {
     IRIBB *bb = e.second.get();
 
@@ -308,17 +316,36 @@ void IRICFG::verify() {
       if (curr->bb != bb) {
         throw std::runtime_error("statement bb back-pointer is stale");
       }
+      // Exception target and PushCatchContext must alwayas be the same in a BB,
+      // right?
+      if (IRI_NODE(ctx, curr->id).tag == IRI_GEN::PushCatchContext &&
+          (double)bb->EXCEPTION !=
+              PushCatchContextSEXP(curr->id, ctx).getIDX()) {
+        throw std::runtime_error("PushCatchContext target diverges from "
+                                 "EXCEPTION in BB " +
+                                 std::to_string((int)bb->IDX));
+      }
+      // A block's control flow is set exclusively by its terminal statement
+      // (modulo possibe exception edge)
+      if (curr != bb->tail) {
+        switch (IRI_NODE(ctx, curr->id).tag) {
+        case IRI_GEN::Goto:
+        case IRI_GEN::IfElseJump:
+        case IRI_GEN::Throw:
+        case IRI_GEN::Return:
+        case IRI_GEN::ReturnAsync:
+        case IRI_GEN::IfJump:
+          throw std::runtime_error(
+              std::string("control-flow statement mid-block in BB ") +
+              std::to_string((int)bb->IDX));
+        default:
+          break;
+        }
+      }
       curr = curr->next;
     }
     if (bb->tail->bb != bb) {
       throw std::runtime_error("terminal bb back-pointer is stale");
-    }
-
-    // This is the invariant that broke: a Ret with no dispatch set means its
-    // invoke sites became unreachable and commit() will silently drop them.
-    if (IRI_NODE(ctx, bb->tail->id).tag == IRI_GEN::Ret &&
-        successors[bb->IDX].empty()) {
-      throw std::runtime_error("Ret terminal with empty dispatch set");
     }
 
     for (auto s : successors[bb->IDX]) {
@@ -329,9 +356,163 @@ void IRICFG::verify() {
         throw std::runtime_error("successor/predecessor asymmetry");
       }
     }
-    if (bb->EXCEPTION > -1 && !nodeMap.contains(bb->EXCEPTION)) {
-      throw std::runtime_error("EXCEPTION missing from nodeMap");
+    if (bb->EXCEPTION > -1) {
+      if (!nodeMap.contains(bb->EXCEPTION)) {
+        throw std::runtime_error("EXCEPTION missing from nodeMap");
+      }
+      if (bb->EXCEPTION == bb->IDX) {
+        throw std::runtime_error("EXCEPTION edge to self");
+      }
+      if (bb->IDX == exit_block) {
+        throw std::runtime_error("EXIT has an EXCEPTION edge");
+      }
     }
+
+    // Terminal tag fixes the successor count.
+    size_t expectedSuccs = 2;
+    switch (IRI_NODE(ctx, bb->tail->id).tag) {
+    case IRI_GEN::Goto:
+    case IRI_GEN::Throw:
+      expectedSuccs = 1;
+      break;
+    case IRI_GEN::IfElseJump:
+      expectedSuccs = 2;
+      break;
+    case IRI_GEN::Return:
+    case IRI_GEN::ReturnAsync:
+      expectedSuccs = 0;
+      break;
+    default:
+      throw std::runtime_error("BB terminal is not a valid terminator");
+    }
+    if (successors[bb->IDX].size() != expectedSuccs) {
+      throw std::runtime_error("terminal/successor arity mismatch in BB " +
+                               std::to_string((int)bb->IDX));
+    }
+    if (IRI_NODE(ctx, bb->tail->id).tag == IRI_GEN::Throw &&
+        *successors[bb->IDX].begin() != exit_block) {
+      throw std::runtime_error("Throw terminal must target EXIT in BB " +
+                               std::to_string((int)bb->IDX));
+    }
+    // Also verify the targets of terminals match the CFGs succ/pred map
+    {
+      auto &succs = successors[bb->IDX];
+      auto termTag = IRI_NODE(ctx, bb->tail->id).tag;
+      if (termTag == IRI_GEN::Goto &&
+          !succs.contains((BBIDX)GotoSEXP(bb->tail->id, ctx).getIDX())) {
+        throw std::runtime_error("Goto target diverges from successors in BB " +
+                                 std::to_string((int)bb->IDX));
+      }
+      if (termTag == IRI_GEN::IfElseJump) {
+        auto tgt = IfElseJumpSEXP(bb->tail->id, ctx);
+        if (!succs.contains((BBIDX)tgt.getTRUE()) ||
+            !succs.contains((BBIDX)tgt.getFALSE())) {
+          throw std::runtime_error("IfElseJump targets diverge from "
+                                   "successors in BB " +
+                                   std::to_string((int)bb->IDX));
+        }
+      }
+    }
+    if (expectedSuccs == 0 && bb->IDX != exit_block) {
+      throw std::runtime_error(
+          "Return/ReturnAsync terminal outside EXIT in BB " +
+          std::to_string((int)bb->IDX));
+    }
+
+    auto &preds = predecessors[bb->IDX];
+    auto &succs = successors[bb->IDX];
+    if (bb->IDX == entry_block && !preds.empty()) {
+      throw std::runtime_error("ENTRY has predecessors");
+    }
+    if (bb->IDX == exit_block && !succs.empty()) {
+      throw std::runtime_error("EXIT has successors");
+    }
+    // Handler dispatch targets are entered through the EXCEPTION edge, so a
+    // BB needs an incoming normal pred, an incoming EXCEPTION edge, or to be
+    // ENTRY.
+    if (bb->IDX != entry_block && bb->IDX != exit_block && preds.empty() &&
+        !exceptionTargets.contains(bb->IDX)) {
+      throw std::runtime_error("BB with no incoming edges: " +
+                               std::to_string((int)bb->IDX));
+    }
+    if (bb->IDX != exit_block && succs.empty()) {
+      throw std::runtime_error("BB with no successors: " +
+                               std::to_string((int)bb->IDX));
+    }
+  }
+
+  // Full reachability from ENTRY over normal + EXCEPTION edges.
+  std::set<BBIDX> fwd;
+  std::function<void(BBIDX)> fwdDFS = [&](BBIDX u) {
+    if (!fwd.insert(u).second)
+      return;
+    for (auto s : successors[u]) {
+      fwdDFS(s);
+    }
+    auto it = nodeMap.find(u);
+    if (it != nodeMap.end() && it->second->EXCEPTION > -1) {
+      fwdDFS(it->second->EXCEPTION);
+    }
+  };
+  fwdDFS(entry_block);
+  if (fwd.size() != nodeMap.size()) {
+    throw std::runtime_error("CFG has unreachable BBs");
+  }
+
+  // Every BB reaches EXIT through normal edges.
+  std::set<BBIDX> rev;
+  std::function<void(BBIDX)> revDFS = [&](BBIDX u) {
+    if (!rev.insert(u).second)
+      return;
+    for (auto p : predecessors[u]) {
+      revDFS(p);
+    }
+  };
+  revDFS(exit_block);
+  if (rev.size() != nodeMap.size()) {
+    throw std::runtime_error("BB cannot reach EXIT");
+  }
+}
+
+void IRICFG::removeUnreachable() {
+  // Cascade: pruning a dead BB's out-edges can strand blocks that were only
+  // reachable through it, so recompute until the graph stops shrinking.
+  while (true) {
+    std::set<BBIDX> reachable;
+    std::function<void(BBIDX)> dfs = [&](BBIDX u) {
+      if (!reachable.insert(u).second)
+        return;
+      for (auto s : successors[u]) {
+        dfs(s);
+      }
+      auto it = nodeMap.find(u);
+      if (it != nodeMap.end() && it->second->EXCEPTION > -1) {
+        dfs(it->second->EXCEPTION);
+      }
+    };
+    dfs(entry_block);
+
+    std::vector<BBIDX> dead;
+    for (auto &e : nodeMap) {
+      if (!reachable.contains(e.first))
+        dead.push_back(e.first);
+    }
+    if (dead.empty())
+      break;
+
+    for (auto idx : dead) {
+      for (auto s : successors[idx]) {
+        predecessors[s].erase(idx);
+      }
+      for (auto p : predecessors[idx]) {
+        successors[p].erase(idx);
+      }
+      successors.erase(idx);
+      predecessors.erase(idx);
+      continuationPoints.erase(idx);
+      nodeMap.erase(idx);
+    }
+    markDirty();
   }
 }
 
@@ -471,6 +652,7 @@ IRICFG::IRICFG(IRI_STORAGE::IRID i, IRI_STORAGE::IRIContext &p)
     resumeSites.insert(nextStmts->id);
   }
 
+  removeUnreachable();
   verify();
 }
 
@@ -550,6 +732,8 @@ void IRICFG::dumpDOT(const std::string &filePath) {
 }
 
 void IRICFG::commit() {
+  verify();
+
   std::vector<IRID> newBBS;
   BBContainerSupport bbc(id, ctx);
   IRID newBBList = ListSEXP::create(ctx, ctx.storage.strings.intern("BB"));
@@ -560,8 +744,6 @@ void IRICFG::commit() {
     nodesTODO.insert(e.first);
   }
 
-  std::set<BBIDX> emitted;
-
   std::function<void(BBIDX)> dumpRecurse = [&](BBIDX currentBBIDX) {
     if (!nodesTODO.contains(currentBBIDX))
       return;
@@ -571,7 +753,6 @@ void IRICFG::commit() {
     IRID currBBID = BBSEXP::create(ctx, false, false, false, false, false,
                                    bb->IDX, bb->SCOPE);
     newBBS.push_back(currBBID);
-    emitted.insert(bb->IDX);
 
     std::vector<IRID> stmtList;
 
@@ -595,51 +776,7 @@ void IRICFG::commit() {
     }
   };
   dumpRecurse(entry_block);
-
-  // Strict emit: blocks unreachable from successors ∪ EXCEPTION are dead
-  // rewrite leftovers (e.g. the original finalizer regions after _20_IFB
-  // cloned them) and get dropped; references to them fail the check below.
-
   ctx.storage.nodes.set_args(newBBList, newBBS);
-
-  // All jump targets in the serialized blocks must be blocks we serialized.
-  // The in-memory graph was validated when it was built, but passes mutate
-  for (IRID bbID : newBBS) {
-    BBIDX from = BBSEXP(bbID, ctx).getIDX();
-    for (IRID stmtID : ctx.storage.nodes.get_args(bbID)) {
-      BBIDX to1 = -1, to2 = -1;
-      const char *kind = nullptr;
-      switch (IRI_NODE(ctx, stmtID).tag) {
-      case IRI_GEN::Goto:
-        kind = "Goto";
-        to1 = GotoSEXP(stmtID, ctx).getIDX();
-        break;
-      case IRI_GEN::PushCatchContext:
-        kind = "PushCatchContext";
-        to1 = PushCatchContextSEXP(stmtID, ctx).getIDX();
-        break;
-      case IRI_GEN::IfJump:
-        kind = "IfJump";
-        to1 = IfJumpSEXP(stmtID, ctx).getIDX();
-        break;
-      case IRI_GEN::IfElseJump:
-        kind = "IfElseJump";
-        to1 = IfElseJumpSEXP(stmtID, ctx).getTRUE();
-        to2 = IfElseJumpSEXP(stmtID, ctx).getFALSE();
-        break;
-      default:
-        break;
-      }
-      if (!kind)
-        continue;
-      if ((to1 >= 0 && !emitted.contains(to1)) ||
-          (to2 >= 0 && !emitted.contains(to2))) {
-        throw std::runtime_error("commit: dangling " + std::string(kind) +
-                                 " target " + std::to_string(to1) +
-                                 " in BB " + std::to_string(from));
-      }
-    }
-  }
 }
 
 const PTAClosureInfo &IRICFG::ptaInfo() {
