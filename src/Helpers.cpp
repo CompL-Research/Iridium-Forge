@@ -44,8 +44,7 @@ auto findParentClosureScope(
 
   if (startBB.hasClosureBoundary() || startBB.hasTopLevel())
     return startingScope;
-  return findParentClosureScope(ctx, buildContext->parent,
-                                iridiumBuildContext);
+  return findParentClosureScope(ctx, buildContext->parent, iridiumBuildContext);
 }
 
 auto getLexicalScope(
@@ -74,6 +73,28 @@ IRI_STORAGE::IRID getTopLevelContainer(IRI_STORAGE::IRIContext &ctx,
     }
   }
   throw std::runtime_error("[Forge] Failed to find top level container SEXP");
+}
+
+IRI_STORAGE::IRID getHoistTargetBB(IRI_STORAGE::IRIContext &ctx,
+                                   const std::vector<IRI_STORAGE::IRID> &bbs,
+                                   IRI_STORAGE::IRID startBBID) {
+  const auto stmts = ctx.storage.nodes.get_args(startBBID);
+  if (stmts.empty())
+    return startBBID;
+
+  IRI_STORAGE::IRID terminal = stmts.back();
+  if (IRI_NODE(ctx, terminal).tag != IRI_GEN::ModuleDeclareGuard)
+    return startBBID;
+
+  double declIDX = IRI_GEN::ModuleDeclareGuardSEXP(terminal, ctx).getDECL();
+  for (auto &bbID : bbs) {
+    if (IRI_NODE(ctx, bbID).tag != IRI_GEN::BB)
+      continue;
+    IRI_GEN::BBSEXP bb(bbID, ctx);
+    if (bb.hasIDX() && bb.getIDX() == declIDX)
+      return bbID;
+  }
+  return startBBID;
 }
 IRI_STORAGE::IRID resolveRemoteBinding(IRI_STORAGE::IRIContext &ctx,
                                        IRI_STORAGE::IRID rbinID) {
@@ -118,8 +139,8 @@ bool hasNodeWithPredicate(IRI_GEN::IRID id, IRI_GEN::IRIContext *ctx,
   return false;
 }
 
-IRI_STORAGE::IRID
-createNoASWResolveEnvBindingSEXP(IRI_STORAGE::IRIContext &ctx, StringID s) {
+IRI_STORAGE::IRID createNoASWResolveEnvBindingSEXP(IRI_STORAGE::IRIContext &ctx,
+                                                   StringID s) {
   return IRI_GEN::ResolveEnvBindingSEXP::create(ctx, s, false);
 }
 

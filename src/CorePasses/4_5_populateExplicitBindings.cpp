@@ -177,7 +177,8 @@ void _4_5_PEB(IRIContext &ctx, IRID fileID, BUILD_CTX &iridiumBuildContext) {
       auto &containerBC = iridiumBuildContext[e.first];
       double localScope = containerBC->scopeIDX;
       double parentScope = containerBC->parent;
-      IRID startBBID = containerBC->BB[0];
+      IRID startBBID = IRI_HELPERS::getHoistTargetBB(ctx, containerBC->BB,
+                                                     containerBC->BB[0]);
       ctx.storage.nodes.add_args_to_beginning(startBBID, e.second);
     }
   }

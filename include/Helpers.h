@@ -4,6 +4,7 @@
 #include <functional>
 #include <memory>
 #include <unordered_map>
+#include <vector>
 
 namespace IRI_STORAGE {
 class IRIContext;
@@ -37,6 +38,16 @@ double getLexicalScope(
 
 IRI_STORAGE::IRID getTopLevelContainer(IRI_STORAGE::IRIContext &ctx,
                                        IRI_STORAGE::IRID fileSEXP);
+
+// Where a pass prepends the statements it hoists to "function entry". A module's
+// entry block only branches between its declaration pass and its evaluation
+// pass, so its prologue belongs at the head of the declaration block instead:
+// that pass initializes the exported bindings and then stops, and the evaluation
+// pass must not create the closures a second time.
+IRI_STORAGE::IRID
+getHoistTargetBB(IRI_STORAGE::IRIContext &ctx,
+                 const std::vector<IRI_STORAGE::IRID> &bbs,
+                 IRI_STORAGE::IRID startBBID);
 double getTopLevelScope(IRI_STORAGE::IRIContext &ctx,
                         IRI_STORAGE::IRID fileSEXP);
 

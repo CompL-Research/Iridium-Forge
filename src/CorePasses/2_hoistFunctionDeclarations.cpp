@@ -1,6 +1,7 @@
 #include "CorePasses.h"
 #include "Generated/IridiumEnums.h"
 #include "Generated/IridiumTypes.h"
+#include "Helpers.h"
 #include "Parser/IridiumBuildContext.h"
 #include "Storage/IRIContext.h"
 
@@ -34,28 +35,12 @@ void _2_HFD(IRIContext &ctx, IRID sexp, BUILD_CTX &iridiumBuildContext) {
     }
   }
 
-  // A module's entry BB only branches between the two passes, so its
-  // declarations belong at the head of the declaration pass instead: that is the
-  // guard's DECL target.
-  std::unordered_map<double, IRID> bbByIDX;
-  for (auto &currBBID : bbs)
-    bbByIDX[BBSEXP(currBBID, ctx).getIDX()] = currBBID;
-
   for (auto &e : toHoist) {
     auto &scope = e.first;
     auto &funDeclarations = e.second;
     auto &buildContext = iridiumBuildContext.at(scope);
-    IRID targetBB = buildContext->BB[0];
-
-    auto bbArgs = ctx.storage.nodes.get_args(targetBB);
-    if (!bbArgs.empty()) {
-      IRID last = bbArgs.back();
-      if (IRI_NODE(ctx, last).tag == IRI_TAG::ModuleDeclareGuard) {
-        auto it = bbByIDX.find(ModuleDeclareGuardSEXP(last, ctx).getDECL());
-        if (it != bbByIDX.end())
-          targetBB = it->second;
-      }
-    }
+    IRID targetBB = IRI_HELPERS::getHoistTargetBB(ctx, buildContext->BB,
+                                                  buildContext->BB[0]);
 
     ctx.storage.nodes.add_args_to_beginning(
         targetBB, {funDeclarations.begin(), funDeclarations.end()});
