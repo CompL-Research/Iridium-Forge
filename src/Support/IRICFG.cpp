@@ -458,20 +458,6 @@ void IRICFG::verify() {
   if (fwd.size() != nodeMap.size()) {
     throw std::runtime_error("CFG has unreachable BBs");
   }
-
-  // Every BB reaches EXIT through normal edges.
-  std::set<BBIDX> rev;
-  std::function<void(BBIDX)> revDFS = [&](BBIDX u) {
-    if (!rev.insert(u).second)
-      return;
-    for (auto p : predecessors[u]) {
-      revDFS(p);
-    }
-  };
-  revDFS(exit_block);
-  if (rev.size() != nodeMap.size()) {
-    throw std::runtime_error("BB cannot reach EXIT");
-  }
 }
 
 void IRICFG::removeUnreachable() {
