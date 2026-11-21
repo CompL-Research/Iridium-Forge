@@ -102,6 +102,7 @@ struct IRICFG {
 
 private:
   void removeUnreachable();
+  void renumberBBs();
 
 public:
 
@@ -116,6 +117,8 @@ public:
   // Well-defined entry and exit points for the graph
   BBIDX entry_block;
   BBIDX exit_block;
+
+  BBIDX globalEntryID = -1;
 
   // What PTA needs from this closure, derived in one pass and cached. Any
   // structural change drops it via markDirty(); the next query rebuilds it.

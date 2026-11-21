@@ -287,6 +287,13 @@ void IRIBB::dumpFlat(std::ostream &oss) const {
 }
 
 void IRICFG::verify() {
+  // Invariant 12: handles are dense CFG-local indices 0..nodeMap.size()-1.
+  for (auto &e : nodeMap) {
+    if (e.first < 0 || e.first >= (BBIDX)nodeMap.size() ||
+        e.second->IDX != e.first)
+      throw std::runtime_error("BB handles are not dense CFG-local indices");
+  }
+
   // EXCEPTION dispatch targets carry their incoming edge in the EXCEPTION
   // field, not in the predecessors map.
   std::set<BBIDX> exceptionTargets;
@@ -502,6 +509,80 @@ void IRICFG::removeUnreachable() {
   }
 }
 
+void IRICFG::renumberBBs() {
+  std::vector<BBIDX> sorted;
+  sorted.reserve(nodeMap.size());
+  for (auto &e : nodeMap)
+    sorted.push_back(e.first);
+  std::sort(sorted.begin(), sorted.end());
+
+  std::unordered_map<BBIDX, BBIDX> map;
+  for (size_t i = 0; i < sorted.size(); i++)
+    map[sorted[i]] = (BBIDX)i;
+
+  auto remap = [&](BBIDX oldID) {
+    auto it = map.find(oldID);
+    if (it == map.end())
+      throw std::runtime_error(
+          "renumberBBs: edge targets a block outside the CFG");
+    return it->second;
+  };
+
+  globalEntryID = entry_block;
+  entry_block = remap(entry_block);
+  exit_block = remap(exit_block);
+
+  std::unordered_map<BBIDX, std::unique_ptr<IRIBB>> newNodes;
+  for (auto &e : nodeMap) {
+    e.second->IDX = remap(e.first);
+    if (e.second->EXCEPTION > -1)
+      e.second->EXCEPTION = remap(e.second->EXCEPTION);
+    newNodes[e.second->IDX] = std::move(e.second);
+  }
+  nodeMap = std::move(newNodes);
+
+  auto remapEdgeMap = [&](std::unordered_map<BBIDX, std::set<BBIDX>> &edges) {
+    std::unordered_map<BBIDX, std::set<BBIDX>> remapped;
+    for (auto &e : edges) {
+      auto &dest = remapped[remap(e.first)];
+      for (auto n : e.second)
+        dest.insert(remap(n));
+    }
+    edges = std::move(remapped);
+  };
+  remapEdgeMap(successors);
+  remapEdgeMap(predecessors);
+
+  for (auto &e : nodeMap) {
+    IRIBB *bb = e.second.get();
+    for (IRIStatement *s = bb->head; s != nullptr; s = s->next) {
+      if (IRI_NODE(ctx, s->id).tag == IRI_GEN::PushCatchContext)
+        PushCatchContextSEXP(s->id, ctx).setIDX(bb->EXCEPTION);
+    }
+    switch (IRI_NODE(ctx, bb->tail->id).tag) {
+    case IRI_GEN::Goto:
+      GotoSEXP(bb->tail->id, ctx)
+          .setIDX(remap(GotoSEXP(bb->tail->id, ctx).getIDX()));
+      bb->setTerminal(bb->tail->id);
+      break;
+    case IRI_GEN::IfElseJump: {
+      IfElseJumpSEXP jump(bb->tail->id, ctx);
+      jump.setTRUE(remap(jump.getTRUE()));
+      jump.setFALSE(remap(jump.getFALSE()));
+      bb->setTerminal(bb->tail->id);
+      break;
+    }
+    default:
+      break;
+    }
+  }
+
+  std::set<BBIDX> remappedCont;
+  for (auto c : continuationPoints)
+    remappedCont.insert(remap(c));
+  continuationPoints = std::move(remappedCont);
+}
+
 IRICFG::IRICFG(IRI_STORAGE::IRID i, IRI_STORAGE::IRIContext &p)
     : id(i), ctx(p) {
   BBContainerSupport bbc(id, ctx);
@@ -639,6 +720,7 @@ IRICFG::IRICFG(IRI_STORAGE::IRID i, IRI_STORAGE::IRIContext &p)
   }
 
   removeUnreachable();
+  renumberBBs();
   verify();
 }
 
