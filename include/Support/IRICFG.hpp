@@ -28,7 +28,7 @@ struct PTAClosureInfo {
   std::vector<IRID> stack;      // uncaptured  -> StackObject
   std::vector<IRID> tstack;     // captured    -> TransientStackObject
   std::vector<IRID> remoteRefs; // captured from an enclosing scope
-  std::vector<StringID> globals;
+  std::vector<IRI_STORAGE::IRID> globals;
   std::set<double> usedJSCTXSlots;
   // Parameters, ordered by REFIDX so index i is the i'th actual argument.
   std::vector<std::pair<double, IRID>> formals;
