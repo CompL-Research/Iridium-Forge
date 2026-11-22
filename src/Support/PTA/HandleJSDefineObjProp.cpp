@@ -43,7 +43,7 @@ void handleJSDefineObjProp(const PTAStatementContext &ptactx) {
   std::string field;
   if (IRI_NODE(ptactx.ctx, keyNode).tag == IRI_GEN::IRI_TAG::String) {
     field = Prakriti::PKRGlobalState::EdgeGet(
-        IRI_GEN::StringSEXP(keyNode, ptactx.ctx).getIridiumPrimitive());
+        IRI_GEN::StringSEXP(keyNode, ptactx.ctx).getIridiumPrimitive().v);
   } else {
     std::set<Prakriti::NodeUID> keys;
     Prakriti::TraceHelperAuto thk("JSDefineObjProp::Key", keyNode);

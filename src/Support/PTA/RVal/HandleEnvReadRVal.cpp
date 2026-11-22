@@ -29,7 +29,7 @@ void computeEnvReadVals(const PTAStatementContext &ptactx, IRID node,
   Prakriti::NodeUID target =
       objTag == IRI_GEN::GlobalBinding
           ? Prakriti::PKRGlobalState::getGlobal(
-                IRI_GEN::GlobalBindingSEXP(obj, ptactx.ctx).getNAME())
+                IRI_GEN::GlobalBindingSEXP(obj, ptactx.ctx).getNAME().v)
       : objTag == IRI_GEN::RemoteEnvBinding
           ? IRI_HELPERS::resolveRemoteBinding(ptactx.ctx, obj)
           : obj;

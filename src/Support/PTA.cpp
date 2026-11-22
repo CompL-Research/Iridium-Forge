@@ -97,7 +97,7 @@ void initGlobalBindings(IRIContext &ctx, IRICFG *rootCFG, ECMAGraph *G,
                         const Prakriti::GlobalInitTable &globals) {
   for (const auto ref : rootCFG->ptaInfo().globals) {
     GlobalBindingSEXP gb(ref, ctx);
-    Prakriti::initNamedGlobal(G, gb.getNAME(), globals);
+    Prakriti::initNamedGlobal(G, gb.getNAME().v, globals);
   }
 }
 
@@ -368,8 +368,8 @@ void PTASolver::solve(IRIContext &ctx) {
 
   Prakriti::PKRGlobalState::Init(
       [&ctx]() { return PTAStubSEXP::create(ctx); },
-      [&ctx](std::string_view s) { return ctx.storage.strings.intern(s); },
-      [&ctx](Prakriti::EdgeUID e) { return ctx.storage.strings.get(e); });
+      [&ctx](std::string_view s) { return ctx.storage.strings.intern(s).v; },
+      [&ctx](Prakriti::EdgeUID e) { return ctx.storage.strings.get(StringID{e}); });
 
   finRes.clear();
 
@@ -396,7 +396,7 @@ void PTASolver::solve(IRIContext &ctx) {
       if (currState.getNodeTAG(n) != Prakriti::TAG::JSFILE)
         continue;
       ECMAGraph G = currState.clone();
-      auto acts = G.getPointees(n, ctx.storage.strings.intern(PKR_Eval));
+      auto acts = G.getPointees(n, ctx.storage.strings.intern(PKR_Eval).v);
       Prakriti::KarmaJoin(&G, Prakriti::Karma(&G, acts, {NULL, {n}}));
       G.removeNode(n);
       results.push_back(G);

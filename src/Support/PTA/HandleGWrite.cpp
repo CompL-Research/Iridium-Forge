@@ -41,7 +41,7 @@ void handleGWrite(const PTAStatementContext &ptactx) {
   Prakriti::NodeUID target =
       lvalTag == IRI_GEN::GlobalBinding
           ? Prakriti::PKRGlobalState::getGlobal(
-                IRI_GEN::GlobalBindingSEXP(lval, ptactx.ctx).getNAME())
+                IRI_GEN::GlobalBindingSEXP(lval, ptactx.ctx).getNAME().v)
           : lval;
   assert(G->hasNode(target));
 

@@ -36,7 +36,7 @@ void computeFieldReadVals(const PTAStatementContext &ptactx, IRID node,
 
   IRI_GEN::StringSEXP fieldSexp(sexp.getArg_Field(), ptactx.ctx);
   std::string field(
-      Prakriti::PKRGlobalState::EdgeGet(fieldSexp.getIridiumPrimitive()));
+      Prakriti::PKRGlobalState::EdgeGet(fieldSexp.getIridiumPrimitive().v));
 
   // Each receiver is an alternative, so each reads from the same incoming
   // state; threading G through the loop would let one observe another.
