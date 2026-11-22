@@ -25,8 +25,8 @@ struct ConstantPropPass {
     ConstantsAtStmtTransfer transfer;
 
     // Perform transformation logic using the analysis facts
-    for (const auto& [idx, bb] : cfg.nodeMap) {
-      CASState state = casResult.getBlockEntryState(idx);
+    for (const auto &bb : cfg.bbs) {
+      CASState state = casResult.getBlockEntryState(bb->IDX);
       IRIStatement* s = bb->head;
       while (s != nullptr) {
         IRIStatement* nextStmt = s->next;

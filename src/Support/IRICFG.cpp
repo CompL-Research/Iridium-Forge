@@ -24,7 +24,7 @@ using namespace IRI_GEN;
 
 IRIStatement::IRIStatement(IRID id, IRIBB *b) : id(id), bb(b) {}
 
-IRIBB::IRIBB(double ss, double i, IRICFG *c, IRI_STORAGE::IRIContext &p)
+IRIBB::IRIBB(double ss, BBIDX i, IRICFG *c, IRI_STORAGE::IRIContext &p)
     : SCOPE(ss), IDX(i), closure(c), ctx(p) {}
 
 IRIBB::~IRIBB() {
@@ -155,16 +155,42 @@ static bool isValidBBTerminal(IRI_GEN::IRI_TAG tag, IRIContext &ctx) {
 
 void IRIBB::clearEdges() {
   closure->markDirty();
-  for (auto &e : closure->successors[IDX]) {
-    closure->predecessors[e].erase(IDX);
+  // Copy first: removeEdge mutates the set being walked.
+  auto succs = (IDX < (BBIDX)closure->successors.size())
+                   ? closure->successors[IDX]
+                   : (closure->sparseSuccs.contains(IDX)
+                          ? closure->sparseSuccs[IDX]
+                          : std::set<BBIDX>{});
+  for (auto s : succs) {
+    closure->removeEdge(IDX, s);
   }
-  closure->successors[IDX].clear();
 }
 
 void IRIBB::addEdge(BBIDX succ) {
   closure->markDirty();
-  closure->successors[IDX].insert(succ);
-  closure->predecessors[succ].insert(IDX);
+  closure->insertEdge(IDX, succ);
+}
+
+void IRICFG::insertEdge(BBIDX from, BBIDX to) {
+  markDirty();
+  if (from < 0 || (size_t)from >= successors.size()) {
+    sparseSuccs[from].insert(to);
+    sparsePreds[to].insert(from);
+  } else {
+    successors[from].insert(to);
+    predecessors[to].insert(from);
+  }
+}
+
+void IRICFG::removeEdge(BBIDX from, BBIDX to) {
+  markDirty();
+  if (from < 0 || (size_t)from >= successors.size()) {
+    sparseSuccs[from].erase(to);
+    sparsePreds[to].erase(from);
+  } else {
+    successors[from].erase(to);
+    predecessors[to].erase(from);
+  }
 }
 
 void IRIBB::moveTerminalTo(IRIBB *dst) {
@@ -182,7 +208,10 @@ void IRIBB::moveTerminalTo(IRIBB *dst) {
   dst->tail->next = nullptr;
   tail = nullptr;
 
-  auto succs = closure->successors[IDX];
+  auto succs = closure->successorsOf(IDX);
+  if (IDX >= (BBIDX)closure->successors.size() &&
+      closure->sparseSuccs.contains(IDX))
+    succs = closure->sparseSuccs.at(IDX);
   clearEdges();
   for (auto s : succs) {
     dst->addEdge(s);
@@ -191,9 +220,9 @@ void IRIBB::moveTerminalTo(IRIBB *dst) {
 
 IRIBB *IRICFG::makeBB(ScopeIDX scope) {
   markDirty();
-  auto idx = ++ctx.lastBBIDX;
-  nodeMap[idx] = std::make_unique<IRIBB>(scope, idx, this, ctx);
-  return nodeMap[idx].get();
+  auto idx = (BBIDX)(++ctx.lastBBIDX);
+  sparseNodes[idx] = std::make_unique<IRIBB>(scope, idx, this, ctx);
+  return sparseNodes[idx].get();
 }
 
 void IRIBB::setTerminal(IRID stmtID) {
@@ -287,23 +316,16 @@ void IRIBB::dumpFlat(std::ostream &oss) const {
 }
 
 void IRICFG::verify() {
-  // Invariant 12: handles are dense CFG-local indices 0..nodeMap.size()-1.
-  for (auto &e : nodeMap) {
-    if (e.first < 0 || e.first >= (BBIDX)nodeMap.size() ||
-        e.second->IDX != e.first)
-      throw std::runtime_error("BB handles are not dense CFG-local indices");
-  }
-
   // EXCEPTION dispatch targets carry their incoming edge in the EXCEPTION
   // field, not in the predecessors map.
   std::set<BBIDX> exceptionTargets;
-  for (auto &e : nodeMap) {
-    if (e.second->EXCEPTION > -1)
-      exceptionTargets.insert(e.second->EXCEPTION);
+  for (auto &bb : bbs) {
+    if (bb->EXCEPTION != NO_BB)
+      exceptionTargets.insert(bb->EXCEPTION);
   }
 
-  for (auto &e : nodeMap) {
-    IRIBB *bb = e.second.get();
+  for (auto &bbp : bbs) {
+    IRIBB *bb = bbp.get();
 
     if (bb->tail == nullptr) {
       throw std::runtime_error("BB has no terminal");
@@ -355,17 +377,19 @@ void IRICFG::verify() {
       throw std::runtime_error("terminal bb back-pointer is stale");
     }
 
-    for (auto s : successors[bb->IDX]) {
-      if (!nodeMap.contains(s)) {
-        throw std::runtime_error("successor missing from nodeMap");
+    auto &succSet = successors[bb->IDX];
+    for (auto s : succSet) {
+      if (s < 0 || (size_t)s >= bbs.size() || !bbs[s]) {
+        throw std::runtime_error("successor missing from CFG");
       }
       if (!predecessors[s].contains(bb->IDX)) {
         throw std::runtime_error("successor/predecessor asymmetry");
       }
     }
-    if (bb->EXCEPTION > -1) {
-      if (!nodeMap.contains(bb->EXCEPTION)) {
-        throw std::runtime_error("EXCEPTION missing from nodeMap");
+    if (bb->EXCEPTION != NO_BB) {
+      if (bb->EXCEPTION < 0 || (size_t)bb->EXCEPTION >= bbs.size() ||
+          !bbs[bb->EXCEPTION]) {
+        throw std::runtime_error("EXCEPTION target missing from CFG");
       }
       if (bb->EXCEPTION == bb->IDX) {
         throw std::runtime_error("EXCEPTION edge to self");
@@ -453,21 +477,36 @@ void IRICFG::verify() {
   std::function<void(BBIDX)> fwdDFS = [&](BBIDX u) {
     if (!fwd.insert(u).second)
       return;
-    for (auto s : successors[u]) {
+    for (auto s : successorsOf(u)) {
       fwdDFS(s);
     }
-    auto it = nodeMap.find(u);
-    if (it != nodeMap.end() && it->second->EXCEPTION > -1) {
-      fwdDFS(it->second->EXCEPTION);
+    if (u >= 0 && (size_t)u < bbs.size() && bbs[u]) {
+      BBIDX exc = bbs[u]->EXCEPTION;
+      if (exc != NO_BB)
+        fwdDFS(exc);
     }
   };
   fwdDFS(entry_block);
-  if (fwd.size() != nodeMap.size()) {
+  if (fwd.size() != bbs.size()) {
     throw std::runtime_error("CFG has unreachable BBs");
   }
 }
 
+void IRICFG::eraseSparseNode(BBIDX idx) {
+  for (auto s : sparseSuccs[idx]) {
+    sparsePreds[s].erase(idx);
+  }
+  for (auto p : sparsePreds[idx]) {
+    sparseSuccs[p].erase(idx);
+  }
+  sparseSuccs.erase(idx);
+  sparsePreds.erase(idx);
+  continuationPoints.erase(idx);
+  sparseNodes.erase(idx);
+}
+
 void IRICFG::removeUnreachable() {
+  // Runs on the sparse (pre-renumber) representation.
   // Cascade: pruning a dead BB's out-edges can strand blocks that were only
   // reachable through it, so recompute until the graph stops shrinking.
   while (true) {
@@ -475,18 +514,18 @@ void IRICFG::removeUnreachable() {
     std::function<void(BBIDX)> dfs = [&](BBIDX u) {
       if (!reachable.insert(u).second)
         return;
-      for (auto s : successors[u]) {
+      for (auto s : sparseSuccs[u]) {
         dfs(s);
       }
-      auto it = nodeMap.find(u);
-      if (it != nodeMap.end() && it->second->EXCEPTION > -1) {
+      auto it = sparseNodes.find(u);
+      if (it != sparseNodes.end() && it->second->EXCEPTION != NO_BB) {
         dfs(it->second->EXCEPTION);
       }
     };
     dfs(entry_block);
 
     std::vector<BBIDX> dead;
-    for (auto &e : nodeMap) {
+    for (auto &e : sparseNodes) {
       if (!reachable.contains(e.first))
         dead.push_back(e.first);
     }
@@ -494,16 +533,7 @@ void IRICFG::removeUnreachable() {
       break;
 
     for (auto idx : dead) {
-      for (auto s : successors[idx]) {
-        predecessors[s].erase(idx);
-      }
-      for (auto p : predecessors[idx]) {
-        successors[p].erase(idx);
-      }
-      successors.erase(idx);
-      predecessors.erase(idx);
-      continuationPoints.erase(idx);
-      nodeMap.erase(idx);
+      eraseSparseNode(idx);
     }
     markDirty();
   }
@@ -511,8 +541,8 @@ void IRICFG::removeUnreachable() {
 
 void IRICFG::renumberBBs() {
   std::vector<BBIDX> sorted;
-  sorted.reserve(nodeMap.size());
-  for (auto &e : nodeMap)
+  sorted.reserve(sparseNodes.size());
+  for (auto &e : sparseNodes)
     sorted.push_back(e.first);
   std::sort(sorted.begin(), sorted.end());
 
@@ -532,29 +562,38 @@ void IRICFG::renumberBBs() {
   entry_block = remap(entry_block);
   exit_block = remap(exit_block);
 
-  std::unordered_map<BBIDX, std::unique_ptr<IRIBB>> newNodes;
-  for (auto &e : nodeMap) {
+  // Dense, CFG-local from here on. globalIDs records each block's identity
+  // in the program-wide numbering (commit() translates back with it).
+  globalIDs = sorted;
+  bbs.clear();
+  bbs.resize(sorted.size());
+  for (auto &e : sparseNodes) {
     e.second->IDX = remap(e.first);
-    if (e.second->EXCEPTION > -1)
+    if (e.second->EXCEPTION != NO_BB)
       e.second->EXCEPTION = remap(e.second->EXCEPTION);
-    newNodes[e.second->IDX] = std::move(e.second);
+    bbs[e.second->IDX] = std::move(e.second);
   }
-  nodeMap = std::move(newNodes);
 
-  auto remapEdgeMap = [&](std::unordered_map<BBIDX, std::set<BBIDX>> &edges) {
-    std::unordered_map<BBIDX, std::set<BBIDX>> remapped;
-    for (auto &e : edges) {
-      auto &dest = remapped[remap(e.first)];
-      for (auto n : e.second)
-        dest.insert(remap(n));
-    }
-    edges = std::move(remapped);
-  };
-  remapEdgeMap(successors);
-  remapEdgeMap(predecessors);
+  successors.clear();
+  successors.resize(sorted.size());
+  for (auto &e : sparseSuccs) {
+    auto &dest = successors[remap(e.first)];
+    for (auto n : e.second)
+      dest.insert(remap(n));
+  }
+  predecessors.clear();
+  predecessors.resize(sorted.size());
+  for (auto &e : sparsePreds) {
+    auto &dest = predecessors[remap(e.first)];
+    for (auto n : e.second)
+      dest.insert(remap(n));
+  }
+  sparseNodes.clear();
+  sparseSuccs.clear();
+  sparsePreds.clear();
 
-  for (auto &e : nodeMap) {
-    IRIBB *bb = e.second.get();
+  for (auto &bbp : bbs) {
+    IRIBB *bb = bbp.get();
     for (IRIStatement *s = bb->head; s != nullptr; s = s->next) {
       if (IRI_NODE(ctx, s->id).tag == IRI_GEN::PushCatchContext)
         PushCatchContextSEXP(s->id, ctx).setIDX(bb->EXCEPTION);
@@ -586,7 +625,7 @@ void IRICFG::renumberBBs() {
 IRICFG::IRICFG(IRI_STORAGE::IRID i, IRI_STORAGE::IRIContext &p)
     : id(i), ctx(p) {
   BBContainerSupport bbc(id, ctx);
-  entry_block = bbc.getStartBBIDX();
+  entry_block = (BBIDX)bbc.getStartBBIDX();
 
   // Common Return Path
   IRI_STORAGE::StringID commonRet = ctx.storage.strings.intern("<common-ret>");
@@ -613,15 +652,15 @@ IRICFG::IRICFG(IRI_STORAGE::IRID i, IRI_STORAGE::IRIContext &p)
     BBSupport bb(bbID, ctx);
     auto currBBIDX = bb.getIDX();
 
-    nodeMap[currBBIDX] =
+    sparseNodes[currBBIDX] =
         std::make_unique<IRIBB>(bb.getScopeIDX(), currBBIDX, this, ctx);
   }
 
   // Populate statements and establish edges
   for (auto [bbID, bbOffset] : bbc.bbs()) {
     BBSupport bbSupp(bbID, ctx);
-    auto currBBIDX = bbSupp.getIDX();
-    IRIBB *bb = nodeMap[currBBIDX].get();
+    auto currBBIDX = (BBIDX)bbSupp.getIDX();
+    IRIBB *bb = sparseNodes[currBBIDX].get();
     // Per-BB dispatch target (declared by _20_IFB, carried by clones).
     double dispatch = -1;
     ctx.iris->getExceptionIDX(bbc.getScopeIDX(), currBBIDX, dispatch);
@@ -645,7 +684,7 @@ IRICFG::IRICFG(IRI_STORAGE::IRID i, IRI_STORAGE::IRIContext &p)
   };
 
   std::set<BBIDX> awaitWorklist;
-  for (auto &e : nodeMap) {
+  for (auto &e : sparseNodes) {
     awaitWorklist.insert(e.first);
   }
 
@@ -655,7 +694,7 @@ IRICFG::IRICFG(IRI_STORAGE::IRID i, IRI_STORAGE::IRIContext &p)
   while (!awaitWorklist.empty()) {
     BBIDX bbIDX = *awaitWorklist.begin();
     awaitWorklist.erase(awaitWorklist.begin());
-    IRIBB *bb = nodeMap[bbIDX].get();
+    IRIBB *bb = sparseNodes[bbIDX].get();
 
     if (bb->tail == nullptr) {
       throw std::runtime_error("bb tail cannot be null before split");
@@ -753,8 +792,8 @@ void IRICFG::dumpDOT(const std::string &filePath) {
   outFile << "  ]\n";
 
   std::set<BBIDX> nodesTODO;
-  for (auto &e : nodeMap) {
-    nodesTODO.insert(e.first);
+  for (auto &bb : bbs) {
+    nodesTODO.insert(bb->IDX);
   }
 
   std::function<void(BBIDX)> dumpRecurse = [&](BBIDX currentBBIDX) {
@@ -763,7 +802,7 @@ void IRICFG::dumpDOT(const std::string &filePath) {
     nodesTODO.erase(currentBBIDX);
 
     std::stringstream ss;
-    auto &bb = nodeMap[currentBBIDX];
+    IRIBB *bb = get_bb(currentBBIDX);
     bb->dumpFlat(ss);
 
     bool isCont = continuationPoints.contains(currentBBIDX);
@@ -775,12 +814,12 @@ void IRICFG::dumpDOT(const std::string &filePath) {
     outFile << "  " << (int)currentBBIDX << " [label=\"" << ss.str()
             << "\", xlabel=\"" << xlabel << "\"" << extraStyle << "];\n";
 
-    for (auto succ : successors[currentBBIDX]) {
+    for (auto succ : successorsOf(currentBBIDX)) {
       outFile << "  " << (int)currentBBIDX << " -> " << (int)succ << ";\n";
       dumpRecurse(succ);
     }
 
-    if (bb->EXCEPTION > -1) {
+    if (bb->EXCEPTION != NO_BB) {
       outFile << "  " << (int)currentBBIDX << " -> " << (int)bb->EXCEPTION
               << " [style=\"dotted\", color=\"red\"];\n";
       dumpRecurse(bb->EXCEPTION);
@@ -808,38 +847,58 @@ void IRICFG::commit() {
   bbc.setArg_BB(newBBList);
 
   std::set<BBIDX> nodesTODO;
-  for (auto &e : nodeMap) {
-    nodesTODO.insert(e.first);
+  for (auto &bb : bbs) {
+    nodesTODO.insert(bb->IDX);
   }
 
+  // The CFG speaks dense local handles; the core IR keeps the original
+  // program-wide numbering, so blocks and jump targets are translated back
+  // on the way out (commit is the local->global boundary).
   std::function<void(BBIDX)> dumpRecurse = [&](BBIDX currentBBIDX) {
     if (!nodesTODO.contains(currentBBIDX))
       return;
     nodesTODO.erase(currentBBIDX);
 
-    auto &bb = nodeMap[currentBBIDX];
+    IRIBB *bb = get_bb(currentBBIDX);
     IRID currBBID = BBSEXP::create(ctx, false, false, false, false, false,
-                                   bb->IDX, bb->SCOPE);
+                                   bb->SCOPE, globalBBID(bb->IDX));
     newBBS.push_back(currBBID);
 
     std::vector<IRID> stmtList;
 
     IRIStatement *curr = bb->head;
     while (curr != nullptr) {
+      if (IRI_NODE(ctx, curr->id).tag == IRI_GEN::PushCatchContext) {
+        PushCatchContextSEXP(curr->id, ctx).setIDX(globalBBID(bb->EXCEPTION));
+      }
       stmtList.push_back(curr->id);
       curr = curr->next;
     }
     if (bb->tail != nullptr) {
+      switch (IRI_NODE(ctx, bb->tail->id).tag) {
+      case IRI_GEN::Goto:
+        GotoSEXP(bb->tail->id, ctx)
+            .setIDX(globalBBID(GotoSEXP(bb->tail->id, ctx).getIDX()));
+        break;
+      case IRI_GEN::IfElseJump: {
+        IfElseJumpSEXP jump(bb->tail->id, ctx);
+        jump.setTRUE(globalBBID(jump.getTRUE()));
+        jump.setFALSE(globalBBID(jump.getFALSE()));
+        break;
+      }
+      default:
+        break;
+      }
       stmtList.push_back(bb->tail->id);
     }
 
     ctx.storage.nodes.set_args(currBBID, stmtList);
 
-    for (auto succ : successors[currentBBIDX]) {
+    for (auto succ : successorsOf(currentBBIDX)) {
       dumpRecurse(succ);
     }
 
-    if (bb->EXCEPTION > -1) {
+    if (bb->EXCEPTION != NO_BB) {
       dumpRecurse(bb->EXCEPTION);
     }
   };
@@ -855,8 +914,8 @@ const PTAClosureInfo &IRICFG::ptaInfo() {
   PTAClosureInfo info;
 
   // JSCTX only ever appears as the RVal of an LWrite
-  for (const auto &[bbID, bb] : nodeMap) {
-    for (IRIStatement *s = bb->head; s != nullptr; s = s->next) {
+  for (auto &bbp : bbs) {
+    for (IRIStatement *s = bbp->head; s != nullptr; s = s->next) {
       if (IRI_NODE(ctx, s->id).tag != IRI_GEN::LWrite)
         continue;
       IRID rval = IRI_GEN::LWriteSEXP(s->id, ctx).getArg_RVal();
@@ -933,27 +992,21 @@ std::vector<BBIDX> IRICFG::getReversePostOrder(bool includeExceptions) const {
 }
 
 std::vector<BBIDX> IRICFG::getReversePostOrder(bool includeExceptions,
-                                               double startBBIDX) const {
+                                               BBIDX startBBIDX) const {
   std::vector<BBIDX> postOrder;
   std::set<BBIDX> visited;
 
   std::function<void(BBIDX)> dfs = [&](BBIDX u) {
     visited.insert(u);
-    auto it = successors.find(u);
-    if (it != successors.end()) {
-      for (BBIDX v : it->second) {
-        if (!visited.contains(v)) {
-          dfs(v);
-        }
+    for (BBIDX v : successorsOf(u)) {
+      if (!visited.contains(v)) {
+        dfs(v);
       }
     }
-    if (includeExceptions) {
-      auto nodeIt = nodeMap.find(u);
-      if (nodeIt != nodeMap.end() && nodeIt->second->EXCEPTION > -1) {
-        BBIDX exc = nodeIt->second->EXCEPTION;
-        if (!visited.contains(exc)) {
-          dfs(exc);
-        }
+    if (includeExceptions && u >= 0 && (size_t)u < bbs.size() && bbs[u]) {
+      BBIDX exc = bbs[u]->EXCEPTION;
+      if (exc != NO_BB && !visited.contains(exc)) {
+        dfs(exc);
       }
     }
     postOrder.push_back(u);

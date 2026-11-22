@@ -40,7 +40,7 @@ export default [
       string: ["NAME"],
       void: ["JSLET", "JSCONST", "JSVAR", "SLOPPY", "SKIPINIT"],
       bool: ["SAFE", "THISINIT"],
-      double: ["OPID"],
+      uint32: ["OPID"],
     },
   },
   {
@@ -163,7 +163,8 @@ export default [
       string: [],
       void: ["TopLevel", "ClosureBoundary", "Lexical", "VARBoundary", "TryBB"],
       bool: [],
-      double: ["IDX", "ScopeIDX"],
+      double: [],
+      uint32: ["ScopeIDX", "IDX"],
     },
   },
   {
@@ -196,7 +197,8 @@ export default [
       string: [],
       void: ["NOT"],
       bool: [],
-      double: ["IDX"],
+      double: [],
+      uint32: ["IDX"],
     },
   },
   {
@@ -207,7 +209,8 @@ export default [
       string: [],
       void: ["NOT"],
       bool: [],
-      double: ["TRUE", "FALSE"],
+      double: [],
+      uint32: ["TRUE", "FALSE"],
     },
   },
   {
@@ -218,7 +221,8 @@ export default [
       string: [],
       void: ["Deferred"],
       bool: [],
-      double: ["IDX"],
+      double: [],
+      uint32: ["IDX"],
     },
   },
   {
@@ -240,7 +244,8 @@ export default [
       string: ["NAME"],
       void: [],
       bool: ["CNAME", "SETNAME"],
-      double: ["StartBBIDX"],
+      double: [],
+      uint32: ["StartBBIDX"],
     },
   },
   {
@@ -274,7 +279,8 @@ export default [
         "TopLevel",
       ],
       bool: [],
-      double: ["ECMAArgs", "StartBBIDX", "ScopeIDX", "ContainerFlagID"],
+      double: [],
+      uint32: ["ECMAArgs", "ScopeIDX", "ContainerFlagID", "StartBBIDX"],
     },
   },
   {
@@ -296,7 +302,7 @@ export default [
       string: [],
       void: [],
       bool: [],
-      double: ["MODULEREQIDX"],
+      uint32: ["MODULEREQIDX"],
     },
   },
   {
@@ -307,7 +313,7 @@ export default [
       string: ["FIELD"],
       void: ["NSIMPORT"],
       bool: [],
-      double: ["MODULEREQIDX"],
+      uint32: ["MODULEREQIDX"],
     },
   },
   {
@@ -329,7 +335,7 @@ export default [
       string: ["LOCALNAME", "EXPORTNAME"],
       void: [],
       bool: [],
-      double: ["MODULEREQIDX"],
+      uint32: ["MODULEREQIDX"],
     },
   },
   {
@@ -340,7 +346,7 @@ export default [
       string: ["SOURCE"],
       void: [],
       bool: [],
-      double: ["REQIDX"],
+      uint32: ["REQIDX"],
     },
   },
   {
@@ -363,7 +369,9 @@ export default [
         "PRIVGETSET",
       ],
       bool: [],
-      double: ["REFIDX", "SCOPE", "NEXT", "LINK"],
+      double: [],
+      int32: ["NEXT"],
+      uint32: ["REFIDX", "SCOPE", "LINK"],
     },
   },
   {
@@ -374,7 +382,7 @@ export default [
       string: [],
       void: ["MODULE", "MODULEI", "MODULENSI"],
       bool: [],
-      double: ["REFIDX", "LINK"],
+      uint32: ["REFIDX", "LINK"],
     },
   },
   {
@@ -385,7 +393,7 @@ export default [
       string: ["NAME"],
       void: [],
       bool: [],
-      double: ["LINK"],
+      uint32: ["LINK"],
     },
   },
   {
@@ -396,7 +404,7 @@ export default [
       string: ["NAME"],
       void: ["JSLET", "JSCONST", "JSVAR"],
       bool: [],
-      double: ["LINK"],
+      uint32: ["LINK"],
     },
   },
   {
@@ -418,7 +426,7 @@ export default [
       string: [],
       void: ["SLOPPY"],
       bool: ["SAFE", "THISINIT", "CINIT"],
-      double: ["ScopeIDX"],
+      uint32: ["ScopeIDX"],
     },
   },
   {
@@ -569,7 +577,7 @@ export default [
       string: [],
       void: [],
       bool: [],
-      double: ["REFIDX"],
+      uint32: ["REFIDX"],
     },
   },
   {
@@ -635,7 +643,8 @@ export default [
       string: [],
       void: [],
       bool: [],
-      double: ["IDX"],
+      double: [],
+      uint32: ["IDX"],
     },
   },
   {
@@ -690,7 +699,8 @@ export default [
       string: [],
       void: [],
       bool: [],
-      double: ["IDX"],
+      double: [],
+      uint32: ["IDX"],
     },
   },
   {
@@ -1158,7 +1168,7 @@ export default [
       string: [],
       void: [],
       bool: [],
-      double: ["OPID"],
+      uint32: ["OPID"],
     },
   },
   {
@@ -1253,7 +1263,7 @@ export default [
       string: [],
       void: [],
       bool: [],
-      double: ["ScopeIDX"],
+      uint32: ["ScopeIDX"],
     },
   },
   {
@@ -1265,7 +1275,7 @@ export default [
       string: [],
       void: [],
       bool: [],
-      double: ["ScopeIDX"],
+      uint32: ["ScopeIDX"],
     },
   },
   {

@@ -134,14 +134,14 @@ public:
 
   // Dump all cached dataflow analyses statement-by-statement for debugging
   void dumpDataflowStates(IRICFG& cfg, std::ostream& os) {
-    for (const auto& [idx, bb] : cfg.nodeMap) {
-      os << "  BB" << idx << ":\n";
+    for (const auto &bb : cfg.bbs) {
+      os << "  BB" << bb->IDX << ":\n";
 
       // 1. Block Entry States
       for (const auto& [passID, model] : cache) {
         if (auto df = model->asDataflow()) {
           os << "    [BlockEntry (" << df->getAnalysisName() << "): ";
-          df->dumpBlockEntryState(idx, cfg.ctx, os);
+          df->dumpBlockEntryState(bb->IDX, cfg.ctx, os);
           os << "]\n";
         }
       }

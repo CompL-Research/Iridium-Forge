@@ -148,7 +148,7 @@ public:
       worklist.pop();
       inWorklist.erase(currIdx);
 
-      const auto &bb = cfg.nodeMap.at(currIdx);
+      const auto *bb = cfg.get_bb(currIdx);
       State currState = blockEntryStates[currIdx];
       double exceptionTarget = bb->EXCEPTION;
 
@@ -182,12 +182,9 @@ public:
       }
 
       // Propagate exit state to normal successors
-      auto succIt = cfg.successors.find(currIdx);
-      if (succIt != cfg.successors.end()) {
-        for (BBIDX succ : succIt->second) {
-          State edgeState = transferFn.transferEdge(currIdx, succ, currState);
-          propagateState(succ, edgeState);
-        }
+      for (BBIDX succ : cfg.successorsOf(currIdx)) {
+        State edgeState = transferFn.transferEdge(currIdx, succ, currState);
+        propagateState(succ, edgeState);
       }
     }
   }
@@ -312,7 +309,7 @@ public:
       worklist.pop();
       inWorklist.erase(currIdx);
 
-      const auto &bb = cfg->nodeMap.at(currIdx);
+      IRIBB *bb = cfg->get_bb(currIdx);
       State currState = blockEntryStates[currIdx];
       double exceptionTarget = bb->EXCEPTION;
 
@@ -384,10 +381,8 @@ public:
       }
 
       // Propagate exit state to normal successors
-      auto succIt = cfg->successors.find(currIdx);
-      if (!isAwaitSuspension && succIt != cfg->successors.end() &&
-          !succIt->second.empty()) {
-        for (BBIDX succ : succIt->second) {
+      if (!isAwaitSuspension) {
+        for (BBIDX succ : cfg->successorsOf(currIdx)) {
           State edgeState = transferFn.transferEdge(currIdx, succ, currState);
           propagateState(succ, edgeState);
         }
@@ -482,17 +477,16 @@ public:
     // Build exceptional predecessors map
     std::unordered_map<BBIDX, std::vector<BBIDX>> exceptionalPredecessors;
     if (includeExceptions) {
-      for (const auto &[idx, bb] : cfg.nodeMap) {
-        if (bb->EXCEPTION > -1) {
-          exceptionalPredecessors[bb->EXCEPTION].push_back(idx);
+      for (const auto &bb : cfg.bbs) {
+        if (bb->EXCEPTION != NO_BB) {
+          exceptionalPredecessors[bb->EXCEPTION].push_back(bb->IDX);
         }
       }
     }
 
     // Seed the exit state of exit blocks (blocks with no successors)
     for (BBIDX block : po) {
-      if (cfg.successors.find(block) == cfg.successors.end() ||
-          cfg.successors.at(block).empty()) {
+      if (cfg.successorsOf(block).empty()) {
         blockExitStates[block] = exitState;
       }
     }
@@ -525,7 +519,7 @@ public:
       worklist.pop();
       inWorklist.erase(currIdx);
 
-      const auto &bb = cfg.nodeMap.at(currIdx);
+      const auto *bb = cfg.get_bb(currIdx);
       State oldEntryState = blockEntryStates[currIdx];
       State currState = blockExitStates[currIdx];
 
@@ -570,12 +564,9 @@ public:
       // predecessors
       if (!(currState == oldEntryState)) {
         // 1. Normal predecessors
-        auto predIt = cfg.predecessors.find(currIdx);
-        if (predIt != cfg.predecessors.end()) {
-          for (BBIDX pred : predIt->second) {
-            State edgeState = transferFn.transferEdge(currIdx, pred, currState);
-            propagateState(pred, edgeState);
-          }
+        for (BBIDX pred : cfg.predecessorsOf(currIdx)) {
+          State edgeState = transferFn.transferEdge(currIdx, pred, currState);
+          propagateState(pred, edgeState);
         }
 
         // 2. Exceptional predecessors

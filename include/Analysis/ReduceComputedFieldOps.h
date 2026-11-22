@@ -93,7 +93,7 @@ struct ReduceComputedFieldOpsPass {
     auto &ctx = cfg.ctx;
     bool changed = false;
 
-    for (const auto &[idx, bb] : cfg.nodeMap) {
+    for (const auto &bb : cfg.bbs) {
       for (IRIStatement *s = bb->head; s != nullptr; s = s->next) {
         IRID next = reduce(ctx, s->id, changed);
         if (next != s->id) {

@@ -23,8 +23,8 @@ struct MTDZSPass {
     TDZATransfer transfer;
 
     // Perform transformation logic using the analysis facts
-    for (const auto& [idx, bb] : cfg.nodeMap) {
-      TDZState state = tdzResult.getBlockEntryState(idx);
+    for (const auto &bb : cfg.bbs) {
+      TDZState state = tdzResult.getBlockEntryState(bb->IDX);
       IRIStatement* s = bb->head;
       while (s != nullptr) {
         IRIStatement* nextStmt = s->next;

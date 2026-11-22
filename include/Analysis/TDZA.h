@@ -260,7 +260,7 @@ struct TDZAnalysis {
     auto solver = std::make_shared<DataflowSolver<TDZState>>(cfg, *transfer);
 
     // Initial State
-    double headScope = cfg.nodeMap.at(cfg.entry_block)->SCOPE;
+    double headScope = cfg.get_bb(cfg.entry_block)->SCOPE;
     auto bindings = cfg.ctx.iris->getEnvBindingsInClosure(headScope);
     TDZState entryState = TDZState::reachableEmpty();
     for (auto bID : bindings) {

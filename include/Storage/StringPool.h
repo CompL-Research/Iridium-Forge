@@ -1,5 +1,6 @@
 #pragma once
 #include "PoolMemStats.h"
+#include "Storage/Config.h"
 #include <cstdint>
 #include <string>
 #include <string_view>
@@ -7,7 +8,7 @@
 #include <vector>
 #include <memory>
 
-using StringID = uint32_t;
+using StringID = IRI_STORAGE::StringID;
 
 class StringPool {
     // Each string is a unique allocation; pointers are stable.

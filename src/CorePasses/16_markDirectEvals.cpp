@@ -53,8 +53,8 @@ inline IRID patchNode(IRIContext &ctx, IRID node, double scopeToTaint,
       evalArgs.push_back(callArgs[i]);
     // ScopeIDX is resolved later by IRIS
     IRID evalNode = tag == IRI_GEN::CallSite
-                        ? JSEvalSEXP::create(ctx, callArgs[0], -3)
-                        : JSEvalApplySEXP::create(ctx, callArgs[0], callArgs[2], -3);
+                        ? JSEvalSEXP::create(ctx, callArgs[0], UINT32_MAX)
+                        : JSEvalApplySEXP::create(ctx, callArgs[0], callArgs[2], UINT32_MAX);
     ctx.storage.nodes.set_args(evalNode, evalArgs);
     ctx.iris->registerDirectEval(evalNode, scopeToTaint, containerScope);
     node = evalNode;

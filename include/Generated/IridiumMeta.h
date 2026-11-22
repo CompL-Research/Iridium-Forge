@@ -1,4 +1,4 @@
-// Generated: 2026-11-20 22:49:22
+// Generated: 2026-11-22 20:07:56
 #pragma once
 #include "IridiumEnums.h"
 #include <cstdint>
@@ -225,8 +225,8 @@ public:
         case IRI_GEN::Lexical: return 2;
         case IRI_GEN::VARBoundary: return 3;
         case IRI_GEN::TryBB: return 4;
-        case IRI_GEN::IDX: return 5;
-        case IRI_GEN::ScopeIDX: return 6;
+        case IRI_GEN::ScopeIDX: return 5;
+        case IRI_GEN::IDX: return 6;
           default: return -1;
         }
         break;
@@ -288,9 +288,9 @@ public:
         case IRI_GEN::DERIVED: return 11;
         case IRI_GEN::TopLevel: return 12;
         case IRI_GEN::ECMAArgs: return 13;
-        case IRI_GEN::StartBBIDX: return 14;
-        case IRI_GEN::ScopeIDX: return 15;
-        case IRI_GEN::ContainerFlagID: return 16;
+        case IRI_GEN::ScopeIDX: return 14;
+        case IRI_GEN::ContainerFlagID: return 15;
+        case IRI_GEN::StartBBIDX: return 16;
           default: return -1;
         }
         break;
@@ -344,9 +344,9 @@ public:
         case IRI_GEN::PRIVGET: return 9;
         case IRI_GEN::PRIVSET: return 10;
         case IRI_GEN::PRIVGETSET: return 11;
-        case IRI_GEN::REFIDX: return 12;
-        case IRI_GEN::SCOPE: return 13;
-        case IRI_GEN::NEXT: return 14;
+        case IRI_GEN::NEXT: return 12;
+        case IRI_GEN::REFIDX: return 13;
+        case IRI_GEN::SCOPE: return 14;
         case IRI_GEN::LINK: return 15;
           default: return -1;
         }
@@ -596,6 +596,476 @@ public:
     }
   }
 
+  // What kind of value a flag slot holds; the single integer payload in
+  // FlagValue is disambiguated by the schema, not the value itself
+  enum FLAG_TYPE { FT_NONE, FT_STRING, FT_VOID, FT_BOOL, FT_DOUBLE, FT_INT32, FT_UINT32 };
+  static FLAG_TYPE get_flag_type(IRI_GEN::IRI_TAG tag, IRI_GEN::IRI_FLAG flag) {
+    switch(tag) {
+      case IRI_GEN::File:
+        switch(flag) {
+        case IRI_GEN::JSScript: return FT_VOID;
+        case IRI_GEN::JSModule: return FT_VOID;
+        case IRI_GEN::TLA: return FT_VOID;
+          default: return FT_NONE;
+        }
+        break;
+      case IRI_GEN::ResolveEnvBinding:
+        switch(flag) {
+        case IRI_GEN::NAME: return FT_STRING;
+        case IRI_GEN::ASW: return FT_VOID;
+          default: return FT_NONE;
+        }
+        break;
+      case IRI_GEN::List:
+        switch(flag) {
+        case IRI_GEN::TYPE: return FT_STRING;
+          default: return FT_NONE;
+        }
+        break;
+      case IRI_GEN::JSImplicitBindingDeclaration:
+        switch(flag) {
+        case IRI_GEN::NAME: return FT_STRING;
+        case IRI_GEN::JSLET: return FT_VOID;
+        case IRI_GEN::JSCONST: return FT_VOID;
+        case IRI_GEN::JSVAR: return FT_VOID;
+        case IRI_GEN::SLOPPY: return FT_VOID;
+        case IRI_GEN::SKIPINIT: return FT_VOID;
+        case IRI_GEN::SAFE: return FT_BOOL;
+        case IRI_GEN::THISINIT: return FT_BOOL;
+        case IRI_GEN::OPID: return FT_UINT32;
+          default: return FT_NONE;
+        }
+        break;
+      case IRI_GEN::EnvRead:
+        switch(flag) {
+        case IRI_GEN::SAFE: return FT_VOID;
+        case IRI_GEN::TAINTED: return FT_VOID;
+          default: return FT_NONE;
+        }
+        break;
+      case IRI_GEN::TDZRead:
+        switch(flag) {
+        case IRI_GEN::SAFE: return FT_VOID;
+          default: return FT_NONE;
+        }
+        break;
+      case IRI_GEN::String:
+        switch(flag) {
+        case IRI_GEN::IridiumPrimitive: return FT_STRING;
+          default: return FT_NONE;
+        }
+        break;
+      case IRI_GEN::JSExplicitBindingDeclaration:
+        switch(flag) {
+        case IRI_GEN::JSLET: return FT_VOID;
+        case IRI_GEN::JSCONST: return FT_VOID;
+        case IRI_GEN::JSVAR: return FT_VOID;
+        case IRI_GEN::SLOPPY: return FT_VOID;
+        case IRI_GEN::SAFE: return FT_BOOL;
+        case IRI_GEN::THISINIT: return FT_BOOL;
+          default: return FT_NONE;
+        }
+        break;
+      case IRI_GEN::JSExplicitBindingDeclarationN:
+        switch(flag) {
+        case IRI_GEN::JSLET: return FT_VOID;
+        case IRI_GEN::JSCONST: return FT_VOID;
+        case IRI_GEN::JSVAR: return FT_VOID;
+        case IRI_GEN::SLOPPY: return FT_VOID;
+        case IRI_GEN::SAFE: return FT_BOOL;
+        case IRI_GEN::THISINIT: return FT_BOOL;
+          default: return FT_NONE;
+        }
+        break;
+      case IRI_GEN::JSExplicitBindingDeclarationX:
+        switch(flag) {
+        case IRI_GEN::JSLET: return FT_VOID;
+        case IRI_GEN::JSCONST: return FT_VOID;
+        case IRI_GEN::JSVAR: return FT_VOID;
+        case IRI_GEN::SLOPPY: return FT_VOID;
+        case IRI_GEN::SAFE: return FT_BOOL;
+        case IRI_GEN::THISINIT: return FT_BOOL;
+          default: return FT_NONE;
+        }
+        break;
+      case IRI_GEN::BB:
+        switch(flag) {
+        case IRI_GEN::TopLevel: return FT_VOID;
+        case IRI_GEN::ClosureBoundary: return FT_VOID;
+        case IRI_GEN::Lexical: return FT_VOID;
+        case IRI_GEN::VARBoundary: return FT_VOID;
+        case IRI_GEN::TryBB: return FT_VOID;
+        case IRI_GEN::ScopeIDX: return FT_UINT32;
+        case IRI_GEN::IDX: return FT_UINT32;
+          default: return FT_NONE;
+        }
+        break;
+      case IRI_GEN::IfJump:
+        switch(flag) {
+        case IRI_GEN::NOT: return FT_VOID;
+        case IRI_GEN::IDX: return FT_UINT32;
+          default: return FT_NONE;
+        }
+        break;
+      case IRI_GEN::IfElseJump:
+        switch(flag) {
+        case IRI_GEN::NOT: return FT_VOID;
+        case IRI_GEN::TRUE: return FT_UINT32;
+        case IRI_GEN::FALSE: return FT_UINT32;
+          default: return FT_NONE;
+        }
+        break;
+      case IRI_GEN::Goto:
+        switch(flag) {
+        case IRI_GEN::Deferred: return FT_VOID;
+        case IRI_GEN::IDX: return FT_UINT32;
+          default: return FT_NONE;
+        }
+        break;
+      case IRI_GEN::JSFuncDecl:
+        switch(flag) {
+        case IRI_GEN::JSLET: return FT_VOID;
+        case IRI_GEN::JSCONST: return FT_VOID;
+        case IRI_GEN::JSVAR: return FT_VOID;
+        case IRI_GEN::SLOPPY: return FT_VOID;
+        case IRI_GEN::SAFE: return FT_BOOL;
+        case IRI_GEN::THISINIT: return FT_BOOL;
+          default: return FT_NONE;
+        }
+        break;
+      case IRI_GEN::Lambda:
+        switch(flag) {
+        case IRI_GEN::NAME: return FT_STRING;
+        case IRI_GEN::CNAME: return FT_BOOL;
+        case IRI_GEN::SETNAME: return FT_BOOL;
+        case IRI_GEN::StartBBIDX: return FT_UINT32;
+          default: return FT_NONE;
+        }
+        break;
+      case IRI_GEN::BBContainer:
+        switch(flag) {
+        case IRI_GEN::NAME: return FT_STRING;
+        case IRI_GEN::FUNCNAME: return FT_STRING;
+        case IRI_GEN::ARGUMENTS: return FT_VOID;
+        case IRI_GEN::ASYNC: return FT_VOID;
+        case IRI_GEN::STRICT: return FT_VOID;
+        case IRI_GEN::GENERATOR: return FT_VOID;
+        case IRI_GEN::PROTO: return FT_VOID;
+        case IRI_GEN::NEW: return FT_VOID;
+        case IRI_GEN::SCALL: return FT_VOID;
+        case IRI_GEN::SOBJ: return FT_VOID;
+        case IRI_GEN::HOME: return FT_VOID;
+        case IRI_GEN::DERIVED: return FT_VOID;
+        case IRI_GEN::TopLevel: return FT_VOID;
+        case IRI_GEN::ECMAArgs: return FT_UINT32;
+        case IRI_GEN::ScopeIDX: return FT_UINT32;
+        case IRI_GEN::ContainerFlagID: return FT_UINT32;
+        case IRI_GEN::StartBBIDX: return FT_UINT32;
+          default: return FT_NONE;
+        }
+        break;
+      case IRI_GEN::StarExport:
+        switch(flag) {
+        case IRI_GEN::MODULEREQIDX: return FT_UINT32;
+          default: return FT_NONE;
+        }
+        break;
+      case IRI_GEN::StaticImport:
+        switch(flag) {
+        case IRI_GEN::FIELD: return FT_STRING;
+        case IRI_GEN::NSIMPORT: return FT_VOID;
+        case IRI_GEN::MODULEREQIDX: return FT_UINT32;
+          default: return FT_NONE;
+        }
+        break;
+      case IRI_GEN::LocalStaticExport:
+        switch(flag) {
+        case IRI_GEN::LOCALNAME: return FT_STRING;
+        case IRI_GEN::EXPORTNAME: return FT_STRING;
+          default: return FT_NONE;
+        }
+        break;
+      case IRI_GEN::NamedReexport:
+        switch(flag) {
+        case IRI_GEN::LOCALNAME: return FT_STRING;
+        case IRI_GEN::EXPORTNAME: return FT_STRING;
+        case IRI_GEN::MODULEREQIDX: return FT_UINT32;
+          default: return FT_NONE;
+        }
+        break;
+      case IRI_GEN::ModuleRequest:
+        switch(flag) {
+        case IRI_GEN::SOURCE: return FT_STRING;
+        case IRI_GEN::REQIDX: return FT_UINT32;
+          default: return FT_NONE;
+        }
+        break;
+      case IRI_GEN::EnvBinding:
+        switch(flag) {
+        case IRI_GEN::NAME: return FT_STRING;
+        case IRI_GEN::JSARG: return FT_VOID;
+        case IRI_GEN::JSRESTARG: return FT_VOID;
+        case IRI_GEN::JSLET: return FT_VOID;
+        case IRI_GEN::JSCONST: return FT_VOID;
+        case IRI_GEN::SLOPPYCONST: return FT_VOID;
+        case IRI_GEN::JSVAR: return FT_VOID;
+        case IRI_GEN::PRIVFIELD: return FT_VOID;
+        case IRI_GEN::PRIVMETHOD: return FT_VOID;
+        case IRI_GEN::PRIVGET: return FT_VOID;
+        case IRI_GEN::PRIVSET: return FT_VOID;
+        case IRI_GEN::PRIVGETSET: return FT_VOID;
+        case IRI_GEN::NEXT: return FT_INT32;
+        case IRI_GEN::REFIDX: return FT_UINT32;
+        case IRI_GEN::SCOPE: return FT_UINT32;
+        case IRI_GEN::LINK: return FT_UINT32;
+          default: return FT_NONE;
+        }
+        break;
+      case IRI_GEN::RemoteEnvBinding:
+        switch(flag) {
+        case IRI_GEN::MODULE: return FT_VOID;
+        case IRI_GEN::MODULEI: return FT_VOID;
+        case IRI_GEN::MODULENSI: return FT_VOID;
+        case IRI_GEN::REFIDX: return FT_UINT32;
+        case IRI_GEN::LINK: return FT_UINT32;
+          default: return FT_NONE;
+        }
+        break;
+      case IRI_GEN::GlobalBinding:
+        switch(flag) {
+        case IRI_GEN::NAME: return FT_STRING;
+        case IRI_GEN::LINK: return FT_UINT32;
+          default: return FT_NONE;
+        }
+        break;
+      case IRI_GEN::ScriptBinding:
+        switch(flag) {
+        case IRI_GEN::NAME: return FT_STRING;
+        case IRI_GEN::JSLET: return FT_VOID;
+        case IRI_GEN::JSCONST: return FT_VOID;
+        case IRI_GEN::JSVAR: return FT_VOID;
+        case IRI_GEN::LINK: return FT_UINT32;
+          default: return FT_NONE;
+        }
+        break;
+      case IRI_GEN::EnvWrite:
+        switch(flag) {
+        case IRI_GEN::SLOPPY: return FT_VOID;
+        case IRI_GEN::SAFE: return FT_BOOL;
+        case IRI_GEN::THISINIT: return FT_BOOL;
+        case IRI_GEN::CINIT: return FT_BOOL;
+          default: return FT_NONE;
+        }
+        break;
+      case IRI_GEN::SiblingSpecialWrite:
+        switch(flag) {
+        case IRI_GEN::SLOPPY: return FT_VOID;
+        case IRI_GEN::SAFE: return FT_BOOL;
+        case IRI_GEN::THISINIT: return FT_BOOL;
+        case IRI_GEN::CINIT: return FT_BOOL;
+        case IRI_GEN::ScopeIDX: return FT_UINT32;
+          default: return FT_NONE;
+        }
+        break;
+      case IRI_GEN::Number:
+        switch(flag) {
+        case IRI_GEN::IridiumPrimitive: return FT_DOUBLE;
+          default: return FT_NONE;
+        }
+        break;
+      case IRI_GEN::JSClass:
+        switch(flag) {
+        case IRI_GEN::NAME: return FT_STRING;
+          default: return FT_NONE;
+        }
+        break;
+      case IRI_GEN::JSPrivate:
+        switch(flag) {
+        case IRI_GEN::IridiumPrimitive: return FT_STRING;
+        case IRI_GEN::PRIVFIELD: return FT_VOID;
+        case IRI_GEN::PRIVMETHOD: return FT_VOID;
+        case IRI_GEN::PRIVGET: return FT_VOID;
+        case IRI_GEN::PRIVSET: return FT_VOID;
+        case IRI_GEN::PRIVGETSET: return FT_VOID;
+          default: return FT_NONE;
+        }
+        break;
+      case IRI_GEN::JSThrowError:
+        switch(flag) {
+        case IRI_GEN::NAME: return FT_STRING;
+          default: return FT_NONE;
+        }
+        break;
+      case IRI_GEN::PoolBinding:
+        switch(flag) {
+        case IRI_GEN::REFIDX: return FT_UINT32;
+          default: return FT_NONE;
+        }
+        break;
+      case IRI_GEN::ResolveContinueTarget:
+        switch(flag) {
+        case IRI_GEN::Label: return FT_STRING;
+          default: return FT_NONE;
+        }
+        break;
+      case IRI_GEN::ResolveBreakTarget:
+        switch(flag) {
+        case IRI_GEN::Label: return FT_STRING;
+          default: return FT_NONE;
+        }
+        break;
+      case IRI_GEN::InvokeFinalizer:
+        switch(flag) {
+        case IRI_GEN::IDX: return FT_UINT32;
+          default: return FT_NONE;
+        }
+        break;
+      case IRI_GEN::PushCatchContext:
+        switch(flag) {
+        case IRI_GEN::IDX: return FT_UINT32;
+          default: return FT_NONE;
+        }
+        break;
+      case IRI_GEN::JSBinop:
+        switch(flag) {
+        case IRI_GEN::OP: return FT_STRING;
+          default: return FT_NONE;
+        }
+        break;
+      case IRI_GEN::JSUnop:
+        switch(flag) {
+        case IRI_GEN::OP: return FT_STRING;
+          default: return FT_NONE;
+        }
+        break;
+      case IRI_GEN::Unop:
+        switch(flag) {
+        case IRI_GEN::OP: return FT_STRING;
+          default: return FT_NONE;
+        }
+        break;
+      case IRI_GEN::Boolean:
+        switch(flag) {
+        case IRI_GEN::IridiumPrimitive: return FT_BOOL;
+          default: return FT_NONE;
+        }
+        break;
+      case IRI_GEN::Binop:
+        switch(flag) {
+        case IRI_GEN::OP: return FT_STRING;
+          default: return FT_NONE;
+        }
+        break;
+      case IRI_GEN::JSComputedFieldRead:
+        switch(flag) {
+        case IRI_GEN::SAFE: return FT_VOID;
+          default: return FT_NONE;
+        }
+        break;
+      case IRI_GEN::JSComputedFieldWrite:
+        switch(flag) {
+        case IRI_GEN::SAFE: return FT_VOID;
+          default: return FT_NONE;
+        }
+        break;
+      case IRI_GEN::JSDefineMethod:
+        switch(flag) {
+        case IRI_GEN::NOENUM: return FT_VOID;
+          default: return FT_NONE;
+        }
+        break;
+      case IRI_GEN::JSDefineGetter:
+        switch(flag) {
+        case IRI_GEN::NOENUM: return FT_VOID;
+          default: return FT_NONE;
+        }
+        break;
+      case IRI_GEN::JSDefineSetter:
+        switch(flag) {
+        case IRI_GEN::NOENUM: return FT_VOID;
+          default: return FT_NONE;
+        }
+        break;
+      case IRI_GEN::RegExp:
+        switch(flag) {
+        case IRI_GEN::EXP: return FT_STRING;
+        case IRI_GEN::FLAGS: return FT_STRING;
+          default: return FT_NONE;
+        }
+        break;
+      case IRI_GEN::UNOPDelVar:
+        switch(flag) {
+        case IRI_GEN::NAME: return FT_STRING;
+          default: return FT_NONE;
+        }
+        break;
+      case IRI_GEN::JSBigInt:
+        switch(flag) {
+        case IRI_GEN::IridiumPrimitive: return FT_STRING;
+          default: return FT_NONE;
+        }
+        break;
+      case IRI_GEN::JSIDOP:
+        switch(flag) {
+        case IRI_GEN::PREFIX: return FT_BOOL;
+        case IRI_GEN::INCREMENT: return FT_BOOL;
+          default: return FT_NONE;
+        }
+        break;
+      case IRI_GEN::GWrite:
+        switch(flag) {
+        case IRI_GEN::INIT: return FT_VOID;
+        case IRI_GEN::SAFE: return FT_VOID;
+        case IRI_GEN::DECLVAR: return FT_VOID;
+        case IRI_GEN::DECLFUN: return FT_VOID;
+          default: return FT_NONE;
+        }
+        break;
+      case IRI_GEN::LWrite:
+        switch(flag) {
+        case IRI_GEN::INIT: return FT_VOID;
+        case IRI_GEN::SAFE: return FT_VOID;
+        case IRI_GEN::THISINIT: return FT_VOID;
+          default: return FT_NONE;
+        }
+        break;
+      case IRI_GEN::RWrite:
+        switch(flag) {
+        case IRI_GEN::INIT: return FT_VOID;
+        case IRI_GEN::SAFE: return FT_VOID;
+        case IRI_GEN::THISINIT: return FT_VOID;
+          default: return FT_NONE;
+        }
+        break;
+      case IRI_GEN::MWrite:
+        switch(flag) {
+        case IRI_GEN::INIT: return FT_VOID;
+        case IRI_GEN::SAFE: return FT_VOID;
+          default: return FT_NONE;
+        }
+        break;
+      case IRI_GEN::JSCTX:
+        switch(flag) {
+        case IRI_GEN::OPID: return FT_UINT32;
+          default: return FT_NONE;
+        }
+        break;
+      case IRI_GEN::JSEval:
+        switch(flag) {
+        case IRI_GEN::ScopeIDX: return FT_UINT32;
+          default: return FT_NONE;
+        }
+        break;
+      case IRI_GEN::JSEvalApply:
+        switch(flag) {
+        case IRI_GEN::ScopeIDX: return FT_UINT32;
+          default: return FT_NONE;
+        }
+        break;
+      default: return FT_NONE;
+    }
+  }
+
   // Used by IridiumSEXP::dump() to recover the flag name
   static IRI_GEN::IRI_FLAG get_flag_enum(IRI_GEN::IRI_TAG tag, uint32_t index) {
     switch(tag) {
@@ -693,8 +1163,8 @@ public:
         case 2: return IRI_GEN::Lexical;
         case 3: return IRI_GEN::VARBoundary;
         case 4: return IRI_GEN::TryBB;
-        case 5: return IRI_GEN::IDX;
-        case 6: return IRI_GEN::ScopeIDX;
+        case 5: return IRI_GEN::ScopeIDX;
+        case 6: return IRI_GEN::IDX;
           default: throw std::runtime_error("Invalid flag index");
         }
         break;
@@ -756,9 +1226,9 @@ public:
         case 11: return IRI_GEN::DERIVED;
         case 12: return IRI_GEN::TopLevel;
         case 13: return IRI_GEN::ECMAArgs;
-        case 14: return IRI_GEN::StartBBIDX;
-        case 15: return IRI_GEN::ScopeIDX;
-        case 16: return IRI_GEN::ContainerFlagID;
+        case 14: return IRI_GEN::ScopeIDX;
+        case 15: return IRI_GEN::ContainerFlagID;
+        case 16: return IRI_GEN::StartBBIDX;
           default: throw std::runtime_error("Invalid flag index");
         }
         break;
@@ -812,9 +1282,9 @@ public:
         case 9: return IRI_GEN::PRIVGET;
         case 10: return IRI_GEN::PRIVSET;
         case 11: return IRI_GEN::PRIVGETSET;
-        case 12: return IRI_GEN::REFIDX;
-        case 13: return IRI_GEN::SCOPE;
-        case 14: return IRI_GEN::NEXT;
+        case 12: return IRI_GEN::NEXT;
+        case 13: return IRI_GEN::REFIDX;
+        case 14: return IRI_GEN::SCOPE;
         case 15: return IRI_GEN::LINK;
           default: throw std::runtime_error("Invalid flag index");
         }

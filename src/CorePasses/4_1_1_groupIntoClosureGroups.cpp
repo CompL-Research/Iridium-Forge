@@ -114,8 +114,8 @@ inline IRID createBBContainerSEXP(IRIContext &ctx, double targetScopeIDX,
       ctx.storage.strings.intern(""), false,
       currContext->isAsync, currContext->isStrict, currContext->isGenerator,
       false, false, false, false, false, false, isTopLevel,
-      currContext->ecmaArgs, BBSEXP(currContext->BB[0], ctx).getIDX(),
-      targetScopeIDX, -1);
+      currContext->ecmaArgs, targetScopeIDX, -1,
+      (UIndex)BBSEXP(currContext->BB[0], ctx).getIDX());
 
   setClosureFlags(currContext->kind, BBContainerSEXP(bbContainer, ctx));
   return bbContainer;

@@ -30,7 +30,7 @@ inline void patchNode(FileSupport file, IRIContext &ctx, IRID node,
 
     if (currTag == IRI_GEN::Lambda) {
       IRID pb =
-          PoolBindingSEXP::create(ctx, currID, -1);
+          PoolBindingSEXP::create(ctx, currID, UINT32_MAX);
       res.push_back(pb);
       ctx.storage.nodes.update_arg_inplace(node, i, pb);
       unresolvedReferences--;

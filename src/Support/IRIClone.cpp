@@ -32,10 +32,10 @@ void IRICloner::remapTargets(IRIContext &ctx, IRID stmtID,
                              const std::unordered_map<double, double> &targetMap) {
   auto re = [&](size_t pos) {
     auto flags = ctx.storage.nodes.get_flags_m(stmtID);
-    if (std::holds_alternative<double>(flags[pos])) {
-      auto it = targetMap.find(std::get<double>(flags[pos]));
+    if (std::holds_alternative<UIndex>(flags[pos])) {
+      auto it = targetMap.find((double)std::get<UIndex>(flags[pos]));
       if (it != targetMap.end())
-        flags[pos] = it->second;
+        flags[pos] = (UIndex)it->second;
     }
   };
   switch (IRI_NODE(ctx, stmtID).tag) {
@@ -93,7 +93,7 @@ static IRID newBBLike(IRIContext &ctx, IRID srcBBID, double newIDX) {
   BBSEXP src(srcBBID, ctx);
   auto flags = ctx.storage.nodes.get_flags(srcBBID);
   std::vector<FlagValue> cFlags(flags.begin(), flags.end());
-  cFlags[BBSEXP::FLAG_IDX_IDX] = newIDX;
+  cFlags[BBSEXP::FLAG_IDX_IDX] = (UIndex)newIDX;
   return ctx.storage.nodes.add_node(IRI_TAG::BB, {}, cFlags);
 }
 
@@ -144,8 +144,8 @@ std::vector<double> bbTargets(IRIContext &ctx, IRID bbID) {
   std::vector<double> out;
   auto add = [&](IRID s, size_t pos) {
     auto flags = ctx.storage.nodes.get_flags(s);
-    if (std::holds_alternative<double>(flags[pos]))
-      out.push_back(std::get<double>(flags[pos]));
+    if (std::holds_alternative<UIndex>(flags[pos]))
+      out.push_back((double)std::get<UIndex>(flags[pos]));
   };
   for (auto s : ctx.storage.nodes.get_args(bbID)) {
     switch (IRI_NODE(ctx, s).tag) {

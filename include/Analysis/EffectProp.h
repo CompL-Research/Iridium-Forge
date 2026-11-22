@@ -46,7 +46,7 @@ struct EffectPropPass {
     };
 
     // Perform optimization on each basic block
-    for (const auto &[idx, bb] : cfg.nodeMap) {
+    for (const auto &bb : cfg.bbs) {
       std::vector<IRIStatement*> stmts;
       for (IRIStatement *s = bb->head; s != nullptr; s = s->next) {
         stmts.push_back(s);

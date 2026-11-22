@@ -1,4 +1,4 @@
-// Generated: 2026-11-20 22:49:22
+// Generated: 2026-11-22 20:07:56
 #pragma once
 #include <string>
 
@@ -263,8 +263,8 @@ namespace IRI_GEN {
     Lexical,
     VARBoundary,
     TryBB,
-    IDX,
     ScopeIDX,
+    IDX,
     NOT,
     TRUE,
     FALSE,
@@ -300,9 +300,9 @@ namespace IRI_GEN {
     PRIVGET,
     PRIVSET,
     PRIVGETSET,
+    NEXT,
     REFIDX,
     SCOPE,
-    NEXT,
     LINK,
     MODULE,
     MODULEI,
@@ -343,8 +343,8 @@ namespace IRI_GEN {
       case Lexical: return "Lexical";
       case VARBoundary: return "VARBoundary";
       case TryBB: return "TryBB";
-      case IDX: return "IDX";
       case ScopeIDX: return "ScopeIDX";
+      case IDX: return "IDX";
       case NOT: return "NOT";
       case TRUE: return "TRUE";
       case FALSE: return "FALSE";
@@ -380,9 +380,9 @@ namespace IRI_GEN {
       case PRIVGET: return "PRIVGET";
       case PRIVSET: return "PRIVSET";
       case PRIVGETSET: return "PRIVGETSET";
+      case NEXT: return "NEXT";
       case REFIDX: return "REFIDX";
       case SCOPE: return "SCOPE";
-      case NEXT: return "NEXT";
       case LINK: return "LINK";
       case MODULE: return "MODULE";
       case MODULEI: return "MODULEI";

@@ -14,8 +14,11 @@ namespace IRI_STRUCTURAL {
 
 using namespace IRI_STORAGE;
 
-using BBIDX = double;
+using BBIDX = int;
 using ScopeIDX = double;
+
+// No block. EXCEPTION uses this instead of the old -1 sentinel.
+inline constexpr BBIDX NO_BB = -1;
 
 class IRIBB;
 class IRICFG;
@@ -47,9 +50,9 @@ struct IRIStatement {
 
 // 2. The Basic Block
 struct IRIBB {
-  double IDX;
+  BBIDX IDX;
   double SCOPE;
-  double EXCEPTION = -1;
+  BBIDX EXCEPTION = NO_BB;
   IRI_STORAGE::IRIContext &ctx;
   IRIStatement *head = nullptr;
   IRIStatement *tail = nullptr;
@@ -63,7 +66,7 @@ struct IRIBB {
   void insertBefore(IRIStatement *inst, IRIStatement *before);
   void insertAfter(IRIStatement *inst, IRIStatement *after);
   void replace(IRIStatement *oldInst, IRIStatement *newInst);
-  explicit IRIBB(double, double, IRICFG *, IRI_STORAGE::IRIContext &);
+  explicit IRIBB(double, BBIDX, IRICFG *, IRI_STORAGE::IRIContext &);
 
   void setTerminal(IRID);
 
@@ -92,33 +95,75 @@ struct IRICFG {
   IRI_STORAGE::IRID id;
   IRI_STORAGE::IRID retCTX;
 
-  // Directed edges representing control flow
-  std::unordered_map<BBIDX, std::unique_ptr<IRIBB>> nodeMap;
-  std::unordered_map<BBIDX, std::set<BBIDX>> successors;
-  std::unordered_map<BBIDX, std::set<BBIDX>> predecessors;
+  // During construction blocks arrive in the program-wide numbering, so the
+  // node set and edge sets are sparse maps. renumberBBs() collapses them into
+  // the dense CFG-local representation below; after the constructor finishes,
+  // only these exist and every handle is a dense index.
+  std::unordered_map<BBIDX, std::unique_ptr<IRIBB>> sparseNodes;
+  std::unordered_map<BBIDX, std::set<BBIDX>> sparseSuccs;
+  std::unordered_map<BBIDX, std::set<BBIDX>> sparsePreds;
+
+  std::vector<std::unique_ptr<IRIBB>> bbs;               // by local handle
+  std::vector<std::set<BBIDX>> successors, predecessors; // indexed by handle
 
   IRIBB *makeBB(ScopeIDX scope);
   void verify();
 
+  // IRIBB::addEdge/clearEdges route through insertEdge/removeEdge, which
+  // reach into the edge containers directly.
+  friend struct IRIBB;
+
 private:
   void removeUnreachable();
   void renumberBBs();
+  void insertEdge(BBIDX from, BBIDX to);
+  void removeEdge(BBIDX from, BBIDX to);
+  void eraseSparseNode(BBIDX idx);
 
 public:
+  size_t numBBs() const { return bbs.size(); }
 
   IRIBB *get_bb(BBIDX idx) {
-    auto it = nodeMap.find(idx);
-    if (it == nodeMap.end())
+    if (idx < 0 || (size_t)idx >= bbs.size() || !bbs[idx])
       throw std::runtime_error("IRICFG could not find the BB");
-    else
-      return nodeMap[idx].get();
+    return bbs[idx].get();
+  }
+
+  const IRIBB *get_bb(BBIDX idx) const {
+    if (idx < 0 || (size_t)idx >= bbs.size() || !bbs[idx])
+      throw std::runtime_error("IRICFG could not find the BB");
+    return bbs[idx].get();
+  }
+
+  // Successor/predecessor sets of a block. Out-of-range handles read as the
+  // empty set; mutation goes through addEdge/clearEdges.
+  const std::set<BBIDX> &successorsOf(BBIDX idx) const {
+    if (idx < 0 || (size_t)idx >= successors.size())
+      return emptySuccs;
+    return successors[idx];
+  }
+  const std::set<BBIDX> &predecessorsOf(BBIDX idx) const {
+    if (idx < 0 || (size_t)idx >= predecessors.size())
+      return emptySuccs;
+    return predecessors[idx];
+  }
+
+  // The entry's id in the program-wide numbering, kept so the closure tree
+  // and core-IR statements can still name this CFG's entry. The CFG itself
+  // only ever uses dense local handles.
+  BBIDX globalEntryID = NO_BB;
+
+  // local handle -> the global id this block had in the core IR (identity
+  // before renumbering). commit() translates back with this.
+  BBIDX globalBBID(BBIDX local) const {
+    if (local < 0 || (size_t)local >= globalIDs.size())
+      throw std::runtime_error("globalBBID: handle out of range");
+    return globalIDs[local];
   }
 
   // Well-defined entry and exit points for the graph
   BBIDX entry_block;
   BBIDX exit_block;
-
-  BBIDX globalEntryID = -1;
 
   // What PTA needs from this closure, derived in one pass and cached. Any
   // structural change drops it via markDirty(); the next query rebuilds it.
@@ -140,11 +185,13 @@ public:
 
   // Compute Reverse Post-Order (RPO) of basic block indices
   std::vector<BBIDX> getReversePostOrder(bool includeExceptions,
-                                         double startBBIDX) const;
+                                         BBIDX startBBIDX) const;
   std::vector<BBIDX> getReversePostOrder(bool includeExceptions = false) const;
 
 private:
   std::set<BBIDX> continuationPoints;
+  std::vector<BBIDX> globalIDs; // local -> global (identity before renumber)
+  inline static const std::set<BBIDX> emptySuccs{};
 };
 
 } // namespace IRI_STRUCTURAL

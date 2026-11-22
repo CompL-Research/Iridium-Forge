@@ -25,9 +25,9 @@ struct DCEPass {
     LivenessTransfer transfer(bbc.hasSTRICT());
 
     // Perform transformation logic using the liveness facts
-    for (const auto& [idx, bb] : cfg.nodeMap) {
+    for (const auto &bb : cfg.bbs) {
       // Start with the exit state of the basic block (post-statement state)
-      LivenessState state = livenessResult.getBlockExitState(idx);
+      LivenessState state = livenessResult.getBlockExitState(bb->IDX);
 
       // Collect all statements in this basic block
       std::vector<IRIStatement*> stmts;

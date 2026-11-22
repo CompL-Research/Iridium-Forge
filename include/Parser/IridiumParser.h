@@ -114,7 +114,37 @@ public:
       int slot_idx = IRI_GEN::IridiumMeta::get_flag_index(tag, flag_enum);
 
       if (slot_idx >= 0) {
-        if (val_obj.IsNumber()) {
+        auto ftype = IRI_GEN::IridiumMeta::get_flag_type(tag, flag_enum);
+        if (ftype == IRI_GEN::IridiumMeta::FT_UINT32) {
+          // New case for Uint32
+          if (!val_obj.IsNumber())
+            throw std::runtime_error(
+                "[FORGE] Iridium Parse Error: " +
+                IRI_GEN::dump_flag(flag_enum) +
+                " expects an unsigned index, but V8 sent a non-number");
+          double d = val_obj.As<Napi::Number>().DoubleValue();
+          if (d < 0 || d >= (double)UINT32_MAX || d != (uint32_t)d)
+            throw std::runtime_error(
+                "[FORGE] Iridium Parse Error: " +
+                IRI_GEN::dump_flag(flag_enum) +
+                " is not a valid unsigned index");
+          flags[slot_idx] = (uint32_t)d;
+        } else if (ftype == IRI_GEN::IridiumMeta::FT_INT32) {
+          // New case for int32
+          if (!val_obj.IsNumber())
+            throw std::runtime_error(
+                "[FORGE] Iridium Parse Error: " +
+                IRI_GEN::dump_flag(flag_enum) +
+                " expects an integer, but V8 sent a non-number");
+          double d = val_obj.As<Napi::Number>().DoubleValue();
+          if (d < (double)INT32_MIN || d > (double)INT32_MAX ||
+              d != (int32_t)d)
+            throw std::runtime_error(
+                "[FORGE] Iridium Parse Error: " +
+                IRI_GEN::dump_flag(flag_enum) +
+                " is not a valid int32");
+          flags[slot_idx] = static_cast<uint32_t>(static_cast<int32_t>(d));
+        } else if (val_obj.IsNumber()) {
           flags[slot_idx] = val_obj.As<Napi::Number>().DoubleValue();
         } else if (val_obj.IsBoolean()) {
           flags[slot_idx] = val_obj.As<Napi::Boolean>().Value();

@@ -40,6 +40,16 @@ function genSchema(spec) {
       allFlags.push({ name: f, type: "double", isVoid: false });
       FLAGS.add(f);
     });
+  if (flags.int32)
+    flags.int32.forEach((f) => {
+      allFlags.push({ name: f, type: "int32", isVoid: false });
+      FLAGS.add(f);
+    });
+  if (flags.uint32)
+    flags.uint32.forEach((f) => {
+      allFlags.push({ name: f, type: "UIndex", isVoid: false });
+      FLAGS.add(f);
+    });
 
   const indexDefs = allFlags
     .map(
@@ -53,6 +63,13 @@ function genSchema(spec) {
         return (
           `    bool has${f.name}() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_${f.name})); }\n` +
           `    void set${f.name}() { mutate_flag(FLAG_IDX_${f.name}) = std::nullptr_t{}; }\n` +
+          `    void clear${f.name}() { mutate_flag(FLAG_IDX_${f.name}) = std::monostate{}; }`
+        );
+      } else if (f.type === "int32") {
+        return (
+          `    int32_t get${f.name}() const { return static_cast<int32_t>(std::get<uint32_t>(get_flag(FLAG_IDX_${f.name}))); }\n` +
+          `    void set${f.name}(int32_t val) { mutate_flag(FLAG_IDX_${f.name}) = static_cast<uint32_t>(val); }\n` +
+          `    bool has${f.name}() const { return std::holds_alternative<uint32_t>(get_flag(FLAG_IDX_${f.name})); }\n` +
           `    void clear${f.name}() { mutate_flag(FLAG_IDX_${f.name}) = std::monostate{}; }`
         );
       } else {
@@ -82,7 +99,9 @@ function genSchema(spec) {
   flags.string.forEach((f) => createArgs.push(`StringID ${f}`));
   flags.void.forEach((f) => createArgs.push(`bool ${f}`));
   flags.bool.forEach((f) => createArgs.push(`bool ${f}`));
-  flags.double.forEach((f) => createArgs.push(`double ${f}`));
+  (flags.double || []).forEach((f) => createArgs.push(`double ${f}`));
+  (flags.int32 || []).forEach((f) => createArgs.push(`int32_t ${f}`));
+  (flags.uint32 || []).forEach((f) => createArgs.push(`UIndex ${f}`));
 
   const createFlags = allFlags
     .map((a) => {
@@ -91,6 +110,9 @@ function genSchema(spec) {
       }
       if (a.type === "StringID") {
         return `FlagValue(${a.name})`;
+      }
+      if (a.type === "int32") {
+        return `FlagValue(static_cast<uint32_t>(${a.name}))`;
       }
       return `FlagValue(${a.name})`;
     })
@@ -142,6 +164,16 @@ const schemas = [];
 const slotCounts = [];
 const flagEnumCases = [];
 const flagIndexCases = [];
+const flagTypeCases = [];
+
+const GROUP_TYPE = {
+  string: "FT_STRING",
+  void: "FT_VOID",
+  bool: "FT_BOOL",
+  double: "FT_DOUBLE",
+  int32: "FT_INT32",
+  uint32: "FT_UINT32",
+};
 
 for (let s of spec) {
   schemas.push(genSchema(s));
@@ -159,7 +191,13 @@ for (let s of spec) {
     ...(s.flags.void || []),
     ...(s.flags.bool || []),
     ...(s.flags.double || []),
+    ...(s.flags.int32 || []),
+    ...(s.flags.uint32 || []),
   ];
+
+  const typedFlags = Object.entries(s.flags || {}).flatMap(([group, names]) =>
+    (names || []).map((f) => [f, GROUP_TYPE[group]]),
+  );
 
   slotCounts.push(`      case IRI_GEN::${s.tag}: return ${allFlags.length};`);
 
@@ -183,6 +221,16 @@ ${innerIndexCases}
           default: return -1;
         }
         break;`);
+
+    const innerTypeCases = typedFlags
+      .map(([f, t]) => `        case IRI_GEN::${f}: return ${t};`)
+      .join("\n");
+    flagTypeCases.push(`      case IRI_GEN::${s.tag}:
+        switch(flag) {
+${innerTypeCases}
+          default: return FT_NONE;
+        }
+        break;`);
   }
 }
 
@@ -201,6 +249,8 @@ const typesFile = [
   `namespace IRI_GEN {`,
   `using IRI_STORAGE::IRIContext;`,
   `using IRI_STORAGE::IRID;`,
+  `using IRI_STORAGE::StringID;`,
+  `using IRI_STORAGE::UIndex;`,
   `using IRI_STORAGE::FlagValue;`,
   ...schemas,
   `} // namespace IRI_GEN`,
@@ -229,6 +279,16 @@ const metaFile = [
   `    switch(tag) {`,
   ...flagIndexCases,
   `      default: return -1;`,
+  `    }`,
+  `  }`,
+  ``,
+  `  // What kind of value a flag slot holds; the single integer payload in
+  // FlagValue is disambiguated by the schema, not the value itself`,
+  `  enum FLAG_TYPE { FT_NONE, FT_STRING, FT_VOID, FT_BOOL, FT_DOUBLE, FT_INT32, FT_UINT32 };`,
+  `  static FLAG_TYPE get_flag_type(IRI_GEN::IRI_TAG tag, IRI_GEN::IRI_FLAG flag) {`,
+  `    switch(tag) {`,
+  ...flagTypeCases,
+  `      default: return FT_NONE;`,
   `    }`,
   `  }`,
   ``,

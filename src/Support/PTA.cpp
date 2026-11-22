@@ -84,9 +84,9 @@ void setupTraceWriter(IRIContext &ctx) {
         currBB.inst(bb->tail->getDebugID(), text.str());
       }
 
-      for (const auto p : cfg->predecessors[bbID])
+      for (const auto p : cfg->predecessorsOf(bbID))
         currBB.pred(IRI_BB(cfg, p)->getDebugID());
-      for (const auto s : cfg->successors[bbID])
+      for (const auto s : cfg->successorsOf(bbID))
         currBB.succ(IRI_BB(cfg, s)->getDebugID());
     }
   });

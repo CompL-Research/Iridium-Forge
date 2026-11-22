@@ -109,7 +109,7 @@ IRIS::IRIS(
           EnvBindingSEXP::create(ctx, bName, kind == JSARG, kind == JSRESTARG,
                                  false, false, false, false,
                                  false, false, false, false, false,
-                                 k, currScope, -1, -1);
+                                 -1, k, (UIndex)currScope, UINT32_MAX);
 
       allNames.insert(bName);
       scopeBindings[currScope][bName] = lb;
@@ -153,7 +153,7 @@ IRI_STORAGE::BindingMeta &IRIS::declareScriptBinding(double scope,
 
     assert(JSLET || JSCONST || JSVAR);
     IRID newBinding =
-        ScriptBindingSEXP::create(ctx, name, JSLET, JSCONST, JSVAR, -1);
+        ScriptBindingSEXP::create(ctx, name, JSLET, JSCONST, JSVAR, UINT32_MAX);
     scriptBindings[name] = newBinding;
     ctx.storage.bindings.allocate(ctx, newBinding);
     return get_binding(newBinding);
@@ -186,14 +186,14 @@ IRI_STORAGE::BindingMeta &IRIS::declareLBinding(double scope, StringID name,
   bool JSCONST = flag == IRI_FLAG::JSCONST;
   bool JSVAR = flag == IRI_FLAG::JSVAR;
   assert(JSARG || JSRESTARG || JSLET || JSCONST || JSVAR);
-  double REFIDX = -1;
-  double SCOPE = scope;
-  double NEXT = -1;
-  double LINK = -1;
+  UIndex REFIDX = UINT32_MAX;
+  UIndex SCOPE = (UIndex)scope;
+  int32_t NEXT = -1;
+  UIndex LINK = UINT32_MAX;
   IRID newBinding = IRI_GEN::EnvBindingSEXP::create(ctx, NAME, JSARG, JSRESTARG,
                                                     JSLET, JSCONST, false, JSVAR,
                                                     false, false, false, false, false,
-                                                    REFIDX, SCOPE, NEXT, LINK);
+                                                    NEXT, REFIDX, SCOPE, LINK);
   bindingsAtScope[name] = newBinding;
   ctx.storage.bindings.allocate(ctx, newBinding);
   return get_binding(newBinding);
@@ -226,21 +226,21 @@ IRI_STORAGE::BindingMeta &IRIS::declareRBinding(double scope, StringID name,
     bool JSLET = flag == IRI_FLAG::JSLET;
     bool JSCONST = flag == IRI_FLAG::JSCONST;
     bool JSVAR = flag == IRI_FLAG::JSVAR;
-    double REFIDX = -1;
-    double SCOPE = scope;
-    double NEXT = -1;
-    double LINK = -1;
+    UIndex REFIDX = UINT32_MAX;
+    UIndex SCOPE = (UIndex)scope;
+    int32_t NEXT = -1;
+    UIndex LINK = UINT32_MAX;
     IRID store = IRI_GEN::EnvBindingSEXP::create(ctx, NAME, JSARG, JSRESTARG,
                                                  JSLET, JSCONST, false, JSVAR,
                                                  false, false, false, false, false,
-                                                 REFIDX, SCOPE, NEXT, LINK);
+                                                 NEXT, REFIDX, SCOPE, LINK);
     ctx.storage.bindings.allocate(ctx, store);
 
     assert(moduleFlag == IRI_FLAG::MODULE || moduleFlag == IRI_FLAG::MODULEI ||
            moduleFlag == IRI_GEN::MODULENSI);
     IRID moduleBinding = RemoteEnvBindingSEXP::create(
         ctx, store, moduleFlag == MODULE, moduleFlag == MODULEI,
-        moduleFlag == MODULENSI, -1, -1);
+        moduleFlag == MODULENSI, UINT32_MAX, UINT32_MAX);
 
     bindingsAtScope[name] = moduleBinding;
     ctx.storage.bindings.allocate(ctx, moduleBinding);
@@ -301,7 +301,7 @@ IRI_STORAGE::BindingMeta &IRIS::resolve(StringID sid, double startScopeIDX) {
       } else if (globalBindings.contains(sid)) {
         return get_binding(globalBindings[sid]);
       } else {
-        IRID newBinding = GlobalBindingSEXP::create(ctx, sid, -1);
+        IRID newBinding = GlobalBindingSEXP::create(ctx, sid, UINT32_MAX);
         globalBindings[sid] = newBinding;
         ctx.storage.bindings.allocate(ctx, newBinding);
         return get_binding(newBinding);
@@ -318,7 +318,7 @@ IRI_STORAGE::BindingMeta &IRIS::resolve(StringID sid, double startScopeIDX) {
       headsCrossed.pop_back();
       IRID parentID = found;
       found =
-          RemoteEnvBindingSEXP::create(ctx, found, false, false, false, -1, -1);
+          RemoteEnvBindingSEXP::create(ctx, found, false, false, false, UINT32_MAX, UINT32_MAX);
       scopeBindings[currHead][sid] = found;
       ctx.storage.bindings.allocate(ctx, found);
       BindingMeta::connect(get_binding(found), get_binding(parentID));
