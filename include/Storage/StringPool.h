@@ -28,13 +28,13 @@ public:
         auto& kept_str = storage.emplace_back(std::make_unique<std::string>(str));
         std::string_view stable_view(*kept_str);
 
-        StringID new_id = static_cast<StringID>(id_to_view.size());
+        StringID new_id = StringID{static_cast<uint32_t>(id_to_view.size())};
         id_to_view.push_back(stable_view);
         intern_map[stable_view] = new_id;
 
         return new_id;
     }
-    std::string_view get(StringID id) const { return id_to_view[id]; }
+    std::string_view get(StringID id) const { return id_to_view[id.v]; }
 
     // Intern a fresh, guaranteed-unique synthetic identifier.
     StringID getTemp() {

@@ -177,16 +177,12 @@ void IridiumSEXP::dump(std::ostream &oss, IRIContext *ctx, bool compressed,
     } else if (std::holds_alternative<bool>(v)) {
       oss << std::boolalpha << std::get<bool>(v);
     } else if (std::holds_alternative<StringID>(v)) {
-      if (IRI_GEN::IridiumMeta::get_flag_type(tag, flagEnum) ==
-          IRI_GEN::IridiumMeta::FT_STRING) {
-        std::string_view str = ctx->storage.strings.get(std::get<StringID>(v));
-        append_escaped_json_string(oss, str);
-      } else if (IRI_GEN::IridiumMeta::get_flag_type(tag, flagEnum) ==
-                 IRI_GEN::IridiumMeta::FT_INT32) {
-        oss << static_cast<int32_t>(std::get<StringID>(v));
-      } else {
-        oss << std::get<StringID>(v);
-      }
+      std::string_view str = ctx->storage.strings.get(std::get<StringID>(v));
+      append_escaped_json_string(oss, str);
+    } else if (std::holds_alternative<UInt32>(v)) {
+      oss << std::get<UInt32>(v).v;
+    } else if (std::holds_alternative<Int32>(v)) {
+      oss << std::get<Int32>(v).v;
     } else if (std::holds_alternative<std::nullptr_t>(v)) {
       oss << "null";
     }
@@ -235,16 +231,12 @@ void IridiumSEXP::dumpFlat(std::ostream &oss, IRIContext *ctx, int depth,
       oss << std::boolalpha << std::get<bool>(v);
     } else if (std::holds_alternative<StringID>(v)) {
       oss << IRI_GEN::dump_flag(flagEnum) << ": ";
-      if (IRI_GEN::IridiumMeta::get_flag_type(tag, flagEnum) ==
-          IRI_GEN::IridiumMeta::FT_STRING) {
-        std::string_view str = ctx->storage.strings.get(std::get<StringID>(v));
-        append_escaped_json_string(oss, str);
-      } else if (IRI_GEN::IridiumMeta::get_flag_type(tag, flagEnum) ==
-                 IRI_GEN::IridiumMeta::FT_INT32) {
-        oss << static_cast<int32_t>(std::get<StringID>(v));
-      } else {
-        oss << std::get<StringID>(v);
-      }
+      std::string_view str = ctx->storage.strings.get(std::get<StringID>(v));
+      append_escaped_json_string(oss, str);
+    } else if (std::holds_alternative<UInt32>(v)) {
+      oss << IRI_GEN::dump_flag(flagEnum) << ": " << std::get<UInt32>(v).v;
+    } else if (std::holds_alternative<Int32>(v)) {
+      oss << IRI_GEN::dump_flag(flagEnum) << ": " << std::get<Int32>(v).v;
     } else if (std::holds_alternative<std::nullptr_t>(v)) {
       oss << IRI_GEN::dump_flag(flagEnum);
     }

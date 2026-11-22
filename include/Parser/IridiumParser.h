@@ -128,7 +128,7 @@ public:
                 "[FORGE] Iridium Parse Error: " +
                 IRI_GEN::dump_flag(flag_enum) +
                 " is not a valid unsigned index");
-          flags[slot_idx] = (uint32_t)d;
+          flags[slot_idx] = IRI_STORAGE::UInt32{(uint32_t)d};
         } else if (ftype == IRI_GEN::IridiumMeta::FT_INT32) {
           // New case for int32
           if (!val_obj.IsNumber())
@@ -143,7 +143,7 @@ public:
                 "[FORGE] Iridium Parse Error: " +
                 IRI_GEN::dump_flag(flag_enum) +
                 " is not a valid int32");
-          flags[slot_idx] = static_cast<uint32_t>(static_cast<int32_t>(d));
+          flags[slot_idx] = IRI_STORAGE::Int32{(int32_t)d};
         } else if (val_obj.IsNumber()) {
           flags[slot_idx] = val_obj.As<Napi::Number>().DoubleValue();
         } else if (val_obj.IsBoolean()) {
