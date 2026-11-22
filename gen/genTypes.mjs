@@ -67,9 +67,16 @@ function genSchema(spec) {
         );
       } else if (f.type === "int32") {
         return (
-          `    int32_t get${f.name}() const { return static_cast<int32_t>(std::get<uint32_t>(get_flag(FLAG_IDX_${f.name}))); }\n` +
-          `    void set${f.name}(int32_t val) { mutate_flag(FLAG_IDX_${f.name}) = static_cast<uint32_t>(val); }\n` +
-          `    bool has${f.name}() const { return std::holds_alternative<uint32_t>(get_flag(FLAG_IDX_${f.name})); }\n` +
+          `    int32_t get${f.name}() const { return std::get<Int32>(get_flag(FLAG_IDX_${f.name})).v; }\n` +
+          `    void set${f.name}(int32_t val) { mutate_flag(FLAG_IDX_${f.name}) = Int32{val}; }\n` +
+          `    bool has${f.name}() const { return std::holds_alternative<Int32>(get_flag(FLAG_IDX_${f.name})); }\n` +
+          `    void clear${f.name}() { mutate_flag(FLAG_IDX_${f.name}) = std::monostate{}; }`
+        );
+      } else if (f.type === "UIndex") {
+        return (
+          `    UIndex get${f.name}() const { return std::get<UInt32>(get_flag(FLAG_IDX_${f.name})).v; }\n` +
+          `    void set${f.name}(UIndex val) { mutate_flag(FLAG_IDX_${f.name}) = UInt32{val}; }\n` +
+          `    bool has${f.name}() const { return std::holds_alternative<UInt32>(get_flag(FLAG_IDX_${f.name})); }\n` +
           `    void clear${f.name}() { mutate_flag(FLAG_IDX_${f.name}) = std::monostate{}; }`
         );
       } else {
@@ -112,7 +119,10 @@ function genSchema(spec) {
         return `FlagValue(${a.name})`;
       }
       if (a.type === "int32") {
-        return `FlagValue(static_cast<uint32_t>(${a.name}))`;
+        return `FlagValue(Int32{${a.name}})`;
+      }
+      if (a.type === "UIndex") {
+        return `FlagValue(UInt32{${a.name}})`;
       }
       return `FlagValue(${a.name})`;
     })
@@ -250,6 +260,8 @@ const typesFile = [
   `using IRI_STORAGE::IRIContext;`,
   `using IRI_STORAGE::IRID;`,
   `using IRI_STORAGE::StringID;`,
+  `using IRI_STORAGE::UInt32;`,
+  `using IRI_STORAGE::Int32;`,
   `using IRI_STORAGE::UIndex;`,
   `using IRI_STORAGE::FlagValue;`,
   ...schemas,
