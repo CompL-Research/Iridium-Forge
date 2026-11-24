@@ -249,10 +249,6 @@ IRI_STORAGE::BindingMeta &IRIS::declareRBinding(SCPIDX scope, StringID name,
   }
 }
 
-void IRIS::addClosureAtScope(SCPIDX scope, IRI_STORAGE::IRID closure) {
-  closuresAtScope[scope].push_back(closure);
-}
-
 bool IRIS::hasBinding(StringID name, SCPIDX currScope) {
   auto scopeIt = scopeBindings.find(currScope);
   if (scopeIt != scopeBindings.end() && scopeIt->second.contains(name)) {
@@ -406,24 +402,6 @@ static std::vector<IRI_STORAGE::IRID> getRemoteEnvBindings(
   return matchedBindings;
 }
 
-void IRIS::populateCClosuresInTree() {
-  if (!ctx.closureTree)
-    throw std::runtime_error(
-        "Expected closure Tree to exist before populating CClosures");
-
-  for (auto &[currHead, bbcID] : scopeHead) {
-    std::vector<IRID> cBindings = closuresAtScope.contains(currHead)
-                                      ? closuresAtScope[currHead]
-                                      : std::vector<IRID>();
-    for (auto &b : cBindings) {
-      PoolBindingSEXP pb(b, ctx);
-      LambdaSEXP lbSEXP(pb.getArg_Lambda(), ctx);
-      ctx.closureTree->addEdgeFromScopeToBBIDX(currHead,
-                                               lbSEXP.getStartBBIDX());
-    }
-  }
-}
-
 void IRIS::commit() {
   // For each
   for (auto &[currHead, bbcID] : scopeHead) {
@@ -435,9 +413,6 @@ void IRIS::commit() {
     std::unordered_map<SCPIDX, std::vector<uint32_t>> lbAtScope;
     std::vector<IRID> lBindings = argsAtScope[currHead];
     std::vector<IRID> rBindings;
-    std::vector<IRID> cBindings = closuresAtScope.contains(currHead)
-                                      ? closuresAtScope[currHead]
-                                      : std::vector<IRID>();
     std::function<void(SCPIDX, bool)> handleFrameBindings =
         [&](SCPIDX currScope, bool allowHead) {
           if (scopeHead.contains(currScope) && !allowHead)
@@ -512,11 +487,8 @@ void IRIS::commit() {
     BindingsSEXP bindings(bbc.getArg_Bindings(), ctx);
     ctx.storage.nodes.set_args(bindings.getArg_LocalBindings(), lBindings);
     ctx.storage.nodes.set_args(bindings.getArg_RemoteBindings(), rBindings);
-    for (size_t i = 0; i < cBindings.size(); i++) {
-      PoolBindingSEXP pb(cBindings[i], ctx);
-      pb.setREFIDX(i);
-    }
-    ctx.storage.nodes.set_args(bindings.getArg_Lambdas(), cBindings);
+    // The Lambdas (PoolBinding) list is written by _9, where the bindings are
+    // created; it never leaves the IR.
   }
   // Resolve evals
   for (auto &[id, scopeToTaint, containerScope] : directEvals) {
@@ -876,13 +848,6 @@ std::vector<IRI_STORAGE::IRID> IRIS::collectReferencedIrids() const {
     ref_irids.push_back(bID);
   }
 
-  // closure binding IRIDs in closuresAtScope
-  for (auto &[currScope, closurebIDs] : closuresAtScope) {
-    for (auto &closurebID : closurebIDs) {
-      ref_irids.push_back(closurebID);
-    }
-  }
-
   // direct eval IRIDs
   for (auto &[id, scopeToTaint, containerScope] : directEvals) {
     ref_irids.push_back(id);
@@ -932,13 +897,6 @@ void IRIS::remapIrids(std::span<const IRID> old_to_new_irid_map) {
   // remap IRID in globalBindings
   for (auto &[name, bID] : globalBindings) {
     bID = remap(bID);
-  }
-
-  // remap closure binding IRID in closuresAtScope
-  for (auto &[currScope, closurebIDs] : closuresAtScope) {
-    for (auto &closurebID : closurebIDs) {
-      closurebID = remap(closurebID);
-    }
   }
 
   // remap direct eval IRIDs

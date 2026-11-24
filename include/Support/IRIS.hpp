@@ -30,6 +30,16 @@ public:
   // Scope Related
   SCPIDX getTopLevelScope() { return topLevelScope; }
 
+  // Read-only view of the scope tree, used by ClosureTree to link closures:
+  // the closure head scopes, and the parent link of any scope.
+  const std::unordered_map<SCPIDX, IRI_GEN::IRID> &scopeHeads() const {
+    return scopeHead;
+  }
+  SCPIDX parentScope(SCPIDX scope) const {
+    auto it = outEdges.find(scope);
+    return it == outEdges.end() ? NO_SCOPE : it->second;
+  }
+
   // Binding Declaration
   IRI_STORAGE::BindingMeta &declareScriptBinding(SCPIDX, StringID,
                                                  IRI_GEN::IRI_FLAG);
@@ -38,8 +48,6 @@ public:
   IRI_STORAGE::BindingMeta &declareRBinding(SCPIDX, StringID,
                                             IRI_GEN::IRI_FLAG,
                                             IRI_GEN::IRI_FLAG);
-  void addClosureAtScope(SCPIDX, IRI_STORAGE::IRID);
-
   bool isGlobal(StringID sid, SCPIDX startScopeIDX);
 
   IRI_STORAGE::BindingMeta &get_binding(IRI_STORAGE::IRID bID) {
@@ -109,8 +117,6 @@ public:
 
   BBIDX getFinalizerRetBBIDX(BBIDX);
 
-  void populateCClosuresInTree();
-
   std::vector<IRI_STORAGE::IRID> getBindingsToMoveToHeap(SCPIDX startScope,
                                                          SCPIDX endScope);
 
@@ -139,7 +145,7 @@ public:
 
   // Remap IRID references after compaction by GC
   // IRIDs in scopeHead, argsAtScope, scopeBindings, scriptBindings,
-  // globalBindings, closuresAtScope, directEvals
+  // globalBindings, directEvals
   // bindingsPool -> handled by BindingsPool::remapIrids
   void remapIrids(std::span<const IRI_STORAGE::IRID> old_to_new_irid_map);
 
@@ -205,7 +211,6 @@ private:
 
   std::unordered_map<StringID, IRI_STORAGE::IRID> scriptBindings;
   std::unordered_map<StringID, IRI_STORAGE::IRID> globalBindings;
-  std::unordered_map<SCPIDX, std::vector<IRI_STORAGE::IRID>> closuresAtScope;
 
   // try/ud-catch scope -> the BB its throw redirects to, and
   // finalizer BB -> the BB its body returns to.

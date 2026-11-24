@@ -49,7 +49,6 @@ void _9_RLT(IRIContext &ctx, IRID fileSEXP, BUILD_CTX &iridiumBuildContext) {
   FileSupport fileSupport(fileSEXP, ctx);
   for (auto [bbContID, _] : fileSupport.containers()) {
     BBContainerSupport container(bbContID, ctx);
-    SCPIDX scopeIDX = container.getScopeIDX();
     std::vector<IRID> res;
 
     for (auto [bbID, _] : container.bbs()) {
@@ -70,10 +69,10 @@ void _9_RLT(IRIContext &ctx, IRID fileSEXP, BUILD_CTX &iridiumBuildContext) {
       }
     }
 
-    for (size_t i = 0; i < res.size(); i++) {
-      PoolBindingSEXP pbSEXP(res[i], ctx);
-      ctx.iris->addClosureAtScope(scopeIDX, res[i]);
-    }
+    for (size_t i = 0; i < res.size(); i++)
+      PoolBindingSEXP(res[i], ctx).setREFIDX(i);
+    BindingsSEXP bindings(container.getArg_Bindings(), ctx);
+    ctx.storage.nodes.set_args(bindings.getArg_Lambdas(), res);
   }
 }
 } // namespace IRI_CORE_PASSES
