@@ -222,7 +222,6 @@ void commitAndDump(IRIContext &ctx, IRID &sexpRef) {
 void normalizeIRIDIUM(IRIContext &ctx, IRID &sexpRef,
                       BuildContextMap &iridiumBuildContext) {
   runCorePasses(ctx, sexpRef, iridiumBuildContext);
-  normalizeIRIDIUM(ctx, sexpRef, iridiumBuildContext);
   ctx.closureTree = std::make_unique<ClosureTree>(ctx, sexpRef);
 }
 
