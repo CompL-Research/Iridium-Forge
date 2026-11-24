@@ -2,6 +2,7 @@
 #include "Generated/IridiumTypes.h"
 #include "Storage/IRIContext.h"
 #include "Support/BBContainerSupport.hpp"
+#include "Support/IRICFG.hpp"
 #include <cstddef>
 #include <unordered_map>
 #include <vector>
@@ -16,16 +17,16 @@ namespace IRI_STRUCTURAL {
 //
 struct IRICloner {
   IRI_STORAGE::IRIContext &ctx;
-  double closureScope; // container scope keying ExceptionIDX entries
+  SCPIDX closureScope; // container scope keying ExceptionIDX entries
   std::unordered_map<IRI_STORAGE::IRID, IRI_STORAGE::IRID> nodeMap; // orig -> clone
-  std::unordered_map<double, double> targetMap;                     // old BBIDX -> new BBIDX
+  std::unordered_map<BBIDX, BBIDX> targetMap;                       // old BBIDX -> new BBIDX
 
-  IRICloner(IRI_STORAGE::IRIContext &p, double scope) : ctx(p), closureScope(scope) {}
+  IRICloner(IRI_STORAGE::IRIContext &p, SCPIDX scope) : ctx(p), closureScope(scope) {}
 
   static bool isSingletonTag(IRI_GEN::IRI_TAG tag);
   static void remapTargets(
       IRI_STORAGE::IRIContext &ctx, IRI_STORAGE::IRID stmtID,
-      const std::unordered_map<double, double> &targetMap);
+      const std::unordered_map<BBIDX, BBIDX> &targetMap);
 
   // Memoized deep copy of a node subtree.
   IRI_STORAGE::IRID cloneNode(IRI_STORAGE::IRID id);
@@ -37,23 +38,23 @@ struct IRICloner {
 // Copy a BB (flags/scope copied, IDX allocated by the caller); carries the
 // source's ExceptionIDX entry, remapped through targetMap. Unattached.
 IRI_GEN::IRID cloneBB(IRI_STORAGE::IRIContext &ctx, IRI_STORAGE::IRID bbID,
-                      double newIDX, IRICloner &cloner);
+                      BBIDX newIDX, IRICloner &cloner);
 
 // Move statements [fromIdx, end) of bbID into a new sibling BB; the suffix
 // inherits the source's dispatch target under closureScope. Unattached.
 IRI_GEN::IRID splitBBSuffix(IRI_STORAGE::IRIContext &ctx, IRI_STORAGE::IRID bbID,
-                            size_t fromIdx, double closureScope);
+                            size_t fromIdx, SCPIDX closureScope);
 
 // Control-flow out-edges of a BB: jump targets and pushed catch entries.
-std::vector<double> bbTargets(IRI_STORAGE::IRIContext &ctx,
-                              IRI_STORAGE::IRID bbID);
+std::vector<BBIDX> bbTargets(IRI_STORAGE::IRIContext &ctx,
+                             IRI_STORAGE::IRID bbID);
 
 // Result of cloneRegion.
 struct RegionClone {
   IRICloner cloner; // targetMap: region source BBIDX -> clone BBIDX
-  double entryIDX;  // the clone's entry block
-  RegionClone(IRI_STORAGE::IRIContext &ctx, double closureScope)
-      : cloner(ctx, closureScope), entryIDX(-1) {}
+  BBIDX entryIDX;   // the clone's entry block
+  RegionClone(IRI_STORAGE::IRIContext &ctx, SCPIDX closureScope)
+      : cloner(ctx, closureScope), entryIDX(NO_BB) {}
 };
 
 //
@@ -65,6 +66,6 @@ struct RegionClone {
 // targets are not followed: nested finalizers must be expanded first.
 //
 RegionClone cloneRegion(IRI_STORAGE::IRIContext &ctx,
-                        BBContainerSupport &bbc, double entryIDX);
+                        BBContainerSupport &bbc, BBIDX entryIDX);
 
 } // namespace IRI_STRUCTURAL
