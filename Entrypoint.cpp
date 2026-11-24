@@ -10,7 +10,6 @@
 #include "Storage/GCStats.h"
 #include "Storage/IRIContext.h"
 #include "Support/ClosureTree.hpp"
-#include "Support/FileSupport.hpp"
 #include "Support/IRIS.hpp"
 #include "Support/PP.hpp"
 #include <cstdlib>
@@ -152,20 +151,6 @@ void runCorePasses(IRIContext &ctx, IRID &sexpRef,
   emitPhase(ctx, "post_core_gc_point");
 }
 
-void buildClosureTree(IRIContext &ctx, IRID &sexpRef) {
-  IRID treeRoot = IRI_HELPERS::getTopLevelContainer(ctx, sexpRef);
-  ctx.closureTree = std::make_unique<ClosureTree>(ctx, treeRoot);
-  FileSupport fs(sexpRef, ctx);
-
-  for (auto [bbcID, _] : fs.containers()) {
-    if (bbcID == treeRoot)
-      continue;
-    ctx.closureTree->addClosure(bbcID);
-  }
-
-  ctx.iris->populateCClosuresInTree();
-}
-
 void runOptimizationPasses(IRIContext &ctx) {
   AnalysisManager am;
   PassManager pm;
@@ -182,8 +167,8 @@ void runOptimizationPasses(IRIContext &ctx) {
     pm.addPass(DCEPass());
 
   ctx.debugger.tick("_23_OPT_MTDZS_DCE");
-  ctx.closureTree->preorderTraversal(
-      [&](IRICFG *cfgCTX) { pm.run(*cfgCTX, am); });
+  for (IRICFG *cfgCTX : ctx.closureTree->preorder())
+    pm.run(*cfgCTX, am);
   ctx.debugger.tock("_23_OPT_MTDZS_DCE");
 
   if (ctx.flags.pta) {
@@ -199,7 +184,7 @@ void runOptimizationPasses(IRIContext &ctx) {
 
   if (ctx.flags.effectProp) {
     ctx.debugger.tick("_24_OPT_EFFECT_PROP");
-    ctx.closureTree->preorderTraversal([&](IRICFG *cfgCTX) {
+    for (IRICFG *cfgCTX : ctx.closureTree->preorder()) {
       EffectPropPass ep;
       bool changed = true;
       int iterations = 0;
@@ -208,7 +193,7 @@ void runOptimizationPasses(IRIContext &ctx) {
         changed = ep.run(*cfgCTX, am);
         iterations++;
       }
-    });
+    }
     ctx.debugger.tock("_24_OPT_EFFECT_PROP");
   }
 }
@@ -237,9 +222,8 @@ void commitAndDump(IRIContext &ctx, IRID &sexpRef) {
 void normalizeIRIDIUM(IRIContext &ctx, IRID &sexpRef,
                       BuildContextMap &iridiumBuildContext) {
   runCorePasses(ctx, sexpRef, iridiumBuildContext);
-  buildClosureTree(ctx, sexpRef);
-  runOptimizationPasses(ctx);
-  commitAndDump(ctx, sexpRef);
+  normalizeIRIDIUM(ctx, sexpRef, iridiumBuildContext);
+  ctx.closureTree = std::make_unique<ClosureTree>(ctx, sexpRef);
 }
 
 IRID sharedEntrypoint(IRIContext &ctx, IRID &file,
@@ -256,6 +240,8 @@ IRID sharedEntrypoint(IRIContext &ctx, IRID &file,
   }
 
   normalizeIRIDIUM(ctx, file, iridiumBuildContext);
+  runOptimizationPasses(ctx);
+  commitAndDump(ctx, file);
 
   emitPhase(ctx, "pre_final_gc_point");
   if (gcMode() & 2) {
