@@ -164,7 +164,8 @@ export default [
       void: ["TopLevel", "ClosureBoundary", "Lexical", "VARBoundary", "TryBB"],
       bool: [],
       double: [],
-      uint32: ["ScopeIDX", "IDX"],
+      int32: ["ScopeIDX"],
+      uint32: ["IDX"],
     },
   },
   {
@@ -280,7 +281,8 @@ export default [
       ],
       bool: [],
       double: [],
-      uint32: ["ECMAArgs", "ScopeIDX", "ContainerFlagID", "StartBBIDX"],
+      int32: ["ScopeIDX"],
+      uint32: ["ECMAArgs", "ContainerFlagID", "StartBBIDX"],
     },
   },
   {
@@ -426,7 +428,7 @@ export default [
       string: [],
       void: ["SLOPPY"],
       bool: ["SAFE", "THISINIT", "CINIT"],
-      uint32: ["ScopeIDX"],
+      int32: ["ScopeIDX"],
     },
   },
   {
@@ -1263,7 +1265,7 @@ export default [
       string: [],
       void: [],
       bool: [],
-      uint32: ["ScopeIDX"],
+      int32: ["ScopeIDX"],
     },
   },
   {
@@ -1275,7 +1277,7 @@ export default [
       string: [],
       void: [],
       bool: [],
-      uint32: ["ScopeIDX"],
+      int32: ["ScopeIDX"],
     },
   },
   {

@@ -1,4 +1,4 @@
-// Generated: 2026-11-23 03:04:46
+// Generated: 2026-11-24 15:04:43
 #pragma once
 #include "Storage/Config.h"
 #include "Storage/IridiumSEXP.h"
@@ -727,8 +727,8 @@ using IRI_STORAGE::FlagValue;
       }
     }
 
-    static IRID create(IRIContext& p, bool TopLevel, bool ClosureBoundary, bool Lexical, bool VARBoundary, bool TryBB, UIndex ScopeIDX, UIndex IDX) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::BB, {}, {TopLevel ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), ClosureBoundary ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), Lexical ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), VARBoundary ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), TryBB ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), FlagValue(UInt32{ScopeIDX}), FlagValue(UInt32{IDX})});
+    static IRID create(IRIContext& p, bool TopLevel, bool ClosureBoundary, bool Lexical, bool VARBoundary, bool TryBB, int32_t ScopeIDX, UIndex IDX) {
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::BB, {}, {TopLevel ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), ClosureBoundary ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), Lexical ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), VARBoundary ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), TryBB ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), FlagValue(Int32{ScopeIDX}), FlagValue(UInt32{IDX})});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
@@ -774,9 +774,9 @@ using IRI_STORAGE::FlagValue;
     void setTryBB() { mutate_flag(FLAG_IDX_TryBB) = std::nullptr_t{}; }
     void clearTryBB() { mutate_flag(FLAG_IDX_TryBB) = std::monostate{}; }
 
-    UIndex getScopeIDX() const { return std::get<UInt32>(get_flag(FLAG_IDX_ScopeIDX)).v; }
-    void setScopeIDX(UIndex val) { mutate_flag(FLAG_IDX_ScopeIDX) = UInt32{val}; }
-    bool hasScopeIDX() const { return std::holds_alternative<UInt32>(get_flag(FLAG_IDX_ScopeIDX)); }
+    int32_t getScopeIDX() const { return std::get<Int32>(get_flag(FLAG_IDX_ScopeIDX)).v; }
+    void setScopeIDX(int32_t val) { mutate_flag(FLAG_IDX_ScopeIDX) = Int32{val}; }
+    bool hasScopeIDX() const { return std::holds_alternative<Int32>(get_flag(FLAG_IDX_ScopeIDX)); }
     void clearScopeIDX() { mutate_flag(FLAG_IDX_ScopeIDX) = std::monostate{}; }
 
     UIndex getIDX() const { return std::get<UInt32>(get_flag(FLAG_IDX_IDX)).v; }
@@ -1159,8 +1159,8 @@ using IRI_STORAGE::FlagValue;
       }
     }
 
-    static IRID create(IRIContext& p, IRID Bindings, IRID BB, StringID NAME, StringID FUNCNAME, bool ARGUMENTS, bool ASYNC, bool STRICT, bool GENERATOR, bool PROTO, bool NEW, bool SCALL, bool SOBJ, bool HOME, bool DERIVED, bool TopLevel, UIndex ECMAArgs, UIndex ScopeIDX, UIndex ContainerFlagID, UIndex StartBBIDX) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::BBContainer, {Bindings, BB}, {FlagValue(NAME), FlagValue(FUNCNAME), ARGUMENTS ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), ASYNC ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), STRICT ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), GENERATOR ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), PROTO ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), NEW ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), SCALL ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), SOBJ ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), HOME ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), DERIVED ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), TopLevel ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), FlagValue(UInt32{ECMAArgs}), FlagValue(UInt32{ScopeIDX}), FlagValue(UInt32{ContainerFlagID}), FlagValue(UInt32{StartBBIDX})});
+    static IRID create(IRIContext& p, IRID Bindings, IRID BB, StringID NAME, StringID FUNCNAME, bool ARGUMENTS, bool ASYNC, bool STRICT, bool GENERATOR, bool PROTO, bool NEW, bool SCALL, bool SOBJ, bool HOME, bool DERIVED, bool TopLevel, int32_t ScopeIDX, UIndex ECMAArgs, UIndex ContainerFlagID, UIndex StartBBIDX) {
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::BBContainer, {Bindings, BB}, {FlagValue(NAME), FlagValue(FUNCNAME), ARGUMENTS ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), ASYNC ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), STRICT ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), GENERATOR ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), PROTO ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), NEW ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), SCALL ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), SOBJ ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), HOME ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), DERIVED ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), TopLevel ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), FlagValue(Int32{ScopeIDX}), FlagValue(UInt32{ECMAArgs}), FlagValue(UInt32{ContainerFlagID}), FlagValue(UInt32{StartBBIDX})});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 2;
@@ -1179,8 +1179,8 @@ using IRI_STORAGE::FlagValue;
     static constexpr uint32_t FLAG_IDX_HOME = 10;
     static constexpr uint32_t FLAG_IDX_DERIVED = 11;
     static constexpr uint32_t FLAG_IDX_TopLevel = 12;
-    static constexpr uint32_t FLAG_IDX_ECMAArgs = 13;
-    static constexpr uint32_t FLAG_IDX_ScopeIDX = 14;
+    static constexpr uint32_t FLAG_IDX_ScopeIDX = 13;
+    static constexpr uint32_t FLAG_IDX_ECMAArgs = 14;
     static constexpr uint32_t FLAG_IDX_ContainerFlagID = 15;
     static constexpr uint32_t FLAG_IDX_StartBBIDX = 16;
 
@@ -1256,15 +1256,15 @@ using IRI_STORAGE::FlagValue;
     void setTopLevel() { mutate_flag(FLAG_IDX_TopLevel) = std::nullptr_t{}; }
     void clearTopLevel() { mutate_flag(FLAG_IDX_TopLevel) = std::monostate{}; }
 
+    int32_t getScopeIDX() const { return std::get<Int32>(get_flag(FLAG_IDX_ScopeIDX)).v; }
+    void setScopeIDX(int32_t val) { mutate_flag(FLAG_IDX_ScopeIDX) = Int32{val}; }
+    bool hasScopeIDX() const { return std::holds_alternative<Int32>(get_flag(FLAG_IDX_ScopeIDX)); }
+    void clearScopeIDX() { mutate_flag(FLAG_IDX_ScopeIDX) = std::monostate{}; }
+
     UIndex getECMAArgs() const { return std::get<UInt32>(get_flag(FLAG_IDX_ECMAArgs)).v; }
     void setECMAArgs(UIndex val) { mutate_flag(FLAG_IDX_ECMAArgs) = UInt32{val}; }
     bool hasECMAArgs() const { return std::holds_alternative<UInt32>(get_flag(FLAG_IDX_ECMAArgs)); }
     void clearECMAArgs() { mutate_flag(FLAG_IDX_ECMAArgs) = std::monostate{}; }
-
-    UIndex getScopeIDX() const { return std::get<UInt32>(get_flag(FLAG_IDX_ScopeIDX)).v; }
-    void setScopeIDX(UIndex val) { mutate_flag(FLAG_IDX_ScopeIDX) = UInt32{val}; }
-    bool hasScopeIDX() const { return std::holds_alternative<UInt32>(get_flag(FLAG_IDX_ScopeIDX)); }
-    void clearScopeIDX() { mutate_flag(FLAG_IDX_ScopeIDX) = std::monostate{}; }
 
     UIndex getContainerFlagID() const { return std::get<UInt32>(get_flag(FLAG_IDX_ContainerFlagID)).v; }
     void setContainerFlagID(UIndex val) { mutate_flag(FLAG_IDX_ContainerFlagID) = UInt32{val}; }
@@ -1892,8 +1892,8 @@ using IRI_STORAGE::FlagValue;
       }
     }
 
-    static IRID create(IRIContext& p, IRID LValTarget, IRID RVal, bool SLOPPY, bool SAFE, bool THISINIT, bool CINIT, UIndex ScopeIDX) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::SiblingSpecialWrite, {LValTarget, RVal}, {SLOPPY ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), FlagValue(SAFE), FlagValue(THISINIT), FlagValue(CINIT), FlagValue(UInt32{ScopeIDX})});
+    static IRID create(IRIContext& p, IRID LValTarget, IRID RVal, bool SLOPPY, bool SAFE, bool THISINIT, bool CINIT, int32_t ScopeIDX) {
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::SiblingSpecialWrite, {LValTarget, RVal}, {SLOPPY ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), FlagValue(SAFE), FlagValue(THISINIT), FlagValue(CINIT), FlagValue(Int32{ScopeIDX})});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 2;
@@ -1942,9 +1942,9 @@ using IRI_STORAGE::FlagValue;
     bool hasCINIT() const { return std::holds_alternative<bool>(get_flag(FLAG_IDX_CINIT)); }
     void clearCINIT() { mutate_flag(FLAG_IDX_CINIT) = std::monostate{}; }
 
-    UIndex getScopeIDX() const { return std::get<UInt32>(get_flag(FLAG_IDX_ScopeIDX)).v; }
-    void setScopeIDX(UIndex val) { mutate_flag(FLAG_IDX_ScopeIDX) = UInt32{val}; }
-    bool hasScopeIDX() const { return std::holds_alternative<UInt32>(get_flag(FLAG_IDX_ScopeIDX)); }
+    int32_t getScopeIDX() const { return std::get<Int32>(get_flag(FLAG_IDX_ScopeIDX)).v; }
+    void setScopeIDX(int32_t val) { mutate_flag(FLAG_IDX_ScopeIDX) = Int32{val}; }
+    bool hasScopeIDX() const { return std::holds_alternative<Int32>(get_flag(FLAG_IDX_ScopeIDX)); }
     void clearScopeIDX() { mutate_flag(FLAG_IDX_ScopeIDX) = std::monostate{}; }
   };
 
@@ -4856,8 +4856,8 @@ using IRI_STORAGE::FlagValue;
       }
     }
 
-    static IRID create(IRIContext& p, IRID Callee, UIndex ScopeIDX) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSEval, {Callee}, {FlagValue(UInt32{ScopeIDX})});
+    static IRID create(IRIContext& p, IRID Callee, int32_t ScopeIDX) {
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSEval, {Callee}, {FlagValue(Int32{ScopeIDX})});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 1;
@@ -4879,9 +4879,9 @@ using IRI_STORAGE::FlagValue;
     void setArg_Callee(IRID val) { assert(hasArg_Callee() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
     // --- Flags ---
-    UIndex getScopeIDX() const { return std::get<UInt32>(get_flag(FLAG_IDX_ScopeIDX)).v; }
-    void setScopeIDX(UIndex val) { mutate_flag(FLAG_IDX_ScopeIDX) = UInt32{val}; }
-    bool hasScopeIDX() const { return std::holds_alternative<UInt32>(get_flag(FLAG_IDX_ScopeIDX)); }
+    int32_t getScopeIDX() const { return std::get<Int32>(get_flag(FLAG_IDX_ScopeIDX)).v; }
+    void setScopeIDX(int32_t val) { mutate_flag(FLAG_IDX_ScopeIDX) = Int32{val}; }
+    bool hasScopeIDX() const { return std::holds_alternative<Int32>(get_flag(FLAG_IDX_ScopeIDX)); }
     void clearScopeIDX() { mutate_flag(FLAG_IDX_ScopeIDX) = std::monostate{}; }
   };
 
@@ -4895,8 +4895,8 @@ using IRI_STORAGE::FlagValue;
       }
     }
 
-    static IRID create(IRIContext& p, IRID Callee, IRID ArgList, UIndex ScopeIDX) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSEvalApply, {Callee, ArgList}, {FlagValue(UInt32{ScopeIDX})});
+    static IRID create(IRIContext& p, IRID Callee, IRID ArgList, int32_t ScopeIDX) {
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSEvalApply, {Callee, ArgList}, {FlagValue(Int32{ScopeIDX})});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 2;
@@ -4922,9 +4922,9 @@ using IRI_STORAGE::FlagValue;
     void setArg_ArgList(IRID val) { assert(hasArg_ArgList() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,1,val); }
 
     // --- Flags ---
-    UIndex getScopeIDX() const { return std::get<UInt32>(get_flag(FLAG_IDX_ScopeIDX)).v; }
-    void setScopeIDX(UIndex val) { mutate_flag(FLAG_IDX_ScopeIDX) = UInt32{val}; }
-    bool hasScopeIDX() const { return std::holds_alternative<UInt32>(get_flag(FLAG_IDX_ScopeIDX)); }
+    int32_t getScopeIDX() const { return std::get<Int32>(get_flag(FLAG_IDX_ScopeIDX)).v; }
+    void setScopeIDX(int32_t val) { mutate_flag(FLAG_IDX_ScopeIDX) = Int32{val}; }
+    bool hasScopeIDX() const { return std::holds_alternative<Int32>(get_flag(FLAG_IDX_ScopeIDX)); }
     void clearScopeIDX() { mutate_flag(FLAG_IDX_ScopeIDX) = std::monostate{}; }
   };
 

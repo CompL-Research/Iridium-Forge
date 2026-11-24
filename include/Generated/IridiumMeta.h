@@ -1,4 +1,4 @@
-// Generated: 2026-11-23 03:04:46
+// Generated: 2026-11-24 15:04:43
 #pragma once
 #include "IridiumEnums.h"
 #include <cstdint>
@@ -287,8 +287,8 @@ public:
         case IRI_GEN::HOME: return 10;
         case IRI_GEN::DERIVED: return 11;
         case IRI_GEN::TopLevel: return 12;
-        case IRI_GEN::ECMAArgs: return 13;
-        case IRI_GEN::ScopeIDX: return 14;
+        case IRI_GEN::ScopeIDX: return 13;
+        case IRI_GEN::ECMAArgs: return 14;
         case IRI_GEN::ContainerFlagID: return 15;
         case IRI_GEN::StartBBIDX: return 16;
           default: return -1;
@@ -695,7 +695,7 @@ public:
         case IRI_GEN::Lexical: return FT_VOID;
         case IRI_GEN::VARBoundary: return FT_VOID;
         case IRI_GEN::TryBB: return FT_VOID;
-        case IRI_GEN::ScopeIDX: return FT_UINT32;
+        case IRI_GEN::ScopeIDX: return FT_INT32;
         case IRI_GEN::IDX: return FT_UINT32;
           default: return FT_NONE;
         }
@@ -757,8 +757,8 @@ public:
         case IRI_GEN::HOME: return FT_VOID;
         case IRI_GEN::DERIVED: return FT_VOID;
         case IRI_GEN::TopLevel: return FT_VOID;
+        case IRI_GEN::ScopeIDX: return FT_INT32;
         case IRI_GEN::ECMAArgs: return FT_UINT32;
-        case IRI_GEN::ScopeIDX: return FT_UINT32;
         case IRI_GEN::ContainerFlagID: return FT_UINT32;
         case IRI_GEN::StartBBIDX: return FT_UINT32;
           default: return FT_NONE;
@@ -863,7 +863,7 @@ public:
         case IRI_GEN::SAFE: return FT_BOOL;
         case IRI_GEN::THISINIT: return FT_BOOL;
         case IRI_GEN::CINIT: return FT_BOOL;
-        case IRI_GEN::ScopeIDX: return FT_UINT32;
+        case IRI_GEN::ScopeIDX: return FT_INT32;
           default: return FT_NONE;
         }
         break;
@@ -1052,13 +1052,13 @@ public:
         break;
       case IRI_GEN::JSEval:
         switch(flag) {
-        case IRI_GEN::ScopeIDX: return FT_UINT32;
+        case IRI_GEN::ScopeIDX: return FT_INT32;
           default: return FT_NONE;
         }
         break;
       case IRI_GEN::JSEvalApply:
         switch(flag) {
-        case IRI_GEN::ScopeIDX: return FT_UINT32;
+        case IRI_GEN::ScopeIDX: return FT_INT32;
           default: return FT_NONE;
         }
         break;
@@ -1225,8 +1225,8 @@ public:
         case 10: return IRI_GEN::HOME;
         case 11: return IRI_GEN::DERIVED;
         case 12: return IRI_GEN::TopLevel;
-        case 13: return IRI_GEN::ECMAArgs;
-        case 14: return IRI_GEN::ScopeIDX;
+        case 13: return IRI_GEN::ScopeIDX;
+        case 14: return IRI_GEN::ECMAArgs;
         case 15: return IRI_GEN::ContainerFlagID;
         case 16: return IRI_GEN::StartBBIDX;
           default: throw std::runtime_error("Invalid flag index");
