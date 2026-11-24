@@ -150,11 +150,11 @@ public:
 
       const auto *bb = cfg.get_bb(currIdx);
       State currState = blockEntryStates[currIdx];
-      double exceptionTarget = bb->EXCEPTION;
+      BBIDX exceptionTarget = bb->EXCEPTION;
 
       bool exceptionPropagatedForCurrentState = false;
       auto handleException = [&](const State &stateBefore) {
-        if (exceptionTarget > -1 && !exceptionPropagatedForCurrentState) {
+        if (exceptionTarget != NO_BB && !exceptionPropagatedForCurrentState) {
           propagateState(exceptionTarget, stateBefore);
           exceptionPropagatedForCurrentState = true;
         }
@@ -311,13 +311,13 @@ public:
 
       IRIBB *bb = cfg->get_bb(currIdx);
       State currState = blockEntryStates[currIdx];
-      double exceptionTarget = bb->EXCEPTION;
+      BBIDX exceptionTarget = bb->EXCEPTION;
 
       auto bs = cfg->ctx.debugger.traceWriter->enterBlock(bb->getDebugID(), iter++);
 
       bool exceptionPropagatedForCurrentState = false;
       auto handleException = [&](const State &stateBefore) {
-        if (exceptionTarget > -1 && !exceptionPropagatedForCurrentState) {
+        if (exceptionTarget != NO_BB && !exceptionPropagatedForCurrentState) {
           propagateState(exceptionTarget, stateBefore);
           exceptionPropagatedForCurrentState = true;
         }
@@ -477,7 +477,7 @@ public:
     // Build exceptional predecessors map
     std::unordered_map<BBIDX, std::vector<BBIDX>> exceptionalPredecessors;
     if (includeExceptions) {
-      for (const auto &bb : cfg.bbs) {
+      for (const auto &bb : cfg.blocks()) {
         if (bb->EXCEPTION != NO_BB) {
           exceptionalPredecessors[bb->EXCEPTION].push_back(bb->IDX);
         }
@@ -526,7 +526,7 @@ public:
       // Sound exceptional control flow propagation
       bool exceptionJoinedForCurrentState = false;
       auto handleException = [&](State &stateBefore) {
-        if (includeExceptions && bb->EXCEPTION > -1 &&
+        if (includeExceptions && bb->EXCEPTION != NO_BB &&
             !exceptionJoinedForCurrentState) {
           stateBefore = stateBefore.joinWith(getBlockEntryState(bb->EXCEPTION));
           exceptionJoinedForCurrentState = true;
