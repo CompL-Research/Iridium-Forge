@@ -113,7 +113,7 @@ function genSchema(spec) {
   const createFlags = allFlags
     .map((a) => {
       if (a.type === "bool" && a.isVoid === true) {
-        return `${a.name} ? FlagValue(${a.name}) : FlagValue(std::monostate())`;
+        return `${a.name} ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate())`;
       }
       if (a.type === "StringID") {
         return `FlagValue(${a.name})`;

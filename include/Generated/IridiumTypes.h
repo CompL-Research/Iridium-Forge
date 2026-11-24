@@ -1,4 +1,4 @@
-// Generated: 2026-11-23 02:07:14
+// Generated: 2026-11-23 03:04:46
 #pragma once
 #include "Storage/Config.h"
 #include "Storage/IridiumSEXP.h"
@@ -28,7 +28,7 @@ using IRI_STORAGE::FlagValue;
     }
 
     static IRID create(IRIContext& p, bool JSScript, bool JSModule, bool TLA) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::File, {}, {JSScript ? FlagValue(JSScript) : FlagValue(std::monostate()), JSModule ? FlagValue(JSModule) : FlagValue(std::monostate()), TLA ? FlagValue(TLA) : FlagValue(std::monostate())});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::File, {}, {JSScript ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), JSModule ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), TLA ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate())});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
@@ -74,7 +74,7 @@ using IRI_STORAGE::FlagValue;
     }
 
     static IRID create(IRIContext& p, StringID NAME, bool ASW) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::ResolveEnvBinding, {}, {FlagValue(NAME), ASW ? FlagValue(ASW) : FlagValue(std::monostate())});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::ResolveEnvBinding, {}, {FlagValue(NAME), ASW ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate())});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
@@ -153,7 +153,7 @@ using IRI_STORAGE::FlagValue;
     }
 
     static IRID create(IRIContext& p, IRID Store, IRID Args, StringID NAME, bool JSLET, bool JSCONST, bool JSVAR, bool SLOPPY, bool SKIPINIT, bool SAFE, bool THISINIT, UIndex OPID) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSImplicitBindingDeclaration, {Store, Args}, {FlagValue(NAME), JSLET ? FlagValue(JSLET) : FlagValue(std::monostate()), JSCONST ? FlagValue(JSCONST) : FlagValue(std::monostate()), JSVAR ? FlagValue(JSVAR) : FlagValue(std::monostate()), SLOPPY ? FlagValue(SLOPPY) : FlagValue(std::monostate()), SKIPINIT ? FlagValue(SKIPINIT) : FlagValue(std::monostate()), FlagValue(SAFE), FlagValue(THISINIT), FlagValue(UInt32{OPID})});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSImplicitBindingDeclaration, {Store, Args}, {FlagValue(NAME), JSLET ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), JSCONST ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), JSVAR ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), SLOPPY ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), SKIPINIT ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), FlagValue(SAFE), FlagValue(THISINIT), FlagValue(UInt32{OPID})});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 2;
@@ -239,7 +239,7 @@ using IRI_STORAGE::FlagValue;
     }
 
     static IRID create(IRIContext& p, IRID Obj, bool SAFE, bool TAINTED) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::EnvRead, {Obj}, {SAFE ? FlagValue(SAFE) : FlagValue(std::monostate()), TAINTED ? FlagValue(TAINTED) : FlagValue(std::monostate())});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::EnvRead, {Obj}, {SAFE ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), TAINTED ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate())});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 1;
@@ -282,7 +282,7 @@ using IRI_STORAGE::FlagValue;
     }
 
     static IRID create(IRIContext& p, IRID Obj, bool SAFE) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::TDZRead, {Obj}, {SAFE ? FlagValue(SAFE) : FlagValue(std::monostate())});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::TDZRead, {Obj}, {SAFE ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate())});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 1;
@@ -401,7 +401,7 @@ using IRI_STORAGE::FlagValue;
     }
 
     static IRID create(IRIContext& p, IRID LValTarget, IRID RVal, bool JSLET, bool JSCONST, bool JSVAR, bool SLOPPY, bool SAFE, bool THISINIT) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSExplicitBindingDeclaration, {LValTarget, RVal}, {JSLET ? FlagValue(JSLET) : FlagValue(std::monostate()), JSCONST ? FlagValue(JSCONST) : FlagValue(std::monostate()), JSVAR ? FlagValue(JSVAR) : FlagValue(std::monostate()), SLOPPY ? FlagValue(SLOPPY) : FlagValue(std::monostate()), FlagValue(SAFE), FlagValue(THISINIT)});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSExplicitBindingDeclaration, {LValTarget, RVal}, {JSLET ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), JSCONST ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), JSVAR ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), SLOPPY ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), FlagValue(SAFE), FlagValue(THISINIT)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 2;
@@ -470,7 +470,7 @@ using IRI_STORAGE::FlagValue;
     }
 
     static IRID create(IRIContext& p, IRID LValTarget, IRID RVal, bool JSLET, bool JSCONST, bool JSVAR, bool SLOPPY, bool SAFE, bool THISINIT) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSExplicitBindingDeclarationN, {LValTarget, RVal}, {JSLET ? FlagValue(JSLET) : FlagValue(std::monostate()), JSCONST ? FlagValue(JSCONST) : FlagValue(std::monostate()), JSVAR ? FlagValue(JSVAR) : FlagValue(std::monostate()), SLOPPY ? FlagValue(SLOPPY) : FlagValue(std::monostate()), FlagValue(SAFE), FlagValue(THISINIT)});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSExplicitBindingDeclarationN, {LValTarget, RVal}, {JSLET ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), JSCONST ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), JSVAR ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), SLOPPY ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), FlagValue(SAFE), FlagValue(THISINIT)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 2;
@@ -539,7 +539,7 @@ using IRI_STORAGE::FlagValue;
     }
 
     static IRID create(IRIContext& p, IRID LValTarget, IRID RVal, bool JSLET, bool JSCONST, bool JSVAR, bool SLOPPY, bool SAFE, bool THISINIT) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSExplicitBindingDeclarationX, {LValTarget, RVal}, {JSLET ? FlagValue(JSLET) : FlagValue(std::monostate()), JSCONST ? FlagValue(JSCONST) : FlagValue(std::monostate()), JSVAR ? FlagValue(JSVAR) : FlagValue(std::monostate()), SLOPPY ? FlagValue(SLOPPY) : FlagValue(std::monostate()), FlagValue(SAFE), FlagValue(THISINIT)});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSExplicitBindingDeclarationX, {LValTarget, RVal}, {JSLET ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), JSCONST ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), JSVAR ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), SLOPPY ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), FlagValue(SAFE), FlagValue(THISINIT)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 2;
@@ -728,7 +728,7 @@ using IRI_STORAGE::FlagValue;
     }
 
     static IRID create(IRIContext& p, bool TopLevel, bool ClosureBoundary, bool Lexical, bool VARBoundary, bool TryBB, UIndex ScopeIDX, UIndex IDX) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::BB, {}, {TopLevel ? FlagValue(TopLevel) : FlagValue(std::monostate()), ClosureBoundary ? FlagValue(ClosureBoundary) : FlagValue(std::monostate()), Lexical ? FlagValue(Lexical) : FlagValue(std::monostate()), VARBoundary ? FlagValue(VARBoundary) : FlagValue(std::monostate()), TryBB ? FlagValue(TryBB) : FlagValue(std::monostate()), FlagValue(UInt32{ScopeIDX}), FlagValue(UInt32{IDX})});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::BB, {}, {TopLevel ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), ClosureBoundary ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), Lexical ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), VARBoundary ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), TryBB ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), FlagValue(UInt32{ScopeIDX}), FlagValue(UInt32{IDX})});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
@@ -866,7 +866,7 @@ using IRI_STORAGE::FlagValue;
     }
 
     static IRID create(IRIContext& p, IRID Test, bool NOT, UIndex IDX) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::IfJump, {Test}, {NOT ? FlagValue(NOT) : FlagValue(std::monostate()), FlagValue(UInt32{IDX})});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::IfJump, {Test}, {NOT ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), FlagValue(UInt32{IDX})});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 1;
@@ -910,7 +910,7 @@ using IRI_STORAGE::FlagValue;
     }
 
     static IRID create(IRIContext& p, IRID Test, bool NOT, UIndex TRUE, UIndex FALSE) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::IfElseJump, {Test}, {NOT ? FlagValue(NOT) : FlagValue(std::monostate()), FlagValue(UInt32{TRUE}), FlagValue(UInt32{FALSE})});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::IfElseJump, {Test}, {NOT ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), FlagValue(UInt32{TRUE}), FlagValue(UInt32{FALSE})});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 1;
@@ -960,7 +960,7 @@ using IRI_STORAGE::FlagValue;
     }
 
     static IRID create(IRIContext& p, bool Deferred, UIndex IDX) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::Goto, {}, {Deferred ? FlagValue(Deferred) : FlagValue(std::monostate()), FlagValue(UInt32{IDX})});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::Goto, {}, {Deferred ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), FlagValue(UInt32{IDX})});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
@@ -1002,7 +1002,7 @@ using IRI_STORAGE::FlagValue;
     }
 
     static IRID create(IRIContext& p, IRID LValTarget, IRID RVal, bool JSLET, bool JSCONST, bool JSVAR, bool SLOPPY, bool SAFE, bool THISINIT) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSFuncDecl, {LValTarget, RVal}, {JSLET ? FlagValue(JSLET) : FlagValue(std::monostate()), JSCONST ? FlagValue(JSCONST) : FlagValue(std::monostate()), JSVAR ? FlagValue(JSVAR) : FlagValue(std::monostate()), SLOPPY ? FlagValue(SLOPPY) : FlagValue(std::monostate()), FlagValue(SAFE), FlagValue(THISINIT)});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSFuncDecl, {LValTarget, RVal}, {JSLET ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), JSCONST ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), JSVAR ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), SLOPPY ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), FlagValue(SAFE), FlagValue(THISINIT)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 2;
@@ -1160,7 +1160,7 @@ using IRI_STORAGE::FlagValue;
     }
 
     static IRID create(IRIContext& p, IRID Bindings, IRID BB, StringID NAME, StringID FUNCNAME, bool ARGUMENTS, bool ASYNC, bool STRICT, bool GENERATOR, bool PROTO, bool NEW, bool SCALL, bool SOBJ, bool HOME, bool DERIVED, bool TopLevel, UIndex ECMAArgs, UIndex ScopeIDX, UIndex ContainerFlagID, UIndex StartBBIDX) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::BBContainer, {Bindings, BB}, {FlagValue(NAME), FlagValue(FUNCNAME), ARGUMENTS ? FlagValue(ARGUMENTS) : FlagValue(std::monostate()), ASYNC ? FlagValue(ASYNC) : FlagValue(std::monostate()), STRICT ? FlagValue(STRICT) : FlagValue(std::monostate()), GENERATOR ? FlagValue(GENERATOR) : FlagValue(std::monostate()), PROTO ? FlagValue(PROTO) : FlagValue(std::monostate()), NEW ? FlagValue(NEW) : FlagValue(std::monostate()), SCALL ? FlagValue(SCALL) : FlagValue(std::monostate()), SOBJ ? FlagValue(SOBJ) : FlagValue(std::monostate()), HOME ? FlagValue(HOME) : FlagValue(std::monostate()), DERIVED ? FlagValue(DERIVED) : FlagValue(std::monostate()), TopLevel ? FlagValue(TopLevel) : FlagValue(std::monostate()), FlagValue(UInt32{ECMAArgs}), FlagValue(UInt32{ScopeIDX}), FlagValue(UInt32{ContainerFlagID}), FlagValue(UInt32{StartBBIDX})});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::BBContainer, {Bindings, BB}, {FlagValue(NAME), FlagValue(FUNCNAME), ARGUMENTS ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), ASYNC ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), STRICT ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), GENERATOR ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), PROTO ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), NEW ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), SCALL ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), SOBJ ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), HOME ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), DERIVED ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), TopLevel ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), FlagValue(UInt32{ECMAArgs}), FlagValue(UInt32{ScopeIDX}), FlagValue(UInt32{ContainerFlagID}), FlagValue(UInt32{StartBBIDX})});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 2;
@@ -1369,7 +1369,7 @@ using IRI_STORAGE::FlagValue;
     }
 
     static IRID create(IRIContext& p, IRID StorageLocation, StringID FIELD, bool NSIMPORT, UIndex MODULEREQIDX) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::StaticImport, {StorageLocation}, {FlagValue(FIELD), NSIMPORT ? FlagValue(NSIMPORT) : FlagValue(std::monostate()), FlagValue(UInt32{MODULEREQIDX})});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::StaticImport, {StorageLocation}, {FlagValue(FIELD), NSIMPORT ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), FlagValue(UInt32{MODULEREQIDX})});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 1;
@@ -1556,7 +1556,7 @@ using IRI_STORAGE::FlagValue;
     }
 
     static IRID create(IRIContext& p, StringID NAME, bool JSARG, bool JSRESTARG, bool JSLET, bool JSCONST, bool SLOPPYCONST, bool JSVAR, bool PRIVFIELD, bool PRIVMETHOD, bool PRIVGET, bool PRIVSET, bool PRIVGETSET, int32_t NEXT, UIndex REFIDX, UIndex SCOPE, UIndex LINK) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::EnvBinding, {}, {FlagValue(NAME), JSARG ? FlagValue(JSARG) : FlagValue(std::monostate()), JSRESTARG ? FlagValue(JSRESTARG) : FlagValue(std::monostate()), JSLET ? FlagValue(JSLET) : FlagValue(std::monostate()), JSCONST ? FlagValue(JSCONST) : FlagValue(std::monostate()), SLOPPYCONST ? FlagValue(SLOPPYCONST) : FlagValue(std::monostate()), JSVAR ? FlagValue(JSVAR) : FlagValue(std::monostate()), PRIVFIELD ? FlagValue(PRIVFIELD) : FlagValue(std::monostate()), PRIVMETHOD ? FlagValue(PRIVMETHOD) : FlagValue(std::monostate()), PRIVGET ? FlagValue(PRIVGET) : FlagValue(std::monostate()), PRIVSET ? FlagValue(PRIVSET) : FlagValue(std::monostate()), PRIVGETSET ? FlagValue(PRIVGETSET) : FlagValue(std::monostate()), FlagValue(Int32{NEXT}), FlagValue(UInt32{REFIDX}), FlagValue(UInt32{SCOPE}), FlagValue(UInt32{LINK})});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::EnvBinding, {}, {FlagValue(NAME), JSARG ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), JSRESTARG ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), JSLET ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), JSCONST ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), SLOPPYCONST ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), JSVAR ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), PRIVFIELD ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), PRIVMETHOD ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), PRIVGET ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), PRIVSET ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), PRIVGETSET ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), FlagValue(Int32{NEXT}), FlagValue(UInt32{REFIDX}), FlagValue(UInt32{SCOPE}), FlagValue(UInt32{LINK})});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
@@ -1672,7 +1672,7 @@ using IRI_STORAGE::FlagValue;
     }
 
     static IRID create(IRIContext& p, IRID ParentReference, bool MODULE, bool MODULEI, bool MODULENSI, UIndex REFIDX, UIndex LINK) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::RemoteEnvBinding, {ParentReference}, {MODULE ? FlagValue(MODULE) : FlagValue(std::monostate()), MODULEI ? FlagValue(MODULEI) : FlagValue(std::monostate()), MODULENSI ? FlagValue(MODULENSI) : FlagValue(std::monostate()), FlagValue(UInt32{REFIDX}), FlagValue(UInt32{LINK})});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::RemoteEnvBinding, {ParentReference}, {MODULE ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), MODULEI ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), MODULENSI ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), FlagValue(UInt32{REFIDX}), FlagValue(UInt32{LINK})});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 1;
@@ -1775,7 +1775,7 @@ using IRI_STORAGE::FlagValue;
     }
 
     static IRID create(IRIContext& p, StringID NAME, bool JSLET, bool JSCONST, bool JSVAR, UIndex LINK) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::ScriptBinding, {}, {FlagValue(NAME), JSLET ? FlagValue(JSLET) : FlagValue(std::monostate()), JSCONST ? FlagValue(JSCONST) : FlagValue(std::monostate()), JSVAR ? FlagValue(JSVAR) : FlagValue(std::monostate()), FlagValue(UInt32{LINK})});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::ScriptBinding, {}, {FlagValue(NAME), JSLET ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), JSCONST ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), JSVAR ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), FlagValue(UInt32{LINK})});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
@@ -1833,7 +1833,7 @@ using IRI_STORAGE::FlagValue;
     }
 
     static IRID create(IRIContext& p, IRID LValTarget, IRID RVal, bool SLOPPY, bool SAFE, bool THISINIT, bool CINIT) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::EnvWrite, {LValTarget, RVal}, {SLOPPY ? FlagValue(SLOPPY) : FlagValue(std::monostate()), FlagValue(SAFE), FlagValue(THISINIT), FlagValue(CINIT)});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::EnvWrite, {LValTarget, RVal}, {SLOPPY ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), FlagValue(SAFE), FlagValue(THISINIT), FlagValue(CINIT)});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 2;
@@ -1893,7 +1893,7 @@ using IRI_STORAGE::FlagValue;
     }
 
     static IRID create(IRIContext& p, IRID LValTarget, IRID RVal, bool SLOPPY, bool SAFE, bool THISINIT, bool CINIT, UIndex ScopeIDX) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::SiblingSpecialWrite, {LValTarget, RVal}, {SLOPPY ? FlagValue(SLOPPY) : FlagValue(std::monostate()), FlagValue(SAFE), FlagValue(THISINIT), FlagValue(CINIT), FlagValue(UInt32{ScopeIDX})});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::SiblingSpecialWrite, {LValTarget, RVal}, {SLOPPY ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), FlagValue(SAFE), FlagValue(THISINIT), FlagValue(CINIT), FlagValue(UInt32{ScopeIDX})});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 2;
@@ -2107,7 +2107,7 @@ using IRI_STORAGE::FlagValue;
     }
 
     static IRID create(IRIContext& p, StringID IridiumPrimitive, bool PRIVFIELD, bool PRIVMETHOD, bool PRIVGET, bool PRIVSET, bool PRIVGETSET) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSPrivate, {}, {FlagValue(IridiumPrimitive), PRIVFIELD ? FlagValue(PRIVFIELD) : FlagValue(std::monostate()), PRIVMETHOD ? FlagValue(PRIVMETHOD) : FlagValue(std::monostate()), PRIVGET ? FlagValue(PRIVGET) : FlagValue(std::monostate()), PRIVSET ? FlagValue(PRIVSET) : FlagValue(std::monostate()), PRIVGETSET ? FlagValue(PRIVGETSET) : FlagValue(std::monostate())});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSPrivate, {}, {FlagValue(IridiumPrimitive), PRIVFIELD ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), PRIVMETHOD ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), PRIVGET ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), PRIVSET ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), PRIVGETSET ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate())});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
@@ -3386,7 +3386,7 @@ using IRI_STORAGE::FlagValue;
     }
 
     static IRID create(IRIContext& p, IRID Obj, IRID Field, IRID Receiver, bool SAFE) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSComputedFieldRead, {Obj, Field, Receiver}, {SAFE ? FlagValue(SAFE) : FlagValue(std::monostate())});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSComputedFieldRead, {Obj, Field, Receiver}, {SAFE ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate())});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 3;
@@ -3468,7 +3468,7 @@ using IRI_STORAGE::FlagValue;
     }
 
     static IRID create(IRIContext& p, IRID Obj, IRID Field, IRID Value, IRID Receiver, bool SAFE) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSComputedFieldWrite, {Obj, Field, Value, Receiver}, {SAFE ? FlagValue(SAFE) : FlagValue(std::monostate())});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSComputedFieldWrite, {Obj, Field, Value, Receiver}, {SAFE ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate())});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 4;
@@ -3598,7 +3598,7 @@ using IRI_STORAGE::FlagValue;
     }
 
     static IRID create(IRIContext& p, IRID TargetObj, IRID Key, IRID Value, bool NOENUM) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSDefineMethod, {TargetObj, Key, Value}, {NOENUM ? FlagValue(NOENUM) : FlagValue(std::monostate())});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSDefineMethod, {TargetObj, Key, Value}, {NOENUM ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate())});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 3;
@@ -3644,7 +3644,7 @@ using IRI_STORAGE::FlagValue;
     }
 
     static IRID create(IRIContext& p, IRID TargetObj, IRID Key, IRID Value, bool NOENUM) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSDefineGetter, {TargetObj, Key, Value}, {NOENUM ? FlagValue(NOENUM) : FlagValue(std::monostate())});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSDefineGetter, {TargetObj, Key, Value}, {NOENUM ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate())});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 3;
@@ -3690,7 +3690,7 @@ using IRI_STORAGE::FlagValue;
     }
 
     static IRID create(IRIContext& p, IRID TargetObj, IRID Key, IRID Value, bool NOENUM) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSDefineSetter, {TargetObj, Key, Value}, {NOENUM ? FlagValue(NOENUM) : FlagValue(std::monostate())});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::JSDefineSetter, {TargetObj, Key, Value}, {NOENUM ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate())});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 3;
@@ -4276,7 +4276,7 @@ using IRI_STORAGE::FlagValue;
     }
 
     static IRID create(IRIContext& p, IRID LValTarget, IRID RVal, bool INIT, bool SAFE, bool DECLVAR, bool DECLFUN) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::GWrite, {LValTarget, RVal}, {INIT ? FlagValue(INIT) : FlagValue(std::monostate()), SAFE ? FlagValue(SAFE) : FlagValue(std::monostate()), DECLVAR ? FlagValue(DECLVAR) : FlagValue(std::monostate()), DECLFUN ? FlagValue(DECLFUN) : FlagValue(std::monostate())});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::GWrite, {LValTarget, RVal}, {INIT ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), SAFE ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), DECLVAR ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), DECLFUN ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate())});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 2;
@@ -4333,7 +4333,7 @@ using IRI_STORAGE::FlagValue;
     }
 
     static IRID create(IRIContext& p, IRID LValTarget, IRID RVal, bool INIT, bool SAFE, bool THISINIT) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::LWrite, {LValTarget, RVal}, {INIT ? FlagValue(INIT) : FlagValue(std::monostate()), SAFE ? FlagValue(SAFE) : FlagValue(std::monostate()), THISINIT ? FlagValue(THISINIT) : FlagValue(std::monostate())});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::LWrite, {LValTarget, RVal}, {INIT ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), SAFE ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), THISINIT ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate())});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 2;
@@ -4385,7 +4385,7 @@ using IRI_STORAGE::FlagValue;
     }
 
     static IRID create(IRIContext& p, IRID LValTarget, IRID RVal, bool INIT, bool SAFE, bool THISINIT) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::RWrite, {LValTarget, RVal}, {INIT ? FlagValue(INIT) : FlagValue(std::monostate()), SAFE ? FlagValue(SAFE) : FlagValue(std::monostate()), THISINIT ? FlagValue(THISINIT) : FlagValue(std::monostate())});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::RWrite, {LValTarget, RVal}, {INIT ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), SAFE ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), THISINIT ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate())});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 2;
@@ -4437,7 +4437,7 @@ using IRI_STORAGE::FlagValue;
     }
 
     static IRID create(IRIContext& p, IRID LValTarget, IRID RVal, bool INIT, bool SAFE) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::MWrite, {LValTarget, RVal}, {INIT ? FlagValue(INIT) : FlagValue(std::monostate()), SAFE ? FlagValue(SAFE) : FlagValue(std::monostate())});
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::MWrite, {LValTarget, RVal}, {INIT ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), SAFE ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate())});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 2;
