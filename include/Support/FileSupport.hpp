@@ -1,5 +1,6 @@
 #pragma once
 #include "Generated/IridiumTypes.h"
+#include "Support/IRICFG.hpp"
 #include "Support/IndexedIterator.hpp"
 
 namespace IRI_STRUCTURAL {
@@ -18,6 +19,5 @@ public:
 
   IRI_STORAGE::IRID staticStarExports() const;
 
-  IRI_GEN::IRID getBBContainerByScopeIDX(double id) const;
 };
 } // namespace IRI_STRUCTURAL

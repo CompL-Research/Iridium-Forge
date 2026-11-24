@@ -15,7 +15,8 @@ ITR_RET BBContainerSupport::bbs() const {
   return IndexedIterator(std::move(ctx->storage.nodes.get_args(bbID)));
 }
 
-IRID BBContainerSupport::getBBByIDX(double idx) {
+// Can we cache this?
+IRID BBContainerSupport::getBBByIDX(BBIDX idx) {
   IRID bbID = getArg_BB();
   ListSEXP bbs(bbID, *ctx);
   auto argsView = ctx->storage.nodes.get_args_view(bbID);

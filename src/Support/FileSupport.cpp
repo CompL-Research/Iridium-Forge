@@ -17,19 +17,20 @@ ITR_RET FileSupport::containers() const {
   return IndexedIterator(std::move(targetIDXs));
 }
 
-inline ITR_RET getIt(IRIContext * ctx, IRID fileID, int offset, StringID type) {
+inline ITR_RET getIt(IRIContext *ctx, IRID fileID, int offset, StringID type) {
   IRID moduleRequestsIDX = ctx->storage.nodes.get_args_view(fileID)[offset];
   ListSEXP moduleRequests(moduleRequestsIDX, *ctx);
   if (moduleRequests.getTYPE() != type)
-    throw std::runtime_error("[Forge]: Failed to get module vec, typecheck failed!");
+    throw std::runtime_error(
+        "[Forge]: Failed to get module vec, typecheck failed!");
 
-  return IndexedIterator(std::move(ctx->storage.nodes.get_args(moduleRequestsIDX)));
+  return IndexedIterator(
+      std::move(ctx->storage.nodes.get_args(moduleRequestsIDX)));
 }
 
 IRID FileSupport::moduleRequests() const {
   return ctx->storage.nodes.get_args_view(id)[0];
 }
-
 
 IRID FileSupport::staticImports() const {
   return ctx->storage.nodes.get_args_view(id)[1];
@@ -39,18 +40,8 @@ IRID FileSupport::staticExports() const {
   return ctx->storage.nodes.get_args_view(id)[2];
 }
 
-
 IRID FileSupport::staticStarExports() const {
   return ctx->storage.nodes.get_args_view(id)[3];
-}
-
-IRI_GEN::IRID FileSupport::getBBContainerByScopeIDX(double id) const {
-  for (auto [cID, _] : containers()) {
-    BBContainerSupport c(cID, *ctx);
-    if (c.getScopeIDX() == id) return cID;
-  }
-  throw std::runtime_error("BBContainer not found for scope idx " +
-                           std::to_string(id));
 }
 
 } // namespace IRI_STRUCTURAL
