@@ -9,6 +9,13 @@ using UIndex = uint32_t;
 
 using IRID = uint32_t;
 
+// BBIDX -> unit32's
+// Scope -> int32's (-1 is used to check scope termination by IRIS)
+using BBIDX = uint32_t;
+inline constexpr BBIDX NO_BB = UINT32_MAX;
+using SCPIDX = int32_t;
+inline constexpr SCPIDX NO_SCOPE = -1;
+
 // Separate Fields
 struct StringID {
   uint32_t v;

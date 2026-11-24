@@ -1,5 +1,6 @@
 #pragma once
 #include "Storage/Config.h"
+#include "Support/IRICFG.hpp"
 #include <memory>
 #include <unordered_map>
 
@@ -13,12 +14,16 @@ class IridiumBuildContext;
 
 namespace IRI_CORE_PASSES {
 
+using IRI_STORAGE::BBIDX;
 using IRI_STORAGE::IRIContext;
 using IRI_STORAGE::IRID;
+using IRI_STORAGE::NO_BB;
+using IRI_STORAGE::NO_SCOPE;
+using IRI_STORAGE::SCPIDX;
 using IRI_CONTEXTMAP =
     std::unordered_map<int, std::shared_ptr<IRI_PARSE::IridiumBuildContext>>;
 
-using CTARGETS = std::unordered_map<IRI_STORAGE::IRID, double>;
+using CTARGETS = std::unordered_map<IRI_STORAGE::IRID, IRI_STORAGE::BBIDX>;
 
 void _1_NBBF(IRIContext &ctx, IRID sexp, IRI_CONTEXTMAP &iridiumBuildContext);
 void _2_HFD(IRIContext &ctx, IRID sexp, IRI_CONTEXTMAP &iridiumBuildContext);

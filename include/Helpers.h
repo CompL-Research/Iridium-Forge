@@ -1,6 +1,7 @@
 #pragma once
 #include "Storage/Config.h"
 #include "Storage/StringPool.h"
+#include "Support/IRICFG.hpp"
 #include <functional>
 #include <memory>
 #include <unordered_map>
@@ -21,18 +22,18 @@ class BindingsSupport;
 
 namespace IRI_HELPERS {
 
-double findVARHoistingScope(
-    IRI_STORAGE::IRIContext &ctx, double startingScope,
+IRI_STORAGE::SCPIDX findVARHoistingScope(
+    IRI_STORAGE::IRIContext &ctx, IRI_STORAGE::SCPIDX startingScope,
     std::unordered_map<int, std::shared_ptr<IRI_PARSE::IridiumBuildContext>>
         &iridiumBuildContext);
 
-double findParentClosureScope(
-    IRI_STORAGE::IRIContext &ctx, double startingScope,
+IRI_STORAGE::SCPIDX findParentClosureScope(
+    IRI_STORAGE::IRIContext &ctx, IRI_STORAGE::SCPIDX startingScope,
     std::unordered_map<int, std::shared_ptr<IRI_PARSE::IridiumBuildContext>>
         &iridiumBuildContext);
 
-double getLexicalScope(
-    IRI_STORAGE::IRIContext &ctx, double startingScope,
+IRI_STORAGE::SCPIDX getLexicalScope(
+    IRI_STORAGE::IRIContext &ctx, IRI_STORAGE::SCPIDX startingScope,
     std::unordered_map<int, std::shared_ptr<IRI_PARSE::IridiumBuildContext>>
         &iridiumBuildContext);
 
@@ -48,8 +49,8 @@ IRI_STORAGE::IRID
 getHoistTargetBB(IRI_STORAGE::IRIContext &ctx,
                  const std::vector<IRI_STORAGE::IRID> &bbs,
                  IRI_STORAGE::IRID startBBID);
-double getTopLevelScope(IRI_STORAGE::IRIContext &ctx,
-                        IRI_STORAGE::IRID fileSEXP);
+IRI_STORAGE::SCPIDX getTopLevelScope(IRI_STORAGE::IRIContext &ctx,
+                                          IRI_STORAGE::IRID fileSEXP);
 
 IRI_STORAGE::IRID resolveRemoteBinding(IRI_STORAGE::IRIContext &ctx,
                                        IRI_STORAGE::IRID rbinID);

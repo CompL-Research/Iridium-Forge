@@ -18,7 +18,7 @@ public:
   IRIDebug debugger;
   IRI_GEN::PassFlags flags;
 
-  double lastBBIDX = 0;
+  uint32_t lastBBIDX = 0;
   std::shared_ptr<IRI_STRUCTURAL::IRIS> iris = nullptr;
   std::shared_ptr<IRI_STRUCTURAL::ClosureTree> closureTree = nullptr;
 
