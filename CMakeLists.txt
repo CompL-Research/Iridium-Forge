@@ -55,6 +55,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Get all C++ Source Files
 file(GLOB_RECURSE IRIDIUM_SRC CONFIGURE_DEPENDS src/*.cpp)
+# PTA is disabled (being reworked from scratch); its sources are not built.
+list(FILTER IRIDIUM_SRC EXCLUDE REGEX "src/Support/PTA")
 
 # Node headers (from cmake-js)
 include_directories(${CMAKE_JS_INC})
