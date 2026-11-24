@@ -44,7 +44,7 @@ void ClosureTree::addEdge(IRID from, IRID to) {
   inEdges[to].push_back(from);
 }
 
-void ClosureTree::addEdgeFromScopeToBBIDX(double fromScope, double toBBIDX) {
+void ClosureTree::addEdgeFromScopeToBBIDX(SCPIDX fromScope, BBIDX toBBIDX) {
   if (!scopeIDXtoClosure.contains(fromScope) ||
       !bbIDXtoClosure.contains(toBBIDX)) {
     throw std::runtime_error("Closure with startBBIDX does not exist");
@@ -52,7 +52,7 @@ void ClosureTree::addEdgeFromScopeToBBIDX(double fromScope, double toBBIDX) {
   addEdge(scopeIDXtoClosure[fromScope]->id, bbIDXtoClosure[toBBIDX]->id);
 }
 
-IRICFG *ClosureTree::getClosureByStartBBIDX(double startBBIDX) const {
+IRICFG *ClosureTree::getClosureByStartBBIDX(BBIDX startBBIDX) const {
   auto it = bbIDXtoClosure.find(startBBIDX);
   if (it == bbIDXtoClosure.end()) {
     throw std::runtime_error("Tried to get a non-existant closure");
