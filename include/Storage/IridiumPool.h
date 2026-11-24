@@ -107,6 +107,8 @@ public:
   // collect roots to start reachability
   std::vector<IRID> collectRoots(IRIContext &ctx, IRID entry) const;
 
+  void validateFlagPayloads() const;
+
   // Reachability
   // traverse nodes starting from the root (DFS) and mark them as reachable
   ReachabilityResult markReachable(std::span<const IRID> roots) const;

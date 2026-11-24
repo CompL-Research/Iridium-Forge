@@ -260,4 +260,45 @@ IridiumPoolTelemetry IridiumPool::telemetry() const {
   return {stat(nodes), stat(args_pool), stat(flags_pool)};
 }
 
+void IridiumPool::validateFlagPayloads() const {
+  for (IRID id = 0; id < nodes.size(); id++) {
+    const auto &node = nodes[id];
+    for (uint32_t i = 0; i < node.num_flag_slots; i++) {
+      auto flagEnum = IRI_GEN::IridiumMeta::get_flag_enum(node.tag, i);
+      auto ft = IRI_GEN::IridiumMeta::get_flag_type(node.tag, flagEnum);
+      const auto &v = flags_pool[node.flags_start_index + i];
+
+      bool ok = std::holds_alternative<std::monostate>(v);
+      switch (ft) {
+      case IRI_GEN::IridiumMeta::FT_STRING:
+        ok = ok || std::holds_alternative<StringID>(v);
+        break;
+      case IRI_GEN::IridiumMeta::FT_VOID:
+        ok = ok || std::holds_alternative<std::nullptr_t>(v);
+        break;
+      case IRI_GEN::IridiumMeta::FT_BOOL:
+        ok = ok || std::holds_alternative<bool>(v);
+        break;
+      case IRI_GEN::IridiumMeta::FT_DOUBLE:
+        ok = ok || std::holds_alternative<double>(v);
+        break;
+      case IRI_GEN::IridiumMeta::FT_UINT32:
+        ok = ok || std::holds_alternative<UInt32>(v);
+        break;
+      case IRI_GEN::IridiumMeta::FT_INT32:
+        ok = ok || std::holds_alternative<Int32>(v);
+        break;
+      default:
+        break;
+      }
+
+      if (!ok)
+        throw std::runtime_error(
+            "[FORGE] flag payload mismatch: node " + std::to_string(id) +
+            " (" + IRI_GEN::dump_tag(node.tag) + ")." +
+            IRI_GEN::dump_flag(flagEnum));
+    }
+  }
+}
+
 } // namespace IRI_STORAGE
