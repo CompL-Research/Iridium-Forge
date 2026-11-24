@@ -18,7 +18,7 @@ using namespace IRI_STRUCTURAL;
 using BUILD_CTX = std::unordered_map<int, std::shared_ptr<IridiumBuildContext>>;
 
 inline void patchNode(FileSupport file, IRIContext &ctx, IRID node,
-                      double startScopeIDX, BUILD_CTX &iridiumBuildContext,
+                      SCPIDX startScopeIDX, BUILD_CTX &iridiumBuildContext,
                       size_t &unresolvedReferences, std::vector<IRID> &res) {
   if (unresolvedReferences == 0)
     return;
@@ -49,7 +49,7 @@ void _9_RLT(IRIContext &ctx, IRID fileSEXP, BUILD_CTX &iridiumBuildContext) {
   FileSupport fileSupport(fileSEXP, ctx);
   for (auto [bbContID, _] : fileSupport.containers()) {
     BBContainerSupport container(bbContID, ctx);
-    double scopeIDX = container.getScopeIDX();
+    SCPIDX scopeIDX = container.getScopeIDX();
     std::vector<IRID> res;
 
     for (auto [bbID, _] : container.bbs()) {

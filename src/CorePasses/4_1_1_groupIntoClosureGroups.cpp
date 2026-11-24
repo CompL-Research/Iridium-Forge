@@ -11,7 +11,7 @@ using namespace IRI_GEN;
 using namespace IRI_STORAGE;
 using BUILD_CTX = std::unordered_map<int, std::shared_ptr<IridiumBuildContext>>;
 
-inline void setClosureFlags(double flag, BBContainerSEXP bbContainer) {
+inline void setClosureFlags(IRI_STORAGE::UIndex flag, BBContainerSEXP bbContainer) {
   bbContainer.setContainerFlagID(flag);
 
   // ::func_kind::
@@ -90,11 +90,11 @@ inline void setClosureFlags(double flag, BBContainerSEXP bbContainer) {
   }
 }
 
-inline IRID createBBContainerSEXP(IRIContext &ctx, double targetScopeIDX,
+inline IRID createBBContainerSEXP(IRIContext &ctx, IRI_STORAGE::SCPIDX targetScopeIDX,
                                   BUILD_CTX &iridiumBuildContext) {
   auto parent =
       IRI_HELPERS::getLexicalScope(ctx, targetScopeIDX, iridiumBuildContext);
-  bool isTopLevel = parent == -1;
+  bool isTopLevel = parent == IRI_STORAGE::NO_SCOPE;
 
   IRID localBindingsID =
       ListSEXP::create(ctx, ctx.storage.strings.intern("EnvBinding"));
@@ -114,7 +114,7 @@ inline IRID createBBContainerSEXP(IRIContext &ctx, double targetScopeIDX,
       ctx.storage.strings.intern(""), false,
       currContext->isAsync, currContext->isStrict, currContext->isGenerator,
       false, false, false, false, false, false, isTopLevel,
-      currContext->ecmaArgs, targetScopeIDX, -1,
+      targetScopeIDX, currContext->ecmaArgs, -1,
       (UIndex)BBSEXP(currContext->BB[0], ctx).getIDX());
 
   setClosureFlags(currContext->kind, BBContainerSEXP(bbContainer, ctx));
@@ -124,7 +124,7 @@ inline IRID createBBContainerSEXP(IRIContext &ctx, double targetScopeIDX,
 void _4_1_1_GICG(IRIContext &ctx, IRID fileSEXP,
                  BUILD_CTX &iridiumBuildContext) {
 
-  std::unordered_map<double, IRID> bbGroups;
+  std::unordered_map<IRI_STORAGE::SCPIDX, IRID> bbGroups;
   std::unordered_map<IRID, std::vector<IRID>> hhGroupArgs;
 
   auto bbs = ctx.storage.nodes.get_args(fileSEXP);

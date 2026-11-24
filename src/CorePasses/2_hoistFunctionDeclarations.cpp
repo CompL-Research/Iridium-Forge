@@ -12,7 +12,7 @@ using namespace IRI_STORAGE;
 using BUILD_CTX = std::unordered_map<int, std::shared_ptr<IridiumBuildContext>>;
 
 void _2_HFD(IRIContext &ctx, IRID sexp, BUILD_CTX &iridiumBuildContext) {
-  std::unordered_map<double, std::set<IRID>> toHoist;
+  std::unordered_map<IRI_STORAGE::SCPIDX, std::set<IRID>> toHoist;
 
   FileSEXP fSEXP(sexp, ctx);
 

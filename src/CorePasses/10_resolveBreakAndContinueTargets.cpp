@@ -21,11 +21,11 @@ using namespace IRI_STRUCTURAL;
 using BUILD_CTX = std::unordered_map<int, std::shared_ptr<IridiumBuildContext>>;
 
 static inline LoopConfig findLoopControlTarget(
-    IRIContext &ctx, double localScope,
+    IRIContext &ctx, SCPIDX localScope,
     std::variant<ResolveBreakTargetSEXP, ResolveContinueTargetSEXP> node,
     BUILD_CTX &iridiumBuildContext,
     std::vector<std::variant<LoopConfig, TryContext>> &intermediateContexts) {
-  if (localScope == -1)
+  if (localScope == NO_SCOPE)
     throw std::runtime_error("Failed to find loop control target!!!");
   assert(iridiumBuildContext.contains(localScope));
 
@@ -77,11 +77,11 @@ static inline LoopConfig findLoopControlTarget(
   return loopConfig.value();
 }
 
-std::unordered_map<IRID, double> _10_RBACT(
+std::unordered_map<IRID, BBIDX> _10_RBACT(
     IRI_STORAGE::IRIContext &ctx, IRI_STORAGE::IRID fileSEXP,
     std::unordered_map<int, std::shared_ptr<IRI_PARSE::IridiumBuildContext>>
         &iridiumBuildContext) {
-  std::unordered_map<IRID, double> CONTINUE_TARGETS;
+  std::unordered_map<IRID, BBIDX> CONTINUE_TARGETS;
   FileSupport fileSupport(fileSEXP, ctx);
   for (auto [bbContID, _] : fileSupport.containers()) {
     BBContainerSupport bbc(bbContID, ctx);

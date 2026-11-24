@@ -11,12 +11,15 @@
 
 namespace IRI_HELPERS {
 
-auto findVARHoistingScope(
-    IRI_STORAGE::IRIContext &ctx, double startingScope,
-    std::unordered_map<int, std::shared_ptr<IRI_PARSE::IridiumBuildContext>>
-        &iridiumBuildContext) -> double {
-  if (startingScope == -1)
-    return -1;
+using IRI_STORAGE::NO_SCOPE;
+using IRI_STORAGE::SCPIDX;
+
+auto findVARHoistingScope(IRI_STORAGE::IRIContext &ctx, SCPIDX startingScope,
+                          std::unordered_map<int, std::shared_ptr<IRI_PARSE::IridiumBuildContext>>
+                              &iridiumBuildContext)
+    -> SCPIDX {
+  if (startingScope == NO_SCOPE)
+    return NO_SCOPE;
   if (iridiumBuildContext.find(startingScope) == iridiumBuildContext.end())
     throw std::runtime_error("build context not found for scope: " +
                              std::to_string(startingScope));
@@ -29,12 +32,12 @@ auto findVARHoistingScope(
   return findVARHoistingScope(ctx, buildContext->parent, iridiumBuildContext);
 }
 
-auto findParentClosureScope(
-    IRI_STORAGE::IRIContext &ctx, double startingScope,
-    std::unordered_map<int, std::shared_ptr<IRI_PARSE::IridiumBuildContext>>
-        &iridiumBuildContext) -> double {
-  if (startingScope == -1)
-    return -1;
+auto findParentClosureScope(IRI_STORAGE::IRIContext &ctx, SCPIDX startingScope,
+                            std::unordered_map<int, std::shared_ptr<IRI_PARSE::IridiumBuildContext>>
+                                &iridiumBuildContext)
+    -> SCPIDX {
+  if (startingScope == NO_SCOPE)
+    return NO_SCOPE;
   if (iridiumBuildContext.find(startingScope) == iridiumBuildContext.end())
     throw std::runtime_error("build context not found for scope: " +
                              std::to_string(startingScope));
@@ -47,12 +50,12 @@ auto findParentClosureScope(
   return findParentClosureScope(ctx, buildContext->parent, iridiumBuildContext);
 }
 
-auto getLexicalScope(
-    IRI_STORAGE::IRIContext &ctx, double startingScope,
-    std::unordered_map<int, std::shared_ptr<IRI_PARSE::IridiumBuildContext>>
-        &iridiumBuildContext) -> double {
-  if (startingScope == -1)
-    return -1;
+auto getLexicalScope(IRI_STORAGE::IRIContext &ctx, SCPIDX startingScope,
+                     std::unordered_map<int, std::shared_ptr<IRI_PARSE::IridiumBuildContext>>
+                         &iridiumBuildContext)
+    -> SCPIDX {
+  if (startingScope == NO_SCOPE)
+    return NO_SCOPE;
   if (iridiumBuildContext.find(startingScope) == iridiumBuildContext.end())
     throw std::runtime_error("build context not found for scope: " +
                              std::to_string(startingScope));
@@ -91,7 +94,7 @@ IRI_STORAGE::IRID getHoistTargetBB(IRI_STORAGE::IRIContext &ctx,
   if (IRI_NODE(ctx, jump.getArg_Test()).tag != IRI_GEN::ModuleDecl)
     return startBBID;
 
-  double declIDX = jump.getTRUE();
+  IRI_STORAGE::UIndex declIDX = jump.getTRUE();
   for (auto &bbID : bbs) {
     if (IRI_NODE(ctx, bbID).tag != IRI_GEN::BB)
       continue;
@@ -114,8 +117,8 @@ IRI_STORAGE::IRID resolveRemoteBinding(IRI_STORAGE::IRIContext &ctx,
   }
 }
 
-double getTopLevelScope(IRI_STORAGE::IRIContext &ctx,
-                        IRI_STORAGE::IRID fileSEXP) {
+IRI_STORAGE::SCPIDX getTopLevelScope(IRI_STORAGE::IRIContext &ctx,
+                                          IRI_STORAGE::IRID fileSEXP) {
   IRI_GEN::IRID topLevelContainer = getTopLevelContainer(ctx, fileSEXP);
   IRI_GEN::BBContainerSEXP c(topLevelContainer, ctx);
 

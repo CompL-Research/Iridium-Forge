@@ -27,7 +27,7 @@ void _FNOPS(IRIContext &ctx, IRID fileSEXP,
   FileSupport fileSupport(fileSEXP, ctx);
   for (auto [bbContID, _] : fileSupport.containers()) {
     BBContainerSupport container(bbContID, ctx);
-    double scopeIDX = container.getScopeIDX();
+    SCPIDX scopeIDX = container.getScopeIDX();
     std::vector<IRID> res;
 
     for (auto [bbID, _] : container.bbs()) {

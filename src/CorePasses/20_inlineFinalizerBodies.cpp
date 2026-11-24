@@ -23,8 +23,8 @@ using namespace IRI_STRUCTURAL;
 // An InvokeFinalizer statement and the scope of the body it invokes.
 struct IVSite {
   IRID stmt;
-  double F;
-  double entryScope;
+  BBIDX F;
+  SCPIDX entryScope;
 };
 
 void _20_IFB(IRIContext &ctx, IRID fileSEXP,
@@ -35,7 +35,7 @@ void _20_IFB(IRIContext &ctx, IRID fileSEXP,
   // Last valid scope lookup; after this ExceptionIDX is the only source.
   for (auto [bbcID, _] : file.containers()) {
     BBContainerSupport bbc(bbcID, ctx);
-    double closureScope = bbc.getScopeIDX();
+    SCPIDX closureScope = bbc.getScopeIDX();
     for (auto [bbID, _] : bbc.bbs()) {
       BBSupport bb(bbID, ctx);
       ctx.iris->declareExceptionIDX(
@@ -77,13 +77,13 @@ void _20_IFB(IRIContext &ctx, IRID fileSEXP,
           if (ctx.iris->hasScopePath(srcSupp.getScopeIDX(),
                                      sites[i].entryScope))
             continue; // descendant re-entry is not an entry
-          for (double t : bbTargets(ctx, srcID))
+          for (BBIDX t : bbTargets(ctx, srcID))
             if (t == supp.getIDX())
               throw std::runtime_error(
                   "_20_IFB: finalizer region has two entry blocks: F=" +
-                  std::to_string((int)sites[i].F) + " entry2=" +
-                  std::to_string((int)supp.getIDX()) + " from BB " +
-                  std::to_string((int)srcSupp.getIDX()));
+                  std::to_string(sites[i].F) + " entry2=" +
+                  std::to_string(supp.getIDX()) + " from BB " +
+                  std::to_string(srcSupp.getIDX()));
         }
       }
     }
@@ -118,26 +118,26 @@ void _20_IFB(IRIContext &ctx, IRID fileSEXP,
       if (siteBB == 0)
         throw std::runtime_error("_20_IFB: InvokeFinalizer statement lost");
 
-      double F = site.F;
+      BBIDX F = site.F;
 
       // Complete clone of the body region; the original stays a template.
       RegionClone rc = cloneRegion(ctx, bbc, F);
 
-      std::vector<double> order;
+      std::vector<BBIDX> order;
       for (auto &[d, copy] : rc.cloner.targetMap)
         order.push_back(d);
       std::sort(order.begin(), order.end()); // deterministic fixups/dumps
 
       // Innermost-first invariant: nested finalizers are already gone.
-      for (double d : order)
+      for (BBIDX d : order)
         for (auto s : ctx.storage.nodes.get_args(bbc.getBBByIDX(d)))
           if (IRI_NODE(ctx, s).tag == IRI_TAG::InvokeFinalizer)
             throw std::runtime_error(
                 "_20_IFB: InvokeFinalizer inside a cloned region: F=" +
-                std::to_string((int)F) + " nestedF=" +
-                std::to_string((int)InvokeFinalizerSEXP(s, ctx).getIDX()));
+                std::to_string(F) + " nestedF=" +
+                std::to_string(InvokeFinalizerSEXP(s, ctx).getIDX()));
 
-      for (double d : order) {
+      for (BBIDX d : order) {
         IRID src = bbc.getBBByIDX(d);
         IRID nb = bbc.getBBByIDX(rc.cloner.targetMap[d]);
 
@@ -172,7 +172,7 @@ void _20_IFB(IRIContext &ctx, IRID fileSEXP,
       if (pos + 1 >= siteArgs.size())
         throw std::runtime_error("_20_IFB: InvokeFinalizer is terminal");
       IRID contBB = splitBBSuffix(ctx, siteBB, pos + 1, bbc.getScopeIDX());
-      double contIDX = BBSupport(contBB, ctx).getIDX();
+      BBIDX contIDX = BBSupport(contBB, ctx).getIDX();
       std::vector<IRID> list = ctx.storage.nodes.get_args(bbList);
       list.push_back(contBB);
       ctx.storage.nodes.set_args(bbList, list);

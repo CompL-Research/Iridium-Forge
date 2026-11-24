@@ -29,7 +29,7 @@ void _4_5_PEB(IRIContext &ctx, IRID fileID, BUILD_CTX &iridiumBuildContext) {
   StringID str_arguments = ctx.storage.strings.intern("arguments");
   FileSEXP fileSEXP(fileID, ctx);
   bool isModule = iridiumBuildContext[0]->isModule;
-  double topLevelScope = ctx.iris->getTopLevelScope();
+  SCPIDX topLevelScope = ctx.iris->getTopLevelScope();
 
   auto args = ctx.storage.nodes.get_args(fileID);
 
@@ -39,7 +39,7 @@ void _4_5_PEB(IRIContext &ctx, IRID fileID, BUILD_CTX &iridiumBuildContext) {
     if (IRI_NODE(ctx, bbcID).tag != IRI_GEN::BBContainer)
       continue;
 
-    std::unordered_map<double, std::vector<IRID>> scopewiseHoisting;
+    std::unordered_map<SCPIDX, std::vector<IRID>> scopewiseHoisting;
 
     BBContainerSEXP container(bbcID, ctx);
     auto bbs = ctx.storage.nodes.get_args(container.getArg_BB());
@@ -75,7 +75,7 @@ void _4_5_PEB(IRIContext &ctx, IRID fileID, BUILD_CTX &iridiumBuildContext) {
 
         if (currTag == IRI_GEN::JSExplicitBindingDeclaration) {
           JSExplicitBindingDeclarationSEXP jsExpBD(stmtID, ctx);
-          double scopeToHoistTo;
+          SCPIDX scopeToHoistTo;
           IRI_FLAG kind;
           if (jsExpBD.hasJSLET()) {
             scopeToHoistTo = localScope;
@@ -175,8 +175,8 @@ void _4_5_PEB(IRIContext &ctx, IRID fileID, BUILD_CTX &iridiumBuildContext) {
     // Handle Explicit Declarations
     for (auto &e : scopewiseHoisting) {
       auto &containerBC = iridiumBuildContext[e.first];
-      double localScope = containerBC->scopeIDX;
-      double parentScope = containerBC->parent;
+      SCPIDX localScope = containerBC->scopeIDX;
+      SCPIDX parentScope = containerBC->parent;
       IRID startBBID = IRI_HELPERS::getHoistTargetBB(ctx, containerBC->BB,
                                                      containerBC->BB[0]);
       ctx.storage.nodes.add_args_to_beginning(startBBID, e.second);

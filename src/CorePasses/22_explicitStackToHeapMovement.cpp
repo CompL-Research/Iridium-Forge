@@ -23,7 +23,7 @@ using BUILD_CTX = std::unordered_map<int, std::shared_ptr<IridiumBuildContext>>;
 
 void _22_ESTKTHM(IRI_STORAGE::IRIContext &ctx, IRI_STORAGE::IRID fileSEXP,
                  BUILD_CTX &iridiumBuildContext,
-                 std::unordered_map<IRID, double> CONTINUE_TARGETS) {
+                 CTARGETS CONTINUE_TARGETS) {
 
   FileSupport file(fileSEXP, ctx);
   for (auto [bbcID, _] : file.containers()) {
@@ -33,7 +33,7 @@ void _22_ESTKTHM(IRI_STORAGE::IRIContext &ctx, IRI_STORAGE::IRID fileSEXP,
       std::vector<IRID> newBB = ctx.storage.nodes.get_args(bbID);
       size_t oldNumArgs = newBB.size();
 
-      double currScope = bb.getScopeIDX();
+      SCPIDX currScope = bb.getScopeIDX();
       bool dirty = false;
       std::vector<IRID> &args = newBB;
       for (auto it = args.begin(); it != args.end(); ++it) {
@@ -43,7 +43,7 @@ void _22_ESTKTHM(IRI_STORAGE::IRIContext &ctx, IRI_STORAGE::IRID fileSEXP,
         if (stmtTAG == IRI_GEN::Goto) {
           GotoSEXP gotoSEXP(stmtID, ctx);
           bool isContinueCTX = CONTINUE_TARGETS.contains(stmtID);
-          double targetScope;
+          SCPIDX targetScope;
 
           if (isContinueCTX) {
             targetScope =
@@ -71,7 +71,7 @@ void _22_ESTKTHM(IRI_STORAGE::IRIContext &ctx, IRI_STORAGE::IRID fileSEXP,
           }
 
         } else if (stmtTAG == IRI_GEN::Throw) {
-          double targetScope = ctx.iris->getEnclosingThrowScope(currScope);
+          SCPIDX targetScope = ctx.iris->getEnclosingThrowScope(currScope);
           auto bindingsToMove =
               ctx.iris->getBindingsToMoveToHeap(currScope, targetScope);
 

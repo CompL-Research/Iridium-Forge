@@ -213,7 +213,7 @@ void _1_NBBF(IRIContext &pool, IRID sexp, BUILD_CTX &iridiumBuildContext) {
     for (auto &b : buildContext->BB) {
       BBSEXP currBB(b, pool);
       setBBFlag(currBB, mainBBFlag);
-      double currIDX = currBB.getIDX();
+      uint32_t currIDX = currBB.getIDX();
       if (pool.lastBBIDX < currIDX) {
         pool.lastBBIDX = currIDX;
       }

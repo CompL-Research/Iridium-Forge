@@ -31,7 +31,7 @@ void _4_4_RFD(IRIContext &ctx, IRID fileID, BUILD_CTX &iridiumBuildContext) {
 
   bool isModule = iridiumBuildContext[0]->isModule;
   bool isScript = !isModule;
-  double topLevelScope = ctx.iris->getTopLevelScope();
+  SCPIDX topLevelScope = ctx.iris->getTopLevelScope();
 
   auto args = ctx.storage.nodes.get_args(fileID);
 
@@ -39,7 +39,7 @@ void _4_4_RFD(IRIContext &ctx, IRID fileID, BUILD_CTX &iridiumBuildContext) {
     if (IRI_NODE(ctx, bbcID).tag != IRI_GEN::BBContainer)
       continue;
 
-    std::unordered_map<double, std::vector<IRID>> hoistedEnvWrites;
+    std::unordered_map<SCPIDX, std::vector<IRID>> hoistedEnvWrites;
 
     BBContainerSEXP container(bbcID, ctx);
     auto bbs = ctx.storage.nodes.get_args(container.getArg_BB());
@@ -149,8 +149,8 @@ void _4_4_RFD(IRIContext &ctx, IRID fileID, BUILD_CTX &iridiumBuildContext) {
     // Handle Explicit Declarations
     for (auto &e : hoistedEnvWrites) {
       auto &containerBC = iridiumBuildContext[e.first];
-      double localScope = containerBC->scopeIDX;
-      double parentScope = containerBC->parent;
+      SCPIDX localScope = containerBC->scopeIDX;
+      SCPIDX parentScope = containerBC->parent;
       IRID startBBID = IRI_HELPERS::getHoistTargetBB(ctx, containerBC->BB,
                                                      containerBC->BB[0]);
       ctx.storage.nodes.add_args_to_beginning(startBBID, e.second);

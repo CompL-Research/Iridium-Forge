@@ -81,7 +81,7 @@ void _4_3_PIB(IRIContext &ctx, IRID fileID, BUILD_CTX &iridiumBuildContext) {
           IRID lval = resolved.ID;
           IRID rval;
 
-          double OPID = ibs.getOPID();
+          IRI_STORAGE::UIndex OPID = ibs.getOPID();
           if (OPID == 10) {
             rval = ctx.storage.nodes.NUBD_SEXP;
           } else if (OPID == 11) {

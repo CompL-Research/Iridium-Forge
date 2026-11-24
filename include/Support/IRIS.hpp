@@ -1,4 +1,3 @@
-
 #pragma once
 #include "Generated/IridiumEnums.h"
 #include "Generated/IridiumTypes.h"
@@ -6,6 +5,7 @@
 #include "Storage/BindingsPool.h"
 #include "Storage/Config.h"
 #include "Storage/StringPool.h"
+#include "Support/IRICFG.hpp"
 #include <cstddef>
 #include <iterator>
 #include <memory>
@@ -28,18 +28,19 @@ public:
        IRI_GEN::IRID);
 
   // Scope Related
-  double getTopLevelScope() { return topLevelScope; }
+  SCPIDX getTopLevelScope() { return topLevelScope; }
 
   // Binding Declaration
-  IRI_STORAGE::BindingMeta &declareScriptBinding(double, StringID,
+  IRI_STORAGE::BindingMeta &declareScriptBinding(SCPIDX, StringID,
                                                  IRI_GEN::IRI_FLAG);
-  IRI_STORAGE::BindingMeta &declareLBinding(double, StringID,
+  IRI_STORAGE::BindingMeta &declareLBinding(SCPIDX, StringID,
                                             IRI_GEN::IRI_FLAG);
-  IRI_STORAGE::BindingMeta &declareRBinding(double, StringID, IRI_GEN::IRI_FLAG,
+  IRI_STORAGE::BindingMeta &declareRBinding(SCPIDX, StringID,
+                                            IRI_GEN::IRI_FLAG,
                                             IRI_GEN::IRI_FLAG);
-  void addClosureAtScope(double, IRI_STORAGE::IRID);
+  void addClosureAtScope(SCPIDX, IRI_STORAGE::IRID);
 
-  bool isGlobal(StringID sid, double startScopeIDX);
+  bool isGlobal(StringID sid, SCPIDX startScopeIDX);
 
   IRI_STORAGE::BindingMeta &get_binding(IRI_STORAGE::IRID bID) {
     return ctx.storage.bindings.getMetaFromIRID(ctx, bID);
@@ -49,51 +50,53 @@ public:
     return ctx.storage.bindings.getMetaFromIRID(ctx, bID);
   }
 
-  IRI_STORAGE::BindingMeta &getBindingMetaFromLINK(double LINK) {
+  IRI_STORAGE::BindingMeta &getBindingMetaFromLINK(uint32_t LINK) {
     return ctx.storage.bindings.get(LINK);
   }
 
-  const IRI_STORAGE::BindingMeta &getBindingMetaFromLINK(double LINK) const {
+  const IRI_STORAGE::BindingMeta &getBindingMetaFromLINK(uint32_t LINK) const {
     return ctx.storage.bindings.get(LINK);
   }
 
-  bool hasBinding(StringID, double);
-  void removeBinding(StringID, double);
+  bool hasBinding(StringID, SCPIDX);
+  void removeBinding(StringID, SCPIDX);
 
-  double getLexicalScope(double);
-  IRI_STORAGE::BindingMeta &resolve(StringID, double);
+  SCPIDX getLexicalScope(SCPIDX);
+  IRI_STORAGE::BindingMeta &resolve(StringID, SCPIDX);
 
-  void registerDirectEval(IRI_STORAGE::IRID, double, double);
+  void registerDirectEval(IRI_STORAGE::IRID, SCPIDX, SCPIDX);
 
   void commit();
 
-  bool hasScopePath(double, double, bool breakAtClosureBoundary = false);
+  bool hasScopePath(SCPIDX, SCPIDX, bool breakAtClosureBoundary = false);
 
-  bool isTopLevelScope(double);
+  bool isTopLevelScope(SCPIDX);
 
-  bool mayReadFromATaintedScope(double);
+  bool mayReadFromATaintedScope(SCPIDX);
 
-  void addEvalRemoteBindingsToParentClosure(double);
+  void addEvalRemoteBindingsToParentClosure(SCPIDX);
 
-  double getJSEvalLookupREFIDX(double, double);
+  SCPIDX getJSEvalLookupREFIDX(SCPIDX, SCPIDX);
 
-  double getEnclosingThrowScope(double);
+  SCPIDX getEnclosingThrowScope(SCPIDX);
 
-  double getEnclosingClosureScope(double);
+  SCPIDX getEnclosingClosureScope(SCPIDX);
 
-  double isArgInitScope(double);
+  bool isArgInitScope(SCPIDX);
 
-  bool isEnclosedInAPropInitScope(double);
+  bool isEnclosedInAPropInitScope(SCPIDX);
 
-  double getExceptionTargetForScope(double);
+  // The handler dispatch target for the innermost try enclosing a scope,
+  // NO_BB if none.
+  BBIDX getExceptionTargetForScope(SCPIDX);
 
   // Per-BB exception dispatch target, keyed (closure scope, BBIDX).
   // Materialized by _20_IFB, carried by IRICloner; after that pass it is
   // the only valid dispatch source (regions and their clones share scopes).
-  void declareExceptionIDX(double closureScope, double bbIDX, double target) {
+  void declareExceptionIDX(SCPIDX closureScope, BBIDX bbIDX, BBIDX target) {
     exceptionIDX[closureScope][bbIDX] = target;
   }
-  bool getExceptionIDX(double closureScope, double bbIDX, double &out) const {
+  bool getExceptionIDX(SCPIDX closureScope, BBIDX bbIDX, BBIDX &out) const {
     auto c = exceptionIDX.find(closureScope);
     if (c == exceptionIDX.end())
       return false;
@@ -104,23 +107,21 @@ public:
     return true;
   }
 
-  double getFinalizerRetBBIDX(double);
-
-  size_t computePoolCapacity();
+  BBIDX getFinalizerRetBBIDX(BBIDX);
 
   void populateCClosuresInTree();
 
-  std::vector<IRI_STORAGE::IRID> getBindingsToMoveToHeap(double startScope,
-                                                         double endScope);
+  std::vector<IRI_STORAGE::IRID> getBindingsToMoveToHeap(SCPIDX startScope,
+                                                         SCPIDX endScope);
 
-  std::vector<IRI_STORAGE::IRID> getBindingsInClosure(double headScope);
+  std::vector<IRI_STORAGE::IRID> getBindingsInClosure(SCPIDX headScope);
 
-  std::vector<IRI_STORAGE::IRID> getEnvBindingsAtScope(double scope);
-  std::vector<IRI_STORAGE::IRID> getRemoteEnvBindingsAtScope(double scope);
+  std::vector<IRI_STORAGE::IRID> getEnvBindingsAtScope(SCPIDX scope);
+  std::vector<IRI_STORAGE::IRID> getRemoteEnvBindingsAtScope(SCPIDX scope);
 
-  std::vector<IRI_STORAGE::IRID> getEnvBindingsInClosure(double headScope);
+  std::vector<IRI_STORAGE::IRID> getEnvBindingsInClosure(SCPIDX headScope);
   std::vector<IRI_STORAGE::IRID>
-  getRemoteEnvBindingsInClosure(double headScope);
+  getRemoteEnvBindingsInClosure(SCPIDX headScope);
 
   void ensureExportedBindingIsModuleBinding(StringID id) {
     exportedModuleBindings.insert(id);
@@ -141,7 +142,7 @@ public:
   // globalBindings, closuresAtScope, directEvals
   // bindingsPool -> handled by BindingsPool::remapIrids
   void remapIrids(std::span<const IRI_STORAGE::IRID> old_to_new_irid_map);
-  
+
   std::vector<IRI_STORAGE::IRID> getScriptBindings() {
     std::vector<IRI_STORAGE::IRID> res;
     res.reserve(scriptBindings.size());
@@ -160,63 +161,63 @@ public:
     return res;
   }
 
-private:
-  // Node Storage Pool
-  IRI_STORAGE::IRIContext &ctx;
-
-  // Graph
-  // In a scope tree, each node has atmost one outgoing edges, with -1 denoting
-  // end of top level scope
-  std::unordered_map<double, double> outEdges;
-  std::unordered_map<double, std::set<double>> inEdges;
-  std::set<double> nodes;
-
-  // Per-BB dispatch targets, (closure scope -> BBIDX -> target BBIDX).
-  // See declareExceptionIDX.
-  std::unordered_map<double, std::unordered_map<double, double>> exceptionIDX;
-
-  std::vector<std::tuple<IRI_STORAGE::IRID, double, double>> directEvals;
-
-  double topLevelScope = -1;
-
-  std::set<StringID> allNames;
-
-  // Special Nodes
-  std::unordered_map<double, IRI_GEN::IRID> scopeHead;
-  std::set<double> argInitScopes;
-  std::set<double> propInitScopes;
-  std::set<double> taintedScopes;
-  std::set<double> tryScopes;
-  std::unordered_map<double, std::vector<IRI_STORAGE::IRID>> argsAtScope;
-
-  // At a given scope O(1) check if a StringID exists
-  std::unordered_map<double, std::unordered_map<StringID, IRI_STORAGE::IRID>>
-      scopeBindings;
-
-  std::unordered_map<StringID, IRI_STORAGE::IRID> scriptBindings;
-  std::unordered_map<StringID, IRI_STORAGE::IRID> globalBindings;
-  std::unordered_map<double, std::vector<IRI_STORAGE::IRID>> closuresAtScope;
-
-  std::unordered_map<double, double> exceptionEdgeRedirect;
-  std::unordered_map<double, double> finalizerRetMap;
-
-  std::set<StringID> exportedModuleBindings;
-
-  void printNode(
-      std::ostream &oss, double node, std::string prefix, bool isLast,
-      const std::unordered_map<double, std::vector<double>> &childrenMap) const;
-
-public:
   // The argument bindings (JSARG / JSRESTARG) declared at a closure's head
   // scope, before commit() lays out the frame; null if there are none.
-  const std::vector<IRI_STORAGE::IRID> *getArgsAtScope(double scope) const {
+  const std::vector<IRI_STORAGE::IRID> *getArgsAtScope(SCPIDX scope) const {
     auto it = argsAtScope.find(scope);
     return it == argsAtScope.end() ? nullptr : &it->second;
   }
 
   void dumpFlat(std::ostream &oss, int indentLevel = 0) const;
   void dumpScopeTree(std::ostream &oss, int indentLevel = 0) const;
-  void dumpBindingsAtScope(std::ostream &oss, double node) const;
+  void dumpBindingsAtScope(std::ostream &oss, SCPIDX node) const;
+
+private:
+  // Node Storage Pool
+  IRI_STORAGE::IRIContext &ctx;
+
+  // Scope tree. Each node has at most one out-edge, NO_SCOPE ends the chain.
+  std::unordered_map<SCPIDX, SCPIDX> outEdges;
+  std::unordered_map<SCPIDX, std::set<SCPIDX>> inEdges;
+  std::set<SCPIDX> nodes;
+
+  // Per-BB dispatch targets, (closure scope -> BBIDX -> target BBIDX).
+  // See declareExceptionIDX.
+  std::unordered_map<SCPIDX, std::unordered_map<BBIDX, BBIDX>> exceptionIDX;
+
+  std::vector<std::tuple<IRI_STORAGE::IRID, SCPIDX, SCPIDX>> directEvals;
+
+  SCPIDX topLevelScope = NO_SCOPE;
+
+  std::set<StringID> allNames;
+
+  // Special Nodes
+  std::unordered_map<SCPIDX, IRI_GEN::IRID> scopeHead;
+  std::set<SCPIDX> argInitScopes;
+  std::set<SCPIDX> propInitScopes;
+  std::set<SCPIDX> taintedScopes;
+  std::set<SCPIDX> tryScopes;
+  std::unordered_map<SCPIDX, std::vector<IRI_STORAGE::IRID>> argsAtScope;
+
+  // At a given scope O(1) check if a StringID exists
+  std::unordered_map<SCPIDX, std::unordered_map<StringID, IRI_STORAGE::IRID>>
+      scopeBindings;
+
+  std::unordered_map<StringID, IRI_STORAGE::IRID> scriptBindings;
+  std::unordered_map<StringID, IRI_STORAGE::IRID> globalBindings;
+  std::unordered_map<SCPIDX, std::vector<IRI_STORAGE::IRID>> closuresAtScope;
+
+  // try/ud-catch scope -> the BB its throw redirects to, and
+  // finalizer BB -> the BB its body returns to.
+  std::unordered_map<SCPIDX, BBIDX> exceptionEdgeRedirect;
+  std::unordered_map<BBIDX, BBIDX> finalizerRetMap;
+
+  std::set<StringID> exportedModuleBindings;
+
+  void printNode(
+      std::ostream &oss, SCPIDX node, std::string prefix, bool isLast,
+      const std::unordered_map<SCPIDX, std::vector<SCPIDX>> &childrenMap)
+      const;
 };
 } // namespace IRI_STRUCTURAL
 

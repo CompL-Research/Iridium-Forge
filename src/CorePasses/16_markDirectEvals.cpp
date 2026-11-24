@@ -33,8 +33,8 @@ static bool isGlobalEvalRead(IRIContext &ctx, IRID callee) {
 //   CallSite(eval, this, ...args) -> JSEval(eval, ...args)
 //   Apply(eval, this, argList)    -> JSEvalApply(eval, argList)
 // Returns the node to use in place of `node`; the caller stores it.
-inline IRID patchNode(IRIContext &ctx, IRID node, double scopeToTaint,
-                      double containerScope) {
+inline IRID patchNode(IRIContext &ctx, IRID node, SCPIDX scopeToTaint,
+                      SCPIDX containerScope) {
   auto tag = IRI_NODE(ctx, node).tag;
   if ((tag == IRI_GEN::CallSite || tag == IRI_GEN::Apply) &&
       isGlobalEvalRead(ctx, ctx.storage.nodes.get_args(node)[0])) {
@@ -53,8 +53,8 @@ inline IRID patchNode(IRIContext &ctx, IRID node, double scopeToTaint,
       evalArgs.push_back(callArgs[i]);
     // ScopeIDX is resolved later by IRIS
     IRID evalNode = tag == IRI_GEN::CallSite
-                        ? JSEvalSEXP::create(ctx, callArgs[0], UINT32_MAX)
-                        : JSEvalApplySEXP::create(ctx, callArgs[0], callArgs[2], UINT32_MAX);
+                        ? JSEvalSEXP::create(ctx, callArgs[0], -1)
+                        : JSEvalApplySEXP::create(ctx, callArgs[0], callArgs[2], -1);
     ctx.storage.nodes.set_args(evalNode, evalArgs);
     ctx.iris->registerDirectEval(evalNode, scopeToTaint, containerScope);
     node = evalNode;

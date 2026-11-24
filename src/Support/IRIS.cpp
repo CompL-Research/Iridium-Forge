@@ -54,24 +54,25 @@ IRIS::IRIS(
     if (bcon->tryContext.has_value()) {
       auto lCon = bcon->tryContext.value();
       if (lCon.tryScopeIDX > -1) {
-        double redirectBBIDX = -1;
+        BBIDX redirectBBIDX = NO_BB;
         if (lCon.udCatchIDX > -1) {
-          redirectBBIDX = lCon.udCatchIDX;
+          redirectBBIDX = (BBIDX)lCon.udCatchIDX;
         } else {
-          redirectBBIDX = lCon.imCatchIDX;
+          redirectBBIDX = (BBIDX)lCon.imCatchIDX;
         }
-        assert(redirectBBIDX != -1);
+        assert(redirectBBIDX != NO_BB);
         exceptionEdgeRedirect[lCon.tryScopeIDX] = redirectBBIDX;
       }
 
       if (lCon.udCatchScopeIDX > -1) {
         assert(lCon.imCatchIDX != -1);
-        exceptionEdgeRedirect[lCon.udCatchScopeIDX] = lCon.imCatchIDX;
+        exceptionEdgeRedirect[lCon.udCatchScopeIDX] = (BBIDX)lCon.imCatchIDX;
       }
 
       if (lCon.finalizerIDX > -1) {
         assert(lCon.finalizerRetIDX != -1);
-        finalizerRetMap[lCon.finalizerIDX] = lCon.finalizerRetIDX;
+        finalizerRetMap[(BBIDX)lCon.finalizerIDX] =
+            (BBIDX)lCon.finalizerRetIDX;
       }
     }
 
@@ -121,15 +122,15 @@ IRIS::IRIS(
 
   // Set value of top level scooe
   for (auto &e : outEdges) {
-    if (e.second == -1)
+    if (e.second == NO_SCOPE)
       topLevelScope = e.first;
   }
 
-  if (topLevelScope == -1)
+  if (topLevelScope == NO_SCOPE)
     throw std::runtime_error("IRIS, top level scope not found");
 }
 
-IRI_STORAGE::BindingMeta &IRIS::declareScriptBinding(double scope,
+IRI_STORAGE::BindingMeta &IRIS::declareScriptBinding(SCPIDX scope,
                                                      StringID name,
                                                      IRI_GEN::IRI_FLAG flag) {
 
@@ -160,7 +161,7 @@ IRI_STORAGE::BindingMeta &IRIS::declareScriptBinding(double scope,
   }
 }
 
-IRI_STORAGE::BindingMeta &IRIS::declareLBinding(double scope, StringID name,
+IRI_STORAGE::BindingMeta &IRIS::declareLBinding(SCPIDX scope, StringID name,
                                                 IRI_GEN::IRI_FLAG flag) {
   auto &bindingsAtScope = scopeBindings[scope];
   if (bindingsAtScope.contains(name)) {
@@ -199,7 +200,7 @@ IRI_STORAGE::BindingMeta &IRIS::declareLBinding(double scope, StringID name,
   return get_binding(newBinding);
 }
 
-IRI_STORAGE::BindingMeta &IRIS::declareRBinding(double scope, StringID name,
+IRI_STORAGE::BindingMeta &IRIS::declareRBinding(SCPIDX scope, StringID name,
                                                 IRI_GEN::IRI_FLAG flag,
                                                 IRI_GEN::IRI_FLAG moduleFlag) {
   auto &bindingsAtScope = scopeBindings[scope];
@@ -248,11 +249,11 @@ IRI_STORAGE::BindingMeta &IRIS::declareRBinding(double scope, StringID name,
   }
 }
 
-void IRIS::addClosureAtScope(double scope, IRI_STORAGE::IRID closure) {
+void IRIS::addClosureAtScope(SCPIDX scope, IRI_STORAGE::IRID closure) {
   closuresAtScope[scope].push_back(closure);
 }
 
-bool IRIS::hasBinding(StringID name, double currScope) {
+bool IRIS::hasBinding(StringID name, SCPIDX currScope) {
   auto scopeIt = scopeBindings.find(currScope);
   if (scopeIt != scopeBindings.end() && scopeIt->second.contains(name)) {
     return true;
@@ -260,12 +261,12 @@ bool IRIS::hasBinding(StringID name, double currScope) {
   return false;
 }
 
-void IRIS::removeBinding(StringID name, double currScope) {
+void IRIS::removeBinding(StringID name, SCPIDX currScope) {
   assert(hasBinding(name, currScope));
   scopeBindings[currScope].erase(name);
 }
 
-double IRIS::getLexicalScope(double currScope) {
+SCPIDX IRIS::getLexicalScope(SCPIDX currScope) {
   auto scopeIt = outEdges.find(currScope);
   if (scopeIt == outEdges.end()) {
     throw std::runtime_error("Failed to fetch lexical scope");
@@ -273,9 +274,9 @@ double IRIS::getLexicalScope(double currScope) {
   return scopeIt->second;
 }
 
-IRI_STORAGE::BindingMeta &IRIS::resolve(StringID sid, double startScopeIDX) {
-  std::vector<double> headsCrossed;
-  double currScope = startScopeIDX;
+IRI_STORAGE::BindingMeta &IRIS::resolve(StringID sid, SCPIDX startScopeIDX) {
+  std::vector<SCPIDX> headsCrossed;
+  SCPIDX currScope = startScopeIDX;
   IRI_STORAGE::IRID found;
 
   while (true) {
@@ -294,8 +295,9 @@ IRI_STORAGE::BindingMeta &IRIS::resolve(StringID sid, double startScopeIDX) {
       throw std::runtime_error(
           "Failed to resolve env binding: scope chain broken");
     }
-    // If edgeIt->second == -1, we have reached a Global, declare and return
-    if (edgeIt->second == -1) {
+    // If edgeIt->second == NO_SCOPE, we have reached a Global, declare and
+    // return
+    if (edgeIt->second == NO_SCOPE) {
       if (scriptBindings.contains(sid)) {
         return get_binding(scriptBindings[sid]);
       } else if (globalBindings.contains(sid)) {
@@ -328,12 +330,12 @@ IRI_STORAGE::BindingMeta &IRIS::resolve(StringID sid, double startScopeIDX) {
   return get_binding(found);
 }
 
-void IRIS::registerDirectEval(IRI_STORAGE::IRID dEval, double startScope,
-                              double endScope) {
+void IRIS::registerDirectEval(IRI_STORAGE::IRID dEval, SCPIDX startScope,
+                              SCPIDX endScope) {
   directEvals.push_back(std::make_tuple(dEval, startScope, endScope));
 }
 
-bool IRIS::isGlobal(StringID sid, double startScopeIDX) {
+bool IRIS::isGlobal(StringID sid, SCPIDX startScopeIDX) {
 
   // If no scope in the scope tree ever saw this string, it must be a
   // global
@@ -341,8 +343,8 @@ bool IRIS::isGlobal(StringID sid, double startScopeIDX) {
     return true;
   }
 
-  double currScope = startScopeIDX;
-  while (currScope != -1) {
+  SCPIDX currScope = startScopeIDX;
+  while (currScope != NO_SCOPE) {
     auto scopeIt = scopeBindings.find(currScope);
     if (scopeIt != scopeBindings.end() && scopeIt->second.contains(sid)) {
       return false;
@@ -360,8 +362,9 @@ bool IRIS::isGlobal(StringID sid, double startScopeIDX) {
 
 // Wrapper method to fetch filtered IRIDs
 static std::vector<IRI_STORAGE::IRID> getEnvBindings(
-    const std::unordered_map<
-        double, std::unordered_map<StringID, IRI_STORAGE::IRID>> &scopeBindings,
+    const std::unordered_map<SCPIDX,
+                             std::unordered_map<StringID, IRI_STORAGE::IRID>>
+        &scopeBindings,
     auto scope, auto &ctx) {
   std::vector<IRI_STORAGE::IRID> matchedBindings;
 
@@ -382,8 +385,9 @@ static std::vector<IRI_STORAGE::IRID> getEnvBindings(
 
 // Wrapper method to fetch filtered IRIDs
 static std::vector<IRI_STORAGE::IRID> getRemoteEnvBindings(
-    const std::unordered_map<
-        double, std::unordered_map<StringID, IRI_STORAGE::IRID>> &scopeBindings,
+    const std::unordered_map<SCPIDX,
+                             std::unordered_map<StringID, IRI_STORAGE::IRID>>
+        &scopeBindings,
     auto scope, auto &ctx) {
   std::vector<IRI_STORAGE::IRID> matchedBindings;
 
@@ -423,19 +427,19 @@ void IRIS::populateCClosuresInTree() {
 void IRIS::commit() {
   // For each
   for (auto &[currHead, bbcID] : scopeHead) {
-    double lIDX = 0;
-    double rIDX = 0;
-    double riIDX = 0;
-    double rlIDX = 0;
+    uint32_t lIDX = 0;
+    uint32_t rIDX = 0;
+    uint32_t riIDX = 0;
+    uint32_t rlIDX = 0;
 
-    std::unordered_map<double, std::vector<double>> lbAtScope;
+    std::unordered_map<SCPIDX, std::vector<uint32_t>> lbAtScope;
     std::vector<IRID> lBindings = argsAtScope[currHead];
     std::vector<IRID> rBindings;
     std::vector<IRID> cBindings = closuresAtScope.contains(currHead)
                                       ? closuresAtScope[currHead]
                                       : std::vector<IRID>();
-    std::function<void(double, bool)> handleFrameBindings =
-        [&](double currScope, bool allowHead) {
+    std::function<void(SCPIDX, bool)> handleFrameBindings =
+        [&](SCPIDX currScope, bool allowHead) {
           if (scopeHead.contains(currScope) && !allowHead)
             return;
           std::vector<IRID> LB = getEnvBindings(scopeBindings, currScope, ctx);
@@ -447,14 +451,14 @@ void IRIS::commit() {
             EnvBindingSEXP lb(lbID, ctx);
             if (lb.hasJSARG() || lb.hasJSRESTARG())
               continue;
-            double NEXT;
-            double REFIDX;
+            int32_t NEXT;
+            uint32_t REFIDX;
             if (i == 0) {
               if (currScope == currHead) {
                 NEXT = -1;
               } else {
                 assert(outEdges.contains(currScope));
-                double parentScope = outEdges[currScope];
+                SCPIDX parentScope = outEdges[currScope];
                 while (true) {
                   if (lbAtScope[parentScope].size() > 0) {
                     NEXT = lbAtScope[parentScope].back();
@@ -516,7 +520,7 @@ void IRIS::commit() {
   }
   // Resolve evals
   for (auto &[id, scopeToTaint, containerScope] : directEvals) {
-    double evalREFIDX = getJSEvalLookupREFIDX(scopeToTaint, containerScope);
+    SCPIDX evalREFIDX = getJSEvalLookupREFIDX(scopeToTaint, containerScope);
     if (IRI_NODE(ctx, id).tag == IRI_GEN::JSEval)
       JSEvalSEXP(id, ctx).setScopeIDX(evalREFIDX);
     else
@@ -524,10 +528,10 @@ void IRIS::commit() {
   }
 }
 
-bool IRIS::hasScopePath(double startScope, double targetScope,
+bool IRIS::hasScopePath(SCPIDX startScope, SCPIDX targetScope,
                         bool breakAtClosureBoundary) {
-  double currScope = startScope;
-  while (currScope != -1) {
+  SCPIDX currScope = startScope;
+  while (currScope != NO_SCOPE) {
     if (breakAtClosureBoundary && scopeHead.contains(currScope))
       return false;
     if (currScope == targetScope) {
@@ -543,11 +547,11 @@ bool IRIS::hasScopePath(double startScope, double targetScope,
   return false;
 }
 
-double IRIS::isArgInitScope(double argInitScope) {
+bool IRIS::isArgInitScope(SCPIDX argInitScope) {
   return argInitScopes.contains(argInitScope);
 }
 
-bool IRIS::isEnclosedInAPropInitScope(double currScope) {
+bool IRIS::isEnclosedInAPropInitScope(SCPIDX currScope) {
   for (auto &pis : propInitScopes) {
     if (hasScopePath(currScope, pis))
       return true;
@@ -555,15 +559,15 @@ bool IRIS::isEnclosedInAPropInitScope(double currScope) {
   return false;
 }
 
-double IRIS::getExceptionTargetForScope(double startScope) {
-  double currScope = startScope;
-  while (currScope != -1) {
+BBIDX IRIS::getExceptionTargetForScope(SCPIDX startScope) {
+  SCPIDX currScope = startScope;
+  while (currScope != NO_SCOPE) {
     if (exceptionEdgeRedirect.contains(currScope)) {
       return exceptionEdgeRedirect[currScope];
     }
 
     if (scopeHead.contains(currScope))
-      return -1;
+      return NO_BB;
 
     auto edgeIt = outEdges.find(currScope);
     if (edgeIt == outEdges.end()) {
@@ -571,23 +575,23 @@ double IRIS::getExceptionTargetForScope(double startScope) {
     }
     currScope = edgeIt->second;
   }
-  return -1;
+  return NO_BB;
 }
 
-double IRIS::getFinalizerRetBBIDX(double finalizerIDX) {
+BBIDX IRIS::getFinalizerRetBBIDX(BBIDX finalizerIDX) {
   assert(finalizerRetMap.contains(finalizerIDX));
   return finalizerRetMap[finalizerIDX];
 }
 
-bool IRIS::isTopLevelScope(double startScope) {
+bool IRIS::isTopLevelScope(SCPIDX startScope) {
   auto edgeIt = outEdges.find(startScope);
   if (edgeIt == outEdges.end()) {
     assert(false && "Parent scope not found, error");
   }
-  return edgeIt->second == -1;
+  return edgeIt->second == NO_SCOPE;
 }
 
-bool IRIS::mayReadFromATaintedScope(double startScope) {
+bool IRIS::mayReadFromATaintedScope(SCPIDX startScope) {
   for (auto &ts : taintedScopes) {
     //
     // Does not cause a problem if the only reachable tainted scope is the
@@ -601,7 +605,7 @@ bool IRIS::mayReadFromATaintedScope(double startScope) {
   return false;
 }
 
-void IRIS::addEvalRemoteBindingsToParentClosure(double startScope) {
+void IRIS::addEvalRemoteBindingsToParentClosure(SCPIDX startScope) {
   if (taintedScopes.contains(startScope))
     return;
 
@@ -619,10 +623,10 @@ void IRIS::addEvalRemoteBindingsToParentClosure(double startScope) {
   std::set<StringID> shadowedReads;
   std::set<StringID> pollutedReads;
 
-  double currScope = startScope;
+  SCPIDX currScope = startScope;
   bool crossedClosureScope = false;
   auto &iris = ctx.iris;
-  while (currScope != -1) {
+  while (currScope != NO_SCOPE) {
     if (scopeBindings.contains(currScope)) {
       for (auto &[sID, bID] : scopeBindings.at(currScope)) {
         if (IRI_NODE(ctx, bID).tag == IRI_GEN::EnvBinding) {
@@ -661,7 +665,7 @@ void IRIS::addEvalRemoteBindingsToParentClosure(double startScope) {
   }
 }
 
-double IRIS::getJSEvalLookupREFIDX(double scope, double parentScope) {
+SCPIDX IRIS::getJSEvalLookupREFIDX(SCPIDX scope, SCPIDX parentScope) {
 
   if (!scopeHead.contains(parentScope)) {
     throw std::runtime_error(
@@ -672,27 +676,26 @@ double IRIS::getJSEvalLookupREFIDX(double scope, double parentScope) {
     throw std::runtime_error("getJSEvalLookupREFIDX scope is invalid");
   }
 
-  double currScope = scope;
+  SCPIDX currScope = scope;
 
   do {
     auto scopeIt = scopeBindings.find(currScope);
     if (scopeIt != scopeBindings.end() && scopeIt->second.size() > 0) {
-      double largestREFIDX = -1;
+      int64_t largestREFIDX = -1;
       // Found a scope with >1 bindings
       for (auto &b : scopeIt->second) {
         IRI_STORAGE::IRID bID = b.second;
         if (IRI_NODE(ctx, bID).tag == IRI_GEN::EnvBinding) {
           IRI_GEN::EnvBindingSEXP ebSEXP(bID, ctx);
-          if (ebSEXP.getREFIDX() > largestREFIDX)
-            largestREFIDX = ebSEXP.getREFIDX();
+          if ((int64_t)ebSEXP.getREFIDX() > largestREFIDX)
+            largestREFIDX = (int64_t)ebSEXP.getREFIDX();
         }
       }
       if (largestREFIDX == -1) {
         // This is a neat assertion...
         assert(scopeHead.contains(currScope));
       }
-      return largestREFIDX + 1;
-      break;
+      return (SCPIDX)(largestREFIDX + 1);
     }
 
     if (currScope == parentScope)
@@ -707,10 +710,10 @@ double IRIS::getJSEvalLookupREFIDX(double scope, double parentScope) {
   } while (true);
 }
 
-double IRIS::getEnclosingClosureScope(double startScope) {
-  assert(startScope != -1);
+SCPIDX IRIS::getEnclosingClosureScope(SCPIDX startScope) {
+  assert(startScope != NO_SCOPE);
 
-  double currScope = startScope;
+  SCPIDX currScope = startScope;
   while (true) {
     if (scopeHead.contains(currScope))
       return currScope;
@@ -722,13 +725,13 @@ double IRIS::getEnclosingClosureScope(double startScope) {
     currScope = edgeIt->second;
   }
   throw std::runtime_error("Failed to resolve parent closure scope");
-  return -1;
+  return NO_SCOPE;
 }
 
-double IRIS::getEnclosingThrowScope(double startScope) {
-  assert(startScope != -1);
+SCPIDX IRIS::getEnclosingThrowScope(SCPIDX startScope) {
+  assert(startScope != NO_SCOPE);
 
-  double currScope = startScope;
+  SCPIDX currScope = startScope;
   while (true) {
     if (scopeHead.contains(currScope) || tryScopes.contains(currScope))
       return currScope;
@@ -740,11 +743,11 @@ double IRIS::getEnclosingThrowScope(double startScope) {
     currScope = edgeIt->second;
   }
 
-  return -1;
+  return NO_SCOPE;
 }
 
-std::vector<IRI_STORAGE::IRID> IRIS::getBindingsToMoveToHeap(double startScope,
-                                                             double endScope) {
+std::vector<IRI_STORAGE::IRID> IRIS::getBindingsToMoveToHeap(SCPIDX startScope,
+                                                             SCPIDX endScope) {
   if (!hasScopePath(startScope, endScope)) {
     return {};
   }
@@ -755,7 +758,7 @@ std::vector<IRI_STORAGE::IRID> IRIS::getBindingsToMoveToHeap(double startScope,
 
   std::vector<IRI_STORAGE::IRID> res;
 
-  double currScope = startScope;
+  SCPIDX currScope = startScope;
   do {
     auto scopeIt = scopeBindings.find(currScope);
     if (scopeIt != scopeBindings.end()) {
@@ -782,12 +785,12 @@ std::vector<IRI_STORAGE::IRID> IRIS::getBindingsToMoveToHeap(double startScope,
   return res;
 }
 
-std::vector<IRI_STORAGE::IRID> IRIS::getBindingsInClosure(double headScope) {
+std::vector<IRI_STORAGE::IRID> IRIS::getBindingsInClosure(SCPIDX headScope) {
   assert(scopeHead.contains(headScope));
   std::vector<IRI_STORAGE::IRID> res;
 
-  std::function<void(double, bool)> traverse = [&](double currScope,
-                                                   bool isHead) {
+  std::function<void(SCPIDX, bool)> traverse = [&](SCPIDX currScope,
+                                                     bool isHead) {
     if (!isHead && scopeHead.contains(currScope)) {
       return;
     }
@@ -800,7 +803,7 @@ std::vector<IRI_STORAGE::IRID> IRIS::getBindingsInClosure(double headScope) {
     }
 
     if (inEdges.contains(currScope)) {
-      for (double child : inEdges.at(currScope)) {
+      for (SCPIDX child : inEdges.at(currScope)) {
         traverse(child, false);
       }
     }
@@ -810,15 +813,17 @@ std::vector<IRI_STORAGE::IRID> IRIS::getBindingsInClosure(double headScope) {
   return res;
 }
 
-std::vector<IRI_STORAGE::IRID> IRIS::getEnvBindingsAtScope(double scope) {
+std::vector<IRI_STORAGE::IRID> IRIS::getEnvBindingsAtScope(SCPIDX scope) {
   return IRI_STRUCTURAL::getEnvBindings(scopeBindings, scope, ctx);
 }
 
-std::vector<IRI_STORAGE::IRID> IRIS::getRemoteEnvBindingsAtScope(double scope) {
+std::vector<IRI_STORAGE::IRID>
+IRIS::getRemoteEnvBindingsAtScope(SCPIDX scope) {
   return IRI_STRUCTURAL::getRemoteEnvBindings(scopeBindings, scope, ctx);
 }
 
-std::vector<IRI_STORAGE::IRID> IRIS::getEnvBindingsInClosure(double headScope) {
+std::vector<IRI_STORAGE::IRID>
+IRIS::getEnvBindingsInClosure(SCPIDX headScope) {
   std::vector<IRI_STORAGE::IRID> res;
   for (auto bID : getBindingsInClosure(headScope)) {
     if (IRI_NODE(ctx, bID).tag == IRI_GEN::EnvBinding) {
@@ -829,7 +834,7 @@ std::vector<IRI_STORAGE::IRID> IRIS::getEnvBindingsInClosure(double headScope) {
 }
 
 std::vector<IRI_STORAGE::IRID>
-IRIS::getRemoteEnvBindingsInClosure(double headScope) {
+IRIS::getRemoteEnvBindingsInClosure(SCPIDX headScope) {
   std::vector<IRI_STORAGE::IRID> res;
   for (auto bID : getBindingsInClosure(headScope)) {
     if (IRI_NODE(ctx, bID).tag == IRI_GEN::RemoteEnvBinding) {
@@ -944,7 +949,7 @@ void IRIS::remapIrids(std::span<const IRID> old_to_new_irid_map) {
   ctx.storage.bindings.remapIrids(old_to_new_irid_map);
 }
 
-void IRIS::dumpBindingsAtScope(std::ostream &oss, double currScope) const {
+void IRIS::dumpBindingsAtScope(std::ostream &oss, SCPIDX currScope) const {
   if (!scopeBindings.contains(currScope)) {
     oss << "[No bindings]";
     return;
@@ -958,8 +963,8 @@ void IRIS::dumpBindingsAtScope(std::ostream &oss, double currScope) const {
 }
 
 void IRIS::printNode(
-    std::ostream &oss, double node, std::string prefix, bool isLast,
-    const std::unordered_map<double, std::vector<double>> &childrenMap) const {
+    std::ostream &oss, SCPIDX node, std::string prefix, bool isLast,
+    const std::unordered_map<SCPIDX, std::vector<SCPIDX>> &childrenMap) const {
 
   // Print current node with branching characters
   oss << prefix << (isLast ? "└── " : "├── ") << "("
@@ -991,14 +996,14 @@ void IRIS::dumpScopeTree(std::ostream &oss, int indentLevel) const {
   }
 
   // 1. Build an adjacency list (Parent -> Children) for O(N) lookup
-  std::unordered_map<double, std::vector<double>> childrenMap;
-  std::vector<double> roots;
+  std::unordered_map<SCPIDX, std::vector<SCPIDX>> childrenMap;
+  std::vector<SCPIDX> roots;
 
-  for (double node : nodes) {
+  for (SCPIDX node : nodes) {
     auto it = outEdges.find(node);
-    if (it != outEdges.end() && it->second != -1.0) {
+    if (it != outEdges.end() && it->second != NO_SCOPE) {
       childrenMap[it->second].push_back(node);
-    } else if (it != outEdges.end() && it->second == -1.0) {
+    } else if (it != outEdges.end() && it->second == NO_SCOPE) {
       roots.push_back(node);
     }
   }

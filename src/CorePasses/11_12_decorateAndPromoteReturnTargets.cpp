@@ -22,9 +22,9 @@ using namespace IRI_STRUCTURAL;
 using BUILD_CTX = std::unordered_map<int, std::shared_ptr<IridiumBuildContext>>;
 
 static inline std::shared_ptr<IridiumBuildContext> findReturnTarget(
-    IRIContext &ctx, double localScope, BUILD_CTX &iridiumBuildContext,
+    IRIContext &ctx, SCPIDX localScope, BUILD_CTX &iridiumBuildContext,
     std::vector<std::variant<LoopConfig, TryContext>> &intermediateContexts) {
-  if (localScope == -1)
+  if (localScope == NO_SCOPE)
     throw std::runtime_error("Failed to find return target!!!");
   assert(iridiumBuildContext.find(localScope) != iridiumBuildContext.end());
   std::shared_ptr<IridiumBuildContext> buildContext =
