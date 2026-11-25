@@ -1,4 +1,4 @@
-// Generated: 2026-11-25 13:41:12
+// Generated: 2026-11-25 18:02:13
 #pragma once
 #include "Storage/Config.h"
 #include "Storage/IridiumSEXP.h"
@@ -727,12 +727,12 @@ using IRI_STORAGE::FlagValue;
       }
     }
 
-    static IRID create(IRIContext& p, bool TopLevel, bool ClosureBoundary, bool Lexical, bool VARBoundary, bool TryBB, int32_t ScopeIDX, UIndex IDX) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::BB, {}, {TopLevel ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), ClosureBoundary ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), Lexical ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), VARBoundary ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), TryBB ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), FlagValue(Int32{ScopeIDX}), FlagValue(UInt32{IDX})});
+    static IRID create(IRIContext& p, bool TopLevel, bool ClosureBoundary, bool Lexical, bool VARBoundary, bool TryBB, int32_t ScopeIDX, UIndex IDX, UIndex EXCIDX) {
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::BB, {}, {TopLevel ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), ClosureBoundary ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), Lexical ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), VARBoundary ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), TryBB ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), FlagValue(Int32{ScopeIDX}), FlagValue(UInt32{IDX}), FlagValue(UInt32{EXCIDX})});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
-    static constexpr uint32_t TOTAL_FLAGS = 7;
+    static constexpr uint32_t TOTAL_FLAGS = 8;
 
     static constexpr uint32_t FLAG_IDX_TopLevel = 0;
     static constexpr uint32_t FLAG_IDX_ClosureBoundary = 1;
@@ -741,6 +741,7 @@ using IRI_STORAGE::FlagValue;
     static constexpr uint32_t FLAG_IDX_TryBB = 4;
     static constexpr uint32_t FLAG_IDX_ScopeIDX = 5;
     static constexpr uint32_t FLAG_IDX_IDX = 6;
+    static constexpr uint32_t FLAG_IDX_EXCIDX = 7;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
@@ -783,6 +784,11 @@ using IRI_STORAGE::FlagValue;
     void setIDX(UIndex val) { mutate_flag(FLAG_IDX_IDX) = UInt32{val}; }
     bool hasIDX() const { return std::holds_alternative<UInt32>(get_flag(FLAG_IDX_IDX)); }
     void clearIDX() { mutate_flag(FLAG_IDX_IDX) = std::monostate{}; }
+
+    UIndex getEXCIDX() const { return std::get<UInt32>(get_flag(FLAG_IDX_EXCIDX)).v; }
+    void setEXCIDX(UIndex val) { mutate_flag(FLAG_IDX_EXCIDX) = UInt32{val}; }
+    bool hasEXCIDX() const { return std::holds_alternative<UInt32>(get_flag(FLAG_IDX_EXCIDX)); }
+    void clearEXCIDX() { mutate_flag(FLAG_IDX_EXCIDX) = std::monostate{}; }
   };
 
   struct ReturnSEXP {

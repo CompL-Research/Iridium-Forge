@@ -1,4 +1,4 @@
-// Generated: 2026-11-25 13:41:12
+// Generated: 2026-11-25 18:02:13
 #pragma once
 #include "IridiumEnums.h"
 #include <cstdint>
@@ -24,7 +24,7 @@ public:
       case IRI_GEN::CallSite: return 0;
       case IRI_GEN::Apply: return 0;
       case IRI_GEN::ReturnAsync: return 0;
-      case IRI_GEN::BB: return 7;
+      case IRI_GEN::BB: return 8;
       case IRI_GEN::Return: return 0;
       case IRI_GEN::UnresolvedReturn: return 0;
       case IRI_GEN::IfJump: return 2;
@@ -227,6 +227,7 @@ public:
         case IRI_GEN::TryBB: return 4;
         case IRI_GEN::ScopeIDX: return 5;
         case IRI_GEN::IDX: return 6;
+        case IRI_GEN::EXCIDX: return 7;
           default: return -1;
         }
         break;
@@ -699,6 +700,7 @@ public:
         case IRI_GEN::TryBB: return FT_VOID;
         case IRI_GEN::ScopeIDX: return FT_INT32;
         case IRI_GEN::IDX: return FT_UINT32;
+        case IRI_GEN::EXCIDX: return FT_UINT32;
           default: return FT_NONE;
         }
         break;
@@ -1169,6 +1171,7 @@ public:
         case 4: return IRI_GEN::TryBB;
         case 5: return IRI_GEN::ScopeIDX;
         case 6: return IRI_GEN::IDX;
+        case 7: return IRI_GEN::EXCIDX;
           default: throw std::runtime_error("Invalid flag index");
         }
         break;

@@ -1,4 +1,4 @@
-// Generated: 2026-11-25 13:41:12
+// Generated: 2026-11-25 18:02:13
 #pragma once
 #include <string>
 
@@ -265,6 +265,7 @@ namespace IRI_GEN {
     TryBB,
     ScopeIDX,
     IDX,
+    EXCIDX,
     NOT,
     TRUE,
     FALSE,
@@ -347,6 +348,7 @@ namespace IRI_GEN {
       case TryBB: return "TryBB";
       case ScopeIDX: return "ScopeIDX";
       case IDX: return "IDX";
+      case EXCIDX: return "EXCIDX";
       case NOT: return "NOT";
       case TRUE: return "TRUE";
       case FALSE: return "FALSE";

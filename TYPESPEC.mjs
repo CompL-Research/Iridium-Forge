@@ -165,7 +165,7 @@ export default [
       bool: [],
       double: [],
       int32: ["ScopeIDX"],
-      uint32: ["IDX"],
+      uint32: ["IDX", "EXCIDX"],
     },
   },
   {
