@@ -16,7 +16,7 @@ namespace IRI_STRUCTURAL {
 struct DCEPass {
   bool run(IRICFG& cfg, AnalysisManager& am) {
     bool changed = false;
-    BBContainerSupport bbc(cfg.id, cfg.ctx);
+    BBContainerSupport bbc(cfg.container, cfg.ctx);
 
     // Query the LivenessAnalysis result (triggers LivenessAnalysis if not cached)
     const LivenessAnalysisResult& livenessResult = am.getResult<LivenessAnalysis>(cfg);
@@ -25,34 +25,29 @@ struct DCEPass {
     LivenessTransfer transfer(bbc.hasSTRICT());
 
     // Perform transformation logic using the liveness facts
-    for (const auto &bb : cfg.bbs) {
-      // Start with the exit state of the basic block (post-statement state)
-      LivenessState state = livenessResult.getBlockExitState(bb->IDX);
+    for (BBIDX h = 0; h < cfg.numBBs(); h++) {
+      const IRIBB &bb = cfg.at(h);
 
-      // Collect all statements in this basic block
-      std::vector<IRIStatement*> stmts;
-      for (IRIStatement* s = bb->head; s != nullptr; s = s->next) {
-        stmts.push_back(s);
-      }
+      // Start with the exit state of the basic block (post-statement state)
+      LivenessState state = livenessResult.getBlockExitState(h);
+      BBIDX handler = cfg.exceptionOf(h);
 
       // Sound exceptional control flow propagation helper.
       // Since statements can throw and branch directly to the exception handler
       // block, the liveness facts of the catch block must merge back immediately
       // before executing any potentially throwing statement.
       auto handleException = [&](LivenessState& stateBefore) {
-        if (bb->EXCEPTION > -1) {
-          stateBefore = stateBefore.joinWith(livenessResult.getBlockEntryState(bb->EXCEPTION));
+        if (handler != NO_BB) {
+          stateBefore = stateBefore.joinWith(livenessResult.getBlockEntryState(handler));
         }
       };
 
-      // Process the terminal statement (bb->tail) first in backward order
-      if (bb->tail) {
-        IRIStatement* s = bb->tail;
-        auto stmtID = s->id;
-        auto stmtTag = IRI_NODE(ctx, stmtID).tag;
+      // Process the terminal statement first in backward order
+      if (bb.terminal != NO_IRID) {
+        IRID stmtID = bb.terminal;
 
         // Compute the state immediately before the terminal statement
-        LivenessState stateBefore = transfer.transferStatement(*s, state);
+        LivenessState stateBefore = transfer.transferStatement(ctx, stmtID, state);
         handleException(stateBefore);
 
         // TODO: Check if the terminal statement is dead code (placeholder)
@@ -60,14 +55,16 @@ struct DCEPass {
         state = stateBefore;
       }
 
-      // Sweep non-terminal statements backward (from tail to head)
-      for (auto it = stmts.rbegin(); it != stmts.rend(); ++it) {
-        IRIStatement* s = *it;
-        auto stmtID = s->id;
+      // Sweep non-terminal statements backward. The sweep reads the block's
+      // statement list while the edits queue in the editor, so removing the
+      // visited statement does not disturb the iteration.
+      BBEditor ed(cfg, h);
+      for (auto it = bb.stmts.rbegin(); it != bb.stmts.rend(); ++it) {
+        IRID stmtID = *it;
         auto stmtTag = IRI_NODE(ctx, stmtID).tag;
 
         // Compute the state immediately before this statement
-        LivenessState stateBefore = transfer.transferStatement(*s, state);
+        LivenessState stateBefore = transfer.transferStatement(ctx, stmtID, state);
         handleException(stateBefore);
 
         bool removed = false;
@@ -86,13 +83,10 @@ struct DCEPass {
               auto rval = lw.getArg_RVal();
               bool safeToDelete = IRI_GEN::get_meta(IRI_NODE(ctx, rval).tag) == IRI_GEN::RVAL;
               if (safeToDelete) {
-                bb->remove(s);
+                ed.erase(stmtID);
                 removed = true;
-                changed = true;
               } else {
-                IRIStatement* newStmt = new IRIStatement(rval, bb.get());
-                bb->replace(s, newStmt);
-                changed = true;
+                ed.replace(stmtID, rval);
                 // Note: removed is left as false here so that the active liveness state
                 // naturally falls through and updates to stateBefore, which correctly
                 // contains the gen set of the reduced RHS expression.
@@ -106,12 +100,11 @@ struct DCEPass {
           state = stateBefore;
         }
       }
+      changed |= ed.changed();
     }
 
-    // Since a transformation pass modifies the IR/CFG, invalidate all cached analysis results
-    am.invalidateAll();
     if (changed)
-      cfg.markDirty();
+      am.invalidate(cfg);
     return changed;
   }
 };

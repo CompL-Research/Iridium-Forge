@@ -220,20 +220,19 @@ public:
 // ============================================================================
 class ConstantsAtStmtTransfer : public TransferFunction<CASState> {
 public:
-  CASState transferStatement(const IRIStatement &stmt,
+  CASState transferStatement(IRIContext &ctx, IRID stmt,
                              const CASState &incomingState) override {
     if (incomingState.isUnreachable()) {
       return CASState::bottom();
     }
 
     CASState nextState = incomingState;
-    auto &ctx = stmt.bb->ctx;
-    auto tag = IRI_NODE(ctx, stmt.id).tag;
+    auto tag = IRI_NODE(ctx, stmt).tag;
 
     if (tag == IRI_GEN::LWrite) {
-      nextState = processWrite(stmt.id, nextState, ctx);
+      nextState = processWrite(stmt, nextState, ctx);
     } else if (tag == IRI_GEN::CompoundAssn) {
-      auto args = ctx.storage.nodes.get_args(stmt.id);
+      auto args = ctx.storage.nodes.get_args(stmt);
       assert(args.size() > 1);
       for (size_t i = 1; i < args.size(); i++) {
         IRID currWriteID = args[i];
@@ -316,20 +315,19 @@ public:
 
   std::string getAnalysisName() const override { return "ConstantsAtStmt"; }
 
-  void dumpStateAtStatement(const IRIStatement &stmt,
-                            IRI_STORAGE::IRIContext &ctx,
+  void dumpStateAtStatement(const IRICFG &cfg, BBIDX block, IRID stmt,
                             std::ostream &os) const override {
-    CASState state = queryStateAtStatement(stmt);
-    state.dump(ctx, os);
+    CASState state = queryStateAtStatement(block, stmt);
+    state.dump(cfg.ctx, os);
   }
 
-  void dumpBlockEntryState(BBIDX block, IRI_STORAGE::IRIContext &ctx,
+  void dumpBlockEntryState(const IRICFG &cfg, BBIDX block,
                            std::ostream &os) const override {
     const CASState &state = getBlockEntryState(block);
-    state.dump(ctx, os);
+    state.dump(cfg.ctx, os);
   }
 
-  void dumpBlockExitState(BBIDX block, IRI_STORAGE::IRIContext &ctx,
+  void dumpBlockExitState(const IRICFG &, BBIDX,
                           std::ostream &os) const override {
     os << "<ExitStateNotTracked>";
   }
@@ -338,8 +336,8 @@ public:
     return solver->getBlockEntryState(block);
   }
 
-  CASState queryStateAtStatement(const IRIStatement &stmt) const {
-    return solver->queryStateAtStatement(stmt);
+  CASState queryStateAtStatement(BBIDX block, IRID stmt) const {
+    return solver->queryStateAtStatement(block, stmt);
   }
 };
 
@@ -352,7 +350,7 @@ struct ConstantsAtStmt {
     auto solver = std::make_shared<DataflowSolver<CASState>>(cfg, *transfer);
 
     // Initial State
-    double headScope = cfg.get_bb(cfg.entry_block)->SCOPE;
+    SCPIDX headScope = cfg.at(cfg.entry).SCOPE;
     auto bindings = cfg.ctx.iris->getEnvBindingsInClosure(headScope);
     CASState entryState = CASState::reachableEmpty();
     auto &iris = cfg.ctx.iris;
@@ -367,7 +365,7 @@ struct ConstantsAtStmt {
                                                    : CASLattice::top());
     }
 
-    solver->run(entryState, /*includeExceptions=*/true);
+    solver->run(entryState);
 
     return ConstantsAtStmtResult(std::move(transfer), std::move(solver));
   }

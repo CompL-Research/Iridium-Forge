@@ -100,15 +100,14 @@ public:
     return true;
   }
 
-  EffectAtStmtState transferStatement(const IRIStatement &stmt,
+  EffectAtStmtState transferStatement(IRIContext &ctx, IRID stmt,
                                       const EffectAtStmtState &incomingState) override {
     if (incomingState.isUnreachable()) {
       return EffectAtStmtState::bottom();
     }
 
     EffectAtStmtState nextState = incomingState;
-    auto &ctx = stmt.bb->ctx;
-    auto tag = IRI_NODE(ctx, stmt.id).tag;
+    auto tag = IRI_NODE(ctx, stmt).tag;
 
     // Recursive helper to check for side-effecting sub-expressions
     auto hasSideEffect = [&](auto &self, IRID node) -> bool {
@@ -181,7 +180,7 @@ public:
     };
 
     if (tag == IRI_GEN::LWrite) {
-      IRI_GEN::LWriteSEXP lw(stmt.id, ctx);
+      IRI_GEN::LWriteSEXP lw(stmt, ctx);
       auto LVAL = lw.getArg_LValTarget();
       auto rval = lw.getArg_RVal();
 
@@ -202,7 +201,7 @@ public:
         }
 
         // 3. AnyReadsOrWritesToCapturedVariables
-        if (hasCapturedAccess(hasCapturedAccess, stmt.id)) {
+        if (hasCapturedAccess(hasCapturedAccess, stmt)) {
           kill = true;
         }
 
@@ -216,11 +215,14 @@ public:
         }
       }
 
-      // Overwrite/Update state after the kill checks so we don't kill ourselves immediately.
-      // Only track effect-free writes: if RVal has side effects, don't mark as valid.
+      // This has slowly become a mess, will need to rethink SLOPPYCONST at somepoint...
+      bool ignoredStore = !lw.hasINIT() &&
+                          IRI_NODE(ctx, LVAL).tag == IRI_GEN::EnvBinding &&
+                          IRI_GEN::EnvBindingSEXP(LVAL, ctx).hasSLOPPYCONST();
       if (IRI_NODE(ctx, LVAL).tag == IRI_GEN::EnvBinding && !IRI_BINDING(ctx.iris, LVAL).isCaptured() &&
           !hasSideEffect(hasSideEffect, rval)) {
-        nextState = EffectAtStmtState(false, true, LVAL, rval, stmt.id);
+        if (!ignoredStore)
+          nextState = EffectAtStmtState(false, true, LVAL, rval, stmt);
       } else {
         // Any write to a global, remote, or captured variable kills the currently tracked effect
         nextState = EffectAtStmtState::reachableEmpty();
@@ -229,13 +231,13 @@ public:
       // Non-LWrite statement
       if (nextState.validEffect) {
         bool kill = false;
-        if (containsNode(containsNode, stmt.id, nextState.store)) {
+        if (containsNode(containsNode, stmt, nextState.store)) {
           kill = true;
         }
-        if (hasSideEffect(hasSideEffect, stmt.id)) {
+        if (hasSideEffect(hasSideEffect, stmt)) {
           kill = true;
         }
-        if (hasCapturedAccess(hasCapturedAccess, stmt.id)) {
+        if (hasCapturedAccess(hasCapturedAccess, stmt)) {
           kill = true;
         }
         if (kill) {
@@ -269,20 +271,19 @@ public:
 
   std::string getAnalysisName() const override { return "EffectAtStmt"; }
 
-  void dumpStateAtStatement(const IRIStatement &stmt,
-                            IRI_STORAGE::IRIContext &ctx,
+  void dumpStateAtStatement(const IRICFG &cfg, BBIDX block, IRID stmt,
                             std::ostream &os) const override {
-    EffectAtStmtState state = queryStateAtStatement(stmt);
-    state.dump(ctx, os);
+    EffectAtStmtState state = queryStateAtStatement(block, stmt);
+    state.dump(cfg.ctx, os);
   }
 
-  void dumpBlockEntryState(BBIDX block, IRI_STORAGE::IRIContext &ctx,
+  void dumpBlockEntryState(const IRICFG &cfg, BBIDX block,
                            std::ostream &os) const override {
     const EffectAtStmtState &state = getBlockEntryState(block);
-    state.dump(ctx, os);
+    state.dump(cfg.ctx, os);
   }
 
-  void dumpBlockExitState(BBIDX block, IRI_STORAGE::IRIContext &ctx,
+  void dumpBlockExitState(const IRICFG &, BBIDX,
                           std::ostream &os) const override {
     os << "<ExitStateNotTracked>";
   }
@@ -291,8 +292,8 @@ public:
     return solver->getBlockEntryState(block);
   }
 
-  EffectAtStmtState queryStateAtStatement(const IRIStatement &stmt) const {
-    return solver->queryStateAtStatement(stmt);
+  EffectAtStmtState queryStateAtStatement(BBIDX block, IRID stmt) const {
+    return solver->queryStateAtStatement(block, stmt);
   }
 };
 
@@ -309,7 +310,7 @@ struct EffectAtStmtAnalysis {
 
     EffectAtStmtState entryState = EffectAtStmtState::reachableEmpty();
 
-    solver->run(entryState, /*includeExceptions=*/true);
+    solver->run(entryState);
 
     return EffectAtStmtResult(std::move(transfer), std::move(solver));
   }

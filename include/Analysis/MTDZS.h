@@ -13,7 +13,7 @@ namespace IRI_STRUCTURAL {
 struct MTDZSPass {
   bool run(IRICFG& cfg, AnalysisManager& am) {
     bool changed = false;
-    BBContainerSupport bbc(cfg.id, cfg.ctx);
+    BBContainerSupport bbc(cfg.container, cfg.ctx);
 
     // Query the TDZAnalysis result (this triggers TDZAnalysis if not cached)
     const TDZAnalysisResult& tdzResult = am.getResult<TDZAnalysis>(cfg);
@@ -23,17 +23,19 @@ struct MTDZSPass {
     TDZATransfer transfer;
 
     // Perform transformation logic using the analysis facts
-    for (const auto &bb : cfg.bbs) {
-      TDZState state = tdzResult.getBlockEntryState(bb->IDX);
-      IRIStatement* s = bb->head;
-      while (s != nullptr) {
-        IRIStatement* nextStmt = s->next;
-        auto stmtID = s->id;
+    for (BBIDX h = 0; h < cfg.numBBs(); h++) {
+      TDZState state = tdzResult.getBlockEntryState(h);
+
+      // Edits queue in the editor, so the block's statement vector never moves
+      // while this sweep runs and erasing the visited statement is safe.
+      BBEditor ed(cfg, h);
+
+      for (IRID stmtID : cfg.at(h).stmts) {
         auto stmtTag = IRI_NODE(ctx, stmtID).tag;
         bool removed = false;
 
-        // Compute the next state before we potentially modify/delete s
-        TDZState nextState = transfer.transferStatement(*s, state);
+        // Compute the next state before we potentially modify/delete stmtID
+        TDZState nextState = transfer.transferStatement(ctx, stmtID, state);
 
         if (stmtTag == IRI_GEN::LWrite) {
           IRI_GEN::LWriteSEXP lw(stmtID, ctx);
@@ -54,9 +56,8 @@ struct MTDZSPass {
 
           if (willRemove) {
             // Remove this instruction
-            bb->remove(s);
+            ed.erase(stmtID);
             removed = true;
-            changed = true;
           }
         }
 
@@ -80,14 +81,13 @@ struct MTDZSPass {
         }
 
         state = nextState;
-        s = nextStmt;
       }
+
+      changed |= ed.changed();
     }
 
-    // Since a transformation pass modifies the IR/CFG, invalidate all cached analysis results
-    am.invalidateAll();
     if (changed)
-      cfg.markDirty();
+      am.invalidate(cfg);
     return changed;
   }
 };

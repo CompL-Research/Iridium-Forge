@@ -89,29 +89,26 @@ struct ReduceComputedFieldOpsPass {
     return node;
   }
 
-  bool run(IRICFG &cfg, AnalysisManager &) {
+  bool run(IRICFG &cfg, AnalysisManager &am) {
     auto &ctx = cfg.ctx;
     bool changed = false;
 
-    for (const auto &bb : cfg.bbs) {
-      for (IRIStatement *s = bb->head; s != nullptr; s = s->next) {
-        IRID next = reduce(ctx, s->id, changed);
-        if (next != s->id) {
-          s->id = next;
-          changed = true;
-        }
+    for (BBIDX h = 0; h < cfg.numBBs(); h++) {
+      BBEditor ed(cfg, h);
+      for (IRID stmtID : cfg.at(h).stmts) {
+        IRID next = reduce(ctx, stmtID, changed);
+        if (next != stmtID)
+          ed.replace(stmtID, next);
       }
-      if (bb->tail) {
-        IRID next = reduce(ctx, bb->tail->id, changed);
-        if (next != bb->tail->id) {
-          bb->tail->id = next;
-          changed = true;
-        }
-      }
+      IRID terminal = cfg.at(h).terminal;
+      IRID next = reduce(ctx, terminal, changed);
+      if (next != terminal)
+        ed.setTerminal(next);
+      changed |= ed.changed();
     }
 
     if (changed)
-      cfg.markDirty();
+      am.invalidate(cfg);
     return changed;
   }
 };

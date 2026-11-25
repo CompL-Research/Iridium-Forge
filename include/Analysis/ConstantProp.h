@@ -15,26 +15,22 @@ namespace IRI_STRUCTURAL {
 struct ConstantPropPass {
   bool run(IRICFG& cfg, AnalysisManager& am) {
     bool changed = false;
-    BBContainerSupport bbc(cfg.id, cfg.ctx);
+    BBContainerSupport bbc(cfg.container, cfg.ctx);
 
-    // Query the ConstantsAtStmt analysis result
+    // 1. Get ConstantsAtStmt
     const ConstantsAtStmtResult& casResult = am.getResult<ConstantsAtStmt>(cfg);
 
-    auto &ctx = cfg.ctx;
-
     ConstantsAtStmtTransfer transfer;
-
     // Perform transformation logic using the analysis facts
-    for (const auto &bb : cfg.bbs) {
-      CASState state = casResult.getBlockEntryState(bb->IDX);
-      IRIStatement* s = bb->head;
-      while (s != nullptr) {
-        IRIStatement* nextStmt = s->next;
-        auto stmtID = s->id;
-        auto stmtTag = IRI_NODE(ctx, stmtID).tag;
+    for (BBIDX h = 0; h < cfg.numBBs(); h++) {
+      CASState state = casResult.getBlockEntryState(h);
+      // Only expression trees are rewritten, never the statement list, so no
+      // BBEditor is needed.
+      for (IRID stmtID : cfg.at(h).stmts) {
+        auto stmtTag = IRI_NODE(cfg.ctx, stmtID).tag;
 
-        // Compute the next state before we potentially modify s
-        CASState nextState = transfer.transferStatement(*s, state);
+        // Compute the next state before we potentially modify stmtID
+        CASState nextState = transfer.transferStatement(cfg.ctx, stmtID, state);
 
         // If the statement itself is a standalone EnvRead, replace it
         if (stmtTag == IRI_GEN::EnvRead) {
@@ -42,18 +38,15 @@ struct ConstantPropPass {
           // Do nothing here
         } else {
           // Recursively find and replace EnvReads with constants in the statement's expression tree
-          changed |= propagateConstants(stmtID, state, ctx);
+          changed |= propagateConstants(stmtID, state, cfg.ctx);
         }
 
         state = nextState;
-        s = nextStmt;
       }
     }
 
-    // Since a transformation pass modifies the IR/CFG, invalidate all cached analysis results
-    am.invalidateAll();
     if (changed)
-      cfg.markDirty();
+      am.invalidate(cfg);
     return changed;
   }
 

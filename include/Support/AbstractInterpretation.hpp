@@ -86,7 +86,7 @@ public:
 
   // Process a single statement. Takes the statement and its incoming merged
   // state.
-  virtual State transferStatement(const IRIStatement &stmt,
+  virtual State transferStatement(IRIContext &ctx, IRID stmt,
                                   const State &incomingState) = 0;
 
   // Optional edge transfer logic (e.g., conditional jump refinements)
@@ -109,16 +109,15 @@ public:
   DataflowSolver(const IRICFG &cfg, TransferFunction<State> &tf)
       : cfg(cfg), transferFn(tf) {}
 
-  // Run the worklist solver to fixed-point convergence
-  void run(State entryState, bool includeExceptions = false) {
+  void run(State entryState, EdgeMask mask = EDGE_ALL) {
     // 1. Get Reverse Post-Order for fastest fixed-point convergence
-    std::vector<BBIDX> rpo = cfg.getReversePostOrder(includeExceptions);
+    std::vector<BBIDX> rpo = cfg.reversePostOrder(mask);
 
     // 2. Initialize block entry states to State::bottom()
     for (BBIDX block : rpo) {
       blockEntryStates[block] = State::bottom();
     }
-    blockEntryStates[cfg.entry_block] = entryState;
+    blockEntryStates[cfg.entry] = entryState;
 
     std::queue<BBIDX> worklist;
     std::unordered_set<BBIDX> inWorklist;
@@ -148,11 +147,13 @@ public:
       worklist.pop();
       inWorklist.erase(currIdx);
 
-      const auto *bb = cfg.get_bb(currIdx);
+      const IRIBB &bb = cfg.at(currIdx);
       State currState = blockEntryStates[currIdx];
-      BBIDX exceptionTarget = bb->EXCEPTION;
+      BBIDX exceptionTarget = cfg.exceptionOf(currIdx);
 
       bool exceptionPropagatedForCurrentState = false;
+
+      // Helper to propagate state to the exception handler
       auto handleException = [&](const State &stateBefore) {
         if (exceptionTarget != NO_BB && !exceptionPropagatedForCurrentState) {
           propagateState(exceptionTarget, stateBefore);
@@ -161,8 +162,9 @@ public:
       };
 
       // Helper to transfer a statement
-      auto runTransfer = [&](IRIStatement *s) {
-        State nextState = transferFn.transferStatement(*s, currState);
+      auto runTransfer = [&](IRID stmtID) {
+        State nextState =
+            transferFn.transferStatement(cfg.ctx, stmtID, currState);
         if (!(nextState == currState)) {
           currState = std::move(nextState);
           exceptionPropagatedForCurrentState = false;
@@ -170,22 +172,23 @@ public:
       };
 
       // Transfer through non-terminal statements
-      for (IRIStatement *s = bb->head; s != nullptr; s = s->next) {
+      for (IRID stmtID : bb.stmts) {
         handleException(currState);
-        runTransfer(s);
+        runTransfer(stmtID);
       }
 
       // Transfer through terminal statement
-      if (bb->tail) {
+      if (bb.terminal != NO_IRID) {
         handleException(currState);
-        runTransfer(bb->tail);
+        runTransfer(bb.terminal);
       }
 
-      // Propagate exit state to normal successors
-      for (BBIDX succ : cfg.successorsOf(currIdx)) {
-        State edgeState = transferFn.transferEdge(currIdx, succ, currState);
-        propagateState(succ, edgeState);
-      }
+      // new CFG edges
+      for (Edge e : bb.succs)
+        if (EDGE_FLOW & edgeMask(e.kind)) {
+          State edgeState = transferFn.transferEdge(currIdx, e.to, currState);
+          propagateState(e.to, edgeState);
+        }
     }
   }
 
@@ -201,13 +204,14 @@ public:
 
   // On-demand query: Computes and returns the state immediately before a
   // statement is executed
-  State queryStateAtStatement(const IRIStatement &stmt) {
-    BBIDX blockIdx = stmt.bb->IDX;
-    State state = getBlockEntryState(blockIdx);
+  State queryStateAtStatement(BBIDX block, IRID stmt) {
+    State state = getBlockEntryState(block);
 
-    const auto &bb = stmt.bb;
-    for (IRIStatement *s = bb->head; s != nullptr && s != &stmt; s = s->next) {
-      state = transferFn.transferStatement(*s, state);
+    const IRIBB &bb = cfg.at(block);
+    for (IRID stmtID : bb.stmts) {
+      if (stmtID == stmt)
+        break;
+      state = transferFn.transferStatement(cfg.ctx, stmtID, state);
     }
     return state;
   }
@@ -220,6 +224,8 @@ public:
 // with the added benefit of picking the starting BB (needed when working with
 // closures that can be continued later). Also returns a list of continuations
 //
+// WIP: will be deprecated soon
+#if 0
 
 template <typename State> class ResumableDataflowState {
 public:
@@ -444,6 +450,8 @@ public:
   }
 };
 
+#endif
+
 // ============================================================================
 // 4. Backward Worklist Dataflow Solver
 // ============================================================================
@@ -460,11 +468,10 @@ public:
   BackwardDataflowSolver(const IRICFG &cfg, TransferFunction<State> &tf)
       : cfg(cfg), transferFn(tf) {}
 
-  // Run the worklist solver backward to fixed-point convergence
-  void run(State exitState, bool includeExceptions = false) {
+  void run(State exitState, EdgeMask mask = EDGE_ALL) {
     // 1. Get Reverse Post-Order and reverse it to get Post-Order (for backward
     // analysis)
-    std::vector<BBIDX> rpo = cfg.getReversePostOrder(includeExceptions);
+    std::vector<BBIDX> rpo = cfg.reversePostOrder(mask);
     std::vector<BBIDX> po = rpo;
     std::reverse(po.begin(), po.end());
 
@@ -474,22 +481,8 @@ public:
       blockExitStates[block] = State::bottom();
     }
 
-    // Build exceptional predecessors map
-    std::unordered_map<BBIDX, std::vector<BBIDX>> exceptionalPredecessors;
-    if (includeExceptions) {
-      for (const auto &bb : cfg.blocks()) {
-        if (bb->EXCEPTION != NO_BB) {
-          exceptionalPredecessors[bb->EXCEPTION].push_back(bb->IDX);
-        }
-      }
-    }
-
-    // Seed the exit state of exit blocks (blocks with no successors)
-    for (BBIDX block : po) {
-      if (cfg.successorsOf(block).empty()) {
-        blockExitStates[block] = exitState;
-      }
-    }
+    // EXIT is the only block with no successors, so it is the only seed.
+    blockExitStates[cfg.exit] = exitState;
 
     std::queue<BBIDX> worklist;
     std::unordered_set<BBIDX> inWorklist;
@@ -519,23 +512,26 @@ public:
       worklist.pop();
       inWorklist.erase(currIdx);
 
-      const auto *bb = cfg.get_bb(currIdx);
+      const IRIBB &bb = cfg.at(currIdx);
       State oldEntryState = blockEntryStates[currIdx];
       State currState = blockExitStates[currIdx];
+      BBIDX exceptionTarget = cfg.exceptionOf(currIdx);
 
       // Sound exceptional control flow propagation
       bool exceptionJoinedForCurrentState = false;
       auto handleException = [&](State &stateBefore) {
-        if (includeExceptions && bb->EXCEPTION != NO_BB &&
+        if ((mask & EDGE_EXCEPTION) && exceptionTarget != NO_BB &&
             !exceptionJoinedForCurrentState) {
-          stateBefore = stateBefore.joinWith(getBlockEntryState(bb->EXCEPTION));
+          stateBefore =
+              stateBefore.joinWith(getBlockEntryState(exceptionTarget));
           exceptionJoinedForCurrentState = true;
         }
       };
 
       // Transfer backward through terminal statement
-      if (bb->tail) {
-        State nextState = transferFn.transferStatement(*bb->tail, currState);
+      if (bb.terminal != NO_IRID) {
+        State nextState =
+            transferFn.transferStatement(cfg.ctx, bb.terminal, currState);
         if (!(nextState == currState)) {
           currState = std::move(nextState);
           exceptionJoinedForCurrentState = false;
@@ -544,13 +540,8 @@ public:
       }
 
       // Transfer backward through non-terminal statements in reverse order
-      // (tail to head)
-      std::vector<IRIStatement *> stmts;
-      for (IRIStatement *s = bb->head; s != nullptr; s = s->next) {
-        stmts.push_back(s);
-      }
-      for (auto it = stmts.rbegin(); it != stmts.rend(); ++it) {
-        State nextState = transferFn.transferStatement(**it, currState);
+      for (auto it = bb.stmts.rbegin(); it != bb.stmts.rend(); ++it) {
+        State nextState = transferFn.transferStatement(cfg.ctx, *it, currState);
         if (!(nextState == currState)) {
           currState = std::move(nextState);
           exceptionJoinedForCurrentState = false;
@@ -563,23 +554,19 @@ public:
       // If the entry state of this block changed, propagate changes to
       // predecessors
       if (!(currState == oldEntryState)) {
-        // 1. Normal predecessors
-        for (BBIDX pred : cfg.predecessorsOf(currIdx)) {
-          State edgeState = transferFn.transferEdge(currIdx, pred, currState);
-          propagateState(pred, edgeState);
-        }
-
-        // 2. Exceptional predecessors
-        if (includeExceptions) {
-          auto expIt = exceptionalPredecessors.find(currIdx);
-          if (expIt != exceptionalPredecessors.end()) {
-            for (BBIDX pred : expIt->second) {
-              if (!inWorklist.contains(pred)) {
-                worklist.push(pred);
-                inWorklist.insert(pred);
-              }
+        for (Edge e : bb.preds) {
+          if (e.kind == EdgeKind::Exception) {
+            // The state along a throw path was already merged by
+            // handleException above; the exceptional predecessor only needs to
+            // be re-run so that merge is seen.
+            if ((mask & EDGE_EXCEPTION) && !inWorklist.contains(e.to)) {
+              worklist.push(e.to);
+              inWorklist.insert(e.to);
             }
+            continue;
           }
+          State edgeState = transferFn.transferEdge(currIdx, e.to, currState);
+          propagateState(e.to, edgeState);
         }
       }
     }

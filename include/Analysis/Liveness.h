@@ -143,20 +143,19 @@ private:
 public:
   explicit LivenessTransfer(bool strict) : isStrict(strict) {}
 
-  LivenessState transferStatement(const IRIStatement &stmt,
+  LivenessState transferStatement(IRIContext &ctx, IRID stmt,
                                   const LivenessState &incomingState) override {
     if (incomingState.isUnreachable()) {
       return LivenessState::bottom();
     }
 
     LivenessState nextState = incomingState;
-    auto &ctx = stmt.bb->ctx;
     auto &iris = ctx.iris;
-    auto tag = IRI_NODE(ctx, stmt.id).tag;
+    auto tag = IRI_NODE(ctx, stmt).tag;
 
     // Kill (if not captured, and not a non-strict formal parameter)
     if (tag == IRI_GEN::LWrite) {
-      LWriteSEXP lw(stmt.id, ctx);
+      LWriteSEXP lw(stmt, ctx);
       auto target = lw.getArg_LValTarget();
       //
       // Deprecated -> ThisINITSEXP [RVAL], basically it takes two arguments (first is an EnvRead to 'this' and second is the new value for 'this') node makes this dependency explicit
@@ -202,7 +201,7 @@ public:
         self(self, child);
       }
     };
-    processNestedEnvReads(processNestedEnvReads, stmt.id);
+    processNestedEnvReads(processNestedEnvReads, stmt);
 
     return nextState;
   }
@@ -230,38 +229,35 @@ public:
 
   std::string getAnalysisName() const override { return "Liveness"; }
 
-  void dumpStateAtStatement(const IRIStatement &stmt,
-                            IRI_STORAGE::IRIContext &ctx,
+  void dumpStateAtStatement(const IRICFG &cfg, BBIDX block, IRID stmt,
                             std::ostream &os) const override {
-    LivenessState state = solver->getBlockExitState(stmt.bb->IDX);
-    if (stmt.bb->tail) {
-      state = transfer->transferStatement(*stmt.bb->tail, state);
+    const IRIBB &bb = cfg.at(block);
+    LivenessState state = solver->getBlockExitState(block);
+    if (bb.terminal != NO_IRID) {
+      state = transfer->transferStatement(cfg.ctx, bb.terminal, state);
     }
-    std::vector<IRIStatement *> stmts;
-    for (IRIStatement *s = stmt.bb->head; s != nullptr; s = s->next) {
-      stmts.push_back(s);
-    }
-    for (auto it = stmts.rbegin(); it != stmts.rend(); ++it) {
-      if (*it == &stmt) {
-        LivenessState stateBefore = transfer->transferStatement(**it, state);
-        stateBefore.dump(ctx, os);
+    for (auto it = bb.stmts.rbegin(); it != bb.stmts.rend(); ++it) {
+      if (*it == stmt) {
+        LivenessState stateBefore =
+            transfer->transferStatement(cfg.ctx, *it, state);
+        stateBefore.dump(cfg.ctx, os);
         return;
       }
-      state = transfer->transferStatement(**it, state);
+      state = transfer->transferStatement(cfg.ctx, *it, state);
     }
-    state.dump(ctx, os);
+    state.dump(cfg.ctx, os);
   }
 
-  void dumpBlockEntryState(BBIDX block, IRI_STORAGE::IRIContext &ctx,
+  void dumpBlockEntryState(const IRICFG &cfg, BBIDX block,
                            std::ostream &os) const override {
     const LivenessState &state = getBlockEntryState(block);
-    state.dump(ctx, os);
+    state.dump(cfg.ctx, os);
   }
 
-  void dumpBlockExitState(BBIDX block, IRI_STORAGE::IRIContext &ctx,
+  void dumpBlockExitState(const IRICFG &cfg, BBIDX block,
                           std::ostream &os) const override {
     const LivenessState &state = getBlockExitState(block);
-    state.dump(ctx, os);
+    state.dump(cfg.ctx, os);
   }
 
   const LivenessState &getBlockEntryState(BBIDX block) const {
@@ -280,7 +276,7 @@ struct LivenessAnalysis {
   LivenessAnalysisResult run(IRICFG &cfg, AnalysisManager &am) {
     auto &ctx = cfg.ctx;
     auto &iris = ctx.iris;
-    BBContainerSupport bbc(cfg.id, ctx);
+    BBContainerSupport bbc(cfg.container, ctx);
     bool strict = bbc.hasSTRICT();
 
     auto transfer = std::make_shared<LivenessTransfer>(strict);
@@ -288,7 +284,7 @@ struct LivenessAnalysis {
         std::make_shared<BackwardDataflowSolver<LivenessState>>(cfg, *transfer);
 
     // Initial State
-    double headScope = bbc.getScopeIDX();
+    SCPIDX headScope = bbc.getScopeIDX();
     auto bindings = iris->getEnvBindingsInClosure(headScope);
     LivenessState exitState = LivenessState::reachableEmpty();
     for (auto bID : bindings) {
@@ -303,13 +299,13 @@ struct LivenessAnalysis {
     }
 
 #if DEBUG_LIVENESS
-    BBContainerSupport bbc(cfg.id, cfg.ctx);
+    BBContainerSupport bbc(cfg.container, cfg.ctx);
     std::cout << "  [Liveness-Analysis] Starting backward solver run on CFG of "
                  "closure "
               << bbc.getStartBBIDX() << "\n";
 #endif
 
-    solver->run(exitState, /*includeExceptions=*/true);
+    solver->run(exitState);
 
     return LivenessAnalysisResult(std::move(transfer), std::move(solver));
   }

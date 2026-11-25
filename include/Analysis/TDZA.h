@@ -133,7 +133,7 @@ public:
 // ============================================================================
 class TDZATransfer : public TransferFunction<TDZState> {
 public:
-  TDZState transferStatement(const IRIStatement &stmt,
+  TDZState transferStatement(IRIContext &ctx, IRID stmt,
                              const TDZState &incomingState) override {
     if (incomingState.isUnreachable()) {
       return TDZState::bottom(); // Unreachable block state propagation
@@ -141,8 +141,7 @@ public:
 
     TDZState nextState = incomingState;
 
-    auto &ctx = stmt.bb->ctx;
-    auto tag = IRI_NODE(ctx, stmt.id).tag;
+    auto tag = IRI_NODE(ctx, stmt).tag;
     // Predicates can probably be much simpler,
     // by construction setting a value to NUBD will
     // be at scope boundaries anyway.
@@ -151,7 +150,7 @@ public:
     // because the check would need to pass for the following code to be valid
     // anyway.
     if (tag == IRI_GEN::LWrite) {
-      IRI_GEN::LWriteSEXP lw(stmt.id, ctx);
+      IRI_GEN::LWriteSEXP lw(stmt, ctx);
 
       auto rval = lw.getArg_RVal();
       auto lval = lw.getArg_LValTarget();
@@ -173,7 +172,7 @@ public:
       //   }
       // }
     } else if (tag == IRI_GEN::CompoundAssn) {
-      auto args = ctx.storage.nodes.get_args(stmt.id);
+      auto args = ctx.storage.nodes.get_args(stmt);
       assert(args.size() > 1);
       IRID rval = args[0];
       for (size_t i = 1; i < args.size(); i++) {
@@ -224,20 +223,19 @@ public:
 
   std::string getAnalysisName() const override { return "TDZ"; }
 
-  void dumpStateAtStatement(const IRIStatement &stmt,
-                            IRI_STORAGE::IRIContext &ctx,
+  void dumpStateAtStatement(const IRICFG &cfg, BBIDX block, IRID stmt,
                             std::ostream &os) const override {
-    TDZState state = queryStateAtStatement(stmt);
-    state.dump(ctx, os);
+    TDZState state = queryStateAtStatement(block, stmt);
+    state.dump(cfg.ctx, os);
   }
 
-  void dumpBlockEntryState(BBIDX block, IRI_STORAGE::IRIContext &ctx,
+  void dumpBlockEntryState(const IRICFG &cfg, BBIDX block,
                            std::ostream &os) const override {
     const TDZState &state = getBlockEntryState(block);
-    state.dump(ctx, os);
+    state.dump(cfg.ctx, os);
   }
 
-  void dumpBlockExitState(BBIDX block, IRI_STORAGE::IRIContext &ctx,
+  void dumpBlockExitState(const IRICFG &, BBIDX,
                           std::ostream &os) const override {
     os << "<ExitStateNotTracked>";
   }
@@ -246,8 +244,8 @@ public:
     return solver->getBlockEntryState(block);
   }
 
-  TDZState queryStateAtStatement(const IRIStatement &stmt) const {
-    return solver->queryStateAtStatement(stmt);
+  TDZState queryStateAtStatement(BBIDX block, IRID stmt) const {
+    return solver->queryStateAtStatement(block, stmt);
   }
 };
 
@@ -260,15 +258,15 @@ struct TDZAnalysis {
     auto solver = std::make_shared<DataflowSolver<TDZState>>(cfg, *transfer);
 
     // Initial State
-    double headScope = cfg.get_bb(cfg.entry_block)->SCOPE;
+    SCPIDX headScope = cfg.at(cfg.entry).SCOPE;
     auto bindings = cfg.ctx.iris->getEnvBindingsInClosure(headScope);
     TDZState entryState = TDZState::reachableEmpty();
     for (auto bID : bindings) {
       entryState = entryState.setLattice(bID, TDZLattice::top());
     }
 
-    // Run the solver to fixed-point, including exceptional edges for soundness
-    solver->run(entryState, /*includeExceptions=*/true);
+    // Run the solver to fixed-point, following exceptional edges for soundness
+    solver->run(entryState);
 
     return TDZAnalysisResult(std::move(transfer), std::move(solver));
   }

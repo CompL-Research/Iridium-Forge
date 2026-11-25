@@ -21,7 +21,7 @@ struct EffectPropPass {
 
     auto &ctx = cfg.ctx;
 
-    BBContainerSupport bbc(cfg.id, ctx);
+    BBContainerSupport bbc(cfg.container, ctx);
     bool strict = bbc.hasSTRICT();
     LivenessTransfer livenessTransfer(strict);
 
@@ -46,47 +46,48 @@ struct EffectPropPass {
     };
 
     // Perform optimization on each basic block
-    for (const auto &bb : cfg.bbs) {
-      std::vector<IRIStatement*> stmts;
-      for (IRIStatement *s = bb->head; s != nullptr; s = s->next) {
-        stmts.push_back(s);
-      }
-
-      // Build ID -> statement map for O(1) defStmt lookup
-      std::unordered_map<IRID, IRIStatement*> idToStmt;
-      idToStmt.reserve(stmts.size());
-      for (auto *s : stmts) idToStmt[s->id] = s;
+    for (BBIDX h = 0; h < cfg.numBBs(); h++) {
+      const IRIBB &bb = cfg.at(h);
+      const std::vector<IRID> &stmts = bb.stmts;
 
       // Pre-compute per-statement liveness from a single backward pass
-      // (eliminates O(n²) getLivenessAfterStatement re-traversals)
       std::vector<LivenessState> livenessAfter(stmts.size());
       {
-        LivenessState state = livenessResult.getBlockExitState(bb->IDX);
-        if (bb->tail && !(stmts.size() > 0 && stmts.back() == bb->tail))
-          state = livenessTransfer.transferStatement(*bb->tail, state);
+        BBIDX handler = cfg.exceptionOf(h);
+        auto handleException = [&](LivenessState &s) {
+          if (handler != NO_BB)
+            s = s.joinWith(livenessResult.getBlockEntryState(handler));
+        };
+
+        LivenessState state = livenessResult.getBlockExitState(h);
+        if (bb.terminal != NO_IRID) {
+          state = livenessTransfer.transferStatement(ctx, bb.terminal, state);
+          handleException(state);
+        }
         for (ssize_t i = static_cast<ssize_t>(stmts.size()) - 1; i >= 0; --i) {
           livenessAfter[i] = state;
-          state = livenessTransfer.transferStatement(**(stmts.begin() + static_cast<size_t>(i)), state);
+          state = livenessTransfer.transferStatement(ctx, stmts[i], state);
+          handleException(state);
         }
       }
 
       // Collect candidate indices upfront (skip if store liveness is TOP/unknown)
       std::vector<size_t> candidates;
       for (size_t i = 0; i < stmts.size(); ++i) {
-        auto es = effectResult.queryStateAtStatement(*stmts[i]);
+        auto es = effectResult.queryStateAtStatement(h, stmts[i]);
         if (!es.validEffect) continue;
         if (livenessAfter[i].getLattice(es.store).kind == LivenessLattice::TOP)
           continue; // unknown liveness → skip to avoid useless subtree walks
         candidates.push_back(i);
       }
 
-      std::set<IRIStatement*> toRemove;
+      std::set<IRID> toRemove;
 
       for (size_t ci : candidates) {
-        IRIStatement *s = stmts[ci];
-        if (toRemove.count(s) > 0) continue;
+        IRID stmtID = stmts[ci];
+        if (toRemove.contains(stmtID)) continue;
 
-        EffectAtStmtState state = effectResult.queryStateAtStatement(*s);
+        EffectAtStmtState state = effectResult.queryStateAtStatement(h, stmtID);
         IRID targetStore       = state.store;
         IRID replacementEffect = state.effect;
         IRID definitionStmtId  = state.stmt;
@@ -101,7 +102,7 @@ struct EffectPropPass {
         size_t occurrences = 0;
         {
           std::vector<IRID> worklist;
-          worklist.push_back(s->id);
+          worklist.push_back(stmtID);
           while (!worklist.empty()) {
             IRID cur = worklist.back();
             worklist.pop_back();
@@ -118,14 +119,15 @@ struct EffectPropPass {
         bool shouldInline = (occurrences == 1 && isDeadAfter) || isSafeReadOrConstant;
         if (!shouldInline) continue;
 
-        // O(1) defStmt lookup via hash map instead of linear scan
-        IRIStatement *defStmt = idToStmt.count(definitionStmtId) ? idToStmt[definitionStmtId] : nullptr;
+        // The definition is only removable if it is a statement of this block.
+        bool hasDef =
+            std::find(stmts.begin(), stmts.end(), definitionStmtId) != stmts.end();
 
         // Iterative tree walker to replace EnvRead(targetStore) with replacementEffect
         bool didPatch = false;
         {
           std::vector<std::pair<IRID, IRID>> path; // (parent, childToCheck)
-          path.push_back({ 0, s->id });
+          path.push_back({ 0, stmtID });
           while (!path.empty()) {
             auto [parent, cur] = path.back();
             path.pop_back();
@@ -151,20 +153,20 @@ struct EffectPropPass {
 
         if (didPatch) {
           changed = true;
-          if (isDeadAfter && defStmt) toRemove.insert(defStmt);
+          if (isDeadAfter && hasDef) toRemove.insert(definitionStmtId);
         }
       }
 
       // Remove the definitions of inlined effects
-      for (auto *defStmt : toRemove) {
-        bb->remove(defStmt);
+      BBEditor ed(cfg, h);
+      for (IRID defStmt : toRemove) {
+        ed.erase(defStmt);
       }
+      changed |= ed.changed();
     }
 
-    if (changed) {
-      am.invalidateAll();
-      cfg.markDirty();
-    }
+    if (changed)
+      am.invalidate(cfg);
     return changed;
   }
 };
