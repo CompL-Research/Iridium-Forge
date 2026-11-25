@@ -1,4 +1,4 @@
-// Generated: 2026-11-22 20:07:56
+// Generated: 2026-11-25 13:41:12
 #pragma once
 
 #include "Support/PTA/PTAContext.hpp"
@@ -24,6 +24,8 @@ void computeApplyVals(const PTAStatementContext &ptactx, IRID node,
                        std::set<Prakriti::NodeUID> &res_);
 void computeLambdaVals(const PTAStatementContext &ptactx, IRID node,
                        std::set<Prakriti::NodeUID> &res_);
+void computeLambdaRefVals(const PTAStatementContext &ptactx, IRID node,
+                       std::set<Prakriti::NodeUID> &res_);
 void computeEnvBindingVals(const PTAStatementContext &ptactx, IRID node,
                        std::set<Prakriti::NodeUID> &res_);
 void computeRemoteEnvBindingVals(const PTAStatementContext &ptactx, IRID node,
@@ -47,8 +49,6 @@ void computeJSThrowErrorVals(const PTAStatementContext &ptactx, IRID node,
 void computeJSHasPrivateVals(const PTAStatementContext &ptactx, IRID node,
                        std::set<Prakriti::NodeUID> &res_);
 void computeJSPrivateFieldReadVals(const PTAStatementContext &ptactx, IRID node,
-                       std::set<Prakriti::NodeUID> &res_);
-void computePoolBindingVals(const PTAStatementContext &ptactx, IRID node,
                        std::set<Prakriti::NodeUID> &res_);
 void computeJSForInStartVals(const PTAStatementContext &ptactx, IRID node,
                        std::set<Prakriti::NodeUID> &res_);

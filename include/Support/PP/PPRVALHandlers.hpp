@@ -1,4 +1,4 @@
-// Generated: 2026-11-22 20:07:56
+// Generated: 2026-11-25 13:41:12
 #pragma once
 
 #include "Support/PP/PPContext.hpp"
@@ -17,6 +17,7 @@ std::string printFieldReadRVal(const PPContext &pp, IRID node);
 std::string printCallSiteRVal(const PPContext &pp, IRID node);
 std::string printApplyRVal(const PPContext &pp, IRID node);
 std::string printLambdaRVal(const PPContext &pp, IRID node);
+std::string printLambdaRefRVal(const PPContext &pp, IRID node);
 std::string printEnvBindingRVal(const PPContext &pp, IRID node);
 std::string printRemoteEnvBindingRVal(const PPContext &pp, IRID node);
 std::string printGlobalBindingRVal(const PPContext &pp, IRID node);
@@ -29,7 +30,6 @@ std::string printJSCheckBrandRVal(const PPContext &pp, IRID node);
 std::string printJSThrowErrorRVal(const PPContext &pp, IRID node);
 std::string printJSHasPrivateRVal(const PPContext &pp, IRID node);
 std::string printJSPrivateFieldReadRVal(const PPContext &pp, IRID node);
-std::string printPoolBindingRVal(const PPContext &pp, IRID node);
 std::string printJSForInStartRVal(const PPContext &pp, IRID node);
 std::string printJSForInNextRVal(const PPContext &pp, IRID node);
 std::string printJSForOfNextRVal(const PPContext &pp, IRID node);

@@ -242,11 +242,23 @@ export default [
     meta: "RVAL",
     args: [],
     flags: {
+      string: [],
+      void: [],
+      bool: [],
+      double: [],
+      int32: ["ClosureScope"],
+      uint32: ["ClosIDX", "REFIDX"],
+    },
+  },
+  {
+    tag: "LambdaRef",
+    meta: "RVAL",
+    args: ["Lambda"],
+    flags: {
       string: ["NAME"],
       void: [],
       bool: ["CNAME", "SETNAME"],
       double: [],
-      uint32: ["StartBBIDX"],
     },
   },
   {
@@ -282,7 +294,7 @@ export default [
       bool: [],
       double: [],
       int32: ["ScopeIDX"],
-      uint32: ["ECMAArgs", "ContainerFlagID", "StartBBIDX"],
+      uint32: ["ECMAArgs", "ContainerFlagID", "StartBBIDX", "ClosIDX"],
     },
   },
   {
@@ -569,17 +581,6 @@ export default [
       void: [],
       bool: [],
       double: [],
-    },
-  },
-  {
-    tag: "PoolBinding",
-    meta: "RVAL",
-    args: ["Lambda"],
-    flags: {
-      string: [],
-      void: [],
-      bool: [],
-      uint32: ["REFIDX"],
     },
   },
   {

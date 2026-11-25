@@ -1,4 +1,4 @@
-// Generated: 2026-11-22 20:07:56
+// Generated: 2026-11-25 13:41:12
 #pragma once
 
 #include "Support/PP.hpp"
@@ -25,6 +25,8 @@ inline std::string ppRVal(const PPContext &pp, IRID node) {
       return printApplyRVal(pp, node);
     case IRI_GEN::IRI_TAG::Lambda:
       return printLambdaRVal(pp, node);
+    case IRI_GEN::IRI_TAG::LambdaRef:
+      return printLambdaRefRVal(pp, node);
     case IRI_GEN::IRI_TAG::EnvBinding:
       return printEnvBindingRVal(pp, node);
     case IRI_GEN::IRI_TAG::RemoteEnvBinding:
@@ -49,8 +51,6 @@ inline std::string ppRVal(const PPContext &pp, IRID node) {
       return printJSHasPrivateRVal(pp, node);
     case IRI_GEN::IRI_TAG::JSPrivateFieldRead:
       return printJSPrivateFieldReadRVal(pp, node);
-    case IRI_GEN::IRI_TAG::PoolBinding:
-      return printPoolBindingRVal(pp, node);
     case IRI_GEN::IRI_TAG::JSForInStart:
       return printJSForInStartRVal(pp, node);
     case IRI_GEN::IRI_TAG::JSForInNext:

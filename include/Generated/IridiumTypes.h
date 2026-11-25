@@ -1,4 +1,4 @@
-// Generated: 2026-11-24 15:04:43
+// Generated: 2026-11-25 13:41:12
 #pragma once
 #include "Storage/Config.h"
 #include "Storage/IridiumSEXP.h"
@@ -1070,17 +1070,16 @@ using IRI_STORAGE::FlagValue;
       }
     }
 
-    static IRID create(IRIContext& p, StringID NAME, bool CNAME, bool SETNAME, UIndex StartBBIDX) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::Lambda, {}, {FlagValue(NAME), FlagValue(CNAME), FlagValue(SETNAME), FlagValue(UInt32{StartBBIDX})});
+    static IRID create(IRIContext& p, int32_t ClosureScope, UIndex ClosIDX, UIndex REFIDX) {
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::Lambda, {}, {FlagValue(Int32{ClosureScope}), FlagValue(UInt32{ClosIDX}), FlagValue(UInt32{REFIDX})});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
-    static constexpr uint32_t TOTAL_FLAGS = 4;
+    static constexpr uint32_t TOTAL_FLAGS = 3;
 
-    static constexpr uint32_t FLAG_IDX_NAME = 0;
-    static constexpr uint32_t FLAG_IDX_CNAME = 1;
-    static constexpr uint32_t FLAG_IDX_SETNAME = 2;
-    static constexpr uint32_t FLAG_IDX_StartBBIDX = 3;
+    static constexpr uint32_t FLAG_IDX_ClosureScope = 0;
+    static constexpr uint32_t FLAG_IDX_ClosIDX = 1;
+    static constexpr uint32_t FLAG_IDX_REFIDX = 2;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
@@ -1092,6 +1091,57 @@ using IRI_STORAGE::FlagValue;
 
     // --- Arguments ---
 
+
+    // --- Flags ---
+    int32_t getClosureScope() const { return std::get<Int32>(get_flag(FLAG_IDX_ClosureScope)).v; }
+    void setClosureScope(int32_t val) { mutate_flag(FLAG_IDX_ClosureScope) = Int32{val}; }
+    bool hasClosureScope() const { return std::holds_alternative<Int32>(get_flag(FLAG_IDX_ClosureScope)); }
+    void clearClosureScope() { mutate_flag(FLAG_IDX_ClosureScope) = std::monostate{}; }
+
+    UIndex getClosIDX() const { return std::get<UInt32>(get_flag(FLAG_IDX_ClosIDX)).v; }
+    void setClosIDX(UIndex val) { mutate_flag(FLAG_IDX_ClosIDX) = UInt32{val}; }
+    bool hasClosIDX() const { return std::holds_alternative<UInt32>(get_flag(FLAG_IDX_ClosIDX)); }
+    void clearClosIDX() { mutate_flag(FLAG_IDX_ClosIDX) = std::monostate{}; }
+
+    UIndex getREFIDX() const { return std::get<UInt32>(get_flag(FLAG_IDX_REFIDX)).v; }
+    void setREFIDX(UIndex val) { mutate_flag(FLAG_IDX_REFIDX) = UInt32{val}; }
+    bool hasREFIDX() const { return std::holds_alternative<UInt32>(get_flag(FLAG_IDX_REFIDX)); }
+    void clearREFIDX() { mutate_flag(FLAG_IDX_REFIDX) = std::monostate{}; }
+  };
+
+  struct LambdaRefSEXP {
+    IRID id;
+    IRIContext* ctx;
+
+    explicit LambdaRefSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
+      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::LambdaRef) {
+        throw std::runtime_error("Schema Cast Error: Expected LambdaRef, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
+      }
+    }
+
+    static IRID create(IRIContext& p, IRID Lambda, StringID NAME, bool CNAME, bool SETNAME) {
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::LambdaRef, {Lambda}, {FlagValue(NAME), FlagValue(CNAME), FlagValue(SETNAME)});
+    }
+
+    static constexpr uint32_t TOTAL_ARGS = 1;
+    static constexpr uint32_t TOTAL_FLAGS = 3;
+
+    static constexpr uint32_t FLAG_IDX_NAME = 0;
+    static constexpr uint32_t FLAG_IDX_CNAME = 1;
+    static constexpr uint32_t FLAG_IDX_SETNAME = 2;
+
+    // --- Helpers ---
+    inline FlagValue& mutate_flag(uint32_t idx) {
+        return ctx->storage.nodes.get_flags_m(id)[idx];
+    }
+    inline const FlagValue& get_flag(uint32_t idx) const {
+        return ctx->storage.nodes.get_flags(id)[idx];
+    }
+
+    // --- Arguments ---
+    IRID getArg_Lambda() const { return ctx->storage.nodes.get_args(id)[0]; }
+    bool hasArg_Lambda() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
+    void setArg_Lambda(IRID val) { assert(hasArg_Lambda() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
 
     // --- Flags ---
     StringID getNAME() const { return std::get<StringID>(get_flag(FLAG_IDX_NAME)); }
@@ -1108,11 +1158,6 @@ using IRI_STORAGE::FlagValue;
     void setSETNAME(bool val) { mutate_flag(FLAG_IDX_SETNAME) = val; }
     bool hasSETNAME() const { return std::holds_alternative<bool>(get_flag(FLAG_IDX_SETNAME)); }
     void clearSETNAME() { mutate_flag(FLAG_IDX_SETNAME) = std::monostate{}; }
-
-    UIndex getStartBBIDX() const { return std::get<UInt32>(get_flag(FLAG_IDX_StartBBIDX)).v; }
-    void setStartBBIDX(UIndex val) { mutate_flag(FLAG_IDX_StartBBIDX) = UInt32{val}; }
-    bool hasStartBBIDX() const { return std::holds_alternative<UInt32>(get_flag(FLAG_IDX_StartBBIDX)); }
-    void clearStartBBIDX() { mutate_flag(FLAG_IDX_StartBBIDX) = std::monostate{}; }
   };
 
   struct NOPSEXP {
@@ -1159,12 +1204,12 @@ using IRI_STORAGE::FlagValue;
       }
     }
 
-    static IRID create(IRIContext& p, IRID Bindings, IRID BB, StringID NAME, StringID FUNCNAME, bool ARGUMENTS, bool ASYNC, bool STRICT, bool GENERATOR, bool PROTO, bool NEW, bool SCALL, bool SOBJ, bool HOME, bool DERIVED, bool TopLevel, int32_t ScopeIDX, UIndex ECMAArgs, UIndex ContainerFlagID, UIndex StartBBIDX) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::BBContainer, {Bindings, BB}, {FlagValue(NAME), FlagValue(FUNCNAME), ARGUMENTS ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), ASYNC ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), STRICT ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), GENERATOR ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), PROTO ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), NEW ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), SCALL ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), SOBJ ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), HOME ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), DERIVED ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), TopLevel ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), FlagValue(Int32{ScopeIDX}), FlagValue(UInt32{ECMAArgs}), FlagValue(UInt32{ContainerFlagID}), FlagValue(UInt32{StartBBIDX})});
+    static IRID create(IRIContext& p, IRID Bindings, IRID BB, StringID NAME, StringID FUNCNAME, bool ARGUMENTS, bool ASYNC, bool STRICT, bool GENERATOR, bool PROTO, bool NEW, bool SCALL, bool SOBJ, bool HOME, bool DERIVED, bool TopLevel, int32_t ScopeIDX, UIndex ECMAArgs, UIndex ContainerFlagID, UIndex StartBBIDX, UIndex ClosIDX) {
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::BBContainer, {Bindings, BB}, {FlagValue(NAME), FlagValue(FUNCNAME), ARGUMENTS ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), ASYNC ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), STRICT ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), GENERATOR ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), PROTO ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), NEW ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), SCALL ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), SOBJ ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), HOME ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), DERIVED ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), TopLevel ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), FlagValue(Int32{ScopeIDX}), FlagValue(UInt32{ECMAArgs}), FlagValue(UInt32{ContainerFlagID}), FlagValue(UInt32{StartBBIDX}), FlagValue(UInt32{ClosIDX})});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 2;
-    static constexpr uint32_t TOTAL_FLAGS = 17;
+    static constexpr uint32_t TOTAL_FLAGS = 18;
 
     static constexpr uint32_t FLAG_IDX_NAME = 0;
     static constexpr uint32_t FLAG_IDX_FUNCNAME = 1;
@@ -1183,6 +1228,7 @@ using IRI_STORAGE::FlagValue;
     static constexpr uint32_t FLAG_IDX_ECMAArgs = 14;
     static constexpr uint32_t FLAG_IDX_ContainerFlagID = 15;
     static constexpr uint32_t FLAG_IDX_StartBBIDX = 16;
+    static constexpr uint32_t FLAG_IDX_ClosIDX = 17;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
@@ -1275,6 +1321,11 @@ using IRI_STORAGE::FlagValue;
     void setStartBBIDX(UIndex val) { mutate_flag(FLAG_IDX_StartBBIDX) = UInt32{val}; }
     bool hasStartBBIDX() const { return std::holds_alternative<UInt32>(get_flag(FLAG_IDX_StartBBIDX)); }
     void clearStartBBIDX() { mutate_flag(FLAG_IDX_StartBBIDX) = std::monostate{}; }
+
+    UIndex getClosIDX() const { return std::get<UInt32>(get_flag(FLAG_IDX_ClosIDX)).v; }
+    void setClosIDX(UIndex val) { mutate_flag(FLAG_IDX_ClosIDX) = UInt32{val}; }
+    bool hasClosIDX() const { return std::holds_alternative<UInt32>(get_flag(FLAG_IDX_ClosIDX)); }
+    void clearClosIDX() { mutate_flag(FLAG_IDX_ClosIDX) = std::monostate{}; }
   };
 
   struct BindingsSEXP {
@@ -2441,45 +2492,6 @@ using IRI_STORAGE::FlagValue;
 
     // --- Flags ---
 
-  };
-
-  struct PoolBindingSEXP {
-    IRID id;
-    IRIContext* ctx;
-
-    explicit PoolBindingSEXP(IRID n, IRIContext& p) : id(n), ctx(&p) {
-      if (ctx->storage.nodes.get_node(n).tag != IRI_GEN::PoolBinding) {
-        throw std::runtime_error("Schema Cast Error: Expected PoolBinding, but got " + IRI_GEN::dump_tag(ctx->storage.nodes.get_node(n).tag));
-      }
-    }
-
-    static IRID create(IRIContext& p, IRID Lambda, UIndex REFIDX) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::PoolBinding, {Lambda}, {FlagValue(UInt32{REFIDX})});
-    }
-
-    static constexpr uint32_t TOTAL_ARGS = 1;
-    static constexpr uint32_t TOTAL_FLAGS = 1;
-
-    static constexpr uint32_t FLAG_IDX_REFIDX = 0;
-
-    // --- Helpers ---
-    inline FlagValue& mutate_flag(uint32_t idx) {
-        return ctx->storage.nodes.get_flags_m(id)[idx];
-    }
-    inline const FlagValue& get_flag(uint32_t idx) const {
-        return ctx->storage.nodes.get_flags(id)[idx];
-    }
-
-    // --- Arguments ---
-    IRID getArg_Lambda() const { return ctx->storage.nodes.get_args(id)[0]; }
-    bool hasArg_Lambda() const { return 0 < ctx->storage.nodes.get_args(id).size(); }
-    void setArg_Lambda(IRID val) { assert(hasArg_Lambda() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,0,val); }
-
-    // --- Flags ---
-    UIndex getREFIDX() const { return std::get<UInt32>(get_flag(FLAG_IDX_REFIDX)).v; }
-    void setREFIDX(UIndex val) { mutate_flag(FLAG_IDX_REFIDX) = UInt32{val}; }
-    bool hasREFIDX() const { return std::holds_alternative<UInt32>(get_flag(FLAG_IDX_REFIDX)); }
-    void clearREFIDX() { mutate_flag(FLAG_IDX_REFIDX) = std::monostate{}; }
   };
 
   struct ResolveContinueTargetSEXP {

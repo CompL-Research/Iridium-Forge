@@ -1,4 +1,4 @@
-// Generated: 2026-11-24 15:04:43
+// Generated: 2026-11-25 13:41:12
 #pragma once
 #include "IridiumEnums.h"
 #include <cstdint>
@@ -31,9 +31,10 @@ public:
       case IRI_GEN::IfElseJump: return 3;
       case IRI_GEN::Goto: return 2;
       case IRI_GEN::JSFuncDecl: return 6;
-      case IRI_GEN::Lambda: return 4;
+      case IRI_GEN::Lambda: return 3;
+      case IRI_GEN::LambdaRef: return 3;
       case IRI_GEN::NOP: return 0;
-      case IRI_GEN::BBContainer: return 17;
+      case IRI_GEN::BBContainer: return 18;
       case IRI_GEN::Bindings: return 0;
       case IRI_GEN::StarExport: return 1;
       case IRI_GEN::StaticImport: return 3;
@@ -58,7 +59,6 @@ public:
       case IRI_GEN::JSPrivateFieldWrite: return 0;
       case IRI_GEN::JSADDBRAND: return 0;
       case IRI_GEN::JSPrivateFieldRead: return 0;
-      case IRI_GEN::PoolBinding: return 1;
       case IRI_GEN::ResolveContinueTarget: return 1;
       case IRI_GEN::ResolveBreakTarget: return 1;
       case IRI_GEN::JSForOfIteratorClose: return 0;
@@ -265,10 +265,17 @@ public:
         break;
       case IRI_GEN::Lambda:
         switch(flag) {
+        case IRI_GEN::ClosureScope: return 0;
+        case IRI_GEN::ClosIDX: return 1;
+        case IRI_GEN::REFIDX: return 2;
+          default: return -1;
+        }
+        break;
+      case IRI_GEN::LambdaRef:
+        switch(flag) {
         case IRI_GEN::NAME: return 0;
         case IRI_GEN::CNAME: return 1;
         case IRI_GEN::SETNAME: return 2;
-        case IRI_GEN::StartBBIDX: return 3;
           default: return -1;
         }
         break;
@@ -291,6 +298,7 @@ public:
         case IRI_GEN::ECMAArgs: return 14;
         case IRI_GEN::ContainerFlagID: return 15;
         case IRI_GEN::StartBBIDX: return 16;
+        case IRI_GEN::ClosIDX: return 17;
           default: return -1;
         }
         break;
@@ -423,12 +431,6 @@ public:
       case IRI_GEN::JSThrowError:
         switch(flag) {
         case IRI_GEN::NAME: return 0;
-          default: return -1;
-        }
-        break;
-      case IRI_GEN::PoolBinding:
-        switch(flag) {
-        case IRI_GEN::REFIDX: return 0;
           default: return -1;
         }
         break;
@@ -735,10 +737,17 @@ public:
         break;
       case IRI_GEN::Lambda:
         switch(flag) {
+        case IRI_GEN::ClosureScope: return FT_INT32;
+        case IRI_GEN::ClosIDX: return FT_UINT32;
+        case IRI_GEN::REFIDX: return FT_UINT32;
+          default: return FT_NONE;
+        }
+        break;
+      case IRI_GEN::LambdaRef:
+        switch(flag) {
         case IRI_GEN::NAME: return FT_STRING;
         case IRI_GEN::CNAME: return FT_BOOL;
         case IRI_GEN::SETNAME: return FT_BOOL;
-        case IRI_GEN::StartBBIDX: return FT_UINT32;
           default: return FT_NONE;
         }
         break;
@@ -761,6 +770,7 @@ public:
         case IRI_GEN::ECMAArgs: return FT_UINT32;
         case IRI_GEN::ContainerFlagID: return FT_UINT32;
         case IRI_GEN::StartBBIDX: return FT_UINT32;
+        case IRI_GEN::ClosIDX: return FT_UINT32;
           default: return FT_NONE;
         }
         break;
@@ -893,12 +903,6 @@ public:
       case IRI_GEN::JSThrowError:
         switch(flag) {
         case IRI_GEN::NAME: return FT_STRING;
-          default: return FT_NONE;
-        }
-        break;
-      case IRI_GEN::PoolBinding:
-        switch(flag) {
-        case IRI_GEN::REFIDX: return FT_UINT32;
           default: return FT_NONE;
         }
         break;
@@ -1203,10 +1207,17 @@ public:
         break;
       case IRI_GEN::Lambda:
         switch(index) {
+        case 0: return IRI_GEN::ClosureScope;
+        case 1: return IRI_GEN::ClosIDX;
+        case 2: return IRI_GEN::REFIDX;
+          default: throw std::runtime_error("Invalid flag index");
+        }
+        break;
+      case IRI_GEN::LambdaRef:
+        switch(index) {
         case 0: return IRI_GEN::NAME;
         case 1: return IRI_GEN::CNAME;
         case 2: return IRI_GEN::SETNAME;
-        case 3: return IRI_GEN::StartBBIDX;
           default: throw std::runtime_error("Invalid flag index");
         }
         break;
@@ -1229,6 +1240,7 @@ public:
         case 14: return IRI_GEN::ECMAArgs;
         case 15: return IRI_GEN::ContainerFlagID;
         case 16: return IRI_GEN::StartBBIDX;
+        case 17: return IRI_GEN::ClosIDX;
           default: throw std::runtime_error("Invalid flag index");
         }
         break;
@@ -1361,12 +1373,6 @@ public:
       case IRI_GEN::JSThrowError:
         switch(index) {
         case 0: return IRI_GEN::NAME;
-          default: throw std::runtime_error("Invalid flag index");
-        }
-        break;
-      case IRI_GEN::PoolBinding:
-        switch(index) {
-        case 0: return IRI_GEN::REFIDX;
           default: throw std::runtime_error("Invalid flag index");
         }
         break;

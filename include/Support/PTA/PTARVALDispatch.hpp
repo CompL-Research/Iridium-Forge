@@ -1,4 +1,4 @@
-// Generated: 2026-11-22 20:07:56
+// Generated: 2026-11-25 13:41:12
 #pragma once
 
 #include "Support/PTA/PTAContext.hpp"
@@ -30,6 +30,8 @@ inline void resolvePKRRVal(const PTAStatementContext &ptactx, IRID node,
       return computeApplyVals(ptactx, node, res_);
     case IRI_GEN::IRI_TAG::Lambda:
       return computeLambdaVals(ptactx, node, res_);
+    case IRI_GEN::IRI_TAG::LambdaRef:
+      return computeLambdaRefVals(ptactx, node, res_);
     case IRI_GEN::IRI_TAG::EnvBinding:
       return computeEnvBindingVals(ptactx, node, res_);
     case IRI_GEN::IRI_TAG::RemoteEnvBinding:
@@ -54,8 +56,6 @@ inline void resolvePKRRVal(const PTAStatementContext &ptactx, IRID node,
       return computeJSHasPrivateVals(ptactx, node, res_);
     case IRI_GEN::IRI_TAG::JSPrivateFieldRead:
       return computeJSPrivateFieldReadVals(ptactx, node, res_);
-    case IRI_GEN::IRI_TAG::PoolBinding:
-      return computePoolBindingVals(ptactx, node, res_);
     case IRI_GEN::IRI_TAG::JSForInStart:
       return computeJSForInStartVals(ptactx, node, res_);
     case IRI_GEN::IRI_TAG::JSForInNext:

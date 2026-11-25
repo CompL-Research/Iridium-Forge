@@ -1,4 +1,4 @@
-// Generated: 2026-11-24 15:04:43
+// Generated: 2026-11-25 13:41:12
 #pragma once
 #include <string>
 
@@ -27,6 +27,7 @@ namespace IRI_GEN {
     Goto,
     JSFuncDecl,
     Lambda,
+    LambdaRef,
     NOP,
     BBContainer,
     Bindings,
@@ -53,7 +54,6 @@ namespace IRI_GEN {
     JSPrivateFieldWrite,
     JSADDBRAND,
     JSPrivateFieldRead,
-    PoolBinding,
     ResolveContinueTarget,
     ResolveBreakTarget,
     JSForOfIteratorClose,
@@ -145,6 +145,7 @@ namespace IRI_GEN {
       case Goto: return "Goto";
       case JSFuncDecl: return "JSFuncDecl";
       case Lambda: return "Lambda";
+      case LambdaRef: return "LambdaRef";
       case NOP: return "NOP";
       case BBContainer: return "BBContainer";
       case Bindings: return "Bindings";
@@ -171,7 +172,6 @@ namespace IRI_GEN {
       case JSPrivateFieldWrite: return "JSPrivateFieldWrite";
       case JSADDBRAND: return "JSADDBRAND";
       case JSPrivateFieldRead: return "JSPrivateFieldRead";
-      case PoolBinding: return "PoolBinding";
       case ResolveContinueTarget: return "ResolveContinueTarget";
       case ResolveBreakTarget: return "ResolveBreakTarget";
       case JSForOfIteratorClose: return "JSForOfIteratorClose";
@@ -269,9 +269,11 @@ namespace IRI_GEN {
     TRUE,
     FALSE,
     Deferred,
+    ClosureScope,
+    ClosIDX,
+    REFIDX,
     CNAME,
     SETNAME,
-    StartBBIDX,
     FUNCNAME,
     ARGUMENTS,
     ASYNC,
@@ -285,6 +287,7 @@ namespace IRI_GEN {
     DERIVED,
     ECMAArgs,
     ContainerFlagID,
+    StartBBIDX,
     MODULEREQIDX,
     FIELD,
     NSIMPORT,
@@ -301,7 +304,6 @@ namespace IRI_GEN {
     PRIVSET,
     PRIVGETSET,
     NEXT,
-    REFIDX,
     SCOPE,
     LINK,
     MODULE,
@@ -349,9 +351,11 @@ namespace IRI_GEN {
       case TRUE: return "TRUE";
       case FALSE: return "FALSE";
       case Deferred: return "Deferred";
+      case ClosureScope: return "ClosureScope";
+      case ClosIDX: return "ClosIDX";
+      case REFIDX: return "REFIDX";
       case CNAME: return "CNAME";
       case SETNAME: return "SETNAME";
-      case StartBBIDX: return "StartBBIDX";
       case FUNCNAME: return "FUNCNAME";
       case ARGUMENTS: return "ARGUMENTS";
       case ASYNC: return "ASYNC";
@@ -365,6 +369,7 @@ namespace IRI_GEN {
       case DERIVED: return "DERIVED";
       case ECMAArgs: return "ECMAArgs";
       case ContainerFlagID: return "ContainerFlagID";
+      case StartBBIDX: return "StartBBIDX";
       case MODULEREQIDX: return "MODULEREQIDX";
       case FIELD: return "FIELD";
       case NSIMPORT: return "NSIMPORT";
@@ -381,7 +386,6 @@ namespace IRI_GEN {
       case PRIVSET: return "PRIVSET";
       case PRIVGETSET: return "PRIVGETSET";
       case NEXT: return "NEXT";
-      case REFIDX: return "REFIDX";
       case SCOPE: return "SCOPE";
       case LINK: return "LINK";
       case MODULE: return "MODULE";
@@ -436,6 +440,7 @@ namespace IRI_GEN {
       case Goto: return IRI_META::STMT;
       case JSFuncDecl: return IRI_META::STAR_STMT;
       case Lambda: return IRI_META::RVAL;
+      case LambdaRef: return IRI_META::RVAL;
       case NOP: return IRI_META::STMT;
       case BBContainer: return IRI_META::UKN;
       case Bindings: return IRI_META::UKN;
@@ -462,7 +467,6 @@ namespace IRI_GEN {
       case JSPrivateFieldWrite: return IRI_META::STMT;
       case JSADDBRAND: return IRI_META::STMT;
       case JSPrivateFieldRead: return IRI_META::AMP;
-      case PoolBinding: return IRI_META::RVAL;
       case ResolveContinueTarget: return IRI_META::STAR_STMT;
       case ResolveBreakTarget: return IRI_META::STAR_STMT;
       case JSForOfIteratorClose: return IRI_META::STMT;

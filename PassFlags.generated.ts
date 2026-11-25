@@ -1,4 +1,4 @@
-/** Generated: 2026-11-22 20:07:56 */
+/** Generated: 2026-11-25 13:41:12 */
 
 export interface PassFlags {
   dumpForgePassesSEXP?: boolean; // Dump Forge Passes (Raw SEXP)
