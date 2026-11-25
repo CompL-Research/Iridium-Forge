@@ -8,6 +8,7 @@ using PoolOffset = uint32_t;
 using UIndex = uint32_t;
 
 using IRID = uint32_t;
+inline constexpr IRID NO_IRID = UINT32_MAX;
 
 // BBIDX -> unit32's
 // Scope -> int32's (-1 is used to check scope termination by IRIS)
