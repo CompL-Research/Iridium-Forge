@@ -12,6 +12,10 @@ namespace IRI_PARSE {
 class IridiumBuildContext;
 }
 
+namespace IRI_STRUCTURAL {
+class TryStructure;
+}
+
 namespace IRI_CORE_PASSES {
 
 using IRI_STORAGE::BBIDX;
@@ -87,7 +91,7 @@ void _20_REW(IRIContext &ctx, IRID fileSEXP,
              IRI_CONTEXTMAP &iridiumBuildContext);
 
 void _20_IFB(IRIContext &ctx, IRID fileSEXP, IRI_CONTEXTMAP &iridiumBuildContext,
-             CTARGETS &continueTargets);
+             CTARGETS &continueTargets, IRI_STRUCTURAL::TryStructure &tryInfo);
 
 void _21_TER(IRIContext &ctx, IRID fileSEXP,
              IRI_CONTEXTMAP &iridiumBuildContext);
