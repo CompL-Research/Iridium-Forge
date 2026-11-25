@@ -163,11 +163,11 @@ void ClosureTree::resolveClosureRefs() {
   };
 
   for (CIDX h = 0; h < (CIDX)nodes.size(); h++)
-    for (auto &bb : nodes[h].cfg->blocks()) {
-      for (IRIStatement *st = bb->head; st != nullptr; st = st->next)
-        patchNode(st->id, h);
-      if (bb->tail != nullptr)
-        patchNode(bb->tail->id, h);
+    for (BBIDX b = 0; b < nodes[h].cfg->numBBs(); b++) {
+      const IRIBB &bb = nodes[h].cfg->at(b);
+      for (IRID st : bb.stmts)
+        patchNode(st, h);
+      patchNode(bb.terminal, h);
     }
 
   for (CIDX h = 0; h < (CIDX)nodes.size(); h++) {
@@ -196,7 +196,8 @@ void ClosureTree::populateSlots(CIDX h) {
 
 void ClosureTree::commit() {
   for (CIDX h = 0; h < (CIDX)nodes.size(); h++) {
-    nodes[h].cfg->commit();
+    // Maybe experiment with more interesting orders later...
+    nodes[h].cfg->commit(nodes[h].cfg->reversePostOrder());
     populateSlots(h);
   }
 }

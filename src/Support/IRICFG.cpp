@@ -2,1020 +2,594 @@
 #include "Generated/IridiumEnums.h"
 #include "Generated/IridiumTypes.h"
 #include "Helpers.h"
-#include "Storage/Config.h"
 #include "Storage/IRIContext.h"
 #include "Support/BBContainerSupport.hpp"
 #include "Support/BBSupport.hpp"
 #include "Support/IRIS.hpp"
 #include <algorithm>
-#include <cassert> // For assert()
-#include <fstream>
 #include <functional>
-#include <iostream>
-#include <memory>
 #include <set>
-#include <stdexcept> // For std::runtime_error
-#include <string>
-#include <vector>
+#include <stdexcept>
+#include <unordered_map>
 
 namespace IRI_STRUCTURAL {
 using namespace IRI_STORAGE;
 using namespace IRI_GEN;
 
-IRIStatement::IRIStatement(IRID id, IRIBB *b) : id(id), bb(b) {}
+namespace {
 
-IRIBB::IRIBB(double ss, BBIDX i, IRICFG *c, IRI_STORAGE::IRIContext &p)
-    : SCOPE(ss), IDX(i), closure(c), ctx(p) {}
+//
+// Helpers
+//
+struct Shape {
+  BBIDX entry;
+  BBIDX exit;
+  IRIContext &ctx;
+};
 
-IRIBB::~IRIBB() {
-  IRIStatement *curr = head;
-  while (curr != nullptr) {
-    IRIStatement *next = curr->next;
-    delete curr;
-    curr = next;
-  }
-  if (tail != nullptr) {
-    delete tail;
-  }
+bool isTerminator(IRI_TAG tag) {
+  return tag == Goto || tag == IfElseJump || tag == Throw || tag == Return ||
+         tag == ReturnAsync;
 }
 
-void IRIBB::append(IRIStatement *inst) {
-  closure->markDirty();
-  if (head == nullptr) {
-    head = inst;
-    inst->prev = nullptr;
-    inst->next = nullptr;
-    return;
-  }
-  IRIStatement *last = head;
-  while (last->next != nullptr) {
-    last = last->next;
-  }
-  last->next = inst;
-  inst->next = nullptr;
-  inst->prev = last;
+bool isControlFlow(IRI_TAG tag) { return isTerminator(tag) || tag == IfJump; }
+
+void erasePred(std::vector<IRIBB> &blocks, BBIDX target, BBIDX source,
+               EdgeKind kind) {
+  std::erase_if(blocks[target].preds,
+                [&](Edge e) { return e.to == source && e.kind == kind; });
 }
 
-void IRIBB::remove(IRIStatement *inst) {
-  closure->markDirty();
-  if (inst == nullptr)
-    return;
-  if (inst == tail) {
-    tail = nullptr;
-    delete inst;
-    return;
-  }
-  if (inst->prev != nullptr) {
-    inst->prev->next = inst->next;
-  } else {
-    head = inst->next;
-  }
-  if (inst->next != nullptr) {
-    inst->next->prev = inst->prev;
-  }
-  delete inst;
-}
+void deriveEdges(std::vector<IRIBB> &blocks, BBIDX h, IRID terminal,
+                 const Shape &shape) {
+  IRIBB &bb = blocks[h];
 
-void IRIBB::insertBefore(IRIStatement *inst, IRIStatement *before) {
-  closure->markDirty();
-  if (inst == nullptr)
-    return;
-  if (before == nullptr) {
-    append(inst);
-    return;
-  }
-  inst->next = before;
-  inst->prev = before->prev;
-  if (before->prev != nullptr) {
-    before->prev->next = inst;
-  } else {
-    head = inst;
-  }
-  before->prev = inst;
-}
+  for (Edge e : bb.succs)
+    if (e.kind != EdgeKind::Exception)
+      erasePred(blocks, e.to, h, e.kind);
+  std::erase_if(bb.succs, [](Edge e) { return e.kind != EdgeKind::Exception; });
 
-void IRIBB::insertAfter(IRIStatement *inst, IRIStatement *after) {
-  closure->markDirty();
-  if (inst == nullptr)
-    return;
-  if (after == nullptr) {
-    inst->next = head;
-    inst->prev = nullptr;
-    if (head != nullptr) {
-      head->prev = inst;
-    }
-    head = inst;
-    return;
-  }
-  inst->prev = after;
-  inst->next = after->next;
-  if (after->next != nullptr) {
-    after->next->prev = inst;
-  }
-  after->next = inst;
-}
+  auto link = [&](BBIDX to, EdgeKind kind) {
+    if (to == shape.entry)
+      throw std::runtime_error("deriveEdges: terminal targets ENTRY");
+    if (to >= blocks.size())
+      throw std::runtime_error(
+          "deriveEdges: target is not a block of this CFG");
+    bb.succs.push_back({to, kind});
+    blocks[to].preds.push_back({h, kind});
+  };
 
-void IRIBB::replace(IRIStatement *oldInst, IRIStatement *newInst) {
-  closure->markDirty();
-  if (oldInst == nullptr || newInst == nullptr)
-    return;
-  if (oldInst == tail) {
-    tail = newInst;
-    newInst->prev = nullptr;
-    newInst->next = nullptr;
-    delete oldInst;
-    return;
-  }
-  newInst->prev = oldInst->prev;
-  newInst->next = oldInst->next;
-  if (oldInst->prev != nullptr) {
-    oldInst->prev->next = newInst;
-  } else {
-    head = newInst;
-  }
-  if (oldInst->next != nullptr) {
-    oldInst->next->prev = newInst;
-  }
-  delete oldInst;
-}
-
-static bool isValidBBTerminal(IRI_GEN::IRI_TAG tag, IRIContext &ctx) {
-  if (ReturnAsync == tag)
-    return true;
-  if (Goto == tag)
-    return true;
-  if (IfElseJump == tag)
-    return true;
-  if (Return == tag)
-    return true;
-  if (Throw == tag)
-    return true;
-  return false;
-}
-
-void IRIBB::clearEdges() {
-  closure->markDirty();
-  // Copy first: removeEdge mutates the set being walked.
-  auto succs = (IDX < (BBIDX)closure->successors.size())
-                   ? closure->successors[IDX]
-                   : (closure->sparseSuccs.contains(IDX)
-                          ? closure->sparseSuccs[IDX]
-                          : std::set<BBIDX>{});
-  for (auto s : succs) {
-    closure->removeEdge(IDX, s);
-  }
-}
-
-void IRIBB::addEdge(BBIDX succ) {
-  closure->markDirty();
-  closure->insertEdge(IDX, succ);
-}
-
-void IRICFG::insertEdge(BBIDX from, BBIDX to) {
-  markDirty();
-  if (from < 0 || (size_t)from >= successors.size()) {
-    sparseSuccs[from].insert(to);
-    sparsePreds[to].insert(from);
-  } else {
-    successors[from].insert(to);
-    predecessors[to].insert(from);
-  }
-}
-
-void IRICFG::removeEdge(BBIDX from, BBIDX to) {
-  markDirty();
-  if (from < 0 || (size_t)from >= successors.size()) {
-    sparseSuccs[from].erase(to);
-    sparsePreds[to].erase(from);
-  } else {
-    successors[from].erase(to);
-    predecessors[to].erase(from);
-  }
-}
-
-void IRIBB::moveTerminalTo(IRIBB *dst) {
-  closure->markDirty();
-  if (tail == nullptr) {
-    throw std::runtime_error("moveTerminalTo: source has no terminal");
-  }
-  if (dst->tail != nullptr) {
-    throw std::runtime_error("moveTerminalTo: dst already has a terminal");
-  }
-
-  dst->tail = tail;
-  dst->tail->bb = dst;
-  dst->tail->prev = nullptr;
-  dst->tail->next = nullptr;
-  tail = nullptr;
-
-  auto succs = closure->successorsOf(IDX);
-  if (IDX >= (BBIDX)closure->successors.size() &&
-      closure->sparseSuccs.contains(IDX))
-    succs = closure->sparseSuccs.at(IDX);
-  clearEdges();
-  for (auto s : succs) {
-    dst->addEdge(s);
-  }
-}
-
-IRIBB *IRICFG::makeBB(ScopeIDX scope) {
-  markDirty();
-  auto idx = (BBIDX)(++ctx.lastBBIDX);
-  sparseNodes[idx] = std::make_unique<IRIBB>(scope, idx, this, ctx);
-  return sparseNodes[idx].get();
-}
-
-void IRIBB::setTerminal(IRID stmtID) {
-  closure->markDirty();
-  if (tail != nullptr) {
-    clearEdges();
-    delete tail;
-    tail = nullptr;
-  }
-
-  IRI_TAG stmtTAG = IRI_NODE(ctx, stmtID).tag;
-  assert(isValidBBTerminal(stmtTAG, ctx));
-  switch (stmtTAG) {
-  case IRI_GEN::Return:
-  case IRI_GEN::ReturnAsync: {
-    IRID rValTarget;
-    if (stmtTAG == Return) {
-      ReturnSEXP r(stmtID, ctx);
-      rValTarget = r.getArg_Obj();
-    } else {
-      ReturnAsyncSEXP rAsync(stmtID, ctx);
-      rValTarget = rAsync.getArg_RetVal();
-    }
-
-    append(new IRIStatement(LWriteSEXP::create(ctx, closure->retCTX, rValTarget,
-                                               false, true, false),
-                            this));
-
-    tail = new IRIStatement(GotoSEXP::create(ctx, false, closure->exit_block),
-                            this);
-    addEdge(closure->exit_block);
+  IRIContext &ctx = shape.ctx;
+  switch (IRI_NODE(ctx, terminal).tag) {
+  case Goto: {
+    GotoSEXP gotoSEXP(terminal, ctx);
+    link((BBIDX)gotoSEXP.getIDX(),
+         gotoSEXP.hasDeferred() ? EdgeKind::Deferred : EdgeKind::Normal);
     break;
   }
-  case IRI_GEN::Goto: {
-    tail = new IRIStatement(stmtID, this);
-    GotoSEXP gotoSEXP(stmtID, ctx);
-    addEdge(gotoSEXP.getIDX());
+  case IfElseJump: {
+    IfElseJumpSEXP jump(terminal, ctx);
+    link((BBIDX)jump.getTRUE(), EdgeKind::Normal);
+    link((BBIDX)jump.getFALSE(), EdgeKind::Normal);
     break;
   }
-  case IRI_GEN::IfElseJump: {
-    tail = new IRIStatement(stmtID, this);
-    IfElseJumpSEXP ieJump(stmtID, ctx);
-    addEdge(ieJump.getTRUE());
-    addEdge(ieJump.getFALSE());
+  case Throw:
+    // A throw that escapes the closure is how the closure ends.
+    link(shape.exit, EdgeKind::Normal);
     break;
-  }
-  case IRI_GEN::Throw: {
-    tail = new IRIStatement(stmtID, this);
-    // Force CFGs to have a single entry and well defined exit bb.
-    addEdge(closure->exit_block);
+  case Return:
+  case ReturnAsync:
+    if (h != shape.exit)
+      throw std::runtime_error("deriveEdges: Return outside EXIT");
     break;
-  }
   default:
-    throw std::runtime_error("Unexpected case for terminal stmt");
+    throw std::runtime_error("deriveEdges: terminal is not a terminator");
   }
 }
 
-static std::string escapeDoubleQuotes(const std::string &input) {
-  std::stringstream ss;
+void setExceptionEdge(std::vector<IRIBB> &blocks, BBIDX h, BBIDX target) {
+  if (target == h)
+    throw std::runtime_error("setExceptionEdge: exception edge to self");
+  if (target >= blocks.size())
+    throw std::runtime_error("setExceptionEdge: target is not a block");
 
-  for (char c : input) {
-    if (c == '"') {
-      ss << "\\\""; // Prepends the backslash to the quote
-    } else {
-      ss << c;
-    }
-  }
+  IRIBB &bb = blocks[h];
+  for (Edge e : bb.succs)
+    if (e.kind == EdgeKind::Exception)
+      erasePred(blocks, e.to, h, EdgeKind::Exception);
+  std::erase_if(bb.succs, [](Edge e) { return e.kind == EdgeKind::Exception; });
 
-  return ss.str();
+  bb.succs.push_back({target, EdgeKind::Exception});
+  blocks[target].preds.push_back({h, EdgeKind::Exception});
 }
 
-void IRIStatement::dumpFlat(std::ostream &oss, IRIContext *ctx, int depth,
-                            bool full) const {
-  IRI_NODE(bb->ctx, id).dumpFlat(oss, &bb->ctx, depth, full);
+BBIDX exceptionEdge(const std::vector<IRIBB> &blocks, BBIDX h) {
+  for (Edge e : blocks[h].succs)
+    if (e.kind == EdgeKind::Exception)
+      return e.to;
+  return NO_BB;
 }
 
-void IRIBB::dumpFlat(std::ostream &oss) const {
-  IRIStatement *curr = head;
-  while (curr != nullptr) {
-    std::stringstream ss;
-    IRI_NODE(ctx, curr->id).dumpFlat(ss, &ctx, 0, false);
-    oss << escapeDoubleQuotes(ss.str()) << "\\l";
-    curr = curr->next;
-  }
+void moveOutEdges(std::vector<IRIBB> &blocks, BBIDX from, BBIDX to) {
+  for (Edge e : blocks[from].succs)
+    for (Edge &p : blocks[e.to].preds)
+      if (p.to == from)
+        p.to = to;
+  blocks[to].succs = std::move(blocks[from].succs);
+  blocks[from].succs.clear();
+}
 
-  if (tail) {
-    std::stringstream ss;
-    IRI_NODE(ctx, tail->id).dumpFlat(ss, &ctx, 0, false);
-    oss << escapeDoubleQuotes(ss.str());
+//
+// 1.1 Validate the incoming CFG
+//
+void validateInput(BBContainerSupport &bbc, IRIContext &ctx) {
+  std::set<BBIDX> declared;
+  for (auto [bbID, off] : bbc.bbs())
+    declared.insert((BBIDX)BBSupport(bbID, ctx).getIDX());
+
+  BBIDX start = (BBIDX)bbc.getStartBBIDX();
+  auto named = [&](BBIDX target, const char *what) {
+    if (!declared.contains(target))
+      throw std::runtime_error(std::string("IRICFG input: ") + what +
+                               " names a block outside this closure");
+    if (target == start)
+      throw std::runtime_error(std::string("IRICFG input: ") + what +
+                               " targets ENTRY");
+  };
+
+  for (auto [bbID, off] : bbc.bbs()) {
+    BBSupport bb(bbID, ctx);
+    if (bb.hasEXCIDX())
+      named((BBIDX)bb.getEXCIDX(), "EXCIDX");
+
+    auto stmts = bb.stmtsVec();
+    if (stmts.empty())
+      throw std::runtime_error("IRICFG input: BB with no statements");
+
+    for (size_t i = 0; i + 1 < stmts.size(); i++) {
+      IRI_TAG tag = IRI_NODE(ctx, stmts[i]).tag;
+      if (isControlFlow(tag))
+        throw std::runtime_error("IRICFG input: control flow mid-block");
+
+      // Probably redundant...? ~Meetesh
+      if (tag == Ret || tag == InvokeFinalizer)
+        throw std::runtime_error("IRICFG input: a tag the inline-finalizer "
+                                 "pass should have removed");
+      if (tag == PushCatchContext)
+        named((BBIDX)PushCatchContextSEXP(stmts[i], ctx).getIDX(),
+              "PushCatchContext");
+    }
+
+    IRID terminal = stmts.back();
+    IRI_TAG tag = IRI_NODE(ctx, terminal).tag;
+    if (!isTerminator(tag))
+      throw std::runtime_error("IRICFG input: BB does not end in a terminator");
+    if (tag == Goto)
+      named((BBIDX)GotoSEXP(terminal, ctx).getIDX(), "Goto");
+    else if (tag == IfElseJump) {
+      IfElseJumpSEXP jump(terminal, ctx);
+      named((BBIDX)jump.getTRUE(), "IfElseJump.TRUE");
+      named((BBIDX)jump.getFALSE(), "IfElseJump.FALSE");
+    }
   }
 }
 
-void IRICFG::verify() {
-  // EXCEPTION dispatch targets carry their incoming edge in the EXCEPTION
-  // field, not in the predecessors map.
-  std::set<BBIDX> exceptionTargets;
-  for (auto &bb : bbs) {
-    if (bb->EXCEPTION != NO_BB)
-      exceptionTargets.insert(bb->EXCEPTION);
-  }
+//
+// 1.2 Remove unreachable blocks
+//
+std::vector<BBIDX> liveBlocks(BBContainerSupport &bbc, IRIContext &ctx) {
+  std::unordered_map<BBIDX, IRID> byIDX;
+  for (auto [bbID, off] : bbc.bbs())
+    byIDX[(BBIDX)BBSupport(bbID, ctx).getIDX()] = bbID;
 
-  for (auto &bbp : bbs) {
-    IRIBB *bb = bbp.get();
+  std::set<BBIDX> seen;
+  std::function<void(BBIDX)> walk = [&](BBIDX u) {
+    if (!seen.insert(u).second)
+      return;
 
-    if (bb->tail == nullptr) {
-      throw std::runtime_error("BB has no terminal");
-    }
-
-    IRIStatement *curr = bb->head;
-    while (curr != nullptr) {
-      IRI_GEN::IRI_META currMeta =
-          IRI_GEN::get_meta(IRI_NODE(ctx, curr->id).tag);
-      if (currMeta != IRI_GEN::IRI_META::STMT &&
-          currMeta != IRI_GEN::IRI_META::AMP) {
-        std::cerr << IRI_GEN::dump_tag(IRI_NODE(ctx, curr->id).tag)
-                  << " expected STMT, found: " << std::to_string(currMeta)
-                  << std::endl;
-        throw std::runtime_error("STMT err");
-      }
-      if (curr->bb != bb) {
-        throw std::runtime_error("statement bb back-pointer is stale");
-      }
-      // Exception target and PushCatchContext must alwayas be the same in a BB,
-      // right?
-      if (IRI_NODE(ctx, curr->id).tag == IRI_GEN::PushCatchContext &&
-          (double)bb->EXCEPTION !=
-              PushCatchContextSEXP(curr->id, ctx).getIDX()) {
-        throw std::runtime_error("PushCatchContext target diverges from "
-                                 "EXCEPTION in BB " +
-                                 std::to_string((int)bb->IDX));
-      }
-      // A block's control flow is set exclusively by its terminal statement
-      // (modulo possibe exception edge)
-      if (curr != bb->tail) {
-        switch (IRI_NODE(ctx, curr->id).tag) {
-        case IRI_GEN::Goto:
-        case IRI_GEN::IfElseJump:
-        case IRI_GEN::Throw:
-        case IRI_GEN::Return:
-        case IRI_GEN::ReturnAsync:
-        case IRI_GEN::IfJump:
-          throw std::runtime_error(
-              std::string("control-flow statement mid-block in BB ") +
-              std::to_string((int)bb->IDX));
-        default:
-          break;
-        }
-      }
-      curr = curr->next;
-    }
-    if (bb->tail->bb != bb) {
-      throw std::runtime_error("terminal bb back-pointer is stale");
-    }
-
-    auto &succSet = successors[bb->IDX];
-    for (auto s : succSet) {
-      if (s < 0 || (size_t)s >= bbs.size() || !bbs[s]) {
-        throw std::runtime_error("successor missing from CFG");
-      }
-      if (!predecessors[s].contains(bb->IDX)) {
-        throw std::runtime_error("successor/predecessor asymmetry");
-      }
-    }
-    if (bb->EXCEPTION != NO_BB) {
-      if (bb->EXCEPTION < 0 || (size_t)bb->EXCEPTION >= bbs.size() ||
-          !bbs[bb->EXCEPTION]) {
-        throw std::runtime_error("EXCEPTION target missing from CFG");
-      }
-      if (bb->EXCEPTION == bb->IDX) {
-        throw std::runtime_error("EXCEPTION edge to self");
-      }
-      if (bb->IDX == exit_block) {
-        throw std::runtime_error("EXIT has an EXCEPTION edge");
-      }
-    }
-
-    // Terminal tag fixes the successor count.
-    size_t expectedSuccs = 2;
-    switch (IRI_NODE(ctx, bb->tail->id).tag) {
-    case IRI_GEN::Goto:
-    case IRI_GEN::Throw:
-      expectedSuccs = 1;
+    BBSupport bb(byIDX.at(u), ctx);
+    IRID terminal = bb.stmtsVec().back();
+    switch (IRI_NODE(ctx, terminal).tag) {
+    case Goto:
+      walk((BBIDX)GotoSEXP(terminal, ctx).getIDX());
       break;
-    case IRI_GEN::IfElseJump:
-      expectedSuccs = 2;
+    case IfElseJump: {
+      IfElseJumpSEXP jump(terminal, ctx);
+      walk((BBIDX)jump.getTRUE());
+      walk((BBIDX)jump.getFALSE());
       break;
-    case IRI_GEN::Return:
-    case IRI_GEN::ReturnAsync:
-      expectedSuccs = 0;
+    }
+    case Throw:
+    case Return:
+    case ReturnAsync:
       break;
     default:
-      throw std::runtime_error("BB terminal is not a valid terminator");
+      throw std::runtime_error("liveBlocks: BB does not end in a terminator");
     }
-    if (successors[bb->IDX].size() != expectedSuccs) {
-      throw std::runtime_error("terminal/successor arity mismatch in BB " +
-                               std::to_string((int)bb->IDX));
-    }
-    if (IRI_NODE(ctx, bb->tail->id).tag == IRI_GEN::Throw &&
-        *successors[bb->IDX].begin() != exit_block) {
-      throw std::runtime_error("Throw terminal must target EXIT in BB " +
-                               std::to_string((int)bb->IDX));
-    }
-    // Also verify the targets of terminals match the CFGs succ/pred map
-    {
-      auto &succs = successors[bb->IDX];
-      auto termTag = IRI_NODE(ctx, bb->tail->id).tag;
-      if (termTag == IRI_GEN::Goto &&
-          !succs.contains((BBIDX)GotoSEXP(bb->tail->id, ctx).getIDX())) {
-        throw std::runtime_error("Goto target diverges from successors in BB " +
-                                 std::to_string((int)bb->IDX));
-      }
-      if (termTag == IRI_GEN::IfElseJump) {
-        auto tgt = IfElseJumpSEXP(bb->tail->id, ctx);
-        if (!succs.contains((BBIDX)tgt.getTRUE()) ||
-            !succs.contains((BBIDX)tgt.getFALSE())) {
-          throw std::runtime_error("IfElseJump targets diverge from "
-                                   "successors in BB " +
-                                   std::to_string((int)bb->IDX));
-        }
-      }
-    }
-    if (expectedSuccs == 0 && bb->IDX != exit_block) {
-      throw std::runtime_error(
-          "Return/ReturnAsync terminal outside EXIT in BB " +
-          std::to_string((int)bb->IDX));
-    }
-
-    auto &preds = predecessors[bb->IDX];
-    auto &succs = successors[bb->IDX];
-    if (bb->IDX == entry_block && !preds.empty()) {
-      throw std::runtime_error("ENTRY has predecessors");
-    }
-    if (bb->IDX == exit_block && !succs.empty()) {
-      throw std::runtime_error("EXIT has successors");
-    }
-    // Handler dispatch targets are entered through the EXCEPTION edge, so a
-    // BB needs an incoming normal pred, an incoming EXCEPTION edge, or to be
-    // ENTRY.
-    if (bb->IDX != entry_block && bb->IDX != exit_block && preds.empty() &&
-        !exceptionTargets.contains(bb->IDX)) {
-      throw std::runtime_error("BB with no incoming edges: " +
-                               std::to_string((int)bb->IDX));
-    }
-    if (bb->IDX != exit_block && succs.empty()) {
-      throw std::runtime_error("BB with no successors: " +
-                               std::to_string((int)bb->IDX));
-    }
-  }
-
-  // Full reachability from ENTRY over normal + EXCEPTION edges.
-  std::set<BBIDX> fwd;
-  std::function<void(BBIDX)> fwdDFS = [&](BBIDX u) {
-    if (!fwd.insert(u).second)
-      return;
-    for (auto s : successorsOf(u)) {
-      fwdDFS(s);
-    }
-    if (u >= 0 && (size_t)u < bbs.size() && bbs[u]) {
-      BBIDX exc = bbs[u]->EXCEPTION;
-      if (exc != NO_BB)
-        fwdDFS(exc);
-    }
+    if (bb.hasEXCIDX())
+      walk((BBIDX)bb.getEXCIDX());
   };
-  fwdDFS(entry_block);
-  if (fwd.size() != bbs.size()) {
-    throw std::runtime_error("CFG has unreachable BBs");
-  }
+
+  walk((BBIDX)bbc.getStartBBIDX());
+  return std::vector<BBIDX>(seen.begin(), seen.end());
 }
 
-void IRICFG::eraseSparseNode(BBIDX idx) {
-  for (auto s : sparseSuccs[idx]) {
-    sparsePreds[s].erase(idx);
-  }
-  for (auto p : sparsePreds[idx]) {
-    sparseSuccs[p].erase(idx);
-  }
-  sparseSuccs.erase(idx);
-  sparsePreds.erase(idx);
-  continuationPoints.erase(idx);
-  sparseNodes.erase(idx);
+//
+// 1.3 Canonical Exit Point for the CFG
+//
+IRID makeExitBlock(std::vector<IRIBB> &blocks, const Shape &shape, SCPIDX scope,
+                   bool resumable) {
+  IRID retCTX = shape.ctx.iris
+                    ->declareLBinding(
+                        scope, shape.ctx.storage.strings.intern("<common-ret>"),
+                        IRI_GEN::IRI_FLAG::JSVAR)
+                    .ID;
+
+  IRIBB &exitBB = blocks[shape.exit];
+  exitBB.SCOPE = scope;
+  IRID read = EnvReadSEXP::create(shape.ctx, retCTX, true, false);
+  exitBB.terminal = resumable ? ReturnAsyncSEXP::create(shape.ctx, read)
+                              : ReturnSEXP::create(shape.ctx, read);
+  deriveEdges(blocks, shape.exit, exitBB.terminal, shape);
+  return retCTX;
 }
 
-void IRICFG::removeUnreachable() {
-  // Runs on the sparse (pre-renumber) representation.
-  // Cascade: pruning a dead BB's out-edges can strand blocks that were only
-  // reachable through it, so recompute until the graph stops shrinking.
-  while (true) {
-    std::set<BBIDX> reachable;
-    std::function<void(BBIDX)> dfs = [&](BBIDX u) {
-      if (!reachable.insert(u).second)
-        return;
-      for (auto s : sparseSuccs[u]) {
-        dfs(s);
-      }
-      auto it = sparseNodes.find(u);
-      if (it != sparseNodes.end() && it->second->EXCEPTION != NO_BB) {
-        dfs(it->second->EXCEPTION);
-      }
-    };
-    dfs(entry_block);
-
-    std::vector<BBIDX> dead;
-    for (auto &e : sparseNodes) {
-      if (!reachable.contains(e.first))
-        dead.push_back(e.first);
-    }
-    if (dead.empty())
-      break;
-
-    for (auto idx : dead) {
-      eraseSparseNode(idx);
-    }
-    markDirty();
-  }
-}
-
-void IRICFG::renumberBBs() {
-  std::vector<BBIDX> sorted;
-  sorted.reserve(sparseNodes.size());
-  for (auto &e : sparseNodes)
-    sorted.push_back(e.first);
-  std::sort(sorted.begin(), sorted.end());
-
-  std::unordered_map<BBIDX, BBIDX> map;
-  for (size_t i = 0; i < sorted.size(); i++)
-    map[sorted[i]] = (BBIDX)i;
-
-  auto remap = [&](BBIDX oldID) {
-    auto it = map.find(oldID);
-    if (it == map.end())
+//
+// 1.4 Construct the new CFG, add edges, etc... (skip returns)
+//
+void extractBlocks(BBContainerSupport &bbc,
+                   const std::unordered_map<BBIDX, BBIDX> &handle,
+                   std::vector<IRIBB> &blocks, const Shape &shape) {
+  IRIContext &ctx = shape.ctx;
+  auto local = [&](BBIDX programID) {
+    auto it = handle.find(programID);
+    if (it == handle.end())
       throw std::runtime_error(
-          "renumberBBs: edge targets a block outside the CFG");
+          "extractBlocks: a pruned block is still referenced");
     return it->second;
   };
 
-  globalEntryID = entry_block;
-  entry_block = remap(entry_block);
-  exit_block = remap(exit_block);
+  for (auto [programID, h] : handle) {
+    BBSupport bb(bbc.getBBByIDX(programID), ctx);
+    IRIBB &dst = blocks[h];
+    dst.SCOPE = bb.getScopeIDX();
 
-  // Dense, CFG-local from here on. globalIDs records each block's identity
-  // in the program-wide numbering (commit() translates back with it).
-  globalIDs = sorted;
-  bbs.clear();
-  bbs.resize(sorted.size());
-  for (auto &e : sparseNodes) {
-    e.second->IDX = remap(e.first);
-    if (e.second->EXCEPTION != NO_BB)
-      e.second->EXCEPTION = remap(e.second->EXCEPTION);
-    bbs[e.second->IDX] = std::move(e.second);
-  }
+    if (bb.hasEXCIDX())
+      setExceptionEdge(blocks, h, local((BBIDX)bb.getEXCIDX()));
 
-  successors.clear();
-  successors.resize(sorted.size());
-  for (auto &e : sparseSuccs) {
-    auto &dest = successors[remap(e.first)];
-    for (auto n : e.second)
-      dest.insert(remap(n));
-  }
-  predecessors.clear();
-  predecessors.resize(sorted.size());
-  for (auto &e : sparsePreds) {
-    auto &dest = predecessors[remap(e.first)];
-    for (auto n : e.second)
-      dest.insert(remap(n));
-  }
-  sparseNodes.clear();
-  sparseSuccs.clear();
-  sparsePreds.clear();
+    auto stmts = bb.stmtsVec();
+    dst.stmts.assign(stmts.begin(), stmts.end() - 1);
+    dst.terminal = stmts.back();
 
-  for (auto &bbp : bbs) {
-    IRIBB *bb = bbp.get();
-    for (IRIStatement *s = bb->head; s != nullptr; s = s->next) {
-      if (IRI_NODE(ctx, s->id).tag == IRI_GEN::PushCatchContext)
-        PushCatchContextSEXP(s->id, ctx).setIDX(bb->EXCEPTION);
-    }
-    switch (IRI_NODE(ctx, bb->tail->id).tag) {
-    case IRI_GEN::Goto:
-      GotoSEXP(bb->tail->id, ctx)
-          .setIDX(remap(GotoSEXP(bb->tail->id, ctx).getIDX()));
-      bb->setTerminal(bb->tail->id);
-      break;
-    case IRI_GEN::IfElseJump: {
-      IfElseJumpSEXP jump(bb->tail->id, ctx);
-      jump.setTRUE(remap(jump.getTRUE()));
-      jump.setFALSE(remap(jump.getFALSE()));
-      bb->setTerminal(bb->tail->id);
+    for (IRID st : dst.stmts)
+      if (IRI_NODE(ctx, st).tag == PushCatchContext) {
+        PushCatchContextSEXP pcc(st, ctx);
+        pcc.setIDX(local((BBIDX)pcc.getIDX()));
+      }
+
+    switch (IRI_NODE(ctx, dst.terminal).tag) {
+    case Goto: {
+      GotoSEXP gotoSEXP(dst.terminal, ctx);
+      gotoSEXP.setIDX(local((BBIDX)gotoSEXP.getIDX()));
       break;
     }
+    case IfElseJump: {
+      IfElseJumpSEXP jump(dst.terminal, ctx);
+      jump.setTRUE(local((BBIDX)jump.getTRUE()));
+      jump.setFALSE(local((BBIDX)jump.getFALSE()));
+      break;
+    }
+    case Throw:
+      break;
+    case Return:
+    case ReturnAsync:
+      // Moved to a different step...
+      continue;
     default:
-      break;
+      throw std::runtime_error("extractBlocks: not a terminator");
     }
-  }
 
-  std::set<BBIDX> remappedCont;
-  for (auto c : continuationPoints)
-    remappedCont.insert(remap(c));
-  continuationPoints = std::move(remappedCont);
+    deriveEdges(blocks, h, dst.terminal, shape);
+  }
 }
 
-IRICFG::IRICFG(IRI_STORAGE::IRID i, IRI_STORAGE::IRIContext &p)
-    : id(i), ctx(p) {
-  BBContainerSupport bbc(id, ctx);
-  entry_block = (BBIDX)bbc.getStartBBIDX();
+//
+// 1.5 Link the canonical Exit point to all early exits
+//
+void normalizeReturns(std::vector<IRIBB> &blocks, const Shape &shape,
+                      IRID retCTX) {
+  IRIContext &ctx = shape.ctx;
+  for (size_t i = 0; i < blocks.size(); i++) {
+    BBIDX h = (BBIDX)i;
+    if (h == shape.exit)
+      continue;
+    IRID &terminal = blocks[h].terminal;
+    IRID rval = NO_IRID;
+    if (IRI_NODE(ctx, terminal).tag == Return)
+      rval = ReturnSEXP(terminal, ctx).getArg_Obj();
+    else if (IRI_NODE(ctx, terminal).tag == ReturnAsync)
+      rval = ReturnAsyncSEXP(terminal, ctx).getArg_RetVal();
+    else
+      continue;
 
-  // Common Return Path
-  IRI_STORAGE::StringID commonRet = ctx.storage.strings.intern("<common-ret>");
-  retCTX = ctx.iris
-               ->declareLBinding(bbc.getScopeIDX(), commonRet,
-                                 IRI_GEN::IRI_FLAG::JSVAR)
-               .ID;
-  IRIBB *exitBB = makeBB(bbc.getScopeIDX());
-  exit_block = exitBB->IDX;
-
-  if (bbc.hasASYNC() || bbc.hasGENERATOR()) {
-    exitBB->tail = new IRIStatement(
-        ReturnAsyncSEXP::create(ctx,
-                                EnvReadSEXP::create(ctx, retCTX, true, false)),
-        exitBB);
-  } else {
-    exitBB->tail = new IRIStatement(
-        ReturnSEXP::create(ctx, EnvReadSEXP::create(ctx, retCTX, true, false)),
-        exitBB);
+    blocks[h].stmts.push_back(
+        LWriteSEXP::create(ctx, retCTX, rval, false, true, false));
+    terminal = GotoSEXP::create(ctx, false, shape.exit);
+    deriveEdges(blocks, h, terminal, shape);
   }
+}
 
-  // Add all the basic blocks to the graph
-  for (auto [bbID, bbOffset] : bbc.bbs()) {
-    BBSupport bb(bbID, ctx);
-    auto currBBIDX = bb.getIDX();
-
-    sparseNodes[currBBIDX] =
-        std::make_unique<IRIBB>(bb.getScopeIDX(), currBBIDX, this, ctx);
-  }
-
-  // Populate statements and establish edges
-  for (auto [bbID, bbOffset] : bbc.bbs()) {
-    BBSupport bbSupp(bbID, ctx);
-    auto currBBIDX = (BBIDX)bbSupp.getIDX();
-    IRIBB *bb = sparseNodes[currBBIDX].get();
-    // Per-BB dispatch target (declared by _20_IFB, carried by clones).
-    double dispatch = -1;
-    ctx.iris->getExceptionIDX(bbc.getScopeIDX(), currBBIDX, dispatch);
-    bb->EXCEPTION = dispatch;
-    auto stmts = bbSupp.stmtsVec();
-    for (size_t i = 0; i < stmts.size(); i++) {
-      IRID stmtID = stmts[i];
-      if (i + 1 == stmts.size()) {
-        bb->setTerminal(stmtID);
-      } else {
-        bb->append(new IRIStatement(stmtID, bb));
-      }
-    }
-  }
-
-  // Split BBs at await points
+//
+// 1.6 Split at awaits (await moves inside the split BB now; will be useful for
+// PTA)
+//
+void splitAwaits(std::vector<IRIBB> &blocks, const Shape &shape) {
+  IRIContext &ctx = shape.ctx;
   auto hasAwait = [&](IRID stmtID) {
-    return IRI_HELPERS::hasNodeWithPredicate(stmtID, &ctx, [&](IRID id) {
-      return IRI_NODE(ctx, id).tag == IRI_GEN::Await;
-    });
+    return IRI_HELPERS::hasNodeWithPredicate(
+        stmtID, &ctx, [&](IRID id) { return IRI_NODE(ctx, id).tag == Await; });
   };
 
-  std::set<BBIDX> awaitWorklist;
-  for (auto &e : sparseNodes) {
-    awaitWorklist.insert(e.first);
-  }
-
-  // Statements already placed as the first statement of a resume block.
   std::set<IRID> resumeSites;
+  std::vector<BBIDX> worklist;
+  for (size_t i = 0; i < blocks.size(); i++)
+    worklist.push_back((BBIDX)i);
 
-  while (!awaitWorklist.empty()) {
-    BBIDX bbIDX = *awaitWorklist.begin();
-    awaitWorklist.erase(awaitWorklist.begin());
-    IRIBB *bb = sparseNodes[bbIDX].get();
+  for (size_t i = 0; i < worklist.size(); i++) {
+    BBIDX h = worklist[i];
+    std::vector<IRID> &stmts = blocks[h].stmts;
 
-    if (bb->tail == nullptr) {
-      throw std::runtime_error("bb tail cannot be null before split");
-    }
-
-    IRIStatement *currStmt = bb->head;
-    if (currStmt != nullptr && resumeSites.contains(currStmt->id)) {
-      currStmt = currStmt->next;
-    }
-    while (currStmt != nullptr) {
-      if (hasAwait(currStmt->id)) {
+    size_t split = 0;
+    bool found = false;
+    // Annoying bug, went into infinite loop because we were splitting
+    // at the prebiously splitted await inside the splitted BB
+    size_t from = (!stmts.empty() && resumeSites.contains(stmts[0])) ? 1 : 0;
+    for (size_t k = from; k < stmts.size(); k++)
+      if (hasAwait(stmts[k])) {
+        split = k;
+        found = true;
         break;
       }
-      currStmt = currStmt->next;
-    }
-
-    if (currStmt == nullptr) {
-      if (hasAwait(bb->tail->id)) {
+    if (!found) {
+      if (hasAwait(blocks[h].terminal))
         throw std::runtime_error(
-            "await inside terminal statement; this should not be possible");
-      }
+            "splitAwaits: await inside a terminal statement");
       continue;
     }
 
-    IRIBB *postBB = makeBB(bb->SCOPE);
-    // Same region, resumed half: inherit the dispatch target.
-    postBB->EXCEPTION = bb->EXCEPTION;
-    auto postBBIDX = postBB->IDX;
-    awaitWorklist.insert(postBBIDX);
+    BBIDX post = (BBIDX)blocks.size();
+    blocks.push_back(IRIBB{});
+    // Most annoying feature awaird in C++ award goes to... moved vectors after
+    // push
+    IRIBB &pre = blocks[h];
+    IRIBB &postBB = blocks[post];
 
-    // The await statement itself starts the resume block; the pre block ends
-    // carrying only its handle operand across the deferred edge.
-    IRIStatement *nextStmts = currStmt;
-    if (currStmt->prev != nullptr) {
-      currStmt->prev->next = nullptr;
-    } else {
-      bb->head = nullptr;
-    }
-    currStmt->prev = nullptr;
+    postBB.SCOPE = pre.SCOPE;
+    postBB.stmts.assign(pre.stmts.begin() + split, pre.stmts.end());
+    pre.stmts.erase(pre.stmts.begin() + split, pre.stmts.end());
 
-    postBB->head = nextStmts;
-    if (postBB->head != nullptr) {
-      postBB->head->prev = nullptr;
-      for (IRIStatement *s = postBB->head; s != nullptr; s = s->next) {
-        s->bb = postBB;
-      }
-    }
+    BBIDX handler = exceptionEdge(blocks, h);
 
-    // Terminal + out-edges belong to the resumed half.
-    bb->moveTerminalTo(postBB);
-    if (postBB->tail == nullptr) {
-      throw std::runtime_error("postBB tail cannot be null");
-    }
+    // Terminal and out-edges move together: control flow is the terminal's.
+    // This carries the Exception edge to the resumed half as well.
+    postBB.terminal = pre.terminal;
+    pre.terminal = NO_IRID;
+    moveOutEdges(blocks, h, post);
 
-    // Deferred -> true ; this represents a GOTO may act as a early return
-    // (useful in analysis that care about suspension points, otherwise its a
-    // normal goto)
-    bb->setTerminal(GotoSEXP::create(ctx, true, postBBIDX));
+    // Both halves can throw, so both need the dispatch target: moveOutEdges
+    // took it from the pre half, so give it back.
+    if (handler != NO_BB)
+      setExceptionEdge(blocks, h, handler);
 
-    continuationPoints.insert(postBBIDX);
-    resumeSites.insert(nextStmts->id);
+    // DEFERRED is what makes this edge a Deferred one. The old code set the
+    // flag and then filed the edge as a normal successor, which every
+    // suspension-aware analysis had to work around.
+    pre.terminal = GotoSEXP::create(ctx, true, post);
+    deriveEdges(blocks, h, pre.terminal, shape);
+    deriveEdges(blocks, post, postBB.terminal, shape);
+
+    resumeSites.insert(postBB.stmts.front());
+    worklist.push_back(post);
   }
-
-  removeUnreachable();
-  renumberBBs();
-  verify();
 }
 
-void IRICFG::dumpDOT(const std::string &filePath) {
-  std::ofstream outFile(filePath);
-  assert(outFile.is_open() &&
-         "Failed to open file: Path may be invalid or restricted.");
-  if (!outFile) {
-    throw std::runtime_error("Error: Could not open file at path: " + filePath);
-  }
+} // namespace
 
-  outFile << "digraph G {\n";
-  outFile << "  graph [\n";
-  outFile << "    rankdir=TB\n";
-  outFile << "    splines=true\n";
-  outFile << "    overlap=false\n";
-  outFile << "  ]\n";
+IRICFG::IRICFG(IRID i, IRIContext &p) : ctx(p), container(i) {
+  BBContainerSupport bbc(container, ctx);
+  validateInput(bbc, ctx);
 
-  // Strict Monospace Typography and Left Alignment
-  outFile << "  node [\n";
-  outFile << "    shape=box\n";
-  outFile << "    style=\"filled,rounded\"\n";
-  outFile << "    fillcolor=\"#f6f8fa\"\n";
-  outFile << "    color=\"#d0d7de\"\n";
-  outFile << "    fontname=\"monospace\"\n";
-  outFile << "    fontsize=12\n";
-  outFile << "    labelloc=\"c\"\n";
-  outFile << "    labeljust=\"l\"\n";
-  outFile << "    margin=\"0.2,0.1\"\n";
-  outFile << "  ]\n";
+  std::vector<BBIDX> live = liveBlocks(bbc, ctx);
 
-  std::set<BBIDX> nodesTODO;
-  for (auto &bb : bbs) {
-    nodesTODO.insert(bb->IDX);
-  }
+  std::unordered_map<BBIDX, BBIDX> handle;
+  for (size_t h = 0; h < live.size(); h++)
+    handle[live[h]] = (BBIDX)(h + 1);
+  entry = handle.at((BBIDX)bbc.getStartBBIDX());
+  exit = 0;
+  Shape shape{entry, exit, ctx};
 
-  std::function<void(BBIDX)> dumpRecurse = [&](BBIDX currentBBIDX) {
-    if (!nodesTODO.contains(currentBBIDX))
-      return;
-    nodesTODO.erase(currentBBIDX);
+  blocks.resize(live.size() + 1);
+  IRID retCTX = makeExitBlock(blocks, shape, bbc.getScopeIDX(),
+                              bbc.hasASYNC() || bbc.hasGENERATOR());
 
-    std::stringstream ss;
-    IRIBB *bb = get_bb(currentBBIDX);
-    bb->dumpFlat(ss);
+  extractBlocks(bbc, handle, blocks, shape);
+  normalizeReturns(blocks, shape, retCTX);
+  splitAwaits(blocks, shape);
 
-    bool isCont = continuationPoints.contains(currentBBIDX);
-    std::string xlabel = "BB" + std::to_string((int)currentBBIDX) +
-                         (isCont ? " (Continuation)" : "");
-    std::string extraStyle =
-        isCont ? ", fillcolor=\"#e1f5fe\", color=\"#0288d1\"" : "";
+  for (size_t h = 0; h < blocks.size(); h++)
+    if (blocks[h].terminal == NO_IRID)
+      throw std::runtime_error("IRICFG: block has no terminal");
+}
 
-    outFile << "  " << (int)currentBBIDX << " [label=\"" << ss.str()
-            << "\", xlabel=\"" << xlabel << "\"" << extraStyle << "];\n";
+// ---------------------------------------------------------------------------
+// Read access
+// ---------------------------------------------------------------------------
 
-    for (auto succ : successorsOf(currentBBIDX)) {
-      outFile << "  " << (int)currentBBIDX << " -> " << (int)succ << ";\n";
-      dumpRecurse(succ);
-    }
+const IRIBB &IRICFG::at(BBIDX h) const {
+  if (h == NO_BB || (size_t)h >= blocks.size())
+    throw std::runtime_error("IRICFG: handle " + std::to_string(h) +
+                             " is not a block of " + debugID() + " (" +
+                             std::to_string(blocks.size()) + " blocks)");
+  return blocks[h];
+}
 
-    if (bb->EXCEPTION != NO_BB) {
-      outFile << "  " << (int)currentBBIDX << " -> " << (int)bb->EXCEPTION
-              << " [style=\"dotted\", color=\"red\"];\n";
-      dumpRecurse(bb->EXCEPTION);
-    }
+BBIDX IRICFG::exceptionOf(BBIDX h) const { return exceptionEdge(blocks, h); }
+
+std::vector<BBIDX> IRICFG::reversePostOrder(EdgeMask mask) const {
+  return reversePostOrder(entry, mask);
+}
+
+std::vector<BBIDX> IRICFG::reversePostOrder(BBIDX start, EdgeMask mask) const {
+  std::vector<BBIDX> post;
+  std::vector<char> seen(blocks.size(), 0);
+  std::function<void(BBIDX)> dfs = [&](BBIDX u) {
+    seen[u] = 1;
+    for (Edge e : at(u).succs)
+      if ((mask & edgeMask(e.kind)) && !seen[e.to])
+        dfs(e.to);
+    post.push_back(u);
   };
-  dumpRecurse(entry_block);
-
-  for (auto contIDX : continuationPoints) {
-    dumpRecurse(contIDX);
-  }
-
-  for (auto &wasteBB : nodesTODO) {
-    std::cerr << "  DeadBB: " << wasteBB << std::endl;
-  }
-
-  outFile << "}\n";
+  dfs(start);
+  std::reverse(post.begin(), post.end());
+  return post;
 }
 
-void IRICFG::commit() {
-  verify();
+// ---------------------------------------------------------------------------
+// Write-back
+// ---------------------------------------------------------------------------
 
-  std::vector<IRID> newBBS;
-  BBContainerSupport bbc(id, ctx);
+void IRICFG::commit(const std::vector<BBIDX> &order) {
+  if (order.size() != blocks.size())
+    throw std::runtime_error("commit: order does not cover every block");
+  std::vector<char> seen(blocks.size(), 0);
+  for (BBIDX h : order) {
+    if (h >= blocks.size() || seen[h])
+      throw std::runtime_error(
+          "commit: order is not a permutation of the blocks");
+    seen[h] = 1;
+  }
+
+  BBContainerSupport bbc(container, ctx);
   IRID newBBList = ListSEXP::create(ctx, ctx.storage.strings.intern("BB"));
   bbc.setArg_BB(newBBList);
 
-  std::set<BBIDX> nodesTODO;
-  for (auto &bb : bbs) {
-    nodesTODO.insert(bb->IDX);
+  std::vector<IRID> newBBS;
+  newBBS.reserve(order.size());
+  for (BBIDX h : order) {
+    const IRIBB &bb = at(h);
+    // IDX = handle, and nothing is translated: the graph's numbering is the
+    // artifact's numbering. That is what deleted globalIDs.
+    IRID bbID = BBSEXP::create(ctx, false, false, false, false, false, bb.SCOPE,
+                               h, NO_BB);
+    // EXCIDX is consumed by construction; the artifact does not carry it.
+    BBSEXP(bbID, ctx).clearEXCIDX();
+
+    // The artifact has no body/terminal split, so the terminal is re-appended.
+    std::vector<IRID> stmtList = bb.stmts;
+    stmtList.push_back(bb.terminal);
+    ctx.storage.nodes.set_args(bbID, stmtList);
+    newBBS.push_back(bbID);
   }
-
-  // The CFG speaks dense local handles; the core IR keeps the original
-  // program-wide numbering, so blocks and jump targets are translated back
-  // on the way out (commit is the local->global boundary).
-  std::function<void(BBIDX)> dumpRecurse = [&](BBIDX currentBBIDX) {
-    if (!nodesTODO.contains(currentBBIDX))
-      return;
-    nodesTODO.erase(currentBBIDX);
-
-    IRIBB *bb = get_bb(currentBBIDX);
-    IRID currBBID = BBSEXP::create(ctx, false, false, false, false, false,
-                                   bb->SCOPE, globalBBID(bb->IDX));
-    newBBS.push_back(currBBID);
-
-    std::vector<IRID> stmtList;
-
-    IRIStatement *curr = bb->head;
-    while (curr != nullptr) {
-      if (IRI_NODE(ctx, curr->id).tag == IRI_GEN::PushCatchContext) {
-        PushCatchContextSEXP(curr->id, ctx).setIDX(globalBBID(bb->EXCEPTION));
-      }
-      stmtList.push_back(curr->id);
-      curr = curr->next;
-    }
-    if (bb->tail != nullptr) {
-      switch (IRI_NODE(ctx, bb->tail->id).tag) {
-      case IRI_GEN::Goto:
-        GotoSEXP(bb->tail->id, ctx)
-            .setIDX(globalBBID(GotoSEXP(bb->tail->id, ctx).getIDX()));
-        break;
-      case IRI_GEN::IfElseJump: {
-        IfElseJumpSEXP jump(bb->tail->id, ctx);
-        jump.setTRUE(globalBBID(jump.getTRUE()));
-        jump.setFALSE(globalBBID(jump.getFALSE()));
-        break;
-      }
-      default:
-        break;
-      }
-      stmtList.push_back(bb->tail->id);
-    }
-
-    ctx.storage.nodes.set_args(currBBID, stmtList);
-
-    for (auto succ : successorsOf(currentBBIDX)) {
-      dumpRecurse(succ);
-    }
-
-    if (bb->EXCEPTION != NO_BB) {
-      dumpRecurse(bb->EXCEPTION);
-    }
-  };
-  dumpRecurse(entry_block);
   ctx.storage.nodes.set_args(newBBList, newBBS);
 }
 
-const PTAClosureInfo &IRICFG::ptaInfo() {
-  if (ptaInfoCache.has_value())
-    return *ptaInfoCache;
+// ---------------------------------------------------------------------------
+// Debug names
+// ---------------------------------------------------------------------------
 
-  BBContainerSupport bbc(id, ctx);
-  PTAClosureInfo info;
-
-  // JSCTX only ever appears as the RVal of an LWrite
-  for (auto &bbp : bbs) {
-    for (IRIStatement *s = bbp->head; s != nullptr; s = s->next) {
-      if (IRI_NODE(ctx, s->id).tag != IRI_GEN::LWrite)
-        continue;
-      IRID rval = IRI_GEN::LWriteSEXP(s->id, ctx).getArg_RVal();
-      if (IRI_NODE(ctx, rval).tag == IRI_GEN::JSCTX)
-        info.usedJSCTXSlots.insert(IRI_GEN::JSCTXSEXP(rval, ctx).getOPID());
-    }
-  }
-
-  // 0 - ArgumentsObject
-  // 1 - MappedArgumentsObject
-  bool argsEscape = info.usedJSCTXSlots.contains(1);
-  for (const auto b : ctx.iris->getEnvBindingsInClosure(bbc.getScopeIDX())) {
-    IRI_GEN::EnvBindingSEXP eb(b, ctx);
-    if (eb.hasJSARG())
-      info.formals.push_back({eb.getREFIDX(), b});
-
-    // Bindings can escape if they are either captured by an inner closure or
-    // the frame actually uses a mapped ArgumentsObject, in which case it holds
-    // references to argument bindings internally
-    bool captured =
-        IRI_BINDING(ctx.iris, b).isCaptured() || (argsEscape && eb.hasJSARG());
-    (captured ? info.tstack : info.stack).push_back(b);
-  }
-  std::sort(info.formals.begin(), info.formals.end());
-
-  auto remoteBindings =
-      ctx.iris->getRemoteEnvBindingsInClosure(bbc.getScopeIDX());
-  for (const auto rb : remoteBindings)
-    info.remoteRefs.push_back(IRI_HELPERS::resolveRemoteBinding(ctx, rb));
-
-  if (ctx.iris->isTopLevelScope(bbc.getScopeIDX())) {
-    // A module's top level owns its RemoteEnvBindings, a script its
-    // ScriptBindings; both are plain stack cells here.
-    for (const auto b : remoteBindings)
-      info.stack.push_back(b);
-    for (const auto b : ctx.iris->getScriptBindings())
-      info.stack.push_back(b);
-    info.globals = ctx.iris->getGlobalBindings();
-  }
-
-  ptaInfoCache = std::move(info);
-  return *ptaInfoCache;
+std::string IRICFG::debugID() const {
+  return "c" + std::to_string(BBContainerSEXP(container, ctx).getStartBBIDX());
 }
 
-std::string IRIBB::getDebugID() {
-  return closure->getDebugID() + "/bb" + std::to_string((int)IDX);
-}
-
-std::string IRIBB::getDebugName() {
-  if (IDX == closure->entry_block)
+std::string IRICFG::debugName(BBIDX h) const {
+  if (h == entry)
     return "Entry";
-  else if (IDX == closure->exit_block)
+  if (h == exit)
     return "Exit";
-  else
-    return getDebugID();
+  return debugID() + "/bb" + std::to_string(h);
 }
 
-std::string IRIStatement::getDebugID() {
-  return bb->getDebugID() + "/i" + bb->getInstID(this);
+std::string IRICFG::debugStmtID(BBIDX h, IRID stmt) const {
+  const IRIBB &bb = at(h);
+  auto it = std::find(bb.stmts.begin(), bb.stmts.end(), stmt);
+  if (it == bb.stmts.end())
+    return debugName(h) + "/term";
+  return debugName(h) + "/i" +
+         std::to_string(std::distance(bb.stmts.begin(), it));
 }
 
-std::string IRICFG::getDebugID() {
-  BBContainerSEXP bbc(id, ctx);
-  return "c" + std::to_string((int)bbc.getStartBBIDX());
+// ---------------------------------------------------------------------------
+// BBEditor
+// ---------------------------------------------------------------------------
+
+BBEditor::BBEditor(IRICFG &cfg, BBIDX block)
+    : cfg(cfg), block(block), body(cfg.at(block).stmts) {}
+
+BBEditor::~BBEditor() {
+  if (dirty)
+    cfg.blocks[block].stmts = std::move(body);
 }
 
-std::string IRICFG::getDebugName() {
-  BBContainerSEXP bbc(id, ctx);
-  return std::string(ctx.storage.strings.get(bbc.getNAME()));
+size_t BBEditor::find(IRID anchor) const {
+  auto it = std::find(body.begin(), body.end(), anchor);
+  if (it == body.end())
+    throw std::runtime_error(
+        "BBEditor: anchor is not a statement of this block");
+  return std::distance(body.begin(), it);
 }
 
-std::vector<BBIDX> IRICFG::getReversePostOrder(bool includeExceptions) const {
-  return getReversePostOrder(includeExceptions, entry_block);
+void BBEditor::check(IRID stmt) const {
+  IRI_META meta = get_meta(IRI_NODE(cfg.ctx, stmt).tag);
+  if (meta != IRI_META::STMT && meta != IRI_META::AMP)
+    throw std::runtime_error("BBEditor: not a statement");
+  if (isControlFlow(IRI_NODE(cfg.ctx, stmt).tag))
+    throw std::runtime_error("BBEditor: control flow belongs to setTerminal");
+  if (std::find(body.begin(), body.end(), stmt) != body.end())
+    throw std::runtime_error("BBEditor: statement is already placed");
 }
 
-std::vector<BBIDX> IRICFG::getReversePostOrder(bool includeExceptions,
-                                               BBIDX startBBIDX) const {
-  std::vector<BBIDX> postOrder;
-  std::set<BBIDX> visited;
+void BBEditor::insertBefore(IRID anchor, IRID stmt) {
+  check(stmt);
+  body.insert(body.begin() + find(anchor), stmt);
+  dirty = true;
+}
 
-  std::function<void(BBIDX)> dfs = [&](BBIDX u) {
-    visited.insert(u);
-    for (BBIDX v : successorsOf(u)) {
-      if (!visited.contains(v)) {
-        dfs(v);
-      }
-    }
-    if (includeExceptions && u >= 0 && (size_t)u < bbs.size() && bbs[u]) {
-      BBIDX exc = bbs[u]->EXCEPTION;
-      if (exc != NO_BB && !visited.contains(exc)) {
-        dfs(exc);
-      }
-    }
-    postOrder.push_back(u);
-  };
+void BBEditor::insertAfter(IRID anchor, IRID stmt) {
+  check(stmt);
+  body.insert(body.begin() + find(anchor) + 1, stmt);
+  dirty = true;
+}
 
-  dfs(startBBIDX);
+void BBEditor::replace(IRID anchor, IRID stmt) {
+  check(stmt);
+  body[find(anchor)] = stmt;
+  dirty = true;
+}
 
-  std::reverse(postOrder.begin(), postOrder.end());
-  return postOrder;
+void BBEditor::erase(IRID stmt) {
+  if (stmt == cfg.blocks[block].terminal)
+    throw std::runtime_error(
+        "BBEditor::erase: the terminal is not part of the body");
+  std::erase(body, stmt);
+  dirty = true;
+}
+
+// A bit dangerous... will look into this later...
+void BBEditor::setTerminal(IRID stmt) {
+  if (!isTerminator(IRI_NODE(cfg.ctx, stmt).tag))
+    throw std::runtime_error("BBEditor::setTerminal: not a terminator");
+  if (std::find(body.begin(), body.end(), stmt) != body.end())
+    throw std::runtime_error(
+        "BBEditor::setTerminal: statement is already in the body");
+
+  cfg.blocks[block].terminal = stmt;
+  deriveEdges(cfg.blocks, block, stmt, Shape{cfg.entry, cfg.exit, cfg.ctx});
+  dirty = true;
+}
+
+void BBEditor::setException(BBIDX target) {
+  setExceptionEdge(cfg.blocks, block, target);
+  dirty = true;
 }
 
 } // namespace IRI_STRUCTURAL
