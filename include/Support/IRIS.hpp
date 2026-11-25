@@ -30,14 +30,12 @@ public:
   // Scope Related
   SCPIDX getTopLevelScope() { return topLevelScope; }
 
-  // Read-only view of the scope tree, used by ClosureTree to link closures:
-  // the closure head scopes, and the parent link of any scope.
-  const std::unordered_map<SCPIDX, IRI_GEN::IRID> &scopeHeads() const {
-    return scopeHead;
-  }
   SCPIDX parentScope(SCPIDX scope) const {
     auto it = outEdges.find(scope);
     return it == outEdges.end() ? NO_SCOPE : it->second;
+  }
+  IRI_GEN::IRID containerForScope(SCPIDX scope) const {
+    return scopeHead.at(scope);
   }
 
   // Binding Declaration
@@ -88,7 +86,7 @@ public:
 
   SCPIDX getEnclosingThrowScope(SCPIDX);
 
-  SCPIDX getEnclosingClosureScope(SCPIDX);
+  SCPIDX getEnclosingClosureScope(SCPIDX) const;
 
   bool isArgInitScope(SCPIDX);
 

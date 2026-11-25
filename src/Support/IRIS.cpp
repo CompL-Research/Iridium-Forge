@@ -10,8 +10,8 @@
 #include "Support/BBContainerSupport.hpp"
 #include "Support/BBSupport.hpp"
 #include "Support/ClosureTree.hpp"
-#include "Support/IRIS.hpp"
 #include "Support/FileSupport.hpp"
+#include "Support/IRIS.hpp"
 #include <cassert>
 #include <memory>
 #include <set>
@@ -71,8 +71,7 @@ IRIS::IRIS(
 
       if (lCon.finalizerIDX > -1) {
         assert(lCon.finalizerRetIDX != -1);
-        finalizerRetMap[(BBIDX)lCon.finalizerIDX] =
-            (BBIDX)lCon.finalizerRetIDX;
+        finalizerRetMap[(BBIDX)lCon.finalizerIDX] = (BBIDX)lCon.finalizerRetIDX;
       }
     }
 
@@ -106,11 +105,10 @@ IRIS::IRIS(
 
       IRI_STORAGE::StringID bName = ctx.storage.strings.intern(bcon->args[k]);
 
-      auto lb =
-          EnvBindingSEXP::create(ctx, bName, kind == JSARG, kind == JSRESTARG,
-                                 false, false, false, false,
-                                 false, false, false, false, false,
-                                 -1, k, (UIndex)currScope, UINT32_MAX);
+      auto lb = EnvBindingSEXP::create(ctx, bName, kind == JSARG,
+                                       kind == JSRESTARG, false, false, false,
+                                       false, false, false, false, false, false,
+                                       -1, k, (UIndex)currScope, UINT32_MAX);
 
       allNames.insert(bName);
       scopeBindings[currScope][bName] = lb;
@@ -191,10 +189,9 @@ IRI_STORAGE::BindingMeta &IRIS::declareLBinding(SCPIDX scope, StringID name,
   UIndex SCOPE = (UIndex)scope;
   int32_t NEXT = -1;
   UIndex LINK = UINT32_MAX;
-  IRID newBinding = IRI_GEN::EnvBindingSEXP::create(ctx, NAME, JSARG, JSRESTARG,
-                                                    JSLET, JSCONST, false, JSVAR,
-                                                    false, false, false, false, false,
-                                                    NEXT, REFIDX, SCOPE, LINK);
+  IRID newBinding = IRI_GEN::EnvBindingSEXP::create(
+      ctx, NAME, JSARG, JSRESTARG, JSLET, JSCONST, false, JSVAR, false, false,
+      false, false, false, NEXT, REFIDX, SCOPE, LINK);
   bindingsAtScope[name] = newBinding;
   ctx.storage.bindings.allocate(ctx, newBinding);
   return get_binding(newBinding);
@@ -231,10 +228,9 @@ IRI_STORAGE::BindingMeta &IRIS::declareRBinding(SCPIDX scope, StringID name,
     UIndex SCOPE = (UIndex)scope;
     int32_t NEXT = -1;
     UIndex LINK = UINT32_MAX;
-    IRID store = IRI_GEN::EnvBindingSEXP::create(ctx, NAME, JSARG, JSRESTARG,
-                                                 JSLET, JSCONST, false, JSVAR,
-                                                 false, false, false, false, false,
-                                                 NEXT, REFIDX, SCOPE, LINK);
+    IRID store = IRI_GEN::EnvBindingSEXP::create(
+        ctx, NAME, JSARG, JSRESTARG, JSLET, JSCONST, false, JSVAR, false, false,
+        false, false, false, NEXT, REFIDX, SCOPE, LINK);
     ctx.storage.bindings.allocate(ctx, store);
 
     assert(moduleFlag == IRI_FLAG::MODULE || moduleFlag == IRI_FLAG::MODULEI ||
@@ -315,8 +311,8 @@ IRI_STORAGE::BindingMeta &IRIS::resolve(StringID sid, SCPIDX startScopeIDX) {
       auto currHead = headsCrossed.back();
       headsCrossed.pop_back();
       IRID parentID = found;
-      found =
-          RemoteEnvBindingSEXP::create(ctx, found, false, false, false, UINT32_MAX, UINT32_MAX);
+      found = RemoteEnvBindingSEXP::create(ctx, found, false, false, false,
+                                           UINT32_MAX, UINT32_MAX);
       scopeBindings[currHead][sid] = found;
       ctx.storage.bindings.allocate(ctx, found);
       BindingMeta::connect(get_binding(found), get_binding(parentID));
@@ -358,9 +354,8 @@ bool IRIS::isGlobal(StringID sid, SCPIDX startScopeIDX) {
 
 // Wrapper method to fetch filtered IRIDs
 static std::vector<IRI_STORAGE::IRID> getEnvBindings(
-    const std::unordered_map<SCPIDX,
-                             std::unordered_map<StringID, IRI_STORAGE::IRID>>
-        &scopeBindings,
+    const std::unordered_map<
+        SCPIDX, std::unordered_map<StringID, IRI_STORAGE::IRID>> &scopeBindings,
     auto scope, auto &ctx) {
   std::vector<IRI_STORAGE::IRID> matchedBindings;
 
@@ -381,9 +376,8 @@ static std::vector<IRI_STORAGE::IRID> getEnvBindings(
 
 // Wrapper method to fetch filtered IRIDs
 static std::vector<IRI_STORAGE::IRID> getRemoteEnvBindings(
-    const std::unordered_map<SCPIDX,
-                             std::unordered_map<StringID, IRI_STORAGE::IRID>>
-        &scopeBindings,
+    const std::unordered_map<
+        SCPIDX, std::unordered_map<StringID, IRI_STORAGE::IRID>> &scopeBindings,
     auto scope, auto &ctx) {
   std::vector<IRI_STORAGE::IRID> matchedBindings;
 
@@ -487,8 +481,8 @@ void IRIS::commit() {
     BindingsSEXP bindings(bbc.getArg_Bindings(), ctx);
     ctx.storage.nodes.set_args(bindings.getArg_LocalBindings(), lBindings);
     ctx.storage.nodes.set_args(bindings.getArg_RemoteBindings(), rBindings);
-    // The Lambdas (PoolBinding) list is written by _9, where the bindings are
-    // created; it never leaves the IR.
+    // Writing lambdas list now happens in closureTree, IRIS has nothing to do
+    // with it anymore
   }
   // Resolve evals
   for (auto &[id, scopeToTaint, containerScope] : directEvals) {
@@ -682,21 +676,10 @@ SCPIDX IRIS::getJSEvalLookupREFIDX(SCPIDX scope, SCPIDX parentScope) {
   } while (true);
 }
 
-SCPIDX IRIS::getEnclosingClosureScope(SCPIDX startScope) {
-  assert(startScope != NO_SCOPE);
-
-  SCPIDX currScope = startScope;
-  while (true) {
-    if (scopeHead.contains(currScope))
-      return currScope;
-
-    auto edgeIt = outEdges.find(currScope);
-    if (edgeIt == outEdges.end()) {
-      assert(false && "Parent scope not found, error");
-    }
-    currScope = edgeIt->second;
-  }
-  throw std::runtime_error("Failed to resolve parent closure scope");
+SCPIDX IRIS::getEnclosingClosureScope(SCPIDX startScope) const {
+  for (SCPIDX scope = startScope; scope != NO_SCOPE; scope = parentScope(scope))
+    if (scopeHead.contains(scope))
+      return scope;
   return NO_SCOPE;
 }
 
@@ -762,7 +745,7 @@ std::vector<IRI_STORAGE::IRID> IRIS::getBindingsInClosure(SCPIDX headScope) {
   std::vector<IRI_STORAGE::IRID> res;
 
   std::function<void(SCPIDX, bool)> traverse = [&](SCPIDX currScope,
-                                                     bool isHead) {
+                                                   bool isHead) {
     if (!isHead && scopeHead.contains(currScope)) {
       return;
     }
@@ -789,13 +772,11 @@ std::vector<IRI_STORAGE::IRID> IRIS::getEnvBindingsAtScope(SCPIDX scope) {
   return IRI_STRUCTURAL::getEnvBindings(scopeBindings, scope, ctx);
 }
 
-std::vector<IRI_STORAGE::IRID>
-IRIS::getRemoteEnvBindingsAtScope(SCPIDX scope) {
+std::vector<IRI_STORAGE::IRID> IRIS::getRemoteEnvBindingsAtScope(SCPIDX scope) {
   return IRI_STRUCTURAL::getRemoteEnvBindings(scopeBindings, scope, ctx);
 }
 
-std::vector<IRI_STORAGE::IRID>
-IRIS::getEnvBindingsInClosure(SCPIDX headScope) {
+std::vector<IRI_STORAGE::IRID> IRIS::getEnvBindingsInClosure(SCPIDX headScope) {
   std::vector<IRI_STORAGE::IRID> res;
   for (auto bID : getBindingsInClosure(headScope)) {
     if (IRI_NODE(ctx, bID).tag == IRI_GEN::EnvBinding) {
@@ -855,17 +836,17 @@ std::vector<IRI_STORAGE::IRID> IRIS::collectReferencedIrids() const {
 
   std::vector<IRI_STORAGE::IRID> bpool_ref_irids;
   bpool_ref_irids = ctx.storage.bindings.collectReferencedIrids();
-  ref_irids.insert(ref_irids.end(), bpool_ref_irids.begin(), bpool_ref_irids.end());
+  ref_irids.insert(ref_irids.end(), bpool_ref_irids.begin(),
+                   bpool_ref_irids.end());
 
   return ref_irids;
 }
 
 void IRIS::remapIrids(std::span<const IRID> old_to_new_irid_map) {
   auto remap = [&](IRID old_irid) -> IRID {
-    if (old_irid >= old_to_new_irid_map.size() || old_to_new_irid_map[old_irid] == static_cast<IRID>(-1)) {
-      throw std::runtime_error(
-        "IRIS::remapIrids: garbage IRID in IRIS"
-      );
+    if (old_irid >= old_to_new_irid_map.size() ||
+        old_to_new_irid_map[old_irid] == static_cast<IRID>(-1)) {
+      throw std::runtime_error("IRIS::remapIrids: garbage IRID in IRIS");
     }
     return old_to_new_irid_map[old_irid];
   };
