@@ -100,10 +100,10 @@ inline IRID createBBContainerSEXP(IRIContext &ctx, IRI_STORAGE::SCPIDX targetSco
       ListSEXP::create(ctx, ctx.storage.strings.intern("EnvBinding"));
   IRID remoteBindingsID =
       ListSEXP::create(ctx, ctx.storage.strings.intern("RemoteEnvBinding"));
-  IRID poolBindingsID =
-      ListSEXP::create(ctx, ctx.storage.strings.intern("PoolBinding"));
+  IRID lambdasID =
+      ListSEXP::create(ctx, ctx.storage.strings.intern("Lambda"));
 
-  IRID bindingsID = BindingsSEXP::create(ctx, localBindingsID, remoteBindingsID, poolBindingsID);
+  IRID bindingsID = BindingsSEXP::create(ctx, localBindingsID, remoteBindingsID, lambdasID);
 
   IRID BBListID = ListSEXP::create(ctx, ctx.storage.strings.intern("BB"));
 
@@ -115,7 +115,7 @@ inline IRID createBBContainerSEXP(IRIContext &ctx, IRI_STORAGE::SCPIDX targetSco
       currContext->isAsync, currContext->isStrict, currContext->isGenerator,
       false, false, false, false, false, false, isTopLevel,
       targetScopeIDX, currContext->ecmaArgs, -1,
-      (UIndex)BBSEXP(currContext->BB[0], ctx).getIDX());
+      (UIndex)BBSEXP(currContext->BB[0], ctx).getIDX(), NO_CIDX);
 
   setClosureFlags(currContext->kind, BBContainerSEXP(bbContainer, ctx));
   return bbContainer;

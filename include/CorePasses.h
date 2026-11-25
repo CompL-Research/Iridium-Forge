@@ -56,12 +56,6 @@ void _5_INITSFRAME(IRIContext &ctx, IRID fileSEXP,
 void _8_RREBS(IRIContext &ctx, IRID fileSEXP,
               IRI_CONTEXTMAP &iridiumBuildContext);
 
-void _9_CER(IRIContext &ctx, IRID fileSEXP,
-            IRI_CONTEXTMAP &iridiumBuildContext);
-
-void _9_RLT(IRIContext &ctx, IRID fileSEXP,
-            IRI_CONTEXTMAP &iridiumBuildContext);
-
 CTARGETS
 _10_RBACT(IRIContext &ctx, IRID fileSEXP, IRI_CONTEXTMAP &iridiumBuildContext);
 

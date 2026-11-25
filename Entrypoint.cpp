@@ -18,6 +18,7 @@
 #include <functional>
 #include <iostream>
 #include <memory>
+#include <stdexcept>
 #include <system_error>
 #include <unordered_map>
 #include <vector>
@@ -102,7 +103,6 @@ void runCorePasses(IRIContext &ctx, IRID &sexpRef,
        [&] { IRI_CORE_PASSES::_4_5_PEB(ctx, sexpRef, buildContext); }},
       {"_8_RREBS",
        [&] { IRI_CORE_PASSES::_8_RREBS(ctx, sexpRef, buildContext); }},
-      {"_9_CER", [&] { IRI_CORE_PASSES::_9_RLT(ctx, sexpRef, buildContext); }},
       {"_10_RBACT",
        [&] {
          continueTargets =
@@ -210,7 +210,7 @@ void commitAndDump(IRIContext &ctx, IRID &sexpRef) {
   if (ctx.flags.dumpCFG)
     dumpCFGs(ctx);
   if (ctx.flags.dumpClosureTree)
-    ctx.closureTree->dumpFlat(std::cout);
+    throw std::runtime_error("[dumpClosure] WIP: disabled for now");
   if (ctx.flags.dumpIrisInfo)
     ctx.iris->dumpFlat(std::cout);
   if (ctx.flags.debugStorage)

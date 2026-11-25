@@ -11,17 +11,16 @@ namespace IRI_STRUCTURAL {
  * Meta:    RVAL
  * Arguments: (none)
  * Flags:
- *   - bool   CNAME -> sexp.getCNAME()
- *   - bool   SETNAME -> sexp.getSETNAME()
- *   - string NAME -> sexp.getNAME()
- *   - double StartBBIDX -> sexp.getStartBBIDX()
+ *   - int32  ClosureScope -> sexp.getClosureScope()
+ *   - uint32 ClosIDX -> sexp.getClosIDX()
+ *   - uint32 REFIDX -> sexp.getREFIDX()
  */
 std::string printLambdaRVal(const PPContext &pp, IRID node) {
-  // λ f@BB1 (a closure whose body starts at BB1), λ@BB1 without a name
+  // c2 (the closure named by handle 2). Before the closure tree resolves refs
+  // there is no handle yet, so fall back to the target's scope.
   IRI_GEN::LambdaSEXP sexp(node, pp.ctx);
-  std::string name(sexp.hasNAME() ? pp.str(sexp.getNAME()) : "");
-  return "λ" + (name.empty() ? "" : " " + name) + "@" +
-         ppBB(sexp.getStartBBIDX());
+  return sexp.hasClosIDX() ? "c" + std::to_string(sexp.getClosIDX())
+                           : "s" + std::to_string(sexp.getClosureScope());
 }
 
 } // namespace IRI_STRUCTURAL

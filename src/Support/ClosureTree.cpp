@@ -1,154 +1,221 @@
 #include "Support/ClosureTree.hpp"
+#include "Helpers.h"
 #include "Storage/Config.h"
 #include "Support/BBContainerSupport.hpp"
+#include "Support/FileSupport.hpp"
+#include "Support/IRIS.hpp"
+#include <algorithm>
+#include <functional>
 #include <iostream>
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <unordered_map>
 
 namespace IRI_STRUCTURAL {
 using namespace IRI_STORAGE;
 
-ClosureTree::ClosureTree(IRIContext &p, IRID rootNode) : ctx(p) {
-  addClosure(rootNode);
+namespace {
+
+// Helpers
+
+void lambdaSitesUnder(IRIContext &ctx, IRID root,
+                      std::vector<std::pair<IRID, size_t>> &out) {
+  auto args = ctx.storage.nodes.get_args(root);
+  for (size_t i = 0; i < args.size(); i++) {
+    if (IRI_NODE(ctx, args[i]).tag == IRI_GEN::LambdaRef)
+      out.push_back({root, i});
+    else
+      lambdaSitesUnder(ctx, args[i], out);
+  }
 }
 
-void ClosureTree::addClosure(IRID id) {
-  BBContainerSupport bbc(id, ctx);
-  if (closures.contains(id)) {
+void lambdaSitesIn(IRICFG &cfg, IRIContext &ctx,
+                   std::vector<std::pair<IRID, size_t>> &out) {
+  for (auto &bb : cfg.blocks()) {
+    for (IRIStatement *st = bb->head; st != nullptr; st = st->next)
+      lambdaSitesUnder(ctx, st->id, out);
+    if (bb->tail != nullptr)
+      lambdaSitesUnder(ctx, bb->tail->id, out);
+  }
+}
+
+} // namespace
+
+ClosureTree::ClosureTree(IRIContext &p, IRID fileSEXP) : ctx(p) {
+  if (!ctx.iris)
+    throw std::runtime_error(
+        "ClosureTree: IRIS must exist before the closure tree is built");
+
+  IRID rootContainer = IRI_HELPERS::getTopLevelContainer(ctx, fileSEXP);
+
+  std::unordered_map<IRID, CIDX> byContainer;
+
+  // Add root first so it always gets id 0
+  addClosure(rootContainer, byContainer);
+
+  FileSupport fs(fileSEXP, ctx);
+  for (auto [bbcID, _] : fs.containers()) {
+    if (bbcID == rootContainer)
+      continue;
+    addClosure(bbcID, byContainer);
+  }
+  root_id = 0;
+
+  linkClosures(byContainer);
+  relayout();
+  resolveClosureRefs();
+}
+
+void ClosureTree::addClosure(IRID container,
+                             std::unordered_map<IRID, CIDX> &byContainer) {
+  if (byContainer.contains(container))
     throw std::runtime_error("Tried to add a duplicate closure");
-  }
 
-  closures[id] = std::make_unique<IRICFG>(id, ctx);
-  scopeIDXtoClosure[bbc.getScopeIDX()] = closures[id].get();
-  bbIDXtoClosure[bbc.getStartBBIDX()] = closures[id].get();
+  byContainer[container] = (CIDX)nodes.size();
 
-  outEdges[id] = {};
-  inEdges[id] = {};
+  ClosureNode n;
+  n.container = container;
+  n.cfg = std::make_unique<IRICFG>(container, ctx);
+  nodes.push_back(std::move(n));
+}
 
-  if (!root_id.has_value()) {
-    root_id = id;
+void ClosureTree::linkClosures(
+    const std::unordered_map<IRID, CIDX> &byContainer) {
+  SCPIDX topLevel = ctx.iris->getTopLevelScope();
+
+  for (CIDX h = 0; h < (CIDX)nodes.size(); h++) {
+    SCPIDX scope = BBContainerSupport(nodes[h].container, ctx).getScopeIDX();
+    if (scope == topLevel)
+      continue;
+
+    SCPIDX parent =
+        ctx.iris->getEnclosingClosureScope(ctx.iris->parentScope(scope));
+    if (parent == NO_SCOPE)
+      throw std::runtime_error(
+          "ClosureTree: closure scope has no enclosing closure: " +
+          std::to_string(scope));
+
+    CIDX p = byContainer.at(ctx.iris->containerForScope(parent));
+    nodes[h].parent = p;
+    nodes[p].children.push_back(h);
   }
 }
 
-void ClosureTree::addEdge(IRID from, IRID to) {
-  if (!closures.contains(from) || !closures.contains(to)) {
-    throw std::runtime_error("Source or destination IRID does not exist.");
+void ClosureTree::relayout() {
+  std::vector<CIDX> order;
+  std::vector<CIDX> ends(nodes.size());
+
+  std::function<void(CIDX)> visit = [&](CIDX h) {
+    CIDX self = (CIDX)order.size();
+    order.push_back(h);
+    for (CIDX c : nodes[h].children)
+      visit(c);
+    ends[self] = (CIDX)order.size();
+  };
+  visit(root_id);
+
+  if (order.size() != nodes.size())
+    throw std::runtime_error(
+        "ClosureTree: closure is not reachable from the root");
+
+  std::vector<CIDX> oldToNew(nodes.size());
+  for (CIDX i = 0; i < (CIDX)order.size(); i++)
+    oldToNew[order[i]] = i;
+
+  std::vector<ClosureNode> laid(order.size());
+  for (CIDX i = 0; i < (CIDX)order.size(); i++) {
+    ClosureNode &n = nodes[order[i]];
+    laid[i].container = n.container;
+    laid[i].cfg = std::move(n.cfg);
+    laid[i].subtreeEnd = ends[i];
+    laid[i].parent = n.parent == NO_CIDX ? NO_CIDX : oldToNew[n.parent];
+    for (CIDX c : n.children)
+      laid[i].children.push_back(oldToNew[c]);
   }
 
-  if (root_id == to) {
-    throw std::runtime_error("Cannot add an outgoing edge ");
-  }
+  nodes = std::move(laid);
+  root_id = 0;
 
-  outEdges[from].push_back(to);
-  inEdges[to].push_back(from);
+  preorder_.clear();
+  preorder_.reserve(nodes.size());
+  for (auto &n : nodes)
+    preorder_.push_back(n.cfg.get());
 }
 
-void ClosureTree::addEdgeFromScopeToBBIDX(SCPIDX fromScope, BBIDX toBBIDX) {
-  if (!scopeIDXtoClosure.contains(fromScope) ||
-      !bbIDXtoClosure.contains(toBBIDX)) {
-    throw std::runtime_error("Closure with startBBIDX does not exist");
+void ClosureTree::resolveClosureRefs() {
+  // Scope -> closure handle: how a site's ClosureScope becomes a ClosIDX.
+  std::unordered_map<SCPIDX, CIDX> byScope;
+  for (CIDX h = 0; h < (CIDX)nodes.size(); h++) {
+    BBContainerSEXP container(nodes[h].container, ctx);
+    container.setClosIDX(h);
+    byScope[container.getScopeIDX()] = h;
   }
-  addEdge(scopeIDXtoClosure[fromScope]->id, bbIDXtoClosure[toBBIDX]->id);
+
+  for (CIDX h = 0; h < (CIDX)nodes.size(); h++) {
+    std::vector<std::pair<IRID, size_t>> sites;
+    lambdaSitesIn(*nodes[h].cfg, ctx, sites);
+
+    for (auto [ref, _] : sites) {
+      LambdaRefSEXP lref(ref, ctx);
+      IRID lambda = lref.getArg_Lambda();
+      LambdaSEXP lmb(lambda, ctx);
+
+      if (!lmb.hasClosureScope())
+        throw std::runtime_error(
+            "ClosureTree: Lambda node has no ClosureScope: " +
+            std::to_string(lambda));
+
+      auto target = byScope.find(lmb.getClosureScope());
+      if (target == byScope.end())
+        throw std::runtime_error(
+            "ClosureTree: Lambda targets a closure outside this file: scope " +
+            std::to_string(lmb.getClosureScope()));
+
+      CIDX closure = target->second;
+
+      if (closure != root_id && nodes[closure].parent != h)
+        throw std::runtime_error(
+            "ClosureTree: closure " + std::to_string(closure) +
+            " is materialized by " + std::to_string(h) +
+            ", but its parent is " + std::to_string(nodes[closure].parent));
+
+      auto [first, isNew] = canonical.try_emplace(closure, lambda);
+      if (isNew)
+        lmb.setClosIDX(closure);
+      else if (first->second != lambda)
+        lref.setArg_Lambda(first->second);
+    }
+  }
+
+  for (CIDX h = 0; h < (CIDX)nodes.size(); h++) {
+    if (h == root_id || canonical.contains(h))
+      continue;
+
+    // Create dummies for closures which were never instantiated...
+    BBContainerSEXP target(nodes[h].container, ctx);
+    canonical[h] = LambdaSEXP::create(ctx, target.getScopeIDX(), h, 0);
+  }
 }
 
-IRICFG *ClosureTree::getClosureByStartBBIDX(BBIDX startBBIDX) const {
-  auto it = bbIDXtoClosure.find(startBBIDX);
-  if (it == bbIDXtoClosure.end()) {
-    throw std::runtime_error("Tried to get a non-existant closure");
+void ClosureTree::populateSlots(CIDX h) {
+  // Create the lambdas list for the logical frame
+  std::vector<IRID> lambdas;
+  for (size_t i = 0; i < nodes[h].children.size(); i++) {
+    IRID lambda = canonical.at(nodes[h].children[i]);
+    LambdaSEXP(lambda, ctx).setREFIDX(i);
+    lambdas.push_back(lambda);
   }
-  return it->second;
+
+  BBContainerSupport bbc(nodes[h].container, ctx);
+  BindingsSEXP bindings(bbc.getArg_Bindings(), ctx);
+  ctx.storage.nodes.set_args(bindings.getArg_Lambdas(), lambdas);
 }
 
 void ClosureTree::commit() {
-  for (auto &e : closures) {
-    e.second->commit();
-  }
-}
-
-// ============================================================================
-// Access & Traversal
-// ============================================================================
-
-IRICFG *ClosureTree::getRoot() {
-  if (root_id.has_value()) {
-    return closures.at(root_id.value()).get();
-  }
-  throw std::runtime_error("Root not defined");
-}
-
-const IRICFG *ClosureTree::getRoot() const {
-  if (root_id.has_value()) {
-    return closures.at(root_id.value()).get();
-  }
-  throw std::runtime_error("Root not defined");
-}
-
-void ClosureTree::preorderTraversal(
-    const std::function<void(IRICFG *)> &visitor) const {
-  if (!root_id.has_value()) {
-    throw std::runtime_error("Root not defined");
-  }
-  traverseRecursive(root_id.value(), visitor);
-}
-
-void ClosureTree::traverseRecursive(
-    IRID current_id, const std::function<void(IRICFG *)> &visitor) const {
-  // Visit the node
-  visitor(closures.at(current_id).get());
-
-  // Recurse down children
-  for (IRID child_id : outEdges.at(current_id)) {
-    traverseRecursive(child_id, visitor);
-  }
-}
-
-// Public dump entry point
-void ClosureTree::dumpFlat(std::ostream &oss) const {
-  if (!root_id.has_value()) {
-    throw std::runtime_error("Tree root not initialized");
-  }
-  oss << "\n=============================================\n";
-  oss << "            ClosureTree STATE DUMP             \n";
-  oss << "=============================================\n";
-
-  IRI_STORAGE::IRID root = root_id.value();
-  BBContainerSupport bbc(root, ctx);
-
-  oss << "Root [BB" << bbc.getStartBBIDX() << "@" << bbc.getScopeIDX() << "]\n";
-  // Fetch children of the root
-  auto it = outEdges.find(root);
-  if (it != outEdges.end()) {
-    const auto &children = it->second;
-    for (size_t i = 0; i < children.size(); ++i) {
-      bool is_last = (i == children.size() - 1);
-      dumpRecursive(oss, children[i], "", is_last);
-    }
-  }
-}
-
-// Private recursive dumper
-void ClosureTree::dumpRecursive(std::ostream &oss, IRI_STORAGE::IRID current_id,
-                                const std::string &prefix, bool is_last) const {
-  BBContainerSupport bbc(current_id, ctx);
-  // Print current node's branch character and ID
-  oss << prefix << (is_last ? "└── " : "├── ") << "[BB" << bbc.getStartBBIDX()
-      << "@" << bbc.getScopeIDX() << "]";
-
-  oss << "\n";
-
-  // Check if this node has children
-  auto edges_it = outEdges.find(current_id);
-  if (edges_it != outEdges.end()) {
-    const auto &children = edges_it->second;
-
-    // Calculate the prefix for the next level down
-    std::string next_prefix = prefix + (is_last ? "    " : "│   ");
-
-    for (size_t i = 0; i < children.size(); ++i) {
-      bool child_is_last = (i == children.size() - 1);
-      dumpRecursive(oss, children[i], next_prefix, child_is_last);
-    }
+  for (CIDX h = 0; h < (CIDX)nodes.size(); h++) {
+    nodes[h].cfg->commit();
+    populateSlots(h);
   }
 }
 

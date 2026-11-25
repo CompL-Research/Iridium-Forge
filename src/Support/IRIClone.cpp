@@ -19,15 +19,13 @@ bool IRICloner::isSingletonTag(IRI_TAG tag) {
   case IRI_TAG::GlobalBinding:
   case IRI_TAG::ScriptBinding:
   case IRI_TAG::RemoteEnvBinding:
-  case IRI_TAG::PoolBinding:
+  case IRI_TAG::Lambda:
     return true;
   default:
     return false;
   }
 }
 
-// Flags holding a BBIDX target, per control flow tag. Cross-closure refs
-// (e.g. Lambda StartBBIDX) are deliberately not remapped.
 void IRICloner::remapTargets(IRIContext &ctx, IRID stmtID,
                              const std::unordered_map<BBIDX, BBIDX> &targetMap) {
   auto re = [&](size_t pos) {

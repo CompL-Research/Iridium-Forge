@@ -3,53 +3,50 @@
 #include "IRICFG.hpp"
 #include "Storage/Config.h"
 #include "Storage/IRIContext.h"
-#include <functional>
 #include <memory>
-#include <optional>
+#include <ostream>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
 namespace IRI_STRUCTURAL {
 
+struct ClosureNode {
+  IRI_STORAGE::IRID container;
+  std::unique_ptr<IRICFG> cfg;
+  CIDX parent = NO_CIDX;
+  CIDX subtreeEnd = NO_CIDX;
+  std::vector<CIDX> children;
+};
+
 class ClosureTree {
-private:
-  // Node Storage Pool
-  IRI_STORAGE::IRIContext &ctx;
-
-  std::unordered_map<IRI_STORAGE::IRID, std::unique_ptr<IRICFG>> closures;
-  std::unordered_map<IRI_STORAGE::IRID, std::vector<IRI_STORAGE::IRID>>
-      outEdges;
-  std::unordered_map<IRI_STORAGE::IRID, std::vector<IRI_STORAGE::IRID>> inEdges;
-  std::unordered_map<SCPIDX, IRICFG *> scopeIDXtoClosure;
-  std::unordered_map<BBIDX, IRICFG *> bbIDXtoClosure;
-
-  // Enforcing exactly one root
-  std::optional<IRI_STORAGE::IRID> root_id;
-
-  // Internal recursive helper for traversal
-  void traverseRecursive(IRI_STORAGE::IRID current_id,
-                         const std::function<void(IRICFG *)> &visitor) const;
-
-  void dumpRecursive(std::ostream &os, IRI_STORAGE::IRID current_id,
-                     const std::string &prefix, bool is_last) const;
-
 public:
-  ClosureTree(IRI_STORAGE::IRIContext &, IRI_STORAGE::IRID);
-  void addClosure(IRI_STORAGE::IRID id);
-  void addEdge(IRI_STORAGE::IRID from, IRI_STORAGE::IRID to);
-  void addEdgeFromScopeToBBIDX(SCPIDX from, BBIDX to);
+  ClosureTree(IRI_STORAGE::IRIContext &, IRI_STORAGE::IRID fileSEXP);
 
-  IRICFG *getRoot();
-  const IRICFG *getRoot() const;
+  const std::vector<IRICFG *> &preorder() const { return preorder_; }
 
-  IRICFG *getClosureByStartBBIDX(BBIDX startBBIDX) const;
-
-  void preorderTraversal(const std::function<void(IRICFG *)> &visitor) const;
-
-  void dumpFlat(std::ostream &oss) const;
+  IRICFG *root() const { return nodes[root_id].cfg.get(); }
+  size_t size() const { return nodes.size(); }
+  const ClosureNode &node(CIDX h) const { return nodes[h]; }
 
   void commit();
+
+private:
+  void addClosure(IRI_STORAGE::IRID container,
+                  std::unordered_map<IRI_STORAGE::IRID, CIDX> &byContainer);
+  void
+  linkClosures(const std::unordered_map<IRI_STORAGE::IRID, CIDX> &byContainer);
+  void relayout();
+  void resolveClosureRefs();
+  void populateSlots(CIDX h);
+  void dumpNode(std::ostream &oss, CIDX h, const std::string &prefix,
+                bool isLast) const;
+
+  IRI_STORAGE::IRIContext &ctx;
+  std::vector<ClosureNode> nodes;
+  std::vector<IRICFG *> preorder_;
+  CIDX root_id = NO_CIDX;
+  std::unordered_map<CIDX, IRI_STORAGE::IRID> canonical;
 };
 
 } // namespace IRI_STRUCTURAL

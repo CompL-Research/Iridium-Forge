@@ -17,14 +17,14 @@ namespace IRI_STRUCTURAL {
  */
 std::string printEnvReadRVal(const PPContext &pp, IRID node) {
   // Reads that may throw (TDZ check) are marked: x!
-  // Arguments, globals and pool bindings never lower to a checked read, so
-  // SAFE does not apply to them and they are never marked.
+  // Arguments, globals and closures never lower to a checked read, so SAFE
+  // does not apply to them and they are never marked.
   IRI_GEN::EnvReadSEXP sexp(node, pp.ctx);
   IRID binding = sexp.getArg_Obj();
   bool checked = !sexp.hasSAFE();
   switch (pp.tagOf(binding)) {
   case IRI_GEN::GlobalBinding:
-  case IRI_GEN::PoolBinding:
+  case IRI_GEN::LambdaRef:
     checked = false;
     break;
   case IRI_GEN::EnvBinding: {

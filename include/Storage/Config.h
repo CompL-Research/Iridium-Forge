@@ -15,6 +15,9 @@ using BBIDX = uint32_t;
 inline constexpr BBIDX NO_BB = UINT32_MAX;
 using SCPIDX = int32_t;
 inline constexpr SCPIDX NO_SCOPE = -1;
+// CIDX -> uint32's
+using CIDX = uint32_t;
+inline constexpr CIDX NO_CIDX = UINT32_MAX;
 
 // Separate Fields
 struct StringID {
