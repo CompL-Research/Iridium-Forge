@@ -5,7 +5,6 @@
 #include "Storage/BindingsPool.h"
 #include "Storage/Config.h"
 #include "Storage/StringPool.h"
-#include "Support/IRICFG.hpp"
 #include <cstddef>
 #include <iterator>
 #include <memory>
@@ -19,6 +18,8 @@ class IridiumBuildContext;
 }
 
 namespace IRI_STRUCTURAL {
+
+using namespace IRI_STORAGE;
 
 class IRIS {
 public:
@@ -36,6 +37,9 @@ public:
   }
   IRI_GEN::IRID containerForScope(SCPIDX scope) const {
     return scopeHead.at(scope);
+  }
+  bool isContainerScope(SCPIDX scope) const {
+    return scopeHead.contains(scope);
   }
 
   // Binding Declaration
@@ -91,29 +95,6 @@ public:
   bool isArgInitScope(SCPIDX);
 
   bool isEnclosedInAPropInitScope(SCPIDX);
-
-  // The handler dispatch target for the innermost try enclosing a scope,
-  // NO_BB if none.
-  BBIDX getExceptionTargetForScope(SCPIDX);
-
-  // Per-BB exception dispatch target, keyed (closure scope, BBIDX).
-  // Materialized by _20_IFB, carried by IRICloner; after that pass it is
-  // the only valid dispatch source (regions and their clones share scopes).
-  void declareExceptionIDX(SCPIDX closureScope, BBIDX bbIDX, BBIDX target) {
-    exceptionIDX[closureScope][bbIDX] = target;
-  }
-  bool getExceptionIDX(SCPIDX closureScope, BBIDX bbIDX, BBIDX &out) const {
-    auto c = exceptionIDX.find(closureScope);
-    if (c == exceptionIDX.end())
-      return false;
-    auto b = c->second.find(bbIDX);
-    if (b == c->second.end())
-      return false;
-    out = b->second;
-    return true;
-  }
-
-  BBIDX getFinalizerRetBBIDX(BBIDX);
 
   std::vector<IRI_STORAGE::IRID> getBindingsToMoveToHeap(SCPIDX startScope,
                                                          SCPIDX endScope);
@@ -185,10 +166,6 @@ private:
   std::unordered_map<SCPIDX, std::set<SCPIDX>> inEdges;
   std::set<SCPIDX> nodes;
 
-  // Per-BB dispatch targets, (closure scope -> BBIDX -> target BBIDX).
-  // See declareExceptionIDX.
-  std::unordered_map<SCPIDX, std::unordered_map<BBIDX, BBIDX>> exceptionIDX;
-
   std::vector<std::tuple<IRI_STORAGE::IRID, SCPIDX, SCPIDX>> directEvals;
 
   SCPIDX topLevelScope = NO_SCOPE;
@@ -209,11 +186,6 @@ private:
 
   std::unordered_map<StringID, IRI_STORAGE::IRID> scriptBindings;
   std::unordered_map<StringID, IRI_STORAGE::IRID> globalBindings;
-
-  // try/ud-catch scope -> the BB its throw redirects to, and
-  // finalizer BB -> the BB its body returns to.
-  std::unordered_map<SCPIDX, BBIDX> exceptionEdgeRedirect;
-  std::unordered_map<BBIDX, BBIDX> finalizerRetMap;
 
   std::set<StringID> exportedModuleBindings;
 

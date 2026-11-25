@@ -12,6 +12,7 @@
 #include "Support/ClosureTree.hpp"
 #include "Support/IRIS.hpp"
 #include "Support/PP.hpp"
+#include "Support/TryStructure.hpp"
 #include <cstdlib>
 #include <exception>
 #include <filesystem>
@@ -120,7 +121,11 @@ void runCorePasses(IRIContext &ctx, IRID &sexpRef,
        [&] { IRI_CORE_PASSES::_19_CBBAMTLA(ctx, sexpRef, buildContext); }},
       {"_20_IFB",
        [&] {
-         IRI_CORE_PASSES::_20_IFB(ctx, sexpRef, buildContext, continueTargets);
+         // Lexical try data is only needed to materialize BB.EXCIDX; the CFG
+         // owns exception flow from here on, so it ends with this pass.
+         TryStructure tryInfo(*ctx.iris, buildContext);
+         IRI_CORE_PASSES::_20_IFB(ctx, sexpRef, buildContext, continueTargets,
+                                  tryInfo);
        }},
       {"_21_TER",
        [&] { IRI_CORE_PASSES::_21_TER(ctx, sexpRef, buildContext); }},

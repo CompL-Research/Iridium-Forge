@@ -51,30 +51,6 @@ IRIS::IRIS(
     auto &bcon = e.second;
     auto parentScope = bcon->parent;
 
-    if (bcon->tryContext.has_value()) {
-      auto lCon = bcon->tryContext.value();
-      if (lCon.tryScopeIDX > -1) {
-        BBIDX redirectBBIDX = NO_BB;
-        if (lCon.udCatchIDX > -1) {
-          redirectBBIDX = (BBIDX)lCon.udCatchIDX;
-        } else {
-          redirectBBIDX = (BBIDX)lCon.imCatchIDX;
-        }
-        assert(redirectBBIDX != NO_BB);
-        exceptionEdgeRedirect[lCon.tryScopeIDX] = redirectBBIDX;
-      }
-
-      if (lCon.udCatchScopeIDX > -1) {
-        assert(lCon.imCatchIDX != -1);
-        exceptionEdgeRedirect[lCon.udCatchScopeIDX] = (BBIDX)lCon.imCatchIDX;
-      }
-
-      if (lCon.finalizerIDX > -1) {
-        assert(lCon.finalizerRetIDX != -1);
-        finalizerRetMap[(BBIDX)lCon.finalizerIDX] = (BBIDX)lCon.finalizerRetIDX;
-      }
-    }
-
     // Populate Tree
     outEdges[currScope] = parentScope;
     inEdges[parentScope].insert(currScope);
@@ -525,30 +501,6 @@ bool IRIS::isEnclosedInAPropInitScope(SCPIDX currScope) {
   return false;
 }
 
-BBIDX IRIS::getExceptionTargetForScope(SCPIDX startScope) {
-  SCPIDX currScope = startScope;
-  while (currScope != NO_SCOPE) {
-    if (exceptionEdgeRedirect.contains(currScope)) {
-      return exceptionEdgeRedirect[currScope];
-    }
-
-    if (scopeHead.contains(currScope))
-      return NO_BB;
-
-    auto edgeIt = outEdges.find(currScope);
-    if (edgeIt == outEdges.end()) {
-      assert(false && "Parent scope not found, error");
-    }
-    currScope = edgeIt->second;
-  }
-  return NO_BB;
-}
-
-BBIDX IRIS::getFinalizerRetBBIDX(BBIDX finalizerIDX) {
-  assert(finalizerRetMap.contains(finalizerIDX));
-  return finalizerRetMap[finalizerIDX];
-}
-
 bool IRIS::isTopLevelScope(SCPIDX startScope) {
   auto edgeIt = outEdges.find(startScope);
   if (edgeIt == outEdges.end()) {
@@ -686,17 +638,9 @@ SCPIDX IRIS::getEnclosingClosureScope(SCPIDX startScope) const {
 SCPIDX IRIS::getEnclosingThrowScope(SCPIDX startScope) {
   assert(startScope != NO_SCOPE);
 
-  SCPIDX currScope = startScope;
-  while (true) {
-    if (scopeHead.contains(currScope) || tryScopes.contains(currScope))
-      return currScope;
-
-    auto edgeIt = outEdges.find(currScope);
-    if (edgeIt == outEdges.end()) {
-      assert(false && "Parent scope not found, error");
-    }
-    currScope = edgeIt->second;
-  }
+  for (SCPIDX scope = startScope; scope != NO_SCOPE; scope = parentScope(scope))
+    if (isContainerScope(scope) || tryScopes.contains(scope))
+      return scope;
 
   return NO_SCOPE;
 }

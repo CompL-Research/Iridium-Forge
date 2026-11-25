@@ -8,6 +8,7 @@
 #include "Support/FileSupport.hpp"
 #include "Support/IRIClone.hpp"
 #include "Support/IRIS.hpp"
+#include "Support/TryStructure.hpp"
 #include <algorithm>
 #include <set>
 #include <stdexcept>
@@ -28,19 +29,19 @@ struct IVSite {
 };
 
 void _20_IFB(IRIContext &ctx, IRID fileSEXP,
-             IRI_CONTEXTMAP &iridiumBuildContext, CTARGETS &continueTargets) {
+             IRI_CONTEXTMAP &iridiumBuildContext, CTARGETS &continueTargets,
+             TryStructure &tryInfo) {
   FileSupport file(fileSEXP, ctx);
 
   // Freeze dispatch targets: materialize the scope table onto every BB.
-  // Last valid scope lookup; after this ExceptionIDX is the only source.
+  // Last valid scope lookup; after this BB.EXCIDX is the only source.
   for (auto [bbcID, _] : file.containers()) {
     BBContainerSupport bbc(bbcID, ctx);
-    SCPIDX closureScope = bbc.getScopeIDX();
     for (auto [bbID, _] : bbc.bbs()) {
       BBSupport bb(bbID, ctx);
-      ctx.iris->declareExceptionIDX(
-          closureScope, bb.getIDX(),
-          ctx.iris->getExceptionTargetForScope(bb.getScopeIDX()));
+      BBIDX target = tryInfo.getExceptionTargetForScope(bb.getScopeIDX());
+      if (target != NO_BB)
+        bb.setEXCIDX(target);
     }
   }
 
@@ -171,7 +172,7 @@ void _20_IFB(IRIContext &ctx, IRID fileSEXP,
                    siteArgs.begin();
       if (pos + 1 >= siteArgs.size())
         throw std::runtime_error("_20_IFB: InvokeFinalizer is terminal");
-      IRID contBB = splitBBSuffix(ctx, siteBB, pos + 1, bbc.getScopeIDX());
+      IRID contBB = splitBBSuffix(ctx, siteBB, pos + 1);
       BBIDX contIDX = BBSupport(contBB, ctx).getIDX();
       std::vector<IRID> list = ctx.storage.nodes.get_args(bbList);
       list.push_back(contBB);
@@ -182,7 +183,7 @@ void _20_IFB(IRIContext &ctx, IRID fileSEXP,
 
       // A completing body's ret copy jumps to the continuation; bodies
       // that always throw/returns have no ret copy (no completion edge).
-      auto rit = rc.cloner.targetMap.find(ctx.iris->getFinalizerRetBBIDX(F));
+      auto rit = rc.cloner.targetMap.find(tryInfo.getFinalizerRetBBIDX(F));
       if (rit != rc.cloner.targetMap.end()) {
         IRID cloneRetBB = bbc.getBBByIDX(rit->second);
         auto retArgs = ctx.storage.nodes.get_args(cloneRetBB);

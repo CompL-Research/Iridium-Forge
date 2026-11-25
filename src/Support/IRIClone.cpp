@@ -102,36 +102,27 @@ IRID cloneBB(IRIContext &ctx, IRID bbID, BBIDX newIDX, IRICloner &cloner) {
     cStmts.push_back(cloner.cloneStmt(s));
   ctx.storage.nodes.set_args(nb, cStmts);
 
-  // Dispatch wiring travels with the region: the clone's exception target
-  // is the source's, remapped into the clone when it lands inside.
-  BBIDX dispatch;
-  if (ctx.iris->getExceptionIDX(cloner.closureScope, BBSEXP(bbID, ctx).getIDX(),
-                                dispatch)) {
-    auto it = cloner.targetMap.find(dispatch);
-    ctx.iris->declareExceptionIDX(
-        cloner.closureScope, newIDX,
-        it != cloner.targetMap.end() ? it->second : dispatch);
+  // Dispatch wiring travels with the region: newBBLike already copied the
+  // source's EXCIDX, so only a target that landed inside the clone is rewired.
+  BBSEXP copy(nb, ctx);
+  if (copy.hasEXCIDX()) {
+    auto it = cloner.targetMap.find(copy.getEXCIDX());
+    if (it != cloner.targetMap.end())
+      copy.setEXCIDX(it->second);
   }
   return nb;
 }
 
-IRID splitBBSuffix(IRIContext &ctx, IRID bbID, size_t fromIdx,
-                   SCPIDX closureScope) {
+IRID splitBBSuffix(IRIContext &ctx, IRID bbID, size_t fromIdx) {
   auto args = ctx.storage.nodes.get_args(bbID);
   if (fromIdx == 0 || fromIdx >= args.size())
     throw std::runtime_error("splitBBSuffix: index out of range");
   BBIDX newIDX = ++ctx.lastBBIDX;
+  // newBBLike copies EXCIDX: the suffix keeps the source's dispatch target.
   IRID nb = newBBLike(ctx, bbID, newIDX);
   ctx.storage.nodes.set_args(
       nb, std::vector<IRID>(args.begin() + fromIdx, args.end()));
   ctx.storage.nodes.update_num_args(bbID, fromIdx);
-
-  // The suffix stays in the source's region: same dispatch target.
-  BBIDX dispatch;
-  if (closureScope >= 0 &&
-      ctx.iris->getExceptionIDX(closureScope, BBSEXP(bbID, ctx).getIDX(),
-                                dispatch))
-    ctx.iris->declareExceptionIDX(closureScope, newIDX, dispatch);
   return nb;
 }
 
@@ -188,7 +179,7 @@ RegionClone cloneRegion(IRIContext &ctx, BBContainerSupport &bbc,
     }
   }
 
-  RegionClone rc(ctx, bbc.getScopeIDX());
+  RegionClone rc(ctx);
   for (BBIDX d : span)
     rc.cloner.targetMap[d] = ++ctx.lastBBIDX;
 
