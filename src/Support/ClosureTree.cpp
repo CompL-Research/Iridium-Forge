@@ -15,33 +15,6 @@
 namespace IRI_STRUCTURAL {
 using namespace IRI_STORAGE;
 
-namespace {
-
-// Helpers
-
-void lambdaSitesUnder(IRIContext &ctx, IRID root,
-                      std::vector<std::pair<IRID, size_t>> &out) {
-  auto args = ctx.storage.nodes.get_args(root);
-  for (size_t i = 0; i < args.size(); i++) {
-    if (IRI_NODE(ctx, args[i]).tag == IRI_GEN::LambdaRef)
-      out.push_back({root, i});
-    else
-      lambdaSitesUnder(ctx, args[i], out);
-  }
-}
-
-void lambdaSitesIn(IRICFG &cfg, IRIContext &ctx,
-                   std::vector<std::pair<IRID, size_t>> &out) {
-  for (auto &bb : cfg.blocks()) {
-    for (IRIStatement *st = bb->head; st != nullptr; st = st->next)
-      lambdaSitesUnder(ctx, st->id, out);
-    if (bb->tail != nullptr)
-      lambdaSitesUnder(ctx, bb->tail->id, out);
-  }
-}
-
-} // namespace
-
 ClosureTree::ClosureTree(IRIContext &p, IRID fileSEXP) : ctx(p) {
   if (!ctx.iris)
     throw std::runtime_error(
@@ -152,41 +125,50 @@ void ClosureTree::resolveClosureRefs() {
     byScope[container.getScopeIDX()] = h;
   }
 
-  for (CIDX h = 0; h < (CIDX)nodes.size(); h++) {
-    std::vector<std::pair<IRID, size_t>> sites;
-    lambdaSitesIn(*nodes[h].cfg, ctx, sites);
+  std::function<void(IRID, CIDX)> patchNode = [&](IRID node, CIDX h) {
+    for (IRID ref : ctx.storage.nodes.get_args_view(node)) {
+      if (IRI_NODE(ctx, ref).tag == IRI_GEN::LambdaRef) {
+        LambdaRefSEXP lref(ref, ctx);
+        IRID lambda = lref.getArg_Lambda();
+        LambdaSEXP lmb(lambda, ctx);
 
-    for (auto [ref, _] : sites) {
-      LambdaRefSEXP lref(ref, ctx);
-      IRID lambda = lref.getArg_Lambda();
-      LambdaSEXP lmb(lambda, ctx);
+        if (!lmb.hasClosureScope())
+          throw std::runtime_error("ClosureTree: Lambda has no ClosureScope: " +
+                                   std::to_string(lambda));
 
-      if (!lmb.hasClosureScope())
-        throw std::runtime_error(
-            "ClosureTree: Lambda node has no ClosureScope: " +
-            std::to_string(lambda));
+        auto target = byScope.find(lmb.getClosureScope());
+        if (target == byScope.end())
+          throw std::runtime_error("ClosureTree: Lambda targets a closure "
+                                   "outside this file: scope " +
+                                   std::to_string(lmb.getClosureScope()));
 
-      auto target = byScope.find(lmb.getClosureScope());
-      if (target == byScope.end())
-        throw std::runtime_error(
-            "ClosureTree: Lambda targets a closure outside this file: scope " +
-            std::to_string(lmb.getClosureScope()));
+        CIDX closure = target->second;
+        if (closure != root_id && nodes[closure].parent != h)
+          throw std::runtime_error(
+              "ClosureTree: closure " + std::to_string(closure) +
+              " is materialized " + "by " + std::to_string(h) +
+              ", but its "
+              "parent is " +
+              std::to_string(nodes[closure].parent));
 
-      CIDX closure = target->second;
+        auto [first, isNew] = canonical.try_emplace(closure, lambda);
+        if (isNew)
+          lmb.setClosIDX(closure);
+        else if (first->second != lambda)
+          lref.setArg_Lambda(first->second);
+      }
 
-      if (closure != root_id && nodes[closure].parent != h)
-        throw std::runtime_error(
-            "ClosureTree: closure " + std::to_string(closure) +
-            " is materialized by " + std::to_string(h) +
-            ", but its parent is " + std::to_string(nodes[closure].parent));
-
-      auto [first, isNew] = canonical.try_emplace(closure, lambda);
-      if (isNew)
-        lmb.setClosIDX(closure);
-      else if (first->second != lambda)
-        lref.setArg_Lambda(first->second);
+      patchNode(ref, h);
     }
-  }
+  };
+
+  for (CIDX h = 0; h < (CIDX)nodes.size(); h++)
+    for (auto &bb : nodes[h].cfg->blocks()) {
+      for (IRIStatement *st = bb->head; st != nullptr; st = st->next)
+        patchNode(st->id, h);
+      if (bb->tail != nullptr)
+        patchNode(bb->tail->id, h);
+    }
 
   for (CIDX h = 0; h < (CIDX)nodes.size(); h++) {
     if (h == root_id || canonical.contains(h))
