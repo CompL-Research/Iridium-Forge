@@ -9,84 +9,90 @@
 namespace IRI_STRUCTURAL {
 
 // ============================================================================
-// Reduce computed field operations into static ones
+// Reduce Computed Field Ops Transformation Pass
 // ============================================================================
 struct ReduceComputedFieldOpsPass {
-  static bool literalKey(IRI_STORAGE::IRIContext &ctx, IRID field,
-                         std::string &out) {
+  static IRID keyOf(IRIContext &ctx, IRID field) {
+    std::string key;
     switch (IRI_NODE(ctx, field).tag) {
     case IRI_GEN::String:
-      out = std::string(ctx.storage.strings.get(
+      key = std::string(ctx.storage.strings.get(
           IRI_GEN::StringSEXP(field, ctx).getIridiumPrimitive()));
-      return true;
+      break;
     case IRI_GEN::Boolean:
-      out = IRI_GEN::BooleanSEXP(field, ctx).getIridiumPrimitive() ? "true"
+      key = IRI_GEN::BooleanSEXP(field, ctx).getIridiumPrimitive() ? "true"
                                                                    : "false";
-      return true;
+      break;
     case IRI_GEN::Null:
-      out = "null";
-      return true;
+      key = "null";
+      break;
     case IRI_GEN::Number: {
-      // This was broken in the old implementation...
       double v = IRI_GEN::NumberSEXP(field, ctx).getIridiumPrimitive();
       if (std::trunc(v) != v || !std::isfinite(v) ||
           std::abs(v) > 9007199254740992.0)
-        return false;
-      out = std::to_string(static_cast<long long>(v));
-      return true;
+        return NO_IRID;
+      key = std::to_string(static_cast<long long>(v));
+      break;
     }
     default:
-      return false;
+      return NO_IRID;
     }
+    return IRI_GEN::StringSEXP::create(ctx, ctx.storage.strings.intern(key));
   }
 
-  // Returns the replacement for node, or node itself when nothing reduced.
-  // Sets `changed` for any rewrite, including ones nested under `node`.
-  static IRID reduce(IRI_STORAGE::IRIContext &ctx, IRID node, bool &changed) {
+  // obj[k] -> obj.key
+  static IRID reduceRead(IRIContext &ctx, IRID node) {
+    IRI_GEN::JSComputedFieldReadSEXP op(node, ctx);
+    IRID key = keyOf(ctx, op.getArg_Field());
+    if (key == NO_IRID)
+      return node;
+    std::vector<IRID> args = {op.getArg_Obj(), key};
+    if (op.hasArg_Receiver())
+      args.push_back(op.getArg_Receiver());
+    return ctx.storage.nodes.add_node(IRI_GEN::FieldRead, args, {});
+  }
+
+  // obj[k] = v -> obj.key = v
+  static IRID reduceWrite(IRIContext &ctx, IRID node) {
+    IRI_GEN::JSComputedFieldWriteSEXP op(node, ctx);
+    IRID key = keyOf(ctx, op.getArg_Field());
+    if (key == NO_IRID)
+      return node;
+    std::vector<IRID> args = {op.getArg_Obj(), key, op.getArg_Value()};
+    if (op.hasArg_Receiver())
+      args.push_back(op.getArg_Receiver());
+    return ctx.storage.nodes.add_node(IRI_GEN::FieldWrite, args, {});
+  }
+
+  // { [k]: v } -> { key: v }
+  static bool reduceDefine(IRIContext &ctx, IRID node) {
+    IRI_GEN::JSDefineObjPropSEXP op(node, ctx);
+    if (IRI_NODE(ctx, op.getArg_Key()).tag == IRI_GEN::String)
+      return false;
+    IRID key = keyOf(ctx, op.getArg_Key());
+    if (key == NO_IRID)
+      return false;
+    op.setArg_Key(key);
+    return true;
+  }
+
+  // Recurse only for JSComputedFieldRead, much much easier to read and reason
+  // about than the earlier implementation :)
+  static void patch(IRIContext &ctx, IRID node, bool &changed) {
     auto args = ctx.storage.nodes.get_args(node);
     bool dirty = false;
     for (size_t i = 0; i < args.size(); i++) {
-      IRID next = reduce(ctx, args[i], changed);
-      if (next != args[i]) {
+      patch(ctx, args[i], changed);
+      if (IRI_NODE(ctx, args[i]).tag == IRI_GEN::JSComputedFieldRead) {
+        IRID next = reduceRead(ctx, args[i]);
+        dirty |= next != args[i];
         args[i] = next;
-        dirty = true;
       }
     }
     if (dirty) {
       ctx.storage.nodes.set_args(node, args);
       changed = true;
     }
-
-    std::string k;
-    auto tag = IRI_NODE(ctx, node).tag;
-    if (tag == IRI_GEN::JSComputedFieldRead) {
-      IRI_GEN::JSComputedFieldReadSEXP sexp(node, ctx);
-      if (literalKey(ctx, sexp.getArg_Field(), k)) {
-        std::vector<IRID> a = {sexp.getArg_Obj(), IRI_GEN::StringSEXP::create(ctx, ctx.storage.strings.intern(k))};
-        if (sexp.hasArg_Receiver())
-          a.push_back(sexp.getArg_Receiver());
-        return ctx.storage.nodes.add_node(IRI_GEN::FieldRead, a, {});
-      }
-    } else if (tag == IRI_GEN::JSDefineObjProp) {
-      // Not a computed op, but the same question about its key.
-      IRI_GEN::JSDefineObjPropSEXP sexp(node, ctx);
-      IRID key = sexp.getArg_Key();
-      if (IRI_NODE(ctx, key).tag != IRI_GEN::String && literalKey(ctx, key, k)) {
-        ctx.storage.nodes.update_arg_inplace(
-            node, 1,
-            IRI_GEN::StringSEXP::create(ctx, ctx.storage.strings.intern(k)));
-        changed = true;
-      }
-    } else if (tag == IRI_GEN::JSComputedFieldWrite) {
-      IRI_GEN::JSComputedFieldWriteSEXP sexp(node, ctx);
-      if (literalKey(ctx, sexp.getArg_Field(), k)) {
-        std::vector<IRID> a = {sexp.getArg_Obj(), IRI_GEN::StringSEXP::create(ctx, ctx.storage.strings.intern(k)), sexp.getArg_Value()};
-        if (sexp.hasArg_Receiver())
-          a.push_back(sexp.getArg_Receiver());
-        return ctx.storage.nodes.add_node(IRI_GEN::FieldWrite, a, {});
-      }
-    }
-    return node;
   }
 
   bool run(IRICFG &cfg, AnalysisManager &am) {
@@ -95,16 +101,30 @@ struct ReduceComputedFieldOpsPass {
 
     for (BBIDX h = 0; h < cfg.numBBs(); h++) {
       BBEditor ed(cfg, h);
-      for (IRID stmtID : cfg.at(h).stmts) {
-        IRID next = reduce(ctx, stmtID, changed);
-        if (next != stmtID)
-          ed.replace(stmtID, next);
+      for (IRID stmt : cfg.at(h).stmts) {
+        patch(ctx, stmt, changed);
+
+        IRID next = stmt;
+        switch (IRI_NODE(ctx, stmt).tag) {
+        case IRI_GEN::JSComputedFieldWrite:
+          next = reduceWrite(ctx, stmt);
+          break;
+        case IRI_GEN::JSDefineObjProp:
+          changed |= reduceDefine(ctx, stmt);
+          break;
+        case IRI_GEN::JSComputedFieldRead:
+          next = reduceRead(ctx, stmt);
+          break;
+        default:
+          break;
+        }
+
+        if (next != stmt) {
+          ed.replace(stmt, next);
+          changed = true;
+        }
       }
-      IRID terminal = cfg.at(h).terminal;
-      IRID next = reduce(ctx, terminal, changed);
-      if (next != terminal)
-        ed.setTerminal(next);
-      changed |= ed.changed();
+      patch(ctx, cfg.at(h).terminal, changed);
     }
 
     if (changed)

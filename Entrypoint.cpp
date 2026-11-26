@@ -6,7 +6,7 @@
 // #include "Analysis/DCE.h"
 // #include "Analysis/EffectProp.h"
 // #include "Analysis/MTDZS.h"
-// #include "Analysis/ReduceComputedFieldOps.h"
+#include "Analysis/ReduceComputedFieldOps.h"
 #include "CorePasses.h"
 #include "Helpers.h"
 #include "Storage/Config.h"
@@ -163,9 +163,10 @@ void runOptimizationPasses(IRIContext &ctx) {
   AnalysisManager am;
   PassManager pm;
 
-  if (ctx.flags.constantProp)
+  if (ctx.flags.constantProp) {
     pm.addPass(ConstantPropPass());
-
+    pm.addPass(ReduceComputedFieldOpsPass());
+  }
   ctx.debugger.tick("_23_OPT_MTDZS_DCE");
   for (IRICFG *cfgCTX : ctx.closureTree->preorder())
     pm.run(*cfgCTX, am);
@@ -176,7 +177,7 @@ void runOptimizationPasses(IRIContext &ctx) {
   // if (ctx.flags.constantProp) {
   //   // After constant propagation, so a key that is only constant once folded
   //   // still reduces. Before PTA, which relies on the static form.
-  //   pm.addPass(ReduceComputedFieldOpsPass());
+  //   
   // }
   // if (ctx.flags.tdz)
   //   pm.addPass(MTDZSPass());
