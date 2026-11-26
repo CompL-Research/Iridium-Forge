@@ -5,7 +5,7 @@
 // solver API settles.
 // #include "Analysis/DCE.h"
 // #include "Analysis/EffectProp.h"
-// #include "Analysis/MTDZS.h"
+#include "Analysis/MTDZS.h"
 #include "Analysis/ReduceComputedFieldOps.h"
 #include "CorePasses.h"
 #include "Helpers.h"
@@ -163,6 +163,8 @@ void runOptimizationPasses(IRIContext &ctx) {
   AnalysisManager am;
   PassManager pm;
 
+  if (ctx.flags.tdz)
+    pm.addPass(MTDZSPass());
   if (ctx.flags.constantProp) {
     pm.addPass(ConstantPropPass());
     pm.addPass(ReduceComputedFieldOpsPass());
@@ -179,8 +181,6 @@ void runOptimizationPasses(IRIContext &ctx) {
   //   // still reduces. Before PTA, which relies on the static form.
   //   
   // }
-  // if (ctx.flags.tdz)
-  //   pm.addPass(MTDZSPass());
   // if (ctx.flags.dce)
   //   pm.addPass(DCEPass());
 
