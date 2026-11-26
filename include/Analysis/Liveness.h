@@ -6,45 +6,23 @@
 #include "Support/AbstractInterpretation.hpp"
 #include "Support/BBContainerSupport.hpp"
 #include "Support/IRIS.hpp"
-#include <iostream>
 #include <memory>
-
-#define DEBUG_LIVENESS 0
+#include <vector>
 
 namespace IRI_STRUCTURAL {
 
-// ============================================================================
-// 1. Liveness Lattice Definition
-// ============================================================================
+//
+// Lattice
+//
 struct LivenessLattice {
-  enum Kind {
-    TOP,  // Unknown / unvisited state
-    DEAD, // Optimistic state
-    LIVE  // Bottom / most generic (conservative) state
-  };
+  enum Kind { DEAD, LIVE };
+  Kind kind = DEAD;
 
-  Kind kind = TOP;
-
-  LivenessLattice() = default;
   LivenessLattice(Kind k) : kind(k) {}
 
-  static LivenessLattice bottom() { return LivenessLattice(LIVE); }
-  static LivenessLattice top() { return LivenessLattice(TOP); }
-
-  // Lattice join operator (Least Upper Bound ⊔)
   [[nodiscard]] LivenessLattice joinWith(const LivenessLattice &other) const {
-    if (kind == TOP) {
-      return other;
-    }
-    if (other.kind == TOP) {
-      return *this;
-    }
-    // If either path could be LIVE, the result must be LIVE
-    // (conservative/bottom)
-    if (kind == LIVE || other.kind == LIVE) {
-      return LivenessLattice(LIVE);
-    }
-    return LivenessLattice(DEAD);
+    return kind == LIVE || other.kind == LIVE ? LivenessLattice(LIVE)
+                                              : LivenessLattice(DEAD);
   }
 
   bool operator==(const LivenessLattice &other) const {
@@ -52,169 +30,114 @@ struct LivenessLattice {
   }
 };
 
-// ============================================================================
-// 2. Liveness Dataflow State
-// ============================================================================
+//
+// Lattice = Lattice X Bindings
+//
 class LivenessState {
 private:
-  bool is_unreachable = true;
   ImmutableDataMap<IRID, LivenessLattice> liveBindings;
 
 public:
-  LivenessState() : is_unreachable(true) {}
-  explicit LivenessState(ImmutableDataMap<IRID, LivenessLattice> bindings,
-                         bool unreachable = false)
-      : liveBindings(std::move(bindings)), is_unreachable(unreachable) {}
+  LivenessState() = default;
+  explicit LivenessState(ImmutableDataMap<IRID, LivenessLattice> bindings)
+      : liveBindings(std::move(bindings)) {}
 
-  static LivenessState bottom() {
-    return LivenessState(); // Default constructor creates unreachable/unvisited
-                            // state
+  static LivenessState over(const std::vector<IRID> &bindings,
+                            const LivenessLattice &initial) {
+    ImmutableDataMap<IRID, LivenessLattice> map;
+    for (IRID bID : bindings)
+      map = map.set(bID, initial);
+    return LivenessState(map);
   }
 
-  static LivenessState reachableEmpty() {
-    return LivenessState(ImmutableDataMap<IRID, LivenessLattice>(), false);
-  }
-
-  bool isUnreachable() const { return is_unreachable; }
-
-  // Lattice join for liveness states
   [[nodiscard]] LivenessState joinWith(const LivenessState &other) const {
-    if (is_unreachable)
-      return other;
-    if (other.is_unreachable)
-      return *this;
     if (*this == other)
       return *this;
 
-    return LivenessState(liveBindings.joinWith(other.liveBindings), false);
+    return LivenessState(liveBindings.joinWith(other.liveBindings));
   }
 
   bool operator==(const LivenessState &other) const {
-    if (is_unreachable != other.is_unreachable)
-      return false;
-    if (is_unreachable)
-      return true;
     return liveBindings == other.liveBindings;
   }
 
   LivenessLattice getLattice(IRID binding) const {
-    return liveBindings.get(binding, LivenessLattice::top()); // Default is TOP (Unknown)
+    return liveBindings.get(binding);
   }
 
   LivenessState setLattice(IRID binding, LivenessLattice val) const {
-    return LivenessState(liveBindings.set(binding, val), false);
-  }
-
-  void dump(IRI_STORAGE::IRIContext &ctx, std::ostream &oss) const {
-    if (is_unreachable) {
-      oss << "<Unreachable>";
-      return;
-    }
-    oss << "{";
-    bool first = true;
-    for (const auto &[bID, lattice] : liveBindings.getRawMap()) {
-      if (!first)
-        oss << ", ";
-      first = false;
-      if (IRI_NODE(ctx, bID).tag == IRI_GEN::EnvBinding) {
-        IRI_GEN::EnvBindingSEXP eb(bID, ctx);
-        oss << ctx.storage.strings.get(eb.getNAME());
-      } else {
-        oss << "IRID(" << bID << ")";
-      }
-      oss << ": ";
-      if (lattice.kind == LivenessLattice::TOP)
-        oss << "TOP";
-      else if (lattice.kind == LivenessLattice::DEAD)
-        oss << "DEAD";
-      else if (lattice.kind == LivenessLattice::LIVE)
-        oss << "LIVE";
-    }
-    oss << "}";
+    assert(liveBindings.contains(binding));
+    return LivenessState(liveBindings.set(binding, val));
   }
 };
 
-// ============================================================================
-// 3. Liveness Transfer Function
-// ============================================================================
+//
+// Transfer Function
+//
 class LivenessTransfer : public TransferFunction<LivenessState> {
 private:
   bool isStrict;
+
 public:
   explicit LivenessTransfer(bool strict) : isStrict(strict) {}
 
+  // A binding this analysis may never kill: eval or a nested closure can read
+  // it, and in a non-strict function a formal parameter can be read implicitly.
+  bool alwaysLive(IRIContext &ctx, IRID binding) const {
+    if (IRI_NODE(ctx, binding).tag != IRI_GEN::EnvBinding)
+      return false;
+    auto &iris = ctx.iris;
+    return IRI_BINDING(iris, binding).isEvalTainted() ||
+           IRI_BINDING(iris, binding).isCaptured() ||
+           (!isStrict && IRI_GEN::EnvBindingSEXP(binding, ctx).hasJSARG());
+  }
+
   LivenessState transferStatement(IRIContext &ctx, IRID stmt,
                                   const LivenessState &incomingState) override {
-    if (incomingState.isUnreachable()) {
-      return LivenessState::bottom();
-    }
-
     LivenessState nextState = incomingState;
-    auto &iris = ctx.iris;
-    auto tag = IRI_NODE(ctx, stmt).tag;
 
-    // Kill (if not captured, and not a non-strict formal parameter)
-    if (tag == IRI_GEN::LWrite) {
-      LWriteSEXP lw(stmt, ctx);
-      auto target = lw.getArg_LValTarget();
-      //
-      // Deprecated -> ThisINITSEXP [RVAL], basically it takes two arguments (first is an EnvRead to 'this' and second is the new value for 'this') node makes this dependency explicit
-      //
-      // If it is a THISINIT write, it checks the TDZ state of the target,
-      // so it acts as a read (making the target LIVE) rather than a kill.
-      // if (lw.hasTHISINIT()) {
-      //   if (IRI_NODE(ctx, target).tag == IRI_GEN::EnvBinding) {
-      //     nextState = nextState.setLattice(target, LivenessLattice::LIVE);
-      //   }
-      // } else
-
-      if (lw.hasTHISINIT() || lw.hasINIT() || lw.hasSAFE()) {
-        if (IRI_NODE(ctx, target).tag == IRI_GEN::EnvBinding) {
-          EnvBindingSEXP eb(target, ctx);
-          bool isEvalTainted = IRI_BINDING(iris, target).isEvalTainted();
-          bool isCap = IRI_BINDING(iris, target).isCaptured();
-          bool isArg = eb.hasJSARG();
-          bool alwaysLive = isEvalTainted || isCap || (!isStrict && isArg);
-          // A write to a function's own name binding (CreateImmutableBinding,
-          // marked SLOPPYCONST when the body is sloppy) is ignored at runtime,
-          // so it must not kill the value earlier definitions gave the binding.
-          bool stores = eb.hasSLOPPYCONST() ? lw.hasINIT() : true;
-          if (stores && !alwaysLive) {
-            nextState = nextState.setLattice(target, LivenessLattice::DEAD);
-          }
-        }
+    // Kill.
+    if (IRI_NODE(ctx, stmt).tag == IRI_GEN::LWrite) {
+      IRI_GEN::LWriteSEXP lw(stmt, ctx);
+      IRID target = lw.getArg_LValTarget();
+      // Only an initializing, this-initializing or checked write definitely
+      // stores, so only those can kill.
+      if ((lw.hasINIT() || lw.hasTHISINIT() || lw.hasSAFE()) &&
+          IRI_NODE(ctx, target).tag == IRI_GEN::EnvBinding) {
+        // A write to a function's own name binding (CreateImmutableBinding,
+        // SLOPPYCONST when the body is sloppy) is ignored at runtime, so it
+        // must not kill what an earlier definition put there. The declaration's
+        // own write does store.
+        bool stores = IRI_GEN::EnvBindingSEXP(target, ctx).hasSLOPPYCONST()
+                          ? lw.hasINIT()
+                          : true;
+        if (stores && !alwaysLive(ctx, target))
+          nextState =
+              nextState.setLattice(target, LivenessLattice(LivenessLattice::DEAD));
       }
     }
 
-    // Gen
-    auto processNestedEnvReads = [&](auto &self, IRID node) -> void {
-      if (IRI_NODE(ctx, node).tag == IRI_GEN::EnvRead) {
-        IRI_GEN::EnvReadSEXP envRead(node, ctx);
-        auto target = envRead.getArg_Obj();
-
-        // Reading a local stack binding
-        if (IRI_NODE(ctx, target).tag == IRI_GEN::EnvBinding) {
-          nextState = nextState.setLattice(target, LivenessLattice::LIVE);
-        }
-      }
-      for (auto child : ctx.storage.nodes.get_args_view(node)) {
-        self(self, child);
-      }
-    };
-    processNestedEnvReads(processNestedEnvReads, stmt);
+    // Gen.
+    markLive(ctx, nextState, stmt);
 
     return nextState;
   }
 
-  LivenessState transferEdge(BBIDX from, BBIDX to,
-                             const LivenessState &exitState) override {
-    return exitState;
+private:
+  void markLive(IRIContext &ctx, LivenessState &state, IRID node) {
+    if (IRI_NODE(ctx, node).tag == IRI_GEN::EnvRead) {
+      IRID target = IRI_GEN::EnvReadSEXP(node, ctx).getArg_Obj();
+      if (IRI_NODE(ctx, target).tag == IRI_GEN::EnvBinding)
+        state = state.setLattice(target, LivenessLattice(LivenessLattice::LIVE));
+    }
+    for (IRID child : ctx.storage.nodes.get_args_view(node))
+      markLive(ctx, state, child);
   }
 };
 
-// ============================================================================
-// 4. Liveness Analysis Result
-// ============================================================================
+//
+// Machinery
+//
 class LivenessAnalysisResult : public DataflowResultConcept {
 private:
   std::shared_ptr<LivenessTransfer> transfer;
@@ -229,43 +152,13 @@ public:
 
   std::string getAnalysisName() const override { return "Liveness"; }
 
-  void dumpStateAtStatement(const IRICFG &cfg, BBIDX block, IRID stmt,
-                            std::ostream &os) const override {
-    const IRIBB &bb = cfg.at(block);
-    LivenessState state = solver->getBlockExitState(block);
-    if (bb.terminal != NO_IRID) {
-      state = transfer->transferStatement(cfg.ctx, bb.terminal, state);
-    }
-    for (auto it = bb.stmts.rbegin(); it != bb.stmts.rend(); ++it) {
-      if (*it == stmt) {
-        LivenessState stateBefore =
-            transfer->transferStatement(cfg.ctx, *it, state);
-        stateBefore.dump(cfg.ctx, os);
-        return;
-      }
-      state = transfer->transferStatement(cfg.ctx, *it, state);
-    }
-    state.dump(cfg.ctx, os);
-  }
-
-  void dumpBlockEntryState(const IRICFG &cfg, BBIDX block,
-                           std::ostream &os) const override {
-    const LivenessState &state = getBlockEntryState(block);
-    state.dump(cfg.ctx, os);
-  }
-
-  void dumpBlockExitState(const IRICFG &cfg, BBIDX block,
-                          std::ostream &os) const override {
-    const LivenessState &state = getBlockExitState(block);
-    state.dump(cfg.ctx, os);
+  const LivenessState &getStateAfterStatement(BBIDX block,
+                                              size_t stmtOffset) const {
+    return solver->getStateAfterStatement(block, stmtOffset);
   }
 
   const LivenessState &getBlockEntryState(BBIDX block) const {
     return solver->getBlockEntryState(block);
-  }
-
-  const LivenessState &getBlockExitState(BBIDX block) const {
-    return solver->getBlockExitState(block);
   }
 };
 
@@ -275,37 +168,21 @@ struct LivenessAnalysis {
 
   LivenessAnalysisResult run(IRICFG &cfg, AnalysisManager &am) {
     auto &ctx = cfg.ctx;
-    auto &iris = ctx.iris;
-    BBContainerSupport bbc(cfg.container, ctx);
-    bool strict = bbc.hasSTRICT();
+    bool strict = BBContainerSupport(cfg.container, ctx).hasSTRICT();
 
     auto transfer = std::make_shared<LivenessTransfer>(strict);
     auto solver =
         std::make_shared<BackwardDataflowSolver<LivenessState>>(cfg, *transfer);
 
-    // Initial State
-    SCPIDX headScope = bbc.getScopeIDX();
-    auto bindings = iris->getEnvBindingsInClosure(headScope);
-    LivenessState exitState = LivenessState::reachableEmpty();
-    for (auto bID : bindings) {
-      EnvBindingSEXP eb(bID, ctx);
-      bool isEvalTainted = IRI_BINDING(iris, bID).isEvalTainted();
-      bool isCap = IRI_BINDING(iris, bID).isCaptured();
-      bool isArg = eb.hasJSARG();
-      bool alwaysLive = isEvalTainted || isCap || (!strict && isArg);
-      exitState = exitState.setLattice(bID, alwaysLive
-                                                ? LivenessLattice::bottom() // LIVE
-                                                : LivenessLattice(LivenessLattice::DEAD));
-    }
+    SCPIDX headScope = cfg.at(cfg.entry).SCOPE;
+    auto bindings = ctx.iris->getEnvBindingsInClosure(headScope);
+    LivenessState state =
+        LivenessState::over(bindings, LivenessLattice(LivenessLattice::DEAD));
+    for (IRID bID : bindings)
+      if (transfer->alwaysLive(ctx, bID))
+        state = state.setLattice(bID, LivenessLattice(LivenessLattice::LIVE));
 
-#if DEBUG_LIVENESS
-    BBContainerSupport bbc(cfg.container, cfg.ctx);
-    std::cout << "  [Liveness-Analysis] Starting backward solver run on CFG of "
-                 "closure "
-              << bbc.getStartBBIDX() << "\n";
-#endif
-
-    solver->run(exitState);
+    solver->run(state, state);
 
     return LivenessAnalysisResult(std::move(transfer), std::move(solver));
   }

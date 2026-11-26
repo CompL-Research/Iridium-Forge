@@ -37,11 +37,6 @@ public:
     return ImmutableDataMap(data.set(key, val));
   }
 
-  // Returns a new map with the key removed
-  ImmutableDataMap erase(const Key &key) const {
-    return ImmutableDataMap(data.erase(key));
-  }
-
   // Returns the value for a key, or the defaultValue if not found
   const LatticeElement &get(const Key &key,
                             const LatticeElement &defaultValue) const {
@@ -82,9 +77,6 @@ public:
     }
     return ImmutableDataMap(result.persistent());
   }
-
-  // Expose the underlying raw immer map if needed
-  const immer::map<Key, LatticeElement> &getRawMap() const { return data; }
 };
 
 // ============================================================================
@@ -464,47 +456,43 @@ template <typename State> class BackwardDataflowSolver {
 private:
   const IRICFG &cfg;
   TransferFunction<State> &transferFn;
-  std::unordered_map<BBIDX, State> blockEntryStates;
-  std::unordered_map<BBIDX, State> blockExitStates;
+  std::vector<State> blockEntryStates;
+  std::vector<State> blockExitStates;
+  std::vector<std::vector<State>> stmtStates;
 
 public:
   BackwardDataflowSolver(const IRICFG &cfg, TransferFunction<State> &tf)
       : cfg(cfg), transferFn(tf) {}
 
-  void run(State exitState, EdgeMask mask = EDGE_ALL) {
-    // 1. Get Reverse Post-Order and reverse it to get Post-Order (for backward
-    // analysis)
-    std::vector<BBIDX> rpo = cfg.reversePostOrder(mask);
-    std::vector<BBIDX> po = rpo;
+  void run(const State &BI, const State &INIT, EdgeMask mask = EDGE_ALL) {
+    // 1. Post-Order, so a block is run after all the blocks it flows to.
+    std::vector<BBIDX> po = cfg.reversePostOrder(mask);
     std::reverse(po.begin(), po.end());
 
-    // 2. Initialize block states to State::bottom()
-    for (BBIDX block : po) {
-      blockEntryStates[block] = State::bottom();
-      blockExitStates[block] = State::bottom();
-    }
-
-    // EXIT is the only block with no successors, so it is the only seed.
-    blockExitStates[cfg.exit] = exitState;
+    // 2. One slot per block at INIT, then the boundary state on top.
+    blockEntryStates.assign(cfg.numBBs(), INIT);
+    blockExitStates.assign(cfg.numBBs(), INIT);
+    stmtStates.resize(cfg.numBBs());
+    blockExitStates[cfg.exit] = BI;
 
     std::queue<BBIDX> worklist;
-    std::unordered_set<BBIDX> inWorklist;
+    std::vector<char> inWorklist(cfg.numBBs(), 0);
 
-    // Seed the worklist with all blocks in Post-Order
+    // Seed the worklist with blocks in Post-Order
     for (BBIDX block : po) {
       worklist.push(block);
-      inWorklist.insert(block);
+      inWorklist[block] = 1;
     }
 
-    // Helper to propagate state to a predecessor block (backward propagation)
+    // Helper to propagate state to a predecessor block and queue it if updated
     auto propagateState = [&](BBIDX target, const State &state) {
       State &oldExit = blockExitStates[target];
       State joined = oldExit.joinWith(state);
       if (!(joined == oldExit)) {
         oldExit = std::move(joined);
-        if (!inWorklist.contains(target)) {
+        if (!inWorklist[target]) {
           worklist.push(target);
-          inWorklist.insert(target);
+          inWorklist[target] = 1;
         }
       }
     };
@@ -513,86 +501,91 @@ public:
     while (!worklist.empty()) {
       BBIDX currIdx = worklist.front();
       worklist.pop();
-      inWorklist.erase(currIdx);
+      inWorklist[currIdx] = 0;
 
       const IRIBB &bb = cfg.at(currIdx);
       State oldEntryState = blockEntryStates[currIdx];
       State currState = blockExitStates[currIdx];
       BBIDX exceptionTarget = cfg.exceptionOf(currIdx);
 
-      // Sound exceptional control flow propagation
+      // A throw can leave the block from any statement, so the handler's entry
+      // state joins in at the statement, not at the block boundary. It only has
+      // to be merged again once the state itself has moved.
       bool exceptionJoinedForCurrentState = false;
-      auto handleException = [&](State &stateBefore) {
+      auto handleException = [&]() {
         if ((mask & EDGE_EXCEPTION) && exceptionTarget != NO_BB &&
             !exceptionJoinedForCurrentState) {
-          stateBefore =
-              stateBefore.joinWith(getBlockEntryState(exceptionTarget));
+          currState = currState.joinWith(blockEntryStates[exceptionTarget]);
           exceptionJoinedForCurrentState = true;
         }
       };
 
-      // Transfer backward through terminal statement
-      if (bb.terminal != NO_IRID) {
+      // Helper to transfer a statement
+      auto runTransfer = [&](IRID stmtID) {
         State nextState =
-            transferFn.transferStatement(cfg.ctx, bb.terminal, currState);
+            transferFn.transferStatement(cfg.ctx, stmtID, currState);
         if (!(nextState == currState)) {
           currState = std::move(nextState);
           exceptionJoinedForCurrentState = false;
         }
-        handleException(currState);
+      };
+
+      // Transfer backward through the terminal statement
+      if (bb.terminal != NO_IRID) {
+        runTransfer(bb.terminal);
+        handleException();
       }
 
-      // Transfer backward through non-terminal statements in reverse order
-      for (auto it = bb.stmts.rbegin(); it != bb.stmts.rend(); ++it) {
-        State nextState = transferFn.transferStatement(cfg.ctx, *it, currState);
-        if (!(nextState == currState)) {
-          currState = std::move(nextState);
-          exceptionJoinedForCurrentState = false;
-        }
-        handleException(currState);
+      // currState is the state after stmts[i] just before stmts[i] is
+      // transferred, which is the boundary worth recording.
+      std::vector<State> after(bb.stmts.size());
+      for (size_t i = bb.stmts.size(); i-- > 0;) {
+        after[i] = currState;
+        runTransfer(bb.stmts[i]);
+        handleException();
       }
+      stmtStates[currIdx] = std::move(after);
 
       blockEntryStates[currIdx] = currState;
 
       // If the entry state of this block changed, propagate changes to
       // predecessors
-      if (!(currState == oldEntryState)) {
-        for (Edge e : bb.preds) {
-          if (e.kind == EdgeKind::Exception) {
-            // The state along a throw path was already merged by
-            // handleException above; the exceptional predecessor only needs to
-            // be re-run so that merge is seen.
-            if ((mask & EDGE_EXCEPTION) && !inWorklist.contains(e.to)) {
-              worklist.push(e.to);
-              inWorklist.insert(e.to);
-            }
-            continue;
+      if (currState == oldEntryState)
+        continue;
+
+      for (Edge e : bb.preds) {
+        if (!(mask & edgeMask(e.kind)))
+          continue;
+        if (e.kind == EdgeKind::Exception) {
+          // The state along a throw path was already merged by handleException
+          // above; the exceptional predecessor only needs to be re-run so that
+          // merge is seen.
+          if (!inWorklist[e.to]) {
+            worklist.push(e.to);
+            inWorklist[e.to] = 1;
           }
-          State edgeState = transferFn.transferEdge(currIdx, e.to, currState);
-          propagateState(e.to, edgeState);
+          continue;
         }
+        State edgeState = transferFn.transferEdge(currIdx, e.to, currState);
+        propagateState(e.to, edgeState);
       }
     }
   }
 
-  // Returns the entry state (state before first statement) for a block
+  // Returns the entry state (state before the first statement) for a block
   const State &getBlockEntryState(BBIDX block) const {
-    auto it = blockEntryStates.find(block);
-    if (it != blockEntryStates.end()) {
-      return it->second;
-    }
-    static const State bottomState = State::bottom();
-    return bottomState;
+    return blockEntryStates.at(block);
   }
 
-  // Returns the exit state (state after last statement) for a block
+  // Returns the exit state (state after the last statement) for a block
   const State &getBlockExitState(BBIDX block) const {
-    auto it = blockExitStates.find(block);
-    if (it != blockExitStates.end()) {
-      return it->second;
-    }
-    static const State bottomState = State::bottom();
-    return bottomState;
+    return blockExitStates.at(block);
+  }
+
+  // Returns the state after stmts[index], which for a backward analysis is the
+  // boundary the statement itself is judged against.
+  const State &getStateAfterStatement(BBIDX block, size_t index) const {
+    return stmtStates.at(block).at(index);
   }
 };
 

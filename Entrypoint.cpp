@@ -3,7 +3,7 @@
 // Only ConstantProp is live while the solver is redesigned. The other passes are
 // not included, so they are not compiled either; re-add one at a time as the
 // solver API settles.
-// #include "Analysis/DCE.h"
+#include "Analysis/DCE.h"
 // #include "Analysis/EffectProp.h"
 #include "Analysis/MTDZS.h"
 #include "Analysis/ReduceComputedFieldOps.h"
@@ -165,24 +165,17 @@ void runOptimizationPasses(IRIContext &ctx) {
 
   if (ctx.flags.tdz)
     pm.addPass(MTDZSPass());
+  if (ctx.flags.dce)
+    pm.addPass(DCEPass());
   if (ctx.flags.constantProp) {
     pm.addPass(ConstantPropPass());
     pm.addPass(ReduceComputedFieldOpsPass());
   }
+
   ctx.debugger.tick("_23_OPT_MTDZS_DCE");
   for (IRICFG *cfgCTX : ctx.closureTree->preorder())
     pm.run(*cfgCTX, am);
   ctx.debugger.tock("_23_OPT_MTDZS_DCE");
-
-  // Disabled along with their includes above; re-enable one at a time once the
-  // solver API settles.
-  // if (ctx.flags.constantProp) {
-  //   // After constant propagation, so a key that is only constant once folded
-  //   // still reduces. Before PTA, which relies on the static form.
-  //   
-  // }
-  // if (ctx.flags.dce)
-  //   pm.addPass(DCEPass());
 
   if (ctx.flags.pta)
     throw std::runtime_error("PTA WIP");
