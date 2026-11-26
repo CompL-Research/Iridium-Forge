@@ -1,8 +1,5 @@
 #include "Entrypoint.h"
 #include "Analysis/ConstantProp.h"
-// Only ConstantProp is live while the solver is redesigned. The other passes are
-// not included, so they are not compiled either; re-add one at a time as the
-// solver API settles.
 #include "Analysis/DCE.h"
 // #include "Analysis/EffectProp.h"
 #include "Analysis/MTDZS.h"
@@ -180,20 +177,23 @@ void runOptimizationPasses(IRIContext &ctx) {
   if (ctx.flags.pta)
     throw std::runtime_error("PTA WIP");
 
-  // if (ctx.flags.effectProp) {
-  //   ctx.debugger.tick("_24_OPT_EFFECT_PROP");
-  //   for (IRICFG *cfgCTX : ctx.closureTree->preorder()) {
-  //     EffectPropPass ep;
-  //     bool changed = true;
-  //     int iterations = 0;
-  //     const int maxIterations = 50;
-  //     while (changed && iterations < maxIterations) {
-  //       changed = ep.run(*cfgCTX, am);
-  //       iterations++;
-  //     }
-  //   }
-  //   ctx.debugger.tock("_24_OPT_EFFECT_PROP");
-  // }
+  if (ctx.flags.effectProp) {
+    throw std::runtime_error(
+        "EffectPropPass will be deprecated and become a peephole optimizer in "
+        "the backend, forge will only deal with canonical IRIDIUM IR now");
+    // ctx.debugger.tick("_24_OPT_EFFECT_PROP");
+    // for (IRICFG *cfgCTX : ctx.closureTree->preorder()) {
+    //   EffectPropPass ep;
+    //   bool changed = true;
+    //   int iterations = 0;
+    //   const int maxIterations = 50;
+    //   while (changed && iterations < maxIterations) {
+    //     changed = ep.run(*cfgCTX, am);
+    //     iterations++;
+    //   }
+    // }
+    // ctx.debugger.tock("_24_OPT_EFFECT_PROP");
+  }
 }
 
 void dumpCFGs(IRIContext &) {

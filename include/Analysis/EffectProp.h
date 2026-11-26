@@ -1,167 +1,122 @@
 #pragma once
 
-#include "Analysis/PassManager.h"
 #include "Analysis/EffectAtStmt.h"
 #include "Analysis/Liveness.h"
+#include "Analysis/PassManager.h"
 #include "Generated/IridiumTypes.h"
-#include "Support/BBContainerSupport.hpp"
-#include <unordered_map>
-#include <vector>
+#include <algorithm>
 #include <set>
+#include <vector>
 
 namespace IRI_STRUCTURAL {
 
+// ============================================================================
+// Effect Propagation
+//
+// EffectAtStmt reports "binding x still holds exactly the value of expression
+// e, computed at statement D". A read of x becomes e, and when x is dead
+// afterwards D goes with it. Only worth doing when e is read once, or when
+// duplicating e costs nothing.
+// ============================================================================
 struct EffectPropPass {
-  bool run(IRICFG &cfg, AnalysisManager &am) {
-    bool changed = false;
-
-    // 1. Query the analysis results
-    const EffectAtStmtResult &effectResult = am.getResult<EffectAtStmtAnalysis>(cfg);
-    const LivenessAnalysisResult &livenessResult = am.getResult<LivenessAnalysis>(cfg);
-
-    auto &ctx = cfg.ctx;
-
-    BBContainerSupport bbc(cfg.container, ctx);
-    bool strict = bbc.hasSTRICT();
-    LivenessTransfer livenessTransfer(strict);
-
-    // Check if a value node is safe to duplicate (constant or cheap read)
-    auto isSafeToDup = [&](IRID node) -> bool {
-      switch (IRI_NODE(ctx, node).tag) {
-        case IRI_GEN::Number: case IRI_GEN::Boolean: case IRI_GEN::Null:
-        case IRI_GEN::String: case IRI_GEN::JSBigInt: case IRI_GEN::JSNUBD:
-          return true;
-        case IRI_GEN::EnvRead: {
-          IRI_GEN::EnvReadSEXP er(node, ctx);
-          if (er.hasSAFE()) {
-            IRID obj = er.getArg_Obj();
-            if (IRI_NODE(ctx, obj).tag == IRI_GEN::GlobalBinding || IRI_NODE(ctx, obj).tag == IRI_GEN::ScriptBinding)
-              return true;
-          }
-          break;
-        }
-        default: break;
-      }
+  // A literal can be duplicated as many times as it appears. Anything else is
+  // only worth inlining once, as a move rather than a copy: JSArray, JSObject,
+  // Lambda and RegExp all denote a freshly built value, so two copies of one of
+  // them are two values.
+  static bool isFreeToDuplicate(IRIContext &ctx, IRID node) {
+    switch (IRI_NODE(ctx, node).tag) {
+    case IRI_GEN::Number:
+    case IRI_GEN::Boolean:
+    case IRI_GEN::Null:
+    case IRI_GEN::String:
+    case IRI_GEN::JSBigInt:
+    case IRI_GEN::JSNUBD:
+      return true;
+    default:
       return false;
-    };
+    }
+  }
 
-    // Perform optimization on each basic block
+  static size_t countReads(IRIContext &ctx, IRID node, IRID target) {
+    size_t reads = IRI_NODE(ctx, node).tag == IRI_GEN::EnvRead &&
+                           IRI_GEN::EnvReadSEXP(node, ctx).getArg_Obj() == target
+                       ? 1
+                       : 0;
+    for (IRID child : ctx.storage.nodes.get_args_view(node))
+      reads += countReads(ctx, child, target);
+    return reads;
+  }
+
+  // Replaces every read of target in the arguments below node with effect, in
+  // place. A read at the root cannot be replaced here, since that would mean
+  // rewriting the statement itself, so this reports nothing done.
+  static bool inlineReads(IRIContext &ctx, IRID node, IRID target,
+                          IRID effect) {
+    auto args = ctx.storage.nodes.get_args(node);
+    bool inlined = false;
+    for (size_t i = 0; i < args.size(); i++) {
+      if (IRI_NODE(ctx, args[i]).tag == IRI_GEN::EnvRead &&
+          IRI_GEN::EnvReadSEXP(args[i], ctx).getArg_Obj() == target) {
+        ctx.storage.nodes.update_arg_inplace(node, i, effect);
+        inlined = true;
+      } else {
+        inlined |= inlineReads(ctx, args[i], target, effect);
+      }
+    }
+    return inlined;
+  }
+
+  bool run(IRICFG &cfg, AnalysisManager &am) {
+    auto &ctx = cfg.ctx;
+    bool changed = false;
+    const EffectAtStmtResult &effects = am.getResult<EffectAtStmtAnalysis>(cfg);
+    const LivenessAnalysisResult &liveness = am.getResult<LivenessAnalysis>(cfg);
+
     for (BBIDX h = 0; h < cfg.numBBs(); h++) {
-      const IRIBB &bb = cfg.at(h);
-      const std::vector<IRID> &stmts = bb.stmts;
+      const std::vector<IRID> &stmts = cfg.at(h).stmts;
+      std::set<IRID> definitions;
 
-      // Pre-compute per-statement liveness from a single backward pass
-      std::vector<LivenessState> livenessAfter(stmts.size());
-      {
-        BBIDX handler = cfg.exceptionOf(h);
-        auto handleException = [&](LivenessState &s) {
-          if (handler != NO_BB)
-            s = s.joinWith(livenessResult.getBlockEntryState(handler));
-        };
+      for (size_t i = 0; i < stmts.size(); i++) {
+        IRID stmtID = stmts[i];
+        if (definitions.contains(stmtID))
+          continue;
 
-        LivenessState state = livenessResult.getBlockExitState(h);
-        if (bb.terminal != NO_IRID) {
-          state = livenessTransfer.transferStatement(ctx, bb.terminal, state);
-          handleException(state);
-        }
-        for (ssize_t i = static_cast<ssize_t>(stmts.size()) - 1; i >= 0; --i) {
-          livenessAfter[i] = state;
-          state = livenessTransfer.transferStatement(ctx, stmts[i], state);
-          handleException(state);
-        }
+        // Re-queried every time rather than cached up front: the trees this
+        // reads are the ones the earlier candidates in this sweep have already
+        // rewritten.
+        EffectAtStmtState effect = effects.getStateBeforeStatement(cfg, h, i);
+        if (effect.kind != EffectAtStmtState::TRACKED)
+          continue;
+
+        IRID target = effect.store;
+        bool deadAfter =
+            liveness.getStateAfterStatement(h, i).getLattice(target).kind ==
+            LivenessLattice::DEAD;
+
+        size_t reads = countReads(ctx, stmtID, target);
+        if (reads == 0)
+          continue;
+        if (!(reads == 1 && deadAfter) && !isFreeToDuplicate(ctx, effect.effect))
+          continue;
+
+        if (!inlineReads(ctx, stmtID, target, effect.effect))
+          continue;
+        changed = true;
+
+        // The fact this write established reaches here without passing over any
+        // other statement, so this read is the only one left after the
+        // definition and the binding is dead from the definition onwards.
+        if (deadAfter &&
+            std::find(stmts.begin(), stmts.end(), effect.stmt) != stmts.end())
+          definitions.insert(effect.stmt);
       }
 
-      // Collect candidate indices upfront (skip if store liveness is TOP/unknown)
-      std::vector<size_t> candidates;
-      for (size_t i = 0; i < stmts.size(); ++i) {
-        auto es = effectResult.queryStateAtStatement(h, stmts[i]);
-        if (!es.validEffect) continue;
-        if (livenessAfter[i].getLattice(es.store).kind == LivenessLattice::TOP)
-          continue; // unknown liveness → skip to avoid useless subtree walks
-        candidates.push_back(i);
-      }
-
-      std::set<IRID> toRemove;
-
-      for (size_t ci : candidates) {
-        IRID stmtID = stmts[ci];
-        if (toRemove.contains(stmtID)) continue;
-
-        EffectAtStmtState state = effectResult.queryStateAtStatement(h, stmtID);
-        IRID targetStore       = state.store;
-        IRID replacementEffect = state.effect;
-        IRID definitionStmtId  = state.stmt;
-
-        // Liveness already cached — no re-traversal needed
-        bool isDeadAfter = (livenessAfter[ci].getLattice(targetStore).kind != LivenessLattice::LIVE);
-
-        // Cheap safety check before any subtree walk
-        bool isSafeReadOrConstant = isSafeToDup(replacementEffect);
-
-        // Count occurrences (only for candidates that passed the cheap checks)
-        size_t occurrences = 0;
-        {
-          std::vector<IRID> worklist;
-          worklist.push_back(stmtID);
-          while (!worklist.empty()) {
-            IRID cur = worklist.back();
-            worklist.pop_back();
-            if (IRI_NODE(ctx, cur).tag == IRI_GEN::EnvRead) {
-              IRI_GEN::EnvReadSEXP er(cur, ctx);
-              if (er.getArg_Obj() == targetStore) ++occurrences;
-            }
-            for (auto child : ctx.storage.nodes.get_args_view(cur))
-              worklist.push_back(child);
-          }
-        }
-        if (occurrences == 0) continue;
-
-        bool shouldInline = (occurrences == 1 && isDeadAfter) || isSafeReadOrConstant;
-        if (!shouldInline) continue;
-
-        // The definition is only removable if it is a statement of this block.
-        bool hasDef =
-            std::find(stmts.begin(), stmts.end(), definitionStmtId) != stmts.end();
-
-        // Iterative tree walker to replace EnvRead(targetStore) with replacementEffect
-        bool didPatch = false;
-        {
-          std::vector<std::pair<IRID, IRID>> path; // (parent, childToCheck)
-          path.push_back({ 0, stmtID });
-          while (!path.empty()) {
-            auto [parent, cur] = path.back();
-            path.pop_back();
-            if (IRI_NODE(ctx, cur).tag == IRI_GEN::EnvRead) {
-              IRI_GEN::EnvReadSEXP er(cur, ctx);
-              if (er.getArg_Obj() == targetStore) {
-                // Replace in-place
-                auto parentArgs = ctx.storage.nodes.get_args_view(parent);
-                for (size_t ai = 0; ai < parentArgs.size(); ++ai) {
-                  if (parentArgs[ai] == cur) {
-                    ctx.storage.nodes.update_arg_inplace(parent, ai, replacementEffect);
-                    didPatch = true;
-                    break; // don't recurse into replaced node
-                  }
-                }
-                continue;
-              }
-            }
-            for (auto child : ctx.storage.nodes.get_args_view(cur))
-              path.push_back({ cur, child });
-          }
-        }
-
-        if (didPatch) {
-          changed = true;
-          if (isDeadAfter && hasDef) toRemove.insert(definitionStmtId);
-        }
-      }
-
-      // Remove the definitions of inlined effects
+      // Only definitions of this block: a definition elsewhere may still be
+      // read on the way here, by a terminal condition for instance, which is
+      // why liveness at this statement cannot see it.
       BBEditor ed(cfg, h);
-      for (IRID defStmt : toRemove) {
-        ed.erase(defStmt);
-      }
+      for (IRID def : definitions)
+        ed.erase(def);
       changed |= ed.changed();
     }
 

@@ -26,7 +26,7 @@ export default [
   },
   {
     name: "effectProp",
-    default: true,
+    default: false,
     desc: "Effect propagation optimization pass",
   },
   {

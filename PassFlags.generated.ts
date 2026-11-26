@@ -1,4 +1,4 @@
-/** Generated: 2026-11-25 18:02:14 */
+/** Generated: 2026-11-26 18:53:18 */
 
 export interface PassFlags {
   dumpForgePassesSEXP?: boolean; // Dump Forge Passes (Raw SEXP)
@@ -21,7 +21,7 @@ export const DEFAULT_PASS_FLAGS: Required<PassFlags> = {
   constantProp: true,
   tdz: true,
   dce: true,
-  effectProp: true,
+  effectProp: false,
   dumpClosureTree: false,
   dumpIrisInfo: false,
   debugStorage: false,
@@ -43,7 +43,7 @@ export const PASS_FLAGS_SPEC: Array<{
   { name: "constantProp", default: true, desc: "Constant propagation optimization pass" },
   { name: "tdz", default: true, desc: "TDZ-check elimination optimization pass (MTDZS)" },
   { name: "dce", default: true, desc: "Dead code elimination optimization pass" },
-  { name: "effectProp", default: true, desc: "Effect propagation optimization pass" },
+  { name: "effectProp", default: false, desc: "Effect propagation optimization pass" },
   { name: "dumpClosureTree", default: false, desc: "Dump the closure tree to stdout after optimization passes run" },
   { name: "dumpIrisInfo", default: false, desc: "Dump IRIS scope-resolution info to stdout after optimization passes run" },
   { name: "debugStorage", default: false, desc: "Dump IRIStorage pool memory diagnostics after optimization passes run" },

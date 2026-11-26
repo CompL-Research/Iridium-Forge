@@ -1,4 +1,4 @@
-// Generated: 2026-11-25 18:02:14
+// Generated: 2026-11-26 18:53:18
 #pragma once
 #include <functional>
 #include <string>
@@ -11,7 +11,7 @@ struct PassFlags {
   bool constantProp = true; // Constant propagation optimization pass
   bool tdz = true; // TDZ-check elimination optimization pass (MTDZS)
   bool dce = true; // Dead code elimination optimization pass
-  bool effectProp = true; // Effect propagation optimization pass
+  bool effectProp = false; // Effect propagation optimization pass
   bool dumpClosureTree = false; // Dump the closure tree to stdout after optimization passes run
   bool dumpIrisInfo = false; // Dump IRIS scope-resolution info to stdout after optimization passes run
   bool debugStorage = false; // Dump IRIStorage pool memory diagnostics after optimization passes run
