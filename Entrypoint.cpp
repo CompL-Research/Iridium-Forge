@@ -231,6 +231,8 @@ void normalizeIRIDIUM(IRIContext &ctx, IRID &sexpRef,
 
 IRID sharedEntrypoint(IRIContext &ctx, IRID &file,
                       BuildContextMap &iridiumBuildContext) {
+  // INIT Lattices
+  CASLattice::ctx = &ctx;
 
   if (statsOn()) {
     resetPeakRss(); // VmHWM measures peak for normalization + GC

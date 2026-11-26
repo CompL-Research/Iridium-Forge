@@ -12,42 +12,51 @@
 
 namespace IRI_STRUCTURAL {
 
-// ============================================================================
-// 1. Constants At Stmt Lattice Definition
-// ============================================================================
+//
+// Lattice
+//
 struct CASLattice {
   enum Kind { TOP, CONST, NAC };
-
   Kind kind = TOP;
   IRID value = 0;
-  IRI_STORAGE::IRIContext *ctx = nullptr;
 
-  CASLattice() = default;
-  CASLattice(Kind k, IRID val = 0, IRI_STORAGE::IRIContext *p = nullptr)
-      : kind(k), value(val), ctx(p) {}
+  CASLattice(Kind k, IRID val = 0) : kind(k), value(val) {}
 
-  static CASLattice bottom() { return CASLattice(NAC); }
-  static CASLattice top() { return CASLattice(TOP); }
+  [[nodiscard]] CASLattice joinWith(const CASLattice &other) const {
+    if (kind == TOP)
+      return other;
+    if (other.kind == TOP)
+      return *this;
+    if (kind == NAC || other.kind == NAC)
+      return CASLattice(NAC);
+    return constantsEqual(value, other.value) ? *this : CASLattice(NAC);
+  }
 
-  bool constantsEqual(IRID a, IRID b) const {
+  bool operator==(const CASLattice &other) const {
+    if (kind != other.kind)
+      return false;
+    if (kind != CONST)
+      return true;
+    return constantsEqual(value, other.value);
+  }
+
+  static inline IRI_STORAGE::IRIContext *ctx = nullptr;
+  static bool constantsEqual(IRID a, IRID b) {
     if (a == b)
       return true;
-    IRI_STORAGE::IRIContext *p = ctx;
-    if (!p)
-      return false;
-    auto tagA = p->storage.nodes.get_node(a).tag;
-    auto tagB = p->storage.nodes.get_node(b).tag;
+    auto tagA = ctx->storage.nodes.get_node(a).tag;
+    auto tagB = ctx->storage.nodes.get_node(b).tag;
     if (tagA != tagB)
       return false;
     switch (tagA) {
     case IRI_GEN::Number: {
-      IRI_GEN::NumberSEXP nA(a, *p);
-      IRI_GEN::NumberSEXP nB(b, *p);
+      IRI_GEN::NumberSEXP nA(a, *ctx);
+      IRI_GEN::NumberSEXP nB(b, *ctx);
       return nA.getIridiumPrimitive() == nB.getIridiumPrimitive();
     }
     case IRI_GEN::Boolean: {
-      IRI_GEN::BooleanSEXP bA(a, *p);
-      IRI_GEN::BooleanSEXP bB(b, *p);
+      IRI_GEN::BooleanSEXP bA(a, *ctx);
+      IRI_GEN::BooleanSEXP bB(b, *ctx);
       return bA.getIridiumPrimitive() == bB.getIridiumPrimitive();
     }
     case IRI_GEN::Null:
@@ -55,58 +64,24 @@ struct CASLattice {
     case IRI_GEN::JSNUBD:
       return true;
     case IRI_GEN::String: {
-      IRI_GEN::StringSEXP sA(a, *p);
-      IRI_GEN::StringSEXP sB(b, *p);
+      IRI_GEN::StringSEXP sA(a, *ctx);
+      IRI_GEN::StringSEXP sB(b, *ctx);
       return sA.getIridiumPrimitive() == sB.getIridiumPrimitive();
     }
     case IRI_GEN::JSBigInt: {
-      IRI_GEN::JSBigIntSEXP iA(a, *p);
-      IRI_GEN::JSBigIntSEXP iB(b, *p);
+      IRI_GEN::JSBigIntSEXP iA(a, *ctx);
+      IRI_GEN::JSBigIntSEXP iB(b, *ctx);
       return iA.getIridiumPrimitive() == iB.getIridiumPrimitive();
     }
     default:
       return false;
     }
   }
-
-  // Lattice join operator (Least Upper Bound ⊔)
-  [[nodiscard]] CASLattice joinWith(const CASLattice &other) const {
-    IRI_STORAGE::IRIContext *p = ctx ? ctx : other.ctx;
-    if (kind == TOP) {
-      return CASLattice(other.kind, other.value, p);
-    }
-    if (other.kind == TOP) {
-      return CASLattice(kind, value, p);
-    }
-    if (kind == NAC || other.kind == NAC) {
-      return CASLattice(NAC, 0, p);
-    }
-    // Both are CONST
-    if (constantsEqual(value, other.value)) {
-      return CASLattice(CONST, value, p);
-    }
-    return CASLattice(NAC, 0, p);
-  }
-
-  bool operator==(const CASLattice &other) const {
-    if (kind != other.kind)
-      return false;
-    if (kind == CONST) {
-      IRI_STORAGE::IRIContext *p = ctx ? ctx : other.ctx;
-      if (p) {
-        CASLattice temp = *this;
-        temp.ctx = p;
-        return temp.constantsEqual(value, other.value);
-      }
-      return value == other.value;
-    }
-    return true;
-  }
 };
 
-// ============================================================================
-// 2. Constants At Stmt Dataflow State
-// ============================================================================
+//
+// Lattice = Lattice X Bindings
+//
 class CASState {
 private:
   ImmutableDataMap<IRID, CASLattice> envBindings;
@@ -124,7 +99,6 @@ public:
     return CASState(map);
   }
 
-  // Lattice join for states
   [[nodiscard]] CASState joinWith(const CASState &other) const {
     if (*this == other)
       return *this;
@@ -136,21 +110,17 @@ public:
     return envBindings == other.envBindings;
   }
 
-  // Get Lattice value for a binding
-  CASLattice getLattice(IRID binding) const {
-    return envBindings.get(binding);
-  }
+  CASLattice getLattice(IRID binding) const { return envBindings.get(binding); }
 
-  // Immutable update: returns a new state with binding mapped to value
   CASState setLattice(IRID binding, CASLattice val) const {
     assert(envBindings.contains(binding));
     return CASState(envBindings.set(binding, val));
   }
 };
 
-// ============================================================================
-// 3. Constants At Stmt Transfer Function
-// ============================================================================
+//
+// Transfer Function
+//
 class ConstantsAtStmtTransfer : public TransferFunction<CASState> {
 public:
   CASState transferStatement(IRIContext &ctx, IRID stmt,
@@ -169,8 +139,7 @@ public:
           IRI_GEN::LWriteSEXP lw(currWriteID, ctx);
           auto lval = lw.getArg_LValTarget();
           if (IRI_NODE(ctx, lval).tag == IRI_GEN::EnvBinding) {
-            nextState = nextState.setLattice(
-                lval, CASLattice(CASLattice::NAC, 0, &ctx));
+            nextState = nextState.setLattice(lval, CASLattice(CASLattice::NAC));
           }
         }
       }
@@ -191,8 +160,9 @@ private:
     if (tag == IRI_GEN::LWrite) {
       IRI_GEN::LWriteSEXP lw(node, ctx);
       auto lval = lw.getArg_LValTarget();
-      auto & iris = ctx.iris;
-      if (IRI_BINDING(iris, lval).isCaptured() || IRI_BINDING(iris, lval).isEvalTainted()) {
+      auto &iris = ctx.iris;
+      if (IRI_BINDING(iris, lval).isCaptured() ||
+          IRI_BINDING(iris, lval).isEvalTainted()) {
         return state;
       }
       // A write to a function's own name binding is ignored at runtime
@@ -222,15 +192,15 @@ private:
     if (tag == IRI_GEN::Number || tag == IRI_GEN::Boolean ||
         tag == IRI_GEN::Null || tag == IRI_GEN::String ||
         tag == IRI_GEN::JSBigInt || tag == IRI_GEN::JSNUBD) {
-      return CASLattice(CASLattice::CONST, node, &ctx);
+      return CASLattice(CASLattice::CONST, node);
     }
-    return CASLattice(CASLattice::NAC, 0, &ctx);
+    return CASLattice(CASLattice::NAC);
   }
 };
 
-// ============================================================================
-// 4. Constants At Stmt Analysis Result and Pass Definition
-// ============================================================================
+//
+// Machinery
+//
 class ConstantsAtStmtResult : public DataflowResultConcept {
 private:
   std::shared_ptr<ConstantsAtStmtTransfer> transfer;
@@ -244,10 +214,10 @@ public:
 
   std::string getAnalysisName() const override { return "ConstantsAtStmt"; }
 
-  const CASState &getStateBeforeStatement(BBIDX block, size_t stmtOffset) const {
+  const CASState &getStateBeforeStatement(BBIDX block,
+                                          size_t stmtOffset) const {
     return solver->getStateBeforeStatement(block, stmtOffset);
   }
-
 };
 
 struct ConstantsAtStmt {
@@ -260,7 +230,7 @@ struct ConstantsAtStmt {
 
     SCPIDX headScope = cfg.at(cfg.entry).SCOPE;
     auto bindings = cfg.ctx.iris->getEnvBindingsInClosure(headScope);
-    CASState init = CASState::over(bindings, CASLattice::top());
+    CASState init = CASState::over(bindings, CASLattice(CASLattice::TOP));
 
     auto &iris = cfg.ctx.iris;
     CASState entryState = init;
@@ -271,7 +241,7 @@ struct ConstantsAtStmt {
         isArg = eb.hasJSARG() || eb.hasJSRESTARG();
       }
       if (IRI_BINDING(iris, bID).isCaptured() || isArg)
-        entryState = entryState.setLattice(bID, CASLattice::bottom());
+        entryState = entryState.setLattice(bID, CASLattice(CASLattice::NAC));
     }
 
     solver->run(entryState, init);
