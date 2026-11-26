@@ -62,6 +62,11 @@ struct MTDZSPass {
         markNested(ctx, stmtID, state, changed);
       }
 
+      IRID terminal = cfg.at(h).terminal;
+      if (terminal != NO_IRID)
+        markNested(ctx, terminal,
+                   tdz.getStateBeforeStatement(h, stmts.size()), changed);
+
       changed |= ed.changed();
     }
 

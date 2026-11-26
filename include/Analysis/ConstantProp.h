@@ -25,6 +25,12 @@ struct ConstantPropPass {
         const CASState & stateBeforeStmt = casResult.getStateBeforeStatement(bbIDX, stmtOffset);
         changed |= propagateConstants(stmtID, stateBeforeStmt, cfg.ctx);
       }
+
+      if (BB.terminal != NO_IRID) {
+        const CASState & stateAtTerminal =
+            casResult.getStateBeforeStatement(bbIDX, stmts.size());
+        changed |= propagateConstants(BB.terminal, stateAtTerminal, cfg.ctx);
+      }
     }
 
     if (changed)
