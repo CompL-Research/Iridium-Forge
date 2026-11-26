@@ -8,6 +8,7 @@
 #include <cassert>
 #include <iostream>
 #include <memory>
+#include <vector>
 
 namespace IRI_STRUCTURAL {
 
@@ -108,110 +109,42 @@ struct CASLattice {
 // ============================================================================
 class CASState {
 private:
-  bool is_unreachable = true;
   ImmutableDataMap<IRID, CASLattice> envBindings;
 
 public:
-  // Default constructor creates an unreachable/unvisited state
-  CASState() : is_unreachable(true) {}
-  explicit CASState(ImmutableDataMap<IRID, CASLattice> bindings,
-                    bool unreachable = false)
-      : envBindings(std::move(bindings)), is_unreachable(unreachable) {}
+  CASState() = default;
+  explicit CASState(ImmutableDataMap<IRID, CASLattice> bindings)
+      : envBindings(std::move(bindings)) {}
 
-  // Solver-required interface: Bottom of the join-semilattice represents
-  // unvisited/unreachable
-  static CASState bottom() {
-    return CASState(); // Default constructor creates unreachable state
-  }
-
-  static CASState reachableEmpty() {
-    return CASState(ImmutableDataMap<IRID, CASLattice>(), false);
-  }
-
-  bool isUnreachable() const { return is_unreachable; }
-
-  void dump(IRI_STORAGE::IRIContext &ctx, std::ostream &oss) const {
-    if (is_unreachable) {
-      oss << "<Unreachable>";
-      return;
-    }
-    oss << "{";
-    bool first = true;
-    for (const auto &[bID, lattice] : envBindings.getRawMap()) {
-      if (!first)
-        oss << ", ";
-      first = false;
-      if (IRI_NODE(ctx, bID).tag == IRI_GEN::EnvBinding) {
-        IRI_GEN::EnvBindingSEXP eb(bID, ctx);
-        oss << ctx.storage.strings.get(eb.getNAME());
-      } else {
-        oss << "IRID(" << bID << ")";
-      }
-      oss << ": ";
-      if (lattice.kind == CASLattice::TOP) {
-        oss << "TOP";
-      } else if (lattice.kind == CASLattice::CONST) {
-        oss << "CONST(";
-        auto cID = lattice.value;
-        auto tag = IRI_NODE(ctx, cID).tag;
-        if (tag == IRI_GEN::Number) {
-          oss << IRI_GEN::NumberSEXP(cID, ctx).getIridiumPrimitive();
-        } else if (tag == IRI_GEN::Boolean) {
-          oss << (IRI_GEN::BooleanSEXP(cID, ctx).getIridiumPrimitive()
-                      ? "true"
-                      : "false");
-        } else if (tag == IRI_GEN::Null) {
-          oss << "null";
-        } else if (tag == IRI_GEN::JSNUBD) {
-          oss << "undefined";
-        } else if (tag == IRI_GEN::String) {
-          oss << "\""
-              << ctx.storage.strings.get(
-                     IRI_GEN::StringSEXP(cID, ctx).getIridiumPrimitive())
-              << "\"";
-        } else if (tag == IRI_GEN::JSBigInt) {
-          oss << ctx.storage.strings.get(
-                     IRI_GEN::JSBigIntSEXP(cID, ctx).getIridiumPrimitive())
-              << "n";
-        } else {
-          oss << "IRID(" << cID << ")";
-        }
-        oss << ")";
-      } else if (lattice.kind == CASLattice::NAC) {
-        oss << "NAC";
-      }
-    }
-    oss << "}";
+  static CASState over(const std::vector<IRID> &bindings,
+                       const CASLattice &initial) {
+    ImmutableDataMap<IRID, CASLattice> map;
+    for (IRID bID : bindings)
+      map = map.set(bID, initial);
+    return CASState(map);
   }
 
   // Lattice join for states
   [[nodiscard]] CASState joinWith(const CASState &other) const {
-    if (is_unreachable)
-      return other;
-    if (other.is_unreachable)
-      return *this;
     if (*this == other)
       return *this;
 
-    return CASState(envBindings.joinWith(other.envBindings), false);
+    return CASState(envBindings.joinWith(other.envBindings));
   }
 
   bool operator==(const CASState &other) const {
-    if (is_unreachable != other.is_unreachable)
-      return false;
-    if (is_unreachable)
-      return true;
     return envBindings == other.envBindings;
   }
 
   // Get Lattice value for a binding
   CASLattice getLattice(IRID binding) const {
-    return envBindings.get(binding, CASLattice::top());
+    return envBindings.get(binding);
   }
 
   // Immutable update: returns a new state with binding mapped to value
   CASState setLattice(IRID binding, CASLattice val) const {
-    return CASState(envBindings.set(binding, val), false);
+    assert(envBindings.contains(binding));
+    return CASState(envBindings.set(binding, val));
   }
 };
 
@@ -222,10 +155,6 @@ class ConstantsAtStmtTransfer : public TransferFunction<CASState> {
 public:
   CASState transferStatement(IRIContext &ctx, IRID stmt,
                              const CASState &incomingState) override {
-    if (incomingState.isUnreachable()) {
-      return CASState::bottom();
-    }
-
     CASState nextState = incomingState;
     auto tag = IRI_NODE(ctx, stmt).tag;
 
@@ -315,30 +244,10 @@ public:
 
   std::string getAnalysisName() const override { return "ConstantsAtStmt"; }
 
-  void dumpStateAtStatement(const IRICFG &cfg, BBIDX block, IRID stmt,
-                            std::ostream &os) const override {
-    CASState state = queryStateAtStatement(block, stmt);
-    state.dump(cfg.ctx, os);
+  const CASState &getStateBeforeStatement(BBIDX block, size_t stmtOffset) const {
+    return solver->getStateBeforeStatement(block, stmtOffset);
   }
 
-  void dumpBlockEntryState(const IRICFG &cfg, BBIDX block,
-                           std::ostream &os) const override {
-    const CASState &state = getBlockEntryState(block);
-    state.dump(cfg.ctx, os);
-  }
-
-  void dumpBlockExitState(const IRICFG &, BBIDX,
-                          std::ostream &os) const override {
-    os << "<ExitStateNotTracked>";
-  }
-
-  const CASState &getBlockEntryState(BBIDX block) const {
-    return solver->getBlockEntryState(block);
-  }
-
-  CASState queryStateAtStatement(BBIDX block, IRID stmt) const {
-    return solver->queryStateAtStatement(block, stmt);
-  }
 };
 
 struct ConstantsAtStmt {
@@ -349,23 +258,23 @@ struct ConstantsAtStmt {
     auto transfer = std::make_shared<ConstantsAtStmtTransfer>();
     auto solver = std::make_shared<DataflowSolver<CASState>>(cfg, *transfer);
 
-    // Initial State
     SCPIDX headScope = cfg.at(cfg.entry).SCOPE;
     auto bindings = cfg.ctx.iris->getEnvBindingsInClosure(headScope);
-    CASState entryState = CASState::reachableEmpty();
+    CASState init = CASState::over(bindings, CASLattice::top());
+
     auto &iris = cfg.ctx.iris;
+    CASState entryState = init;
     for (auto bID : bindings) {
       bool isArg = false;
       if (IRI_NODE(cfg.ctx, bID).tag == IRI_GEN::EnvBinding) {
         IRI_GEN::EnvBindingSEXP eb(bID, cfg.ctx);
         isArg = eb.hasJSARG() || eb.hasJSRESTARG();
       }
-      entryState = entryState.setLattice(bID, (IRI_BINDING(iris, bID).isCaptured() || isArg)
-                                                   ? CASLattice::bottom()
-                                                   : CASLattice::top());
+      if (IRI_BINDING(iris, bID).isCaptured() || isArg)
+        entryState = entryState.setLattice(bID, CASLattice::bottom());
     }
 
-    solver->run(entryState);
+    solver->run(entryState, init);
 
     return ConstantsAtStmtResult(std::move(transfer), std::move(solver));
   }

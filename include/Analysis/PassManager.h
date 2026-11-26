@@ -35,12 +35,12 @@ class AnalysisManager;
 struct DataflowResultConcept {
   virtual ~DataflowResultConcept() = default;
   virtual std::string getAnalysisName() const = 0;
-  virtual void dumpStateAtStatement(const IRICFG &cfg, BBIDX block, IRID stmt,
-                                    std::ostream &os) const = 0;
-  virtual void dumpBlockEntryState(const IRICFG &cfg, BBIDX block,
-                                   std::ostream &os) const = 0;
-  virtual void dumpBlockExitState(const IRICFG &cfg, BBIDX block,
-                                  std::ostream &os) const = 0;
+  // virtual void dumpStateAtStatement(const IRICFG &cfg, BBIDX block, IRID stmt,
+  //                                   std::ostream &os) const = 0;
+  // virtual void dumpBlockEntryState(const IRICFG &cfg, BBIDX block,
+  //                                  std::ostream &os) const = 0;
+  // virtual void dumpBlockExitState(const IRICFG &cfg, BBIDX block,
+  //                                 std::ostream &os) const = 0;
 };
 
 // ============================================================================
@@ -123,62 +123,62 @@ public:
 
   void invalidate(const IRICFG &cfg) { cache.erase(&cfg); }
 
-  void dumpDataflowStates(IRICFG &cfg, std::ostream &os) {
-    using Entries = std::unordered_map<const void *,
-                                       std::unique_ptr<AnalysisResultConcept>>;
-    static const Entries none;
-    auto found = cache.find(&cfg);
-    const Entries &cached = found == cache.end() ? none : found->second;
-
-    auto dumpStatement = [&](IRID stmtID) {
-      std::stringstream ss;
-      IRI_NODE(cfg.ctx, stmtID).dumpFlat(ss, &cfg.ctx, 0, false);
-      std::stringstream statementLines(ss.str());
-      std::string line;
-      while (std::getline(statementLines, line)) {
-        os << "      " << line << "\n";
-      }
-      os << "\n";
-    };
-
-    for (BBIDX h = 0; h < cfg.numBBs(); h++) {
-      const IRIBB &bb = cfg.at(h);
-      os << "  BB" << h << ":\n";
-
-      // 1. Block Entry States
-      for (const auto &[passID, model] : cached) {
-        if (auto df = model->asDataflow()) {
-          os << "    [BlockEntry (" << df->getAnalysisName() << "): ";
-          df->dumpBlockEntryState(cfg, h, os);
-          os << "]\n";
-        }
-      }
-
-      // 2. Statements
-      for (IRID stmtID : bb.stmts) {
-        for (const auto &[passID, model] : cached) {
-          if (auto df = model->asDataflow()) {
-            os << "    [State (" << df->getAnalysisName() << "): ";
-            df->dumpStateAtStatement(cfg, h, stmtID, os);
-            os << "]\n";
-          }
-        }
-        dumpStatement(stmtID);
-      }
-
-      // 3. Terminal Statement BlockExit States
-      if (bb.terminal != NO_IRID) {
-        for (const auto &[passID, model] : cached) {
-          if (auto df = model->asDataflow()) {
-            os << "    [State (" << df->getAnalysisName() << "): ";
-            df->dumpStateAtStatement(cfg, h, bb.terminal, os);
-            os << "]\n";
-          }
-        }
-        dumpStatement(bb.terminal);
-      }
-    }
-  }
+  // void dumpDataflowStates(IRICFG &cfg, std::ostream &os) {
+  //   using Entries = std::unordered_map<const void *,
+  //                                      std::unique_ptr<AnalysisResultConcept>>;
+  //   static const Entries none;
+  //   auto found = cache.find(&cfg);
+  //   const Entries &cached = found == cache.end() ? none : found->second;
+  //
+  //   auto dumpStatement = [&](IRID stmtID) {
+  //     std::stringstream ss;
+  //     IRI_NODE(cfg.ctx, stmtID).dumpFlat(ss, &cfg.ctx, 0, false);
+  //     std::stringstream statementLines(ss.str());
+  //     std::string line;
+  //     while (std::getline(statementLines, line)) {
+  //       os << "      " << line << "\n";
+  //     }
+  //     os << "\n";
+  //   };
+  //
+  //   for (BBIDX h = 0; h < cfg.numBBs(); h++) {
+  //     const IRIBB &bb = cfg.at(h);
+  //     os << "  BB" << h << ":\n";
+  //
+  //     // 1. Block Entry States
+  //     for (const auto &[passID, model] : cached) {
+  //       if (auto df = model->asDataflow()) {
+  //         os << "    [BlockEntry (" << df->getAnalysisName() << "): ";
+  //         df->dumpBlockEntryState(cfg, h, os);
+  //         os << "]\n";
+  //       }
+  //     }
+  //
+  //     // 2. Statements
+  //     for (IRID stmtID : bb.stmts) {
+  //       for (const auto &[passID, model] : cached) {
+  //         if (auto df = model->asDataflow()) {
+  //           os << "    [State (" << df->getAnalysisName() << "): ";
+  //           df->dumpStateAtStatement(cfg, h, stmtID, os);
+  //           os << "]\n";
+  //         }
+  //       }
+  //       dumpStatement(stmtID);
+  //     }
+  //
+  //     // 3. Terminal Statement BlockExit States
+  //     if (bb.terminal != NO_IRID) {
+  //       for (const auto &[passID, model] : cached) {
+  //         if (auto df = model->asDataflow()) {
+  //           os << "    [State (" << df->getAnalysisName() << "): ";
+  //           df->dumpStateAtStatement(cfg, h, bb.terminal, os);
+  //           os << "]\n";
+  //         }
+  //       }
+  //       dumpStatement(bb.terminal);
+  //     }
+  //   }
+  // }
 };
 
 // ============================================================================

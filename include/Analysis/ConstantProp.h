@@ -3,8 +3,7 @@
 #include "Analysis/PassManager.h"
 #include "Analysis/ConstantsAtStmt.h"
 #include "Generated/IridiumTypes.h"
-#include "Support/BBContainerSupport.hpp"
-#include <iostream>
+#include "Storage/Config.h"
 #include <vector>
 
 namespace IRI_STRUCTURAL {
@@ -15,33 +14,16 @@ namespace IRI_STRUCTURAL {
 struct ConstantPropPass {
   bool run(IRICFG& cfg, AnalysisManager& am) {
     bool changed = false;
-    BBContainerSupport bbc(cfg.container, cfg.ctx);
-
-    // 1. Get ConstantsAtStmt
     const ConstantsAtStmtResult& casResult = am.getResult<ConstantsAtStmt>(cfg);
 
-    ConstantsAtStmtTransfer transfer;
-    // Perform transformation logic using the analysis facts
-    for (BBIDX h = 0; h < cfg.numBBs(); h++) {
-      CASState state = casResult.getBlockEntryState(h);
-      // Only expression trees are rewritten, never the statement list, so no
-      // BBEditor is needed.
-      for (IRID stmtID : cfg.at(h).stmts) {
-        auto stmtTag = IRI_NODE(cfg.ctx, stmtID).tag;
+    for (BBIDX bbIDX = 0; bbIDX < cfg.numBBs(); bbIDX++) {
+      const IRIBB & BB = cfg.at(bbIDX);
+      const std::vector<IRID> & stmts = BB.stmts;
 
-        // Compute the next state before we potentially modify stmtID
-        CASState nextState = transfer.transferStatement(cfg.ctx, stmtID, state);
-
-        // If the statement itself is a standalone EnvRead, replace it
-        if (stmtTag == IRI_GEN::EnvRead) {
-          // EnvReads at top level always unsafe, if they were safe they would have been collected by MTDZS pass..
-          // Do nothing here
-        } else {
-          // Recursively find and replace EnvReads with constants in the statement's expression tree
-          changed |= propagateConstants(stmtID, state, cfg.ctx);
-        }
-
-        state = nextState;
+      for (size_t stmtOffset = 0; stmtOffset < stmts.size(); stmtOffset++) {
+        IRID stmtID = stmts[stmtOffset];
+        const CASState & stateBeforeStmt = casResult.getStateBeforeStatement(bbIDX, stmtOffset);
+        changed |= propagateConstants(stmtID, stateBeforeStmt, cfg.ctx);
       }
     }
 

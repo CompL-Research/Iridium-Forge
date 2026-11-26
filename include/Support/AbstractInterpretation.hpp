@@ -4,6 +4,7 @@
 #include "Generated/IridiumTypes.h"
 #include "IRICFG.hpp"
 #include <algorithm>
+#include <cassert>
 #include <immer/map.hpp>
 #include <immer/map_transient.hpp>
 #include <queue>
@@ -49,6 +50,16 @@ public:
     }
     return defaultValue;
   }
+
+  // The key must be present. A state is only ever as total as the INIT and
+  // boundary states it was built from, so totality is the analysis' job.
+  const LatticeElement &get(const Key &key) const {
+    auto ptr = data.find(key);
+    assert(ptr);
+    return *ptr;
+  }
+
+  bool contains(const Key &key) const { return data.find(key) != nullptr; }
 
   // Structural sharing comparison (O(1) root-pointer check, falling back to
   // O(N))
@@ -103,29 +114,29 @@ template <typename State> class DataflowSolver {
 private:
   const IRICFG &cfg;
   TransferFunction<State> &transferFn;
-  std::unordered_map<BBIDX, State> blockEntryStates;
+  std::vector<State> blockEntryStates;
+  std::vector<std::vector<State>> stmtStates;
 
 public:
   DataflowSolver(const IRICFG &cfg, TransferFunction<State> &tf)
       : cfg(cfg), transferFn(tf) {}
 
-  void run(State entryState, EdgeMask mask = EDGE_ALL) {
+  void run(const State &BI, const State &INIT, EdgeMask mask = EDGE_ALL) {
     // 1. Get Reverse Post-Order for fastest fixed-point convergence
     std::vector<BBIDX> rpo = cfg.reversePostOrder(mask);
 
-    // 2. Initialize block entry states to State::bottom()
-    for (BBIDX block : rpo) {
-      blockEntryStates[block] = State::bottom();
-    }
-    blockEntryStates[cfg.entry] = entryState;
+    // 2. One slot per block at INIT, then the boundary state on top.
+    blockEntryStates.assign(cfg.numBBs(), INIT);
+    stmtStates.resize(cfg.numBBs());
+    blockEntryStates[cfg.entry] = BI;
 
     std::queue<BBIDX> worklist;
-    std::unordered_set<BBIDX> inWorklist;
+    std::vector<char> inWorklist(cfg.numBBs(), 0);
 
     // Seed the worklist with blocks in RPO order
     for (BBIDX block : rpo) {
       worklist.push(block);
-      inWorklist.insert(block);
+      inWorklist[block] = 1;
     }
 
     // Helper to propagate state to a target block and queue it if updated
@@ -134,9 +145,9 @@ public:
       State joined = oldEntry.joinWith(state);
       if (!(joined == oldEntry)) {
         oldEntry = std::move(joined);
-        if (!inWorklist.contains(target)) {
+        if (!inWorklist[target]) {
           worklist.push(target);
-          inWorklist.insert(target);
+          inWorklist[target] = 1;
         }
       }
     };
@@ -145,7 +156,7 @@ public:
     while (!worklist.empty()) {
       BBIDX currIdx = worklist.front();
       worklist.pop();
-      inWorklist.erase(currIdx);
+      inWorklist[currIdx] = 0;
 
       const IRIBB &bb = cfg.at(currIdx);
       State currState = blockEntryStates[currIdx];
@@ -171,11 +182,18 @@ public:
         }
       };
 
+      // Record the state at each boundary as the walk passes it.
+      std::vector<State> boundaries;
+      boundaries.reserve(bb.stmts.size() + 1);
+
       // Transfer through non-terminal statements
       for (IRID stmtID : bb.stmts) {
+        boundaries.push_back(currState);
         handleException(currState);
         runTransfer(stmtID);
       }
+      boundaries.push_back(currState);
+      stmtStates[currIdx] = std::move(boundaries);
 
       // Transfer through terminal statement
       if (bb.terminal != NO_IRID) {
@@ -192,29 +210,14 @@ public:
     }
   }
 
-  // Returns the entry state for a given basic block
   const State &getBlockEntryState(BBIDX block) const {
-    auto it = blockEntryStates.find(block);
-    if (it != blockEntryStates.end()) {
-      return it->second;
-    }
-    static const State bottomState = State::bottom();
-    return bottomState;
+    return blockEntryStates.at(block);
   }
 
-  // On-demand query: Computes and returns the state immediately before a
-  // statement is executed
-  State queryStateAtStatement(BBIDX block, IRID stmt) {
-    State state = getBlockEntryState(block);
-
-    const IRIBB &bb = cfg.at(block);
-    for (IRID stmtID : bb.stmts) {
-      if (stmtID == stmt)
-        break;
-      state = transferFn.transferStatement(cfg.ctx, stmtID, state);
-    }
-    return state;
+  const State &getStateBeforeStatement(BBIDX block, size_t index) const {
+    return stmtStates.at(block).at(index);
   }
+
 };
 
 // ============================================================================
