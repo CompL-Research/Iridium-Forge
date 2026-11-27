@@ -113,41 +113,38 @@ std::string ppMemberOf(const PPContext &pp, const std::string &base, IRID key) {
   return base + "[" + ppRVal(pp, key) + "]";
 }
 
-const char *ppWriteOp(bool init, bool safe) {
-  if (init)
-    return "<-";
-  return safe ? "=" : ".=";
-}
+// SAFE is an unconditional store; without it the store checks the TDZ zone.
+const char *ppWriteOp(bool safe) { return safe ? "=" : ".="; }
 
 template <typename S>
 static PPWrite writeParts(const PPContext &pp, const S &write,
                           const std::string &prefix = "") {
   return {prefix + ppBinding(pp, write.getArg_LValTarget()),
-          ppWriteOp(write.hasINIT(), write.hasSAFE())};
+          ppWriteOp(write.hasSAFE())};
 }
 
 PPWrite ppWriteParts(const PPContext &pp, IRID write) {
   switch (pp.tagOf(write)) {
   case LWrite: {
-    // put_loc_check_init; ignored by the lowering when INIT is set.
+    // put_loc_check_init.
     LWriteSEXP lWrite(write, pp.ctx);
-    bool thisInit = lWrite.hasTHISINIT() && !lWrite.hasINIT();
-    return writeParts(pp, lWrite, thisInit ? "thisinit " : "");
+    return writeParts(pp, lWrite, lWrite.hasTHISINIT() ? "thisinit " : "");
   }
   case RWrite: {
-    // put_var_ref_check_init; unlike LWrite it wins over INIT.
+    // put_var_ref_check_init.
     RWriteSEXP rWrite(write, pp.ctx);
     return writeParts(pp, rWrite, rWrite.hasTHISINIT() ? "thisinit " : "");
   }
   case MWrite:
     return writeParts(pp, MWriteSEXP(write, pp.ctx));
   case GWrite: {
+    // GWrite's INIT is OP_put_var_init, unrelated to a lexical declaration.
     GWriteSEXP gWrite(write, pp.ctx);
-    if (gWrite.hasDECLVAR())
-      return writeParts(pp, gWrite, "decl(script) ");
-    if (gWrite.hasDECLFUN())
-      return writeParts(pp, gWrite, "declFun(script) ");
-    return writeParts(pp, gWrite);
+    std::string prefix = gWrite.hasDECLVAR()   ? "decl(script) "
+                         : gWrite.hasDECLFUN() ? "declFun(script) "
+                                               : "";
+    return {prefix + ppBinding(pp, gWrite.getArg_LValTarget()),
+            gWrite.hasINIT() ? "<-" : ppWriteOp(gWrite.hasSAFE())};
   }
   default:
     throw std::runtime_error("Unexpected write node");

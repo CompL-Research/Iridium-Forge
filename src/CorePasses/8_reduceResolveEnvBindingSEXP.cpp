@@ -64,7 +64,7 @@ void _8_RREBS(IRIContext &ctx, IRID fileSEXP,
             throw std::runtime_error(
                 "Expected SiblingSpecialWrite to resolve to EnvBinding");
           }
-          IRID writeStmt = LWriteSEXP::create(ctx, lval, rval, true, false, false);
+          IRID writeStmt = LWriteSEXP::create(ctx, lval, rval, true, false);
 
           ctx.storage.nodes.update_arg_inplace(bbID, stmtIDX, writeStmt);
           patchNode(file, ctx, rval, bbScopeIDX);
@@ -90,17 +90,15 @@ void _8_RREBS(IRIContext &ctx, IRID fileSEXP,
              target = GWriteSEXP::create(ctx, lval, rval, ew.getCINIT(), ew.getSAFE(), false, false);
              // target = GWriteSEXP::create(ctx, lval, rval, ew.getSAFE(), false, false, false);
            } else if (IRI_NODE(ctx, lval).tag == IRI_GEN::EnvBinding) {
-             target = LWriteSEXP::create(ctx, lval, rval, ew.getCINIT(), hasASW || ew.getSAFE(), ew.getTHISINIT());
-             // target = LWriteSEXP::create(ctx, lval, rval, hasASW || ew.getSAFE(), false, ew.getTHISINIT());
+             // CINIT is the binding's own declaration: it stores unconditionally.
+             target = LWriteSEXP::create(ctx, lval, rval, hasASW || ew.getSAFE() || ew.getCINIT(), ew.getTHISINIT());
            } else if (IRI_NODE(ctx, lval).tag == IRI_GEN::RemoteEnvBinding) {
              RemoteEnvBindingSEXP rb(lval, ctx);
              if (rb.hasMODULE() || rb.hasMODULEI() || rb.hasMODULENSI()) {
                assert(ew.getTHISINIT() == false);
-               target = MWriteSEXP::create(ctx, lval, rval, ew.getCINIT(), ew.getSAFE());
-               // target = MWriteSEXP::create(ctx, lval, rval, ew.getSAFE(), false);
+               target = MWriteSEXP::create(ctx, lval, rval, ew.getSAFE() || ew.getCINIT());
              } else {
-               target = RWriteSEXP::create(ctx, lval, rval, ew.getCINIT(), ew.getSAFE(), ew.getTHISINIT());
-               // target = RWriteSEXP::create(ctx, lval, rval, ew.getSAFE(), false, ew.getTHISINIT());
+               target = RWriteSEXP::create(ctx, lval, rval, ew.getSAFE() || ew.getCINIT(), ew.getTHISINIT());
              }
            }
            ctx.storage.nodes.update_arg_inplace(stmtID, i, target);
@@ -120,17 +118,14 @@ void _8_RREBS(IRIContext &ctx, IRID fileSEXP,
             target = GWriteSEXP::create(ctx, lval, rval, ew.getCINIT(), ew.getSAFE(), false, false);
             // target = GWriteSEXP::create(ctx, lval, rval, ew.getSAFE(), false, false, false);
           } else if (IRI_NODE(ctx, lval).tag == IRI_GEN::EnvBinding) {
-            target = LWriteSEXP::create(ctx, lval, rval, ew.getCINIT(), hasASW || ew.getSAFE(), ew.getTHISINIT());
-            // target = LWriteSEXP::create(ctx, lval, rval, hasASW || ew.getSAFE(), false, ew.getTHISINIT());
+            target = LWriteSEXP::create(ctx, lval, rval, hasASW || ew.getSAFE() || ew.getCINIT(), ew.getTHISINIT());
           } else if (IRI_NODE(ctx, lval).tag == IRI_GEN::RemoteEnvBinding) {
             RemoteEnvBindingSEXP rb(lval, ctx);
             if (rb.hasMODULE() || rb.hasMODULEI() || rb.hasMODULENSI()) {
               assert(ew.getTHISINIT() == false);
-              target = MWriteSEXP::create(ctx, lval, rval, ew.getCINIT(), ew.getSAFE());
-              // target = MWriteSEXP::create(ctx, lval, rval, ew.getSAFE(), false);
+              target = MWriteSEXP::create(ctx, lval, rval, ew.getSAFE() || ew.getCINIT());
             } else {
-              target = RWriteSEXP::create(ctx, lval, rval, ew.getCINIT(), ew.getSAFE(), ew.getTHISINIT());
-              // target = RWriteSEXP::create(ctx, lval, rval, ew.getSAFE(), false, ew.getTHISINIT());
+              target = RWriteSEXP::create(ctx, lval, rval, ew.getSAFE() || ew.getCINIT(), ew.getTHISINIT());
             }
           }
           ctx.storage.nodes.update_arg_inplace(bbID, stmtIDX, target);

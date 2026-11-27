@@ -103,7 +103,7 @@ void _4_3_PIB(IRIContext &ctx, IRID fileID, BUILD_CTX &iridiumBuildContext) {
             ctx.storage.nodes.set_args(rval, ctx.storage.nodes.get_args(ibs.getArg_Args()));
           }
 
-          IRID target = LWriteSEXP::create(ctx, lval, rval, true, false, OPID == 10);
+          IRID target = LWriteSEXP::create(ctx, lval, rval, true, false);
           ctx.storage.nodes.update_arg_inplace(bbID, i, target);
         }
       }

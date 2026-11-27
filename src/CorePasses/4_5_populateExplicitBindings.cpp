@@ -129,12 +129,12 @@ void _4_5_PEB(IRIContext &ctx, IRID fileID, BUILD_CTX &iridiumBuildContext) {
                 auto & decl = ctx.iris->declareLBinding(scopeToHoistTo, bindingName, kind);
                 if (isArgX) decl.isARGX = true;
                 resolvedLVAL = decl.ID;
-                target = LWriteSEXP::create(ctx, resolvedLVAL, rval, true, false, false);
+                target = LWriteSEXP::create(ctx, resolvedLVAL, rval, true, false);
               } else if (loc == LOC::MODULE) {
                 auto & decl = ctx.iris->declareRBinding(scopeToHoistTo, bindingName, kind, IRI_GEN::MODULE);
                 if (isArgX) decl.isARGX = true;
                 resolvedLVAL = decl.ID;
-                target = MWriteSEXP::create(ctx, resolvedLVAL, rval, true, false);
+                target = MWriteSEXP::create(ctx, resolvedLVAL, rval, true);
               } else if (loc == LOC::SCRIPT) {
                 auto & decl = ctx.iris->declareScriptBinding(scopeToHoistTo, bindingName, kind);
                 if (isArgX) decl.isARGX = true;
@@ -159,9 +159,9 @@ void _4_5_PEB(IRIContext &ctx, IRID fileID, BUILD_CTX &iridiumBuildContext) {
             inlineReplacement = ctx.storage.nodes.NOP_SEXP;
           } else {
             if (IRI_NODE(ctx, resolvedLVAL).tag == IRI_GEN::EnvBinding) {
-              inlineReplacement = LWriteSEXP::create(ctx, resolvedLVAL, irRVal, true, false, false);
+              inlineReplacement = LWriteSEXP::create(ctx, resolvedLVAL, irRVal, true, false);
             } else if (IRI_NODE(ctx, resolvedLVAL).tag == IRI_GEN::RemoteEnvBinding) {
-              inlineReplacement = MWriteSEXP::create(ctx, resolvedLVAL, irRVal, true, false);
+              inlineReplacement = MWriteSEXP::create(ctx, resolvedLVAL, irRVal, true);
             } else if (IRI_NODE(ctx, resolvedLVAL).tag == IRI_GEN::ScriptBinding) {
               inlineReplacement = GWriteSEXP::create(ctx, resolvedLVAL, irRVal, true, false, false, false);
             } else {

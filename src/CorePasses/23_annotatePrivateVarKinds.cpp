@@ -28,8 +28,6 @@ void _23_APVK(IRIContext &ctx, IRID fileSEXP,
         if (IRI_NODE(ctx, stmtID).tag != IRI_GEN::LWrite)
           continue;
         LWriteSEXP write(stmtID, ctx);
-        if (!write.hasINIT())
-          continue;
         IRID lval = write.getArg_LValTarget();
         IRID rval = write.getArg_RVal();
         if (IRI_NODE(ctx, lval).tag != IRI_GEN::EnvBinding)

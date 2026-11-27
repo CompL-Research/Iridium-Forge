@@ -312,8 +312,7 @@ void normalizeReturns(std::vector<IRIBB> &blocks, const Shape &shape,
     else
       continue;
 
-    blocks[h].stmts.push_back(
-        LWriteSEXP::create(ctx, retCTX, rval, false, true, false));
+    blocks[h].stmts.push_back(LWriteSEXP::create(ctx, retCTX, rval, true, false));
     terminal = GotoSEXP::create(ctx, false, shape.exit);
     deriveEdges(blocks, h, terminal, shape);
   }

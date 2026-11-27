@@ -1,4 +1,4 @@
-// Generated: 2026-11-27 18:24:53
+// Generated: 2026-11-27 19:37:53
 #pragma once
 #include "Storage/Config.h"
 #include "Storage/IridiumSEXP.h"
@@ -4350,16 +4350,15 @@ using IRI_STORAGE::FlagValue;
       }
     }
 
-    static IRID create(IRIContext& p, IRID LValTarget, IRID RVal, bool INIT, bool SAFE, bool THISINIT) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::LWrite, {LValTarget, RVal}, {INIT ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), SAFE ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), THISINIT ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate())});
+    static IRID create(IRIContext& p, IRID LValTarget, IRID RVal, bool SAFE, bool THISINIT) {
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::LWrite, {LValTarget, RVal}, {SAFE ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), THISINIT ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate())});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 2;
-    static constexpr uint32_t TOTAL_FLAGS = 3;
+    static constexpr uint32_t TOTAL_FLAGS = 2;
 
-    static constexpr uint32_t FLAG_IDX_INIT = 0;
-    static constexpr uint32_t FLAG_IDX_SAFE = 1;
-    static constexpr uint32_t FLAG_IDX_THISINIT = 2;
+    static constexpr uint32_t FLAG_IDX_SAFE = 0;
+    static constexpr uint32_t FLAG_IDX_THISINIT = 1;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
@@ -4379,10 +4378,6 @@ using IRI_STORAGE::FlagValue;
     void setArg_RVal(IRID val) { assert(hasArg_RVal() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,1,val); }
 
     // --- Flags ---
-    bool hasINIT() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_INIT)); }
-    void setINIT() { mutate_flag(FLAG_IDX_INIT) = std::nullptr_t{}; }
-    void clearINIT() { mutate_flag(FLAG_IDX_INIT) = std::monostate{}; }
-
     bool hasSAFE() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_SAFE)); }
     void setSAFE() { mutate_flag(FLAG_IDX_SAFE) = std::nullptr_t{}; }
     void clearSAFE() { mutate_flag(FLAG_IDX_SAFE) = std::monostate{}; }
@@ -4402,16 +4397,15 @@ using IRI_STORAGE::FlagValue;
       }
     }
 
-    static IRID create(IRIContext& p, IRID LValTarget, IRID RVal, bool INIT, bool SAFE, bool THISINIT) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::RWrite, {LValTarget, RVal}, {INIT ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), SAFE ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), THISINIT ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate())});
+    static IRID create(IRIContext& p, IRID LValTarget, IRID RVal, bool SAFE, bool THISINIT) {
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::RWrite, {LValTarget, RVal}, {SAFE ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), THISINIT ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate())});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 2;
-    static constexpr uint32_t TOTAL_FLAGS = 3;
+    static constexpr uint32_t TOTAL_FLAGS = 2;
 
-    static constexpr uint32_t FLAG_IDX_INIT = 0;
-    static constexpr uint32_t FLAG_IDX_SAFE = 1;
-    static constexpr uint32_t FLAG_IDX_THISINIT = 2;
+    static constexpr uint32_t FLAG_IDX_SAFE = 0;
+    static constexpr uint32_t FLAG_IDX_THISINIT = 1;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
@@ -4431,10 +4425,6 @@ using IRI_STORAGE::FlagValue;
     void setArg_RVal(IRID val) { assert(hasArg_RVal() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,1,val); }
 
     // --- Flags ---
-    bool hasINIT() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_INIT)); }
-    void setINIT() { mutate_flag(FLAG_IDX_INIT) = std::nullptr_t{}; }
-    void clearINIT() { mutate_flag(FLAG_IDX_INIT) = std::monostate{}; }
-
     bool hasSAFE() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_SAFE)); }
     void setSAFE() { mutate_flag(FLAG_IDX_SAFE) = std::nullptr_t{}; }
     void clearSAFE() { mutate_flag(FLAG_IDX_SAFE) = std::monostate{}; }
@@ -4454,15 +4444,14 @@ using IRI_STORAGE::FlagValue;
       }
     }
 
-    static IRID create(IRIContext& p, IRID LValTarget, IRID RVal, bool INIT, bool SAFE) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::MWrite, {LValTarget, RVal}, {INIT ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), SAFE ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate())});
+    static IRID create(IRIContext& p, IRID LValTarget, IRID RVal, bool SAFE) {
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::MWrite, {LValTarget, RVal}, {SAFE ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate())});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 2;
-    static constexpr uint32_t TOTAL_FLAGS = 2;
+    static constexpr uint32_t TOTAL_FLAGS = 1;
 
-    static constexpr uint32_t FLAG_IDX_INIT = 0;
-    static constexpr uint32_t FLAG_IDX_SAFE = 1;
+    static constexpr uint32_t FLAG_IDX_SAFE = 0;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
@@ -4482,10 +4471,6 @@ using IRI_STORAGE::FlagValue;
     void setArg_RVal(IRID val) { assert(hasArg_RVal() && "Tried to set missing ARG"); ctx->storage.nodes.update_arg_inplace(id,1,val); }
 
     // --- Flags ---
-    bool hasINIT() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_INIT)); }
-    void setINIT() { mutate_flag(FLAG_IDX_INIT) = std::nullptr_t{}; }
-    void clearINIT() { mutate_flag(FLAG_IDX_INIT) = std::monostate{}; }
-
     bool hasSAFE() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_SAFE)); }
     void setSAFE() { mutate_flag(FLAG_IDX_SAFE) = std::nullptr_t{}; }
     void clearSAFE() { mutate_flag(FLAG_IDX_SAFE) = std::monostate{}; }

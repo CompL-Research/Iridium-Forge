@@ -25,26 +25,26 @@ namespace {
 
 IRID illegalConstWrite(IRIContext &ctx, IRID write) {
   IRID target;
-  bool init, thisInit;
+  bool safe, thisInit;
   switch (IRI_NODE(ctx, write).tag) {
   case LWrite: {
     LWriteSEXP w(write, ctx);
     target = w.getArg_LValTarget();
-    init = w.hasINIT();
+    safe = w.hasSAFE();
     thisInit = w.hasTHISINIT();
     break;
   }
   case RWrite: {
     RWriteSEXP w(write, ctx);
     target = IRI_HELPERS::resolveRemoteBinding(ctx, w.getArg_LValTarget());
-    init = w.hasINIT();
+    safe = w.hasSAFE();
     thisInit = w.hasTHISINIT();
     break;
   }
   case MWrite: {
     MWriteSEXP w(write, ctx);
     target = IRI_HELPERS::resolveRemoteBinding(ctx, w.getArg_LValTarget());
-    init = w.hasINIT();
+    safe = w.hasSAFE();
     thisInit = false;
     break;
   }
@@ -52,7 +52,7 @@ IRID illegalConstWrite(IRIContext &ctx, IRID write) {
     return NO_IRID;
   }
 
-  if (init || thisInit)
+  if (safe || thisInit)
     return NO_IRID;
 
   return EnvBindingSEXP(target, ctx).hasJSCONST() ? target : NO_IRID;
