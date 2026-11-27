@@ -113,14 +113,12 @@ std::string ppMemberOf(const PPContext &pp, const std::string &base, IRID key) {
   return base + "[" + ppRVal(pp, key) + "]";
 }
 
-// SAFE is an unconditional store; without it the store checks the TDZ zone.
-const char *ppWriteOp(bool safe) { return safe ? "=" : ".="; }
+const char *ppWriteOp() { return "="; }
 
 template <typename S>
 static PPWrite writeParts(const PPContext &pp, const S &write,
                           const std::string &prefix = "") {
-  return {prefix + ppBinding(pp, write.getArg_LValTarget()),
-          ppWriteOp(write.hasSAFE())};
+  return {prefix + ppBinding(pp, write.getArg_LValTarget()), ppWriteOp()};
 }
 
 PPWrite ppWriteParts(const PPContext &pp, IRID write) {
@@ -144,7 +142,7 @@ PPWrite ppWriteParts(const PPContext &pp, IRID write) {
                          : gWrite.hasDECLFUN() ? "declFun(script) "
                                                : "";
     return {prefix + ppBinding(pp, gWrite.getArg_LValTarget()),
-            gWrite.hasINIT() ? "<-" : ppWriteOp(gWrite.hasSAFE())};
+            gWrite.hasINIT() ? "<-" : ppWriteOp()};
   }
   default:
     throw std::runtime_error("Unexpected write node");
