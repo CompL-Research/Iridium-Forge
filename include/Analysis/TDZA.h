@@ -4,11 +4,17 @@
 #include "Generated/IridiumTypes.h"
 #include "Support/AbstractInterpretation.hpp"
 #include "Support/IRIS.hpp"
-#include <cassert>
 #include <memory>
+#include <stdexcept>
+#include <string>
 #include <vector>
 
 namespace IRI_STRUCTURAL {
+
+inline bool trackedBinding(IRI_STORAGE::IRIContext &ctx, IRID binding) {
+  IRI_TAG tag = IRI_NODE(ctx, binding).tag;
+  return tag == IRI_GEN::EnvBinding || tag == IRI_GEN::RemoteEnvBinding;
+}
 
 //
 // Lattice
@@ -24,8 +30,8 @@ struct TDZLattice {
       return other;
     if (other.kind == TOP)
       return *this;
-    return kind == TDZ || other.kind == TDZ ? TDZLattice(TDZ)
-                                            : TDZLattice(SAFE);
+    return (kind == TDZ || other.kind == TDZ) ? TDZLattice(TDZ)
+                                              : TDZLattice(SAFE);
   }
 
   bool operator==(const TDZLattice &other) const { return kind == other.kind; }
@@ -43,11 +49,14 @@ public:
   explicit TDZState(ImmutableDataMap<IRID, TDZLattice> bindings)
       : envBindings(std::move(bindings)) {}
 
-  static TDZState over(const std::vector<IRID> &bindings,
-                       const TDZLattice &initial) {
+  static TDZState over(const std::vector<IRID> &locals,
+                       const std::vector<IRID> &remotes, TDZLattice localSeed,
+                       TDZLattice remoteSeed) {
     ImmutableDataMap<IRID, TDZLattice> map;
-    for (IRID bID : bindings)
-      map = map.set(bID, initial);
+    for (IRID b : locals)
+      map = map.set(b, localSeed);
+    for (IRID b : remotes)
+      map = map.set(b, remoteSeed);
     return TDZState(map);
   }
 
@@ -62,10 +71,17 @@ public:
     return envBindings == other.envBindings;
   }
 
-  TDZLattice getLattice(IRID binding) const { return envBindings.get(binding); }
+  TDZLattice getLattice(IRID binding) const {
+    if (!envBindings.contains(binding))
+      throw std::runtime_error("TDZA: no lattice for binding " +
+                               std::to_string(binding));
+    return envBindings.get(binding);
+  }
 
   TDZState setLattice(IRID binding, TDZLattice val) const {
-    assert(envBindings.contains(binding));
+    if (!envBindings.contains(binding))
+      throw std::runtime_error("TDZA: binding " + std::to_string(binding) +
+                               " is not declared in this closure");
     return TDZState(envBindings.set(binding, val));
   }
 };
@@ -75,33 +91,42 @@ public:
 //
 class TDZATransfer : public TransferFunction<TDZState> {
 public:
+  static void markReads(IRIContext &ctx, IRID node, TDZState &state) {
+    if (IRI_NODE(ctx, node).tag == IRI_GEN::EnvRead) {
+      IRID obj = ctx.storage.nodes.get_args_view(node)[0];
+      if (trackedBinding(ctx, obj))
+        state = state.setLattice(obj, TDZLattice(TDZLattice::SAFE));
+    }
+    for (IRID child : ctx.storage.nodes.get_args_view(node))
+      markReads(ctx, child, state);
+  }
+
   TDZState transferStatement(IRIContext &ctx, IRID stmt,
                              const TDZState &incomingState) override {
     TDZState nextState = incomingState;
 
+    markReads(ctx, stmt, nextState);
+
     switch (IRI_NODE(ctx, stmt).tag) {
-    // Writing NUBD is the declaration's initialization; any other value makes
-    // the binding live from here on.
-    case IRI_GEN::LWrite: {
-      IRI_GEN::LWriteSEXP lw(stmt, ctx);
-      IRID target = lw.getArg_LValTarget();
-      if (IRI_NODE(ctx, target).tag != IRI_GEN::EnvBinding)
-        break;
-      bool nubd = IRI_NODE(ctx, lw.getArg_RVal()).tag == IRI_GEN::JSNUBD;
+    case IRI_GEN::LWrite:
+    case IRI_GEN::RWrite:
+    case IRI_GEN::MWrite: {
+      auto args = ctx.storage.nodes.get_args_view(stmt);
+      bool nubd = IRI_NODE(ctx, args[1]).tag == IRI_GEN::JSNUBD;
       nextState = nextState.setLattice(
-          target, TDZLattice(nubd ? TDZLattice::TDZ : TDZLattice::SAFE));
+          args[0], TDZLattice(nubd ? TDZLattice::TDZ : TDZLattice::SAFE));
       break;
     }
-    // args[0] is the read; the rest are the writes it feeds.
     case IRI_GEN::CompoundAssn: {
       auto args = ctx.storage.nodes.get_args(stmt);
-      for (size_t i = 1; i < args.size(); i++)
-        if (IRI_NODE(ctx, args[i]).tag == IRI_GEN::LWrite) {
-          IRID target = IRI_GEN::LWriteSEXP(args[i], ctx).getArg_LValTarget();
-          if (IRI_NODE(ctx, target).tag == IRI_GEN::EnvBinding)
-            nextState =
-                nextState.setLattice(target, TDZLattice(TDZLattice::SAFE));
-        }
+      for (size_t i = 1; i < args.size(); i++) {
+        IRI_TAG innerTag = IRI_NODE(ctx, args[i]).tag;
+        if (innerTag != IRI_GEN::LWrite && innerTag != IRI_GEN::RWrite &&
+            innerTag != IRI_GEN::MWrite)
+          continue;
+        IRID target = ctx.storage.nodes.get_args_view(args[i])[0];
+        nextState = nextState.setLattice(target, TDZLattice(TDZLattice::SAFE));
+      }
       break;
     }
     default:
@@ -143,12 +168,15 @@ struct TDZAnalysis {
     auto solver = std::make_shared<DataflowSolver<TDZState>>(cfg, *transfer);
 
     SCPIDX headScope = cfg.at(cfg.entry).SCOPE;
-    auto bindings = cfg.ctx.iris->getEnvBindingsInClosure(headScope);
-    TDZState init = TDZState::over(bindings, TDZLattice(TDZLattice::TOP));
+    auto locals = cfg.ctx.iris->getEnvBindingsInClosure(headScope);
+    auto remotes = cfg.ctx.iris->getRemoteEnvBindingsInClosure(headScope);
+    TDZState boundary =
+        TDZState::over(locals, remotes, TDZLattice(TDZLattice::SAFE),
+                       TDZLattice(TDZLattice::TDZ));
+    TDZState top = TDZState::over(locals, remotes, TDZLattice(TDZLattice::TOP),
+                                  TDZLattice(TDZLattice::TOP));
 
-    // Nothing is known about any binding at entry, so the boundary state is
-    // INIT itself.
-    solver->run(init, init);
+    solver->run(boundary, top);
 
     return TDZAnalysisResult(std::move(transfer), std::move(solver));
   }

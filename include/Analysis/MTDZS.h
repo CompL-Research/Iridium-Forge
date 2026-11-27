@@ -11,16 +11,16 @@ namespace IRI_STRUCTURAL {
 // MTDZS (Mark TDZ Safe) Transformation Pass
 // ============================================================================
 struct MTDZSPass {
-  static bool isSafe(IRIContext &ctx, const TDZState &state, IRID target) {
-    return IRI_NODE(ctx, target).tag == IRI_GEN::EnvBinding &&
-           state.getLattice(target).kind == TDZLattice::SAFE;
+  static bool isSafe(const TDZState &state, IRID target) {
+    return state.getLattice(target).kind == TDZLattice::SAFE;
   }
 
   static void markNested(IRIContext &ctx, IRID node, const TDZState &state,
                          bool &changed) {
     if (IRI_NODE(ctx, node).tag == IRI_GEN::EnvRead) {
       IRI_GEN::EnvReadSEXP er(node, ctx);
-      if (!er.hasSAFE() && isSafe(ctx, state, er.getArg_Obj())) {
+      IRID obj = er.getArg_Obj();
+      if (!er.hasSAFE() && trackedBinding(ctx, obj) && isSafe(state, obj)) {
         er.setSAFE();
         changed = true;
       }
@@ -43,19 +43,11 @@ struct MTDZSPass {
         IRI_TAG tag = IRI_NODE(ctx, stmtID).tag;
         const TDZState &state = tdz.getStateBeforeStatement(h, i);
 
-        if (tag == IRI_GEN::EnvRead &&
-            isSafe(ctx, state,
-                   IRI_GEN::EnvReadSEXP(stmtID, ctx).getArg_Obj())) {
-          ed.erase(stmtID);
-          continue;
-        }
-
-        if (tag == IRI_GEN::LWrite) {
-          IRI_GEN::LWriteSEXP lw(stmtID, ctx);
-          if (!lw.hasSAFE() && !lw.hasTHISINIT() &&
-              isSafe(ctx, state, lw.getArg_LValTarget())) {
-            lw.setSAFE();
-            changed = true;
+        if (tag == IRI_GEN::EnvRead) {
+          IRID obj = IRI_GEN::EnvReadSEXP(stmtID, ctx).getArg_Obj();
+          if (trackedBinding(ctx, obj) && isSafe(state, obj)) {
+            ed.erase(stmtID);
+            continue;
           }
         }
 
