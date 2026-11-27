@@ -19,6 +19,9 @@ struct BindingMeta {
   bool isIMPLICITOVERRIDEABLE = false;
   bool tombstone = false;
   bool evalTainted = false;
+  // CreateImmutableBinding(name, false): writes are ignored rather than a
+  // TypeError. Only a sloppy function's own name binding gets it.
+  bool sloppyConst = false;
   uint32_t backOffset = 0;
 
   small::vector<uint32_t, 1> forwardOffsets;

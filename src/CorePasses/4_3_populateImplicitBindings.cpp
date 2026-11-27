@@ -92,7 +92,7 @@ void _4_3_PIB(IRIContext &ctx, IRID fileID, BUILD_CTX &iridiumBuildContext) {
             // binding with CreateImmutableBinding(name, strict), so a write to
             // it is an error only in strict code and is ignored otherwise.
             if (!container.hasSTRICT())
-              EnvBindingSEXP(lval, ctx).setSLOPPYCONST();
+              resolved.sloppyConst = true;
             rval = JSCTXSEXP::create(ctx, 2);
             ctx.storage.nodes.set_args(rval, ctx.storage.nodes.get_args(ibs.getArg_Args()));
           } else {

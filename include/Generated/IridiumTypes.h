@@ -1,4 +1,4 @@
-// Generated: 2026-11-26 20:00:58
+// Generated: 2026-11-27 18:24:53
 #pragma once
 #include "Storage/Config.h"
 #include "Storage/IridiumSEXP.h"
@@ -1612,29 +1612,28 @@ using IRI_STORAGE::FlagValue;
       }
     }
 
-    static IRID create(IRIContext& p, StringID NAME, bool JSARG, bool JSRESTARG, bool JSLET, bool JSCONST, bool SLOPPYCONST, bool JSVAR, bool PRIVFIELD, bool PRIVMETHOD, bool PRIVGET, bool PRIVSET, bool PRIVGETSET, int32_t NEXT, UIndex REFIDX, UIndex SCOPE, UIndex LINK) {
-      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::EnvBinding, {}, {FlagValue(NAME), JSARG ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), JSRESTARG ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), JSLET ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), JSCONST ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), SLOPPYCONST ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), JSVAR ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), PRIVFIELD ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), PRIVMETHOD ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), PRIVGET ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), PRIVSET ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), PRIVGETSET ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), FlagValue(Int32{NEXT}), FlagValue(UInt32{REFIDX}), FlagValue(UInt32{SCOPE}), FlagValue(UInt32{LINK})});
+    static IRID create(IRIContext& p, StringID NAME, bool JSARG, bool JSRESTARG, bool JSLET, bool JSCONST, bool JSVAR, bool PRIVFIELD, bool PRIVMETHOD, bool PRIVGET, bool PRIVSET, bool PRIVGETSET, int32_t NEXT, UIndex REFIDX, UIndex SCOPE, UIndex LINK) {
+      return p.storage.nodes.add_node(IRI_GEN::IRI_TAG::EnvBinding, {}, {FlagValue(NAME), JSARG ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), JSRESTARG ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), JSLET ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), JSCONST ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), JSVAR ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), PRIVFIELD ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), PRIVMETHOD ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), PRIVGET ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), PRIVSET ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), PRIVGETSET ? FlagValue(std::nullptr_t{}) : FlagValue(std::monostate()), FlagValue(Int32{NEXT}), FlagValue(UInt32{REFIDX}), FlagValue(UInt32{SCOPE}), FlagValue(UInt32{LINK})});
     }
 
     static constexpr uint32_t TOTAL_ARGS = 0;
-    static constexpr uint32_t TOTAL_FLAGS = 16;
+    static constexpr uint32_t TOTAL_FLAGS = 15;
 
     static constexpr uint32_t FLAG_IDX_NAME = 0;
     static constexpr uint32_t FLAG_IDX_JSARG = 1;
     static constexpr uint32_t FLAG_IDX_JSRESTARG = 2;
     static constexpr uint32_t FLAG_IDX_JSLET = 3;
     static constexpr uint32_t FLAG_IDX_JSCONST = 4;
-    static constexpr uint32_t FLAG_IDX_SLOPPYCONST = 5;
-    static constexpr uint32_t FLAG_IDX_JSVAR = 6;
-    static constexpr uint32_t FLAG_IDX_PRIVFIELD = 7;
-    static constexpr uint32_t FLAG_IDX_PRIVMETHOD = 8;
-    static constexpr uint32_t FLAG_IDX_PRIVGET = 9;
-    static constexpr uint32_t FLAG_IDX_PRIVSET = 10;
-    static constexpr uint32_t FLAG_IDX_PRIVGETSET = 11;
-    static constexpr uint32_t FLAG_IDX_NEXT = 12;
-    static constexpr uint32_t FLAG_IDX_REFIDX = 13;
-    static constexpr uint32_t FLAG_IDX_SCOPE = 14;
-    static constexpr uint32_t FLAG_IDX_LINK = 15;
+    static constexpr uint32_t FLAG_IDX_JSVAR = 5;
+    static constexpr uint32_t FLAG_IDX_PRIVFIELD = 6;
+    static constexpr uint32_t FLAG_IDX_PRIVMETHOD = 7;
+    static constexpr uint32_t FLAG_IDX_PRIVGET = 8;
+    static constexpr uint32_t FLAG_IDX_PRIVSET = 9;
+    static constexpr uint32_t FLAG_IDX_PRIVGETSET = 10;
+    static constexpr uint32_t FLAG_IDX_NEXT = 11;
+    static constexpr uint32_t FLAG_IDX_REFIDX = 12;
+    static constexpr uint32_t FLAG_IDX_SCOPE = 13;
+    static constexpr uint32_t FLAG_IDX_LINK = 14;
 
     // --- Helpers ---
     inline FlagValue& mutate_flag(uint32_t idx) {
@@ -1668,10 +1667,6 @@ using IRI_STORAGE::FlagValue;
     bool hasJSCONST() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_JSCONST)); }
     void setJSCONST() { mutate_flag(FLAG_IDX_JSCONST) = std::nullptr_t{}; }
     void clearJSCONST() { mutate_flag(FLAG_IDX_JSCONST) = std::monostate{}; }
-
-    bool hasSLOPPYCONST() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_SLOPPYCONST)); }
-    void setSLOPPYCONST() { mutate_flag(FLAG_IDX_SLOPPYCONST) = std::nullptr_t{}; }
-    void clearSLOPPYCONST() { mutate_flag(FLAG_IDX_SLOPPYCONST) = std::monostate{}; }
 
     bool hasJSVAR() const { return !std::holds_alternative<std::monostate>(get_flag(FLAG_IDX_JSVAR)); }
     void setJSVAR() { mutate_flag(FLAG_IDX_JSVAR) = std::nullptr_t{}; }

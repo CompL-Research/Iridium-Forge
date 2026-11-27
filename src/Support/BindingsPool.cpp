@@ -186,6 +186,7 @@ void BindingMeta::dump(IRIContext &ctx, std::ostream &oss, bool full) const {
     oss << (eb.hasJSLET() ? "let" : "");
     oss << (eb.hasJSCONST() ? "const" : "");
     oss << (eb.hasJSVAR() ? "var" : "");
+    oss << (sloppyConst ? ":s" : "");
     oss << (isCaptured() ? ":C" : "");
     oss << "}";
     if (full) {

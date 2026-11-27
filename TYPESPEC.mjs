@@ -374,7 +374,6 @@ export default [
         "JSRESTARG",
         "JSLET",
         "JSCONST",
-        "SLOPPYCONST",
         "JSVAR",
         "PRIVFIELD",
         "PRIVMETHOD",

@@ -83,7 +83,7 @@ IRIS::IRIS(
 
       auto lb = EnvBindingSEXP::create(ctx, bName, kind == JSARG,
                                        kind == JSRESTARG, false, false, false,
-                                       false, false, false, false, false, false,
+                                       false, false, false, false, false,
                                        -1, k, (UIndex)currScope, UINT32_MAX);
 
       allNames.insert(bName);
@@ -166,7 +166,7 @@ IRI_STORAGE::BindingMeta &IRIS::declareLBinding(SCPIDX scope, StringID name,
   int32_t NEXT = -1;
   UIndex LINK = UINT32_MAX;
   IRID newBinding = IRI_GEN::EnvBindingSEXP::create(
-      ctx, NAME, JSARG, JSRESTARG, JSLET, JSCONST, false, JSVAR, false, false,
+      ctx, NAME, JSARG, JSRESTARG, JSLET, JSCONST, JSVAR, false, false,
       false, false, false, NEXT, REFIDX, SCOPE, LINK);
   bindingsAtScope[name] = newBinding;
   ctx.storage.bindings.allocate(ctx, newBinding);
@@ -205,7 +205,7 @@ IRI_STORAGE::BindingMeta &IRIS::declareRBinding(SCPIDX scope, StringID name,
     int32_t NEXT = -1;
     UIndex LINK = UINT32_MAX;
     IRID store = IRI_GEN::EnvBindingSEXP::create(
-        ctx, NAME, JSARG, JSRESTARG, JSLET, JSCONST, false, JSVAR, false, false,
+        ctx, NAME, JSARG, JSRESTARG, JSLET, JSCONST, JSVAR, false, false,
         false, false, false, NEXT, REFIDX, SCOPE, LINK);
     ctx.storage.bindings.allocate(ctx, store);
 

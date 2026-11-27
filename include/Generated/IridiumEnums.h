@@ -1,4 +1,4 @@
-// Generated: 2026-11-26 20:00:58
+// Generated: 2026-11-27 18:24:53
 #pragma once
 #include <string>
 
@@ -298,7 +298,6 @@ namespace IRI_GEN {
     REQIDX,
     JSARG,
     JSRESTARG,
-    SLOPPYCONST,
     PRIVFIELD,
     PRIVMETHOD,
     PRIVGET,
@@ -382,7 +381,6 @@ namespace IRI_GEN {
       case REQIDX: return "REQIDX";
       case JSARG: return "JSARG";
       case JSRESTARG: return "JSRESTARG";
-      case SLOPPYCONST: return "SLOPPYCONST";
       case PRIVFIELD: return "PRIVFIELD";
       case PRIVMETHOD: return "PRIVMETHOD";
       case PRIVGET: return "PRIVGET";
