@@ -129,11 +129,6 @@ private:
         !state.contains(src) || !state.contains(target))
       return state;
 
-    // Only an initializing, this-initializing or checked write definitely
-    // stores.
-    if (!(lw.hasINIT() || lw.hasTHISINIT() || lw.hasSAFE()))
-      return state;
-
     // A binding a nested closure or eval can reach may be written from outside
     // this CFG, where no kill can see it.
     auto &iris = ctx.iris;

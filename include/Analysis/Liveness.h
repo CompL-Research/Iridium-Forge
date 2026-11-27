@@ -96,14 +96,12 @@ public:
                                   const LivenessState &incomingState) override {
     LivenessState nextState = incomingState;
 
-    // Kill.
+    // Kill. Every write stores: SAFE unconditionally, the others only after
+    // their check passes, and a failed check leaves this CFG.
     if (IRI_NODE(ctx, stmt).tag == IRI_GEN::LWrite) {
       IRI_GEN::LWriteSEXP lw(stmt, ctx);
       IRID target = lw.getArg_LValTarget();
-      // Only an initializing, this-initializing or checked write definitely
-      // stores, so only those can kill.
-      if ((lw.hasINIT() || lw.hasTHISINIT() || lw.hasSAFE()) &&
-          IRI_NODE(ctx, target).tag == IRI_GEN::EnvBinding) {
+      if (IRI_NODE(ctx, target).tag == IRI_GEN::EnvBinding) {
         if (!alwaysLive(ctx, target))
           nextState =
               nextState.setLattice(target, LivenessLattice(LivenessLattice::DEAD));

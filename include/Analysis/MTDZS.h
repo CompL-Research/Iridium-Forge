@@ -52,7 +52,7 @@ struct MTDZSPass {
 
         if (tag == IRI_GEN::LWrite) {
           IRI_GEN::LWriteSEXP lw(stmtID, ctx);
-          if (!lw.hasINIT() && !lw.hasTHISINIT() && !lw.hasSAFE() &&
+          if (!lw.hasSAFE() && !lw.hasTHISINIT() &&
               isSafe(ctx, state, lw.getArg_LValTarget())) {
             lw.setSAFE();
             changed = true;
