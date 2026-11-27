@@ -15,6 +15,13 @@ struct MTDZSPass {
     return state.getLattice(target).kind == TDZLattice::SAFE;
   }
 
+  static bool isEffectFree(IRIContext &ctx, IRID obj) {
+    if (IRI_NODE(ctx, obj).tag != IRI_GEN::GlobalBinding)
+      return false;
+    IRI_GEN::GlobalBindingSEXP gb(obj, ctx);
+    return ctx.storage.strings.get(gb.getNAME()) == "undefined";
+  }
+
   static void markNested(IRIContext &ctx, IRID node, const TDZState &state,
                          bool &changed) {
     if (IRI_NODE(ctx, node).tag == IRI_GEN::EnvRead) {
@@ -45,7 +52,8 @@ struct MTDZSPass {
 
         if (tag == IRI_GEN::EnvRead) {
           IRID obj = IRI_GEN::EnvReadSEXP(stmtID, ctx).getArg_Obj();
-          if (trackedBinding(ctx, obj) && isSafe(state, obj)) {
+          if (isEffectFree(ctx, obj) ||
+              (trackedBinding(ctx, obj) && isSafe(state, obj))) {
             ed.erase(stmtID);
             continue;
           }
