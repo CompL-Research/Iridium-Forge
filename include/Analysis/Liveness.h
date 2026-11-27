@@ -104,14 +104,7 @@ public:
       // stores, so only those can kill.
       if ((lw.hasINIT() || lw.hasTHISINIT() || lw.hasSAFE()) &&
           IRI_NODE(ctx, target).tag == IRI_GEN::EnvBinding) {
-        // A write to a function's own name binding (CreateImmutableBinding,
-        // SLOPPYCONST when the body is sloppy) is ignored at runtime, so it
-        // must not kill what an earlier definition put there. The declaration's
-        // own write does store.
-        bool stores = IRI_GEN::EnvBindingSEXP(target, ctx).hasSLOPPYCONST()
-                          ? lw.hasINIT()
-                          : true;
-        if (stores && !alwaysLive(ctx, target))
+        if (!alwaysLive(ctx, target))
           nextState =
               nextState.setLattice(target, LivenessLattice(LivenessLattice::DEAD));
       }

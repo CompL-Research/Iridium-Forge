@@ -36,12 +36,8 @@ struct DCEPass {
             LivenessLattice::DEAD)
           continue;
 
-        // Assigning to 'this' (initializing this after super) or a
-        // non-initializing write to a const (this always throws an error, maybe
-        // we should just replace the statement with an error)
-        if (lw.hasTHISINIT() ||
-            (IRI_GEN::EnvBindingSEXP(target, ctx).hasJSCONST() &&
-             !lw.hasINIT()))
+        // Assigning to 'this' (initializing this after super).
+        if (lw.hasTHISINIT())
           continue;
 
         if (IRI_GEN::get_meta(IRI_NODE(ctx, lw.getArg_RVal()).tag) ==

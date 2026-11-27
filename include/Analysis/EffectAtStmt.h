@@ -88,11 +88,6 @@ public:
       return lost();
     if (hasSideEffect(ctx, rval))
       return lost();
-    // A write to a function's own name binding (SLOPPYCONST, other than its
-    // declaration) is ignored at runtime, so it establishes nothing. Only the
-    // right hand side still runs.
-    if (!lw.hasINIT() && IRI_GEN::EnvBindingSEXP(target, ctx).hasSLOPPYCONST())
-      return lost();
     // The value must not read the binding it is stored to. At a later read,
     // that read denotes the new value, not the one the tree was built from, so
     // x = [x] would inline to a tree reading itself.

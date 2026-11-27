@@ -130,11 +130,8 @@ private:
       return state;
 
     // Only an initializing, this-initializing or checked write definitely
-    // stores. A write to a function's own name binding (SLOPPYCONST, other than
-    // its declaration) is ignored at runtime, so it establishes nothing.
-    if (!(lw.hasINIT() || lw.hasTHISINIT() || lw.hasSAFE()) ||
-        (!lw.hasINIT() &&
-         IRI_GEN::EnvBindingSEXP(target, ctx).hasSLOPPYCONST()))
+    // stores.
+    if (!(lw.hasINIT() || lw.hasTHISINIT() || lw.hasSAFE()))
       return state;
 
     // A binding a nested closure or eval can reach may be written from outside

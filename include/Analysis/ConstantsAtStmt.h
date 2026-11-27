@@ -163,11 +163,6 @@ private:
         IRI_BINDING(iris, lval).isEvalTainted()) {
       return state;
     }
-    // A write to a function's own name binding is ignored at runtime
-    // (CreateImmutableBinding with Annex B), so it must not forward its
-    // value to later reads; the declaration's initializing write does store.
-    if (!lw.hasINIT() && IRI_GEN::EnvBindingSEXP(lval, ctx).hasSLOPPYCONST())
-      return state;
     if (IRI_NODE(ctx, lval).tag == IRI_GEN::EnvBinding) {
       return state.setLattice(lval, resolveValue(lw.getArg_RVal(), state, ctx));
     }
