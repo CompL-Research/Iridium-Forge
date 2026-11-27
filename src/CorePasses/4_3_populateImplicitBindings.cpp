@@ -13,7 +13,8 @@ using namespace IRI_GEN;
 using namespace IRI_STORAGE;
 using BUILD_CTX = std::unordered_map<int, std::shared_ptr<IridiumBuildContext>>;
 
-void _4_3_PIB(IRIContext &ctx, IRID fileID, BUILD_CTX &iridiumBuildContext) {
+void _4_3_PIB(IRIContext &ctx, IRID fileID, BUILD_CTX &iridiumBuildContext,
+              DECLSTORES &declStores) {
   StringID str_arguments = ctx.storage.strings.intern("arguments");
   FileSEXP fileSEXP(fileID, ctx);
 
@@ -103,7 +104,8 @@ void _4_3_PIB(IRIContext &ctx, IRID fileID, BUILD_CTX &iridiumBuildContext) {
             ctx.storage.nodes.set_args(rval, ctx.storage.nodes.get_args(ibs.getArg_Args()));
           }
 
-          IRID target = LWriteSEXP::create(ctx, lval, rval, true, false);
+          IRID target = LWriteSEXP::create(ctx, lval, rval, false);
+          declStores.insert(target);
           ctx.storage.nodes.update_arg_inplace(bbID, i, target);
         }
       }

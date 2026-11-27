@@ -23,28 +23,25 @@ using BUILD_CTX = std::unordered_map<int, std::shared_ptr<IridiumBuildContext>>;
 
 namespace {
 
-IRID illegalConstWrite(IRIContext &ctx, IRID write) {
+IRID illegalConstWrite(IRIContext &ctx, IRID write, DECLSTORES &declStores) {
   IRID target;
-  bool safe, thisInit;
+  bool thisInit;
   switch (IRI_NODE(ctx, write).tag) {
   case LWrite: {
     LWriteSEXP w(write, ctx);
     target = w.getArg_LValTarget();
-    safe = w.hasSAFE();
     thisInit = w.hasTHISINIT();
     break;
   }
   case RWrite: {
     RWriteSEXP w(write, ctx);
     target = IRI_HELPERS::resolveRemoteBinding(ctx, w.getArg_LValTarget());
-    safe = w.hasSAFE();
     thisInit = w.hasTHISINIT();
     break;
   }
   case MWrite: {
     MWriteSEXP w(write, ctx);
     target = IRI_HELPERS::resolveRemoteBinding(ctx, w.getArg_LValTarget());
-    safe = w.hasSAFE();
     thisInit = false;
     break;
   }
@@ -52,13 +49,13 @@ IRID illegalConstWrite(IRIContext &ctx, IRID write) {
     return NO_IRID;
   }
 
-  if (safe || thisInit)
+  if (thisInit || declStores.count(write))
     return NO_IRID;
 
   return EnvBindingSEXP(target, ctx).hasJSCONST() ? target : NO_IRID;
 }
 
-void patchBB(IRIContext &ctx, IRID bbID) {
+void patchBB(IRIContext &ctx, IRID bbID, DECLSTORES &declStores) {
   BBSupport bb(bbID, ctx);
   auto oldStmts = bb.stmtsVec();
 
@@ -67,7 +64,7 @@ void patchBB(IRIContext &ctx, IRID bbID) {
   bool changed = false;
 
   for (IRID stmt : oldStmts) {
-    IRID binding = illegalConstWrite(ctx, stmt);
+    IRID binding = illegalConstWrite(ctx, stmt, declStores);
     if (binding == NO_IRID) {
       if (IRI_NODE(ctx, stmt).tag == CompoundAssn) {
         // This cannot be allowed inside a CompoundAssn, we'll have to deal with
@@ -75,7 +72,7 @@ void patchBB(IRIContext &ctx, IRID bbID) {
         // so just an assertion for now.
         // ~Meetesh
         for (IRID arg : ctx.storage.nodes.get_args_view(stmt))
-          if (illegalConstWrite(ctx, arg) != NO_IRID)
+          if (illegalConstWrite(ctx, arg, declStores) != NO_IRID)
             throw std::runtime_error(
                 "_24_RCW: CompoundAssn writes to a const binding");
       }
@@ -128,13 +125,13 @@ void patchBB(IRIContext &ctx, IRID bbID) {
 } // namespace
 
 void _24_RCW(IRI_STORAGE::IRIContext &ctx, IRI_STORAGE::IRID fileSEXP,
-             BUILD_CTX &iridiumBuildContext) {
+             BUILD_CTX &iridiumBuildContext, DECLSTORES &declStores) {
 
   FileSupport file(fileSEXP, ctx);
   for (auto [bbcID, _] : file.containers()) {
     BBContainerSupport bbc(bbcID, ctx);
     for (auto [bbID, _] : bbc.bbs())
-      patchBB(ctx, bbID);
+      patchBB(ctx, bbID, declStores);
   }
 }
 } // namespace IRI_CORE_PASSES

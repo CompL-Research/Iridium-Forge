@@ -3,6 +3,7 @@
 #include "Support/IRICFG.hpp"
 #include <memory>
 #include <unordered_map>
+#include <unordered_set>
 
 namespace IRI_STORAGE {
 class IRIContext;
@@ -29,6 +30,11 @@ using IRI_CONTEXTMAP =
 
 using CTARGETS = std::unordered_map<IRI_STORAGE::IRID, IRI_STORAGE::BBIDX>;
 
+// Remember the declaration statements explicitly, used by our assertion pass
+// later... Might actually be redundant but that assertion pass has helped hunt
+// many bugs, so we'll keep this
+using DECLSTORES = std::unordered_set<IRI_STORAGE::IRID>;
+
 void _1_NBBF(IRIContext &ctx, IRID sexp, IRI_CONTEXTMAP &iridiumBuildContext);
 void _2_HFD(IRIContext &ctx, IRID sexp, IRI_CONTEXTMAP &iridiumBuildContext);
 void _FNOPS(IRIContext &ctx, IRID fileSEXP,
@@ -43,13 +49,13 @@ void _4_2_PMB(IRIContext &ctx, IRID fileSEXP,
               IRI_CONTEXTMAP &iridiumBuildContext);
 
 void _4_3_PIB(IRIContext &ctx, IRID fileSEXP,
-              IRI_CONTEXTMAP &iridiumBuildContext);
+              IRI_CONTEXTMAP &iridiumBuildContext, DECLSTORES &declStores);
 
 void _4_5_PEB(IRIContext &ctx, IRID fileSEXP,
-              IRI_CONTEXTMAP &iridiumBuildContext);
+              IRI_CONTEXTMAP &iridiumBuildContext, DECLSTORES &declStores);
 
 void _4_4_RFD(IRIContext &ctx, IRID fileSEXP,
-              IRI_CONTEXTMAP &iridiumBuildContext);
+              IRI_CONTEXTMAP &iridiumBuildContext, DECLSTORES &declStores);
 
 void _4_6_CBA(IRIContext &ctx, IRID fileSEXP,
               IRI_CONTEXTMAP &iridiumBuildContext);
@@ -58,7 +64,7 @@ void _5_INITSFRAME(IRIContext &ctx, IRID fileSEXP,
                    IRI_CONTEXTMAP &iridiumBuildContext);
 
 void _8_RREBS(IRIContext &ctx, IRID fileSEXP,
-              IRI_CONTEXTMAP &iridiumBuildContext);
+              IRI_CONTEXTMAP &iridiumBuildContext, DECLSTORES &declStores);
 
 CTARGETS
 _10_RBACT(IRIContext &ctx, IRID fileSEXP, IRI_CONTEXTMAP &iridiumBuildContext);
@@ -90,8 +96,9 @@ void _19_CBBAMTLA(IRIContext &ctx, IRID fileSEXP,
 void _20_REW(IRIContext &ctx, IRID fileSEXP,
              IRI_CONTEXTMAP &iridiumBuildContext);
 
-void _20_IFB(IRIContext &ctx, IRID fileSEXP, IRI_CONTEXTMAP &iridiumBuildContext,
-             CTARGETS &continueTargets, IRI_STRUCTURAL::TryStructure &tryInfo);
+void _20_IFB(IRIContext &ctx, IRID fileSEXP,
+             IRI_CONTEXTMAP &iridiumBuildContext, CTARGETS &continueTargets,
+             IRI_STRUCTURAL::TryStructure &tryInfo);
 
 void _21_TER(IRIContext &ctx, IRID fileSEXP,
              IRI_CONTEXTMAP &iridiumBuildContext);
@@ -106,6 +113,6 @@ void _23_RIB(IRIContext &ctx, IRID fileSEXP,
              IRI_CONTEXTMAP &iridiumBuildContext);
 
 void _24_RCW(IRIContext &ctx, IRID fileSEXP,
-             IRI_CONTEXTMAP &iridiumBuildContext);
+             IRI_CONTEXTMAP &iridiumBuildContext, DECLSTORES &declStores);
 
 }; // namespace IRI_CORE_PASSES

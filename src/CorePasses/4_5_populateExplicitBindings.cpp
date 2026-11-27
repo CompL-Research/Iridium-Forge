@@ -24,7 +24,8 @@ using BUILD_CTX = std::unordered_map<int, std::shared_ptr<IridiumBuildContext>>;
 
 enum class LOC { FRAME, MODULE, SCRIPT };
 
-void _4_5_PEB(IRIContext &ctx, IRID fileID, BUILD_CTX &iridiumBuildContext) {
+void _4_5_PEB(IRIContext &ctx, IRID fileID, BUILD_CTX &iridiumBuildContext,
+              DECLSTORES &declStores) {
   StringID str_undefined = ctx.storage.strings.intern("undefined");
   StringID str_arguments = ctx.storage.strings.intern("arguments");
   FileSEXP fileSEXP(fileID, ctx);
@@ -129,22 +130,25 @@ void _4_5_PEB(IRIContext &ctx, IRID fileID, BUILD_CTX &iridiumBuildContext) {
                 auto & decl = ctx.iris->declareLBinding(scopeToHoistTo, bindingName, kind);
                 if (isArgX) decl.isARGX = true;
                 resolvedLVAL = decl.ID;
-                target = LWriteSEXP::create(ctx, resolvedLVAL, rval, true, false);
+                target = LWriteSEXP::create(ctx, resolvedLVAL, rval, false);
               } else if (loc == LOC::MODULE) {
                 auto & decl = ctx.iris->declareRBinding(scopeToHoistTo, bindingName, kind, IRI_GEN::MODULE);
                 if (isArgX) decl.isARGX = true;
                 resolvedLVAL = decl.ID;
-                target = MWriteSEXP::create(ctx, resolvedLVAL, rval, true);
+                target = MWriteSEXP::create(ctx, resolvedLVAL, rval);
               } else if (loc == LOC::SCRIPT) {
                 auto & decl = ctx.iris->declareScriptBinding(scopeToHoistTo, bindingName, kind);
                 if (isArgX) decl.isARGX = true;
                 resolvedLVAL = decl.ID;
-                target = GWriteSEXP::create(ctx, resolvedLVAL, rval, false, false, true, false);
+                target = GWriteSEXP::create(ctx, resolvedLVAL, rval, false, true, false);
                 doHoist = true;
               }
               if (alreadyHasBinding == false && doHoist == true) {
                 scopewiseHoisting[scopeToHoistTo].push_back(target);
               }
+              if (IRI_NODE(ctx, target).tag == IRI_GEN::LWrite ||
+                  IRI_NODE(ctx, target).tag == IRI_GEN::MWrite)
+                declStores.insert(target);
             }
           }
 
@@ -159,14 +163,17 @@ void _4_5_PEB(IRIContext &ctx, IRID fileID, BUILD_CTX &iridiumBuildContext) {
             inlineReplacement = ctx.storage.nodes.NOP_SEXP;
           } else {
             if (IRI_NODE(ctx, resolvedLVAL).tag == IRI_GEN::EnvBinding) {
-              inlineReplacement = LWriteSEXP::create(ctx, resolvedLVAL, irRVal, true, false);
+              inlineReplacement = LWriteSEXP::create(ctx, resolvedLVAL, irRVal, false);
             } else if (IRI_NODE(ctx, resolvedLVAL).tag == IRI_GEN::RemoteEnvBinding) {
-              inlineReplacement = MWriteSEXP::create(ctx, resolvedLVAL, irRVal, true);
+              inlineReplacement = MWriteSEXP::create(ctx, resolvedLVAL, irRVal);
             } else if (IRI_NODE(ctx, resolvedLVAL).tag == IRI_GEN::ScriptBinding) {
-              inlineReplacement = GWriteSEXP::create(ctx, resolvedLVAL, irRVal, true, false, false, false);
+              inlineReplacement = GWriteSEXP::create(ctx, resolvedLVAL, irRVal, true, false, false);
             } else {
               throw std::runtime_error("Unexpected binding kind");
             }
+            if (IRI_NODE(ctx, inlineReplacement).tag == IRI_GEN::LWrite ||
+                IRI_NODE(ctx, inlineReplacement).tag == IRI_GEN::MWrite)
+              declStores.insert(inlineReplacement);
           }
           ctx.storage.nodes.update_arg_inplace(bbID, stmtOffset, inlineReplacement);
         }

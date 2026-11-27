@@ -24,7 +24,8 @@ using BUILD_CTX = std::unordered_map<int, std::shared_ptr<IridiumBuildContext>>;
 
 enum class LOC { FRAME, MODULE, SCRIPT };
 
-void _4_4_RFD(IRIContext &ctx, IRID fileID, BUILD_CTX &iridiumBuildContext) {
+void _4_4_RFD(IRIContext &ctx, IRID fileID, BUILD_CTX &iridiumBuildContext,
+              DECLSTORES &declStores) {
   StringID str_undefined = ctx.storage.strings.intern("undefined");
 
   FileSEXP fileSEXP(fileID, ctx);
@@ -74,45 +75,45 @@ void _4_4_RFD(IRIContext &ctx, IRID fileID, BUILD_CTX &iridiumBuildContext) {
 
           auto sloppyFuncDecl = [&]() {
             IRID lval = ctx.iris->declareScriptBinding(localScope, funName, IRI_GEN::JSVAR).ID;
-            hoistedEnvWrites[localScope].push_back(GWriteSEXP::create(ctx, lval, rval, false, false, false, true));
+            hoistedEnvWrites[localScope].push_back(GWriteSEXP::create(ctx, lval, rval, false, false, true));
           };
 
           auto moduleFuncDecl = [&]() {
             IRID lval = ctx.iris->declareRBinding(localScope, funName, IRI_GEN::JSLET, IRI_GEN::MODULE).ID;
-            hoistedEnvWrites[localScope].push_back(MWriteSEXP::create(ctx, lval, rval, true));
+            hoistedEnvWrites[localScope].push_back(MWriteSEXP::create(ctx, lval, rval));
           };
 
           auto lexicalLetDecl = [&]() {
             IRID lval = ctx.iris->declareLBinding(localScope, funName, IRI_GEN::JSLET).ID;
             hoistedEnvWrites[localScope].push_back(
-              LWriteSEXP::create(ctx, lval, rval, true, false)
+              LWriteSEXP::create(ctx, lval, rval, false)
             );
           };
 
           auto scriptVarAndGWrite = [&]() {
             IRID lval = ctx.iris->declareScriptBinding(containerScope, funName, IRI_GEN::JSVAR).ID;
             hoistedEnvWrites[containerScope].push_back(
-              GWriteSEXP::create(ctx, lval, ctx.storage.nodes.NOP_SEXP, false, false, true, false)
+              GWriteSEXP::create(ctx, lval, ctx.storage.nodes.NOP_SEXP, false, true, false)
             );
             hoistedEnvWrites[localScope].push_back(
-              GWriteSEXP::create(ctx, lval, rval, true, false, false, false)
+              GWriteSEXP::create(ctx, lval, rval, true, false, false)
             );
           };
 
           auto funcVarDecl = [&]() {
             IRID lval = ctx.iris->declareLBinding(localScope, funName, IRI_GEN::JSVAR).ID;
             hoistedEnvWrites[localScope].push_back(
-              LWriteSEXP::create(ctx, lval, rval, true, false)
+              LWriteSEXP::create(ctx, lval, rval, false)
             );
           };
 
           auto funcVarAndGWrite = [&]() {
             IRID lval = ctx.iris->declareLBinding(localScope, funName, IRI_GEN::JSVAR).ID;
             hoistedEnvWrites[containerScope].push_back(
-              LWriteSEXP::create(ctx, lval, IRI_HELPERS::createUnsafeEnvReadSEXP(ctx, str_undefined), true, false)
+              LWriteSEXP::create(ctx, lval, IRI_HELPERS::createUnsafeEnvReadSEXP(ctx, str_undefined), false)
             );
             hoistedEnvWrites[localScope].push_back(
-              LWriteSEXP::create(ctx, lval, rval, true, false)
+              LWriteSEXP::create(ctx, lval, rval, false)
             );
           };
 
@@ -148,6 +149,10 @@ void _4_4_RFD(IRIContext &ctx, IRID fileID, BUILD_CTX &iridiumBuildContext) {
     }
     // Handle Explicit Declarations
     for (auto &e : hoistedEnvWrites) {
+      for (IRID store : e.second)
+        if (IRI_NODE(ctx, store).tag == IRI_GEN::LWrite ||
+            IRI_NODE(ctx, store).tag == IRI_GEN::MWrite)
+          declStores.insert(store);
       auto &containerBC = iridiumBuildContext[e.first];
       SCPIDX localScope = containerBC->scopeIDX;
       SCPIDX parentScope = containerBC->parent;

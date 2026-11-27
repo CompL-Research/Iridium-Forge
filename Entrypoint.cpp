@@ -6,6 +6,7 @@
 #include "Analysis/MTDZS.h"
 #include "Analysis/ReduceComputedFieldOps.h"
 #include "Analysis/RemoveDeadBindings.h"
+#include "Analysis/TDZBeforeWrite.h"
 #include "CorePasses.h"
 #include "Helpers.h"
 #include "Storage/Config.h"
@@ -72,7 +73,8 @@ void dumpIfEnabled(IRIContext &ctx, IRID sexp, const std::string &name) {
 }
 
 void runCorePasses(IRIContext &ctx, IRID &sexpRef,
-                   BuildContextMap &buildContext) {
+                   BuildContextMap &buildContext,
+                   IRI_CORE_PASSES::DECLSTORES &declStores) {
   if (ctx.flags.dumpForgePasses || ctx.flags.dumpForgePassesSEXP) {
     namespace fs = std::filesystem;
     std::filesystem::path root_ = fs::path("out.iri");
@@ -99,13 +101,19 @@ void runCorePasses(IRIContext &ctx, IRID &sexpRef,
       {"_4_2_PMB",
        [&] { IRI_CORE_PASSES::_4_2_PMB(ctx, sexpRef, buildContext); }},
       {"_4_3_PIB",
-       [&] { IRI_CORE_PASSES::_4_3_PIB(ctx, sexpRef, buildContext); }},
+       [&] {
+         IRI_CORE_PASSES::_4_3_PIB(ctx, sexpRef, buildContext, declStores);
+       }},
       {"_4_4_RFD",
-       [&] { IRI_CORE_PASSES::_4_4_RFD(ctx, sexpRef, buildContext); }},
+       [&] {
+         IRI_CORE_PASSES::_4_4_RFD(ctx, sexpRef, buildContext, declStores);
+       }},
       {"_4_5_PEB",
-       [&] { IRI_CORE_PASSES::_4_5_PEB(ctx, sexpRef, buildContext); }},
+       [&] {
+         IRI_CORE_PASSES::_4_5_PEB(ctx, sexpRef, buildContext, declStores);
+       }},
       {"_8_RREBS",
-       [&] { IRI_CORE_PASSES::_8_RREBS(ctx, sexpRef, buildContext); }},
+       [&] { IRI_CORE_PASSES::_8_RREBS(ctx, sexpRef, buildContext, declStores); }},
       {"_10_RBACT",
        [&] {
          continueTargets =
@@ -139,7 +147,9 @@ void runCorePasses(IRIContext &ctx, IRID &sexpRef,
       {"_23_APVK",
        [&] { IRI_CORE_PASSES::_23_APVK(ctx, sexpRef, buildContext); }},
       {"_24_RCW",
-       [&] { IRI_CORE_PASSES::_24_RCW(ctx, sexpRef, buildContext); }},
+       [&] {
+         IRI_CORE_PASSES::_24_RCW(ctx, sexpRef, buildContext, declStores);
+       }},
       {"AFTER_CORE_PASSES",
        [&] { IRI_CORE_PASSES::_FNOPS(ctx, sexpRef, buildContext); }},
   };
@@ -155,12 +165,20 @@ void runCorePasses(IRIContext &ctx, IRID &sexpRef,
   if (gcMode() & 1) {
     auto compaction_result =
         ctx.storage.nodes.garbageCollect(ctx, sexpRef, "AFTER_CORE_PASSES");
+    // Compaction renumbers every IRID, so the recorded stores have to follow.
+    IRI_CORE_PASSES::DECLSTORES remapped;
+    for (IRID id : declStores)
+      if (IRID newID = compaction_result.old_to_new_irid_map[id];
+          newID != NO_IRID)
+        remapped.insert(newID);
+    declStores = std::move(remapped);
   }
 
   emitPhase(ctx, "post_core_gc_point");
 }
 
-void runOptimizationPasses(IRIContext &ctx) {
+void runOptimizationPasses(IRIContext &ctx,
+                           IRI_CORE_PASSES::DECLSTORES &declStores) {
   AnalysisManager am;
   PassManager pm;
 
@@ -176,6 +194,8 @@ void runOptimizationPasses(IRIContext &ctx) {
     pm.addPass(ConstantPropPass());
     pm.addPass(ReduceComputedFieldOpsPass());
   }
+  if (ctx.flags.tdz)
+    pm.addPass(TDZBeforeWritePass(declStores));
 
   ctx.debugger.tick("_23_OPT_MTDZS_DCE");
   for (IRICFG *cfgCTX : ctx.closureTree->preorder())
@@ -226,8 +246,9 @@ void commitAndDump(IRIContext &ctx, IRID &sexpRef) {
 } // namespace
 
 void normalizeIRIDIUM(IRIContext &ctx, IRID &sexpRef,
-                      BuildContextMap &iridiumBuildContext) {
-  runCorePasses(ctx, sexpRef, iridiumBuildContext);
+                      BuildContextMap &iridiumBuildContext,
+                      IRI_CORE_PASSES::DECLSTORES &declStores) {
+  runCorePasses(ctx, sexpRef, iridiumBuildContext, declStores);
   ctx.closureTree = std::make_unique<ClosureTree>(ctx, sexpRef);
 }
 
@@ -246,8 +267,10 @@ IRID sharedEntrypoint(IRIContext &ctx, IRID &file,
     emitPhase(ctx, "start");
   }
 
-  normalizeIRIDIUM(ctx, file, iridiumBuildContext);
-  runOptimizationPasses(ctx);
+  IRI_CORE_PASSES::DECLSTORES declStores;
+
+  normalizeIRIDIUM(ctx, file, iridiumBuildContext, declStores);
+  runOptimizationPasses(ctx, declStores);
   commitAndDump(ctx, file);
 
   emitPhase(ctx, "pre_final_gc_point");
