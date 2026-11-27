@@ -105,4 +105,7 @@ void _23_APVK(IRIContext &ctx, IRID fileSEXP,
 void _23_RIB(IRIContext &ctx, IRID fileSEXP,
              IRI_CONTEXTMAP &iridiumBuildContext);
 
+void _24_RCW(IRIContext &ctx, IRID fileSEXP,
+             IRI_CONTEXTMAP &iridiumBuildContext);
+
 }; // namespace IRI_CORE_PASSES

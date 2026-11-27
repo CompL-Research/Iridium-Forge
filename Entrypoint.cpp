@@ -138,6 +138,8 @@ void runCorePasses(IRIContext &ctx, IRID &sexpRef,
        }},
       {"_23_APVK",
        [&] { IRI_CORE_PASSES::_23_APVK(ctx, sexpRef, buildContext); }},
+      {"_24_RCW",
+       [&] { IRI_CORE_PASSES::_24_RCW(ctx, sexpRef, buildContext); }},
       {"AFTER_CORE_PASSES",
        [&] { IRI_CORE_PASSES::_FNOPS(ctx, sexpRef, buildContext); }},
   };
