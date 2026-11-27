@@ -1102,21 +1102,18 @@ export default [
     args: ["LValTarget", "RVal"],
     flags: {
       string: [],
-      void: ["INIT", "SAFE", "DECLVAR", "DECLFUN"],
+      void: ["INIT", "DECLVAR", "DECLFUN"],
       bool: [],
       double: [],
     },
   },
   {
-    // SAFE and THISINIT are mutually exclusive: THISINIT is the once-only
-    // 'this' store, SAFE is an unconditional frame store, neither is a TDZ
-    // checked store.
     tag: "LWrite",
     meta: "STMT",
     args: ["LValTarget", "RVal"],
     flags: {
       string: [],
-      void: ["SAFE", "THISINIT"],
+      void: ["THISINIT"],
       bool: [],
       double: [],
     },
@@ -1127,20 +1124,18 @@ export default [
     args: ["LValTarget", "RVal"],
     flags: {
       string: [],
-      void: ["SAFE", "THISINIT"],
+      void: ["THISINIT"],
       bool: [],
       double: [],
     },
   },
   {
-    // 'this' always belongs to a constructor's own scope, so a module binding
-    // is either stored unconditionally (SAFE) or TDZ checked.
     tag: "MWrite",
     meta: "STMT",
     args: ["LValTarget", "RVal"],
     flags: {
       string: [],
-      void: ["SAFE"],
+      void: [],
       bool: [],
       double: [],
     },

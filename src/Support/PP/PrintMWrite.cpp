@@ -14,7 +14,6 @@ namespace IRI_STRUCTURAL {
  *   [0] IRID LValTarget -> sexp.getArg_LValTarget()
  *   [1] IRID RVal -> sexp.getArg_RVal()
  * Flags:
- *   - void   SAFE -> sexp.hasSAFE()
  */
 std::string printMWrite(const PPContext &pp, IRID node) {
   IRI_GEN::MWriteSEXP sexp(node, pp.ctx);

@@ -15,7 +15,6 @@ namespace IRI_STRUCTURAL {
  *   [1] IRID RVal -> sexp.getArg_RVal()
  * Flags:
  *   - void   INIT -> sexp.hasINIT()
- *   - void   SAFE -> sexp.hasSAFE()
  *   - void   DECLVAR -> sexp.hasDECLVAR()
  *   - void   DECLFUN -> sexp.hasDECLFUN()
  */

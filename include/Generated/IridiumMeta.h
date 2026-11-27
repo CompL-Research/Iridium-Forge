@@ -1,4 +1,4 @@
-// Generated: 2026-11-27 19:37:53
+// Generated: 2026-11-27 22:09:07
 #pragma once
 #include "IridiumEnums.h"
 #include <cstdint>
@@ -105,10 +105,10 @@ public:
       case IRI_GEN::JSSetHome: return 0;
       case IRI_GEN::JSSetName: return 0;
       case IRI_GEN::JSSetPrototypeOf: return 0;
-      case IRI_GEN::GWrite: return 4;
-      case IRI_GEN::LWrite: return 2;
-      case IRI_GEN::RWrite: return 2;
-      case IRI_GEN::MWrite: return 1;
+      case IRI_GEN::GWrite: return 3;
+      case IRI_GEN::LWrite: return 1;
+      case IRI_GEN::RWrite: return 1;
+      case IRI_GEN::MWrite: return 0;
       case IRI_GEN::DCTRRet: return 0;
       case IRI_GEN::ToNumeric: return 0;
       case IRI_GEN::JSCTX: return 1;
@@ -548,29 +548,20 @@ public:
       case IRI_GEN::GWrite:
         switch(flag) {
         case IRI_GEN::INIT: return 0;
-        case IRI_GEN::SAFE: return 1;
-        case IRI_GEN::DECLVAR: return 2;
-        case IRI_GEN::DECLFUN: return 3;
+        case IRI_GEN::DECLVAR: return 1;
+        case IRI_GEN::DECLFUN: return 2;
           default: return -1;
         }
         break;
       case IRI_GEN::LWrite:
         switch(flag) {
-        case IRI_GEN::SAFE: return 0;
-        case IRI_GEN::THISINIT: return 1;
+        case IRI_GEN::THISINIT: return 0;
           default: return -1;
         }
         break;
       case IRI_GEN::RWrite:
         switch(flag) {
-        case IRI_GEN::SAFE: return 0;
-        case IRI_GEN::THISINIT: return 1;
-          default: return -1;
-        }
-        break;
-      case IRI_GEN::MWrite:
-        switch(flag) {
-        case IRI_GEN::SAFE: return 0;
+        case IRI_GEN::THISINIT: return 0;
           default: return -1;
         }
         break;
@@ -1018,7 +1009,6 @@ public:
       case IRI_GEN::GWrite:
         switch(flag) {
         case IRI_GEN::INIT: return FT_VOID;
-        case IRI_GEN::SAFE: return FT_VOID;
         case IRI_GEN::DECLVAR: return FT_VOID;
         case IRI_GEN::DECLFUN: return FT_VOID;
           default: return FT_NONE;
@@ -1026,21 +1016,13 @@ public:
         break;
       case IRI_GEN::LWrite:
         switch(flag) {
-        case IRI_GEN::SAFE: return FT_VOID;
         case IRI_GEN::THISINIT: return FT_VOID;
           default: return FT_NONE;
         }
         break;
       case IRI_GEN::RWrite:
         switch(flag) {
-        case IRI_GEN::SAFE: return FT_VOID;
         case IRI_GEN::THISINIT: return FT_VOID;
-          default: return FT_NONE;
-        }
-        break;
-      case IRI_GEN::MWrite:
-        switch(flag) {
-        case IRI_GEN::SAFE: return FT_VOID;
           default: return FT_NONE;
         }
         break;
@@ -1486,29 +1468,20 @@ public:
       case IRI_GEN::GWrite:
         switch(index) {
         case 0: return IRI_GEN::INIT;
-        case 1: return IRI_GEN::SAFE;
-        case 2: return IRI_GEN::DECLVAR;
-        case 3: return IRI_GEN::DECLFUN;
+        case 1: return IRI_GEN::DECLVAR;
+        case 2: return IRI_GEN::DECLFUN;
           default: throw std::runtime_error("Invalid flag index");
         }
         break;
       case IRI_GEN::LWrite:
         switch(index) {
-        case 0: return IRI_GEN::SAFE;
-        case 1: return IRI_GEN::THISINIT;
+        case 0: return IRI_GEN::THISINIT;
           default: throw std::runtime_error("Invalid flag index");
         }
         break;
       case IRI_GEN::RWrite:
         switch(index) {
-        case 0: return IRI_GEN::SAFE;
-        case 1: return IRI_GEN::THISINIT;
-          default: throw std::runtime_error("Invalid flag index");
-        }
-        break;
-      case IRI_GEN::MWrite:
-        switch(index) {
-        case 0: return IRI_GEN::SAFE;
+        case 0: return IRI_GEN::THISINIT;
           default: throw std::runtime_error("Invalid flag index");
         }
         break;

@@ -14,11 +14,10 @@ namespace IRI_STRUCTURAL {
  *   [0] IRID LValTarget -> sexp.getArg_LValTarget()
  *   [1] IRID RVal -> sexp.getArg_RVal()
  * Flags:
- *   - void   SAFE -> sexp.hasSAFE()
  *   - void   THISINIT -> sexp.hasTHISINIT()
  */
 std::string printRWrite(const PPContext &pp, IRID node) {
-  // ^x = v (SAFE) / ^x .= v (checked) / thisinit ^x .= v
+  // ^x = v, or thisinit ^x = v for the once-only 'this' store.
   IRI_GEN::RWriteSEXP sexp(node, pp.ctx);
   return ppWriteLHS(pp, node) + " " + ppRVal(pp, sexp.getArg_RVal());
 }
