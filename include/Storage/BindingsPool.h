@@ -21,8 +21,6 @@ struct BindingMeta {
   bool evalTainted = false;
   uint32_t backOffset = 0;
 
-  small::vector<IRID, 3> defs;
-  small::vector<IRID, 4> uses;
   small::vector<uint32_t, 1> forwardOffsets;
 
   void reset() {
@@ -30,8 +28,6 @@ struct BindingMeta {
     ID = 0;
     isARGX = false;
     backOffset = 0;
-    defs.clear();
-    uses.clear();
     forwardOffsets.clear();
   }
 
@@ -40,16 +36,11 @@ struct BindingMeta {
     parent.forwardOffsets.push_back(child.currOffset);
   }
 
-  void addDef(IRID);
-  void addUse(IRID);
-
   bool isCaptured() const { return forwardOffsets.size() > 0; }
 
   void markEvalTainted() { evalTainted = true; }
 
   bool isEvalTainted() const { return evalTainted; }
-
-  bool isDead() { return uses.size() == 0 && forwardOffsets.size() == 0; }
 
   void dump(IRIContext &, std::ostream &, bool full = true) const;
 };
@@ -90,7 +81,7 @@ public:
 
   // bPool holds BindingMeta per binding
   // Remap IRIDs referenced by BindingMeta after compaction
-  // ID, defs, uses -> only these are IRIDs of IridiumPool
+  // ID is the only IRID of IridiumPool held by a BindingMeta
   void remapIrids(std::span<const IRID> old_to_new_irid_map);
 
 private:

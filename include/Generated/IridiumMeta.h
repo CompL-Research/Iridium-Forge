@@ -1,4 +1,4 @@
-// Generated: 2026-11-25 18:02:13
+// Generated: 2026-11-26 20:00:58
 #pragma once
 #include "IridiumEnums.h"
 #include <cstdint>
@@ -94,7 +94,7 @@ public:
       case IRI_GEN::JSCopyDataProperties: return 0;
       case IRI_GEN::RegExp: return 2;
       case IRI_GEN::UNOPDelMemberExpr: return 0;
-      case IRI_GEN::UNOPDelVar: return 1;
+      case IRI_GEN::UNOPDelVar: return 2;
       case IRI_GEN::JSTemplate: return 0;
       case IRI_GEN::JSBigInt: return 1;
       case IRI_GEN::Await: return 0;
@@ -529,6 +529,7 @@ public:
       case IRI_GEN::UNOPDelVar:
         switch(flag) {
         case IRI_GEN::NAME: return 0;
+        case IRI_GEN::GLOBAL: return 1;
           default: return -1;
         }
         break;
@@ -1002,6 +1003,7 @@ public:
       case IRI_GEN::UNOPDelVar:
         switch(flag) {
         case IRI_GEN::NAME: return FT_STRING;
+        case IRI_GEN::GLOBAL: return FT_VOID;
           default: return FT_NONE;
         }
         break;
@@ -1473,6 +1475,7 @@ public:
       case IRI_GEN::UNOPDelVar:
         switch(index) {
         case 0: return IRI_GEN::NAME;
+        case 1: return IRI_GEN::GLOBAL;
           default: throw std::runtime_error("Invalid flag index");
         }
         break;

@@ -20,9 +20,19 @@ export default [
     desc: "TDZ-check elimination optimization pass (MTDZS)",
   },
   {
+    name: "copyProp",
+    default: true,
+    desc: "(To be deprecated soon) Copy propagation optimization pass",
+  },
+  {
     name: "dce",
     default: true,
     desc: "Dead code elimination optimization pass",
+  },
+  {
+    name: "deadBindings",
+    default: true,
+    desc: "Delete bindings that nothing reads or writes",
   },
   {
     name: "effectProp",

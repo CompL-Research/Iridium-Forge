@@ -19,27 +19,41 @@ using namespace IRI_STRUCTURAL;
 
 using BUILD_CTX = std::unordered_map<int, std::shared_ptr<IridiumBuildContext>>;
 
-inline void patchNode(IRIContext &ctx, IRID node, SCPIDX startScope) {
+namespace {
+
+IRID resolveDelete(IRIContext &ctx, IRID node, SCPIDX startScope) {
+  IRI_TAG tag = IRI_NODE(ctx, node).tag;
+  if (tag != JSUnop && tag != Unop)
+    return node;
+
+  IRID val = tag == JSUnop ? JSUnopSEXP(node, ctx).getArg_Val()
+                           : UnopSEXP(node, ctx).getArg_Val();
+  if (IRI_NODE(ctx, val).tag != IRI_GEN::UNOPDelVar)
+    return node;
+
+  UNOPDelVarSEXP dv(val, ctx);
+  if (!ctx.iris->isGlobal(dv.getNAME(), startScope))
+    return BooleanSEXP::create(ctx, false);
+
+  dv.setGLOBAL();
+  return node;
+}
+
+void patchNode(IRIContext &ctx, IRID node, SCPIDX startScope) {
   auto args = ctx.storage.nodes.get_args(node);
 
-  for (int i = 0; i < args.size(); i++) {
-    auto currID = args[i];
-    if (IRI_NODE(ctx, currID).tag == JSUnop) {
-      JSUnopSEXP unop(currID, ctx);
-      IRID val = unop.getArg_Val();
-      if (IRI_NODE(ctx, val).tag == IRI_GEN::UNOPDelVar) {
-        UNOPDelVarSEXP dv(val, ctx);
-        if (!ctx.iris->isGlobal(dv.getNAME(), startScope)) {
-          ctx.storage.nodes.update_arg_inplace(node, i, BooleanSEXP::create(ctx, false));
-        }
-      }
-    }
-    patchNode(ctx, args[i], startScope);
+  for (size_t i = 0; i < args.size(); i++) {
+    IRID patched = resolveDelete(ctx, args[i], startScope);
+    if (patched != args[i])
+      ctx.storage.nodes.update_arg_inplace(node, i, patched);
+    patchNode(ctx, patched, startScope);
   }
 }
 
+} // namespace
+
 void _18_DELOP(IRI_STORAGE::IRIContext &ctx, IRI_STORAGE::IRID fileSEXP,
-              BUILD_CTX &iridiumBuildContext) {
+               BUILD_CTX &iridiumBuildContext) {
 
   FileSupport file(fileSEXP, ctx);
   for (auto [bbcID, _] : file.containers()) {
@@ -48,7 +62,10 @@ void _18_DELOP(IRI_STORAGE::IRIContext &ctx, IRI_STORAGE::IRID fileSEXP,
       BBSupport bb(bbID, ctx);
       auto bbScope = bb.getScopeIDX();
       for (auto [stmtID, stmtOffset] : bb.stmts()) {
-        patchNode(ctx, stmtID, bbScope);
+        IRID root = resolveDelete(ctx, stmtID, bbScope);
+        if (root != stmtID)
+          ctx.storage.nodes.update_arg_inplace(bbID, stmtOffset, root);
+        patchNode(ctx, root, bbScope);
       }
     }
   }

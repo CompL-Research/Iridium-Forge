@@ -156,24 +156,20 @@ public:
 private:
   CASState processWrite(IRID node, const CASState &state,
                         IRI_STORAGE::IRIContext &ctx) {
-    auto tag = IRI_NODE(ctx, node).tag;
-    if (tag == IRI_GEN::LWrite) {
-      IRI_GEN::LWriteSEXP lw(node, ctx);
-      auto lval = lw.getArg_LValTarget();
-      auto &iris = ctx.iris;
-      if (IRI_BINDING(iris, lval).isCaptured() ||
-          IRI_BINDING(iris, lval).isEvalTainted()) {
-        return state;
-      }
-      // A write to a function's own name binding is ignored at runtime
-      // (CreateImmutableBinding with Annex B), so it must not forward its
-      // value to later reads; the declaration's initializing write does store.
-      if (!lw.hasINIT() && IRI_GEN::EnvBindingSEXP(lval, ctx).hasSLOPPYCONST())
-        return state;
-      if (IRI_NODE(ctx, lval).tag == IRI_GEN::EnvBinding) {
-        return state.setLattice(lval,
-                                resolveValue(lw.getArg_RVal(), state, ctx));
-      }
+    IRI_GEN::LWriteSEXP lw(node, ctx);
+    auto lval = lw.getArg_LValTarget();
+    auto &iris = ctx.iris;
+    if (IRI_BINDING(iris, lval).isCaptured() ||
+        IRI_BINDING(iris, lval).isEvalTainted()) {
+      return state;
+    }
+    // A write to a function's own name binding is ignored at runtime
+    // (CreateImmutableBinding with Annex B), so it must not forward its
+    // value to later reads; the declaration's initializing write does store.
+    if (!lw.hasINIT() && IRI_GEN::EnvBindingSEXP(lval, ctx).hasSLOPPYCONST())
+      return state;
+    if (IRI_NODE(ctx, lval).tag == IRI_GEN::EnvBinding) {
+      return state.setLattice(lval, resolveValue(lw.getArg_RVal(), state, ctx));
     }
     return state;
   }

@@ -1,9 +1,11 @@
 #include "Entrypoint.h"
 #include "Analysis/ConstantProp.h"
+#include "Analysis/CopyProp.h"
 #include "Analysis/DCE.h"
 // #include "Analysis/EffectProp.h"
 #include "Analysis/MTDZS.h"
 #include "Analysis/ReduceComputedFieldOps.h"
+#include "Analysis/RemoveDeadBindings.h"
 #include "CorePasses.h"
 #include "Helpers.h"
 #include "Storage/Config.h"
@@ -162,8 +164,12 @@ void runOptimizationPasses(IRIContext &ctx) {
 
   if (ctx.flags.tdz)
     pm.addPass(MTDZSPass());
+  if (ctx.flags.copyProp)
+    pm.addPass(CopyPropPass());
   if (ctx.flags.dce)
     pm.addPass(DCEPass());
+  if (ctx.flags.deadBindings)
+    pm.addPass(RemoveDeadBindingsPass());
   if (ctx.flags.constantProp) {
     pm.addPass(ConstantPropPass());
     pm.addPass(ReduceComputedFieldOpsPass());

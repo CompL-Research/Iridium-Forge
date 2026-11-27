@@ -982,7 +982,7 @@ export default [
     args: [],
     flags: {
       string: ["NAME"],
-      void: [],
+      void: ["GLOBAL"],
       bool: [],
       double: [],
     },

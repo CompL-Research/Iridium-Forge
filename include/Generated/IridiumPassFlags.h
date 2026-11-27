@@ -1,4 +1,4 @@
-// Generated: 2026-11-26 18:53:18
+// Generated: 2026-11-26 23:32:20
 #pragma once
 #include <functional>
 #include <string>
@@ -10,7 +10,9 @@ struct PassFlags {
   bool dumpForgePasses = false; // Dump Forge Passes (Pretty Printing)
   bool constantProp = true; // Constant propagation optimization pass
   bool tdz = true; // TDZ-check elimination optimization pass (MTDZS)
+  bool copyProp = true; // (To be deprecated soon) Copy propagation optimization pass
   bool dce = true; // Dead code elimination optimization pass
+  bool deadBindings = true; // Delete bindings that nothing reads or writes
   bool effectProp = false; // Effect propagation optimization pass
   bool dumpClosureTree = false; // Dump the closure tree to stdout after optimization passes run
   bool dumpIrisInfo = false; // Dump IRIS scope-resolution info to stdout after optimization passes run
@@ -29,7 +31,9 @@ inline void forEachPassFlag(
   fn("dumpForgePasses", flags.dumpForgePasses);
   fn("constantProp", flags.constantProp);
   fn("tdz", flags.tdz);
+  fn("copyProp", flags.copyProp);
   fn("dce", flags.dce);
+  fn("deadBindings", flags.deadBindings);
   fn("effectProp", flags.effectProp);
   fn("dumpClosureTree", flags.dumpClosureTree);
   fn("dumpIrisInfo", flags.dumpIrisInfo);

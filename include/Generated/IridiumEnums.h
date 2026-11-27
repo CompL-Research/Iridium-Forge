@@ -1,4 +1,4 @@
-// Generated: 2026-11-25 18:02:13
+// Generated: 2026-11-26 20:00:58
 #pragma once
 #include <string>
 
@@ -316,6 +316,7 @@ namespace IRI_GEN {
     NOENUM,
     EXP,
     FLAGS,
+    GLOBAL,
     PREFIX,
     INCREMENT,
     INIT,
@@ -399,6 +400,7 @@ namespace IRI_GEN {
       case NOENUM: return "NOENUM";
       case EXP: return "EXP";
       case FLAGS: return "FLAGS";
+      case GLOBAL: return "GLOBAL";
       case PREFIX: return "PREFIX";
       case INCREMENT: return "INCREMENT";
       case INIT: return "INIT";

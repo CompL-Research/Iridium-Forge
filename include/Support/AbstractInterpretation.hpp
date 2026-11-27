@@ -37,6 +37,15 @@ public:
     return ImmutableDataMap(data.set(key, val));
   }
 
+  // Returns a new map with f(key, value) applied to every entry. Used by kills
+  // that have to test the value rather than the key.
+  template <typename F> ImmutableDataMap mapValues(F f) const {
+    auto result = data.transient();
+    for (const auto &[key, val] : data)
+      result.set(key, f(key, val));
+    return ImmutableDataMap(result.persistent());
+  }
+
   // Returns the value for a key, or the defaultValue if not found
   const LatticeElement &get(const Key &key,
                             const LatticeElement &defaultValue) const {
