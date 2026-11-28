@@ -87,11 +87,16 @@ void deriveEdges(std::vector<IRIBB> &blocks, BBIDX h, IRID terminal,
   }
 }
 
-void setExceptionEdge(std::vector<IRIBB> &blocks, BBIDX h, BBIDX target) {
+void setExceptionEdge(std::vector<IRIBB> &blocks, BBIDX h, BBIDX target,
+                      const Shape &shape) {
   if (target == h)
     throw std::runtime_error("setExceptionEdge: exception edge to self");
   if (target >= blocks.size())
     throw std::runtime_error("setExceptionEdge: target is not a block");
+  if (target == shape.entry)
+    throw std::runtime_error("setExceptionEdge: exception edge targets ENTRY");
+  if (h == shape.exit)
+    throw std::runtime_error("setExceptionEdge: EXIT has an exception edge");
 
   IRIBB &bb = blocks[h];
   for (Edge e : bb.succs)
@@ -255,7 +260,7 @@ void extractBlocks(BBContainerSupport &bbc,
     dst.SCOPE = bb.getScopeIDX();
 
     if (bb.hasEXCIDX())
-      setExceptionEdge(blocks, h, local((BBIDX)bb.getEXCIDX()));
+      setExceptionEdge(blocks, h, local((BBIDX)bb.getEXCIDX()), shape);
 
     auto stmts = bb.stmtsVec();
     dst.stmts.assign(stmts.begin(), stmts.end() - 1);
@@ -378,7 +383,7 @@ void splitAwaits(std::vector<IRIBB> &blocks, const Shape &shape) {
     // Both halves can throw, so both need the dispatch target: moveOutEdges
     // took it from the pre half, so give it back.
     if (handler != NO_BB)
-      setExceptionEdge(blocks, h, handler);
+      setExceptionEdge(blocks, h, handler, shape);
 
     // DEFERRED is what makes this edge a Deferred one. The old code set the
     // flag and then filed the edge as a normal successor, which every
@@ -587,7 +592,8 @@ void BBEditor::setTerminal(IRID stmt) {
 }
 
 void BBEditor::setException(BBIDX target) {
-  setExceptionEdge(cfg.blocks, block, target);
+  setExceptionEdge(cfg.blocks, block, target,
+                   Shape{cfg.entry, cfg.exit, cfg.ctx});
   dirty = true;
 }
 
