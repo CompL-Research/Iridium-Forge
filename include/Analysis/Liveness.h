@@ -69,6 +69,9 @@ public:
     assert(liveBindings.contains(binding));
     return LivenessState(liveBindings.set(binding, val));
   }
+
+  auto begin() const { return liveBindings.begin(); }
+  auto end() const { return liveBindings.end(); }
 };
 
 //
@@ -150,6 +153,10 @@ public:
 
   const LivenessState &getBlockEntryState(BBIDX block) const {
     return solver->getBlockEntryState(block);
+  }
+
+  const LivenessState &getBlockExitState(BBIDX block) const {
+    return solver->getBlockExitState(block);
   }
 };
 

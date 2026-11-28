@@ -65,6 +65,9 @@ public:
 
   bool contains(const Key &key) const { return data.find(key) != nullptr; }
 
+  auto begin() const { return data.begin(); }
+  auto end() const { return data.end(); }
+
   // Structural sharing comparison (O(1) root-pointer check, falling back to
   // O(N))
   bool operator==(const ImmutableDataMap &other) const {
